@@ -1,0 +1,97 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.headers-font {
+  font-family: var(--font-fellix-bold);
+}
+
+.subheaders-font {
+  font-family: var(--font-fellix);
+}
+
+.poppins-font {
+  font-family: var(--font-poppins);
+}
+* {
+  font-family: var(--font-poppins);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+#trustpilot-container iframe {
+  height: 80px !important;
+}
+
+
+.border-gradient {
+  border-width: 1.5px;
+  border-style: solid;
+  border-image-source: linear-gradient(90deg, #d3876a 0%, #a55255 100%);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+.desc::-webkit-scrollbar {
+  width: 6px;
+  border-radius: 3px;
+}
+.desc::-webkit-scrollbar-track {
+  background: #7d7c78;
+  border-radius: 3px;
+}
+.desc::-webkit-scrollbar-thumb {
+  background: black;
+  border-radius: 3px;
+}
+.desc::-webkit-scrollbar-thumb:hover {
+  background: gray;
+}
+
+.faqs-cover-gradient{
+ 
+background: linear-gradient(0deg, #f5f4ef, #f5f4ef), linear-gradient( 180deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0) 60% );
+
+}
+
+.hrw-step1-gradient{
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 54.87%, #FFFFFF 100%);
+
+}
+
+.vertical-line-inactive {
+  
+  background-image: repeating-linear-gradient(
+    to bottom,
+    #d9d9d9,
+    #d9d9d9 6px,
+    transparent 6px,
+    transparent 12px
+  );
+}
+
+.vertical-line-active {
+ 
+  background-image: repeating-linear-gradient(
+    to bottom,
+    #ae7e56,
+    #ae7e56 6px,
+    transparent 6px,
+    transparent 12px
+  );
+}
+
+.scrollbar-hide {
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+    scrollbar-width: none;  /* Firefox, Safari 18.2+, Chromium 121+ */
+}
+.scrollbar-hide::-webkit-scrollbar { 
+    display: none;  /* Older Safari and Chromium */
+}

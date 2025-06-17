@@ -1,0 +1,70 @@
+{
+  "timestamp": "2025-05-07T14:01:54.750Z",
+  "checkoutData": {
+    "billing_address": {
+      "first_name": "Mo",
+      "last_name": "Atef",
+      "company": "",
+      "address_1": "Hadati Rd",
+      "address_2": "101-178 john St 1",
+      "city": "Ontario",
+      "state": "ON",
+      "postcode": "L6W 2A4",
+      "country": "CA",
+      "email": "atefhamosa@gmail.com123",
+      "phone": "(011) 000-8672"
+    },
+    "shipping_address": {
+      "first_name": "Mo",
+      "last_name": "Atef",
+      "company": "",
+      "address_1": "hadati Rd",
+      "address_2": "101-178 john St 1",
+      "city": "Ontario",
+      "state": "ON",
+      "postcode": "L6W 2A4",
+      "country": "CA",
+      "phone": "(011) 000-8672"
+    },
+    "customer_note": "Nothing",
+    "payment_method": "bambora_credit_card",
+    "payment_data": [
+      {
+        "key": "wc-bambora-credit-card-js-token",
+        "value": "c40-c5bfb98d-92e1-44f0-9ac3-7b799b32808b"
+      },
+      {
+        "key": "wc-bambora-credit-card-account-number",
+        "value": "1234"
+      },
+      {
+        "key": "wc-bambora-credit-card-card-type",
+        "value": "visa"
+      },
+      {
+        "key": "wc-bambora-credit-card-exp-month",
+        "value": "06"
+      },
+      {
+        "key": "wc-bambora-credit-card-exp-year",
+        "value": "26"
+      },
+      {
+        "key": "wc-bambora_credit_card-new-payment-method",
+        "value": "1"
+      }
+    ],
+    "meta_data": [
+      {
+        "key": "_meta_discreet",
+        "value": "1"
+      },
+      {
+        "key": "_meta_mail_box",
+        "value": "1"
+      }
+    ]
+  },
+  "savedCardUsed": false,
+  "totalAmount": 1596
+}

@@ -1,0 +1,59 @@
+{
+  "timestamp": "2025-05-07T13:47:21.773Z",
+  "checkoutData": {
+    "billing_address": {
+      "first_name": "Muhammed",
+      "last_name": "atef",
+      "company": "",
+      "address_1": "Egypt",
+      "address_2": "123",
+      "city": "Ontario",
+      "state": "ON",
+      "postcode": "L6W 2A4",
+      "country": "CA",
+      "email": "mo@gmail.com",
+      "phone": "01203388446"
+    },
+    "shipping_address": null,
+    "customer_note": "",
+    "payment_method": "bambora_credit_card",
+    "payment_data": [
+      {
+        "key": "wc-bambora-credit-card-js-token",
+        "value": "c44-9ca702ef-54bf-4518-a4fe-306b065ae8e8"
+      },
+      {
+        "key": "wc-bambora-credit-card-account-number",
+        "value": "4242"
+      },
+      {
+        "key": "wc-bambora-credit-card-card-type",
+        "value": "visa"
+      },
+      {
+        "key": "wc-bambora-credit-card-exp-month",
+        "value": "06"
+      },
+      {
+        "key": "wc-bambora-credit-card-exp-year",
+        "value": "26"
+      },
+      {
+        "key": "wc-bambora_credit_card-new-payment-method",
+        "value": "1"
+      }
+    ],
+    "meta_data": [
+      {
+        "key": "_meta_discreet",
+        "value": "1"
+      },
+      {
+        "key": "_meta_mail_box",
+        "value": "1"
+      }
+    ]
+  },
+  "savedCardUsed": false,
+  "totalAmount": 399
+}

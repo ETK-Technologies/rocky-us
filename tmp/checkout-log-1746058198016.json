@@ -1,0 +1,51 @@
+{
+  "timestamp": "2025-05-01T00:09:58.016Z",
+  "checkoutData": {
+    "billing_address": {
+      "first_name": "Tymour",
+      "last_name": "Testing",
+      "company": "",
+      "address_1": "15-5270 Solar Dr",
+      "address_2": "",
+      "city": "New Brunswick",
+      "state": "NB",
+      "postcode": "L4W 0G7",
+      "country": "CA",
+      "email": "tymitaly@yahoo.com",
+      "phone": "(124) 356-4567"
+    },
+    "shipping_address": null,
+    "customer_note": "",
+    "payment_method": "bambora_credit_card",
+    "payment_data": [
+      {
+        "key": "wc-bambora-credit-card-transaction-id",
+        "value": "10327445"
+      },
+      {
+        "key": "wc-bambora_credit_card-new-payment-method",
+        "value": "0"
+      },
+      {
+        "key": "payment_method_id",
+        "value": "64043"
+      },
+      {
+        "key": "wc-bambora_credit_card-payment-token",
+        "value": "d67f7d7Dad7A493eA6C3c7988197FD57"
+      }
+    ],
+    "meta_data": [
+      {
+        "key": "_meta_discreet",
+        "value": "1"
+      },
+      {
+        "key": "_meta_mail_box",
+        "value": "1"
+      }
+    ]
+  },
+  "savedCardUsed": true,
+  "totalAmount": 54.55
+}
