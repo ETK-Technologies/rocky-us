@@ -47,6 +47,11 @@ const nextConfig = {
         hostname: "stg-1.rocky.health",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "dodgerblue-chamois-740307.hostingersite.com",
+        pathname: "/**",
+      },
     ],
   },
 };
