@@ -7,6 +7,7 @@ import {
   MdOutlineVisibilityOff,
   MdArrowForward,
   MdArrowBack,
+  MdClose,
 } from "react-icons/md";
 import { toast } from "react-toastify";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -17,6 +18,47 @@ import {
   clearSavedProducts,
 } from "../../utils/crossSellCheckout";
 import { migrateLocalCartToServer } from "@/lib/cart/cartService";
+import {
+  ALL_US_STATES,
+  PHASE_1_STATES,
+  getStateLabel,
+} from "@/lib/constants/usStates";
+
+// Popup component for unsupported states
+const UnsupportedStatePopup = ({ isOpen, onClose, selectedState }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+      <div className="bg-white rounded-lg p-6 max-w-md mx-4 relative">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+        >
+          <MdClose size={24} />
+        </button>
+
+        <div className="text-center">
+          <h3 className="text-xl font-semibold text-gray-800 mb-4">
+            Service Not Available
+          </h3>
+          <p className="text-gray-600 mb-6">
+            We apologize, but our services are not currently available in{" "}
+            {getStateLabel(selectedState) || selectedState}. We are actively
+            working to expand our coverage and will notify you once we are
+            available in your state.
+          </p>
+          <button
+            onClick={onClose}
+            className="bg-black text-white px-6 py-2 rounded-full hover:bg-gray-800 transition-colors"
+          >
+            Understood
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const RegisterContent = ({ setActiveTab, registerRef }) => {
   const router = useRouter();
@@ -29,7 +71,7 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
     confirm_password: "",
     phone: "",
     date_of_birth: "",
-    province: "",
+    province: "", // We'll keep this field name for backend compatibility but use it for states
     gender: "",
   });
   const [datePickerValue, setDatePickerValue] = useState(null);
@@ -37,14 +79,40 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const [showUnsupportedPopup, setShowUnsupportedPopup] = useState(false);
+  const [selectedUnsupportedState, setSelectedUnsupportedState] = useState("");
   const redirectTo = searchParams.get("redirect_to");
   const isEdFlow = searchParams.get("ed-flow") === "1";
 
+  const genderOptions = [
+    { value: "", label: "Select gender" },
+    { value: "male", label: "Male" },
+    { value: "female", label: "Female" },
+  ];
+
   const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    // Special handling for state selection
+    if (name === "province") {
+      // We keep the field name as "province" for backend compatibility
+      // Check if the selected state is supported (Phase 1)
+      if (value && !PHASE_1_STATES.includes(value)) {
+        setSelectedUnsupportedState(value);
+        setShowUnsupportedPopup(true);
+        return; // Don't update the form data
+      }
+    }
+
     setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [name]: value,
     }));
+  };
+
+  const closeUnsupportedPopup = () => {
+    setShowUnsupportedPopup(false);
+    setSelectedUnsupportedState("");
   };
 
   const togglePasswordVisibility = () => {
@@ -54,25 +122,6 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
   const toggleConfirmPasswordVisibility = () => {
     setShowConfirmPassword(!showConfirmPassword);
   };
-
-  const provinces = [
-    { value: "", label: "Select a province" },
-    { value: "Ontario", label: "Ontario" },
-    { value: "British Columbia", label: "British Columbia" },
-    { value: "Quebec", label: "Quebec" },
-    { value: "Alberta", label: "Alberta" },
-    { value: "Manitoba", label: "Manitoba" },
-    { value: "New Brunswick", label: "New Brunswick" },
-    { value: "Nova Scotia", label: "Nova Scotia" },
-    { value: "Saskatchewan", label: "Saskatchewan" },
-    { value: "Other", label: "Other" },
-  ];
-
-  const genderOptions = [
-    { value: "", label: "Select gender" },
-    { value: "male", label: "Male" },
-    { value: "female", label: "Female" },
-  ];
 
   const handleCrossSellProducts = async () => {
     try {
@@ -151,7 +200,7 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
       return false;
     }
     if (!formData.province) {
-      toast.error("Province is required");
+      toast.error("State is required");
       return false;
     }
     return true;
@@ -569,7 +618,7 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
                 </div>
               </div>
               <div className="w-full flex flex-col items-start justify-center gap-2">
-                <label htmlFor="province">Province</label>
+                <label htmlFor="province">State</label>
                 <select
                   id="province"
                   name="province"
@@ -579,7 +628,7 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
                   style={{ outlineColor: "black" }}
                   required
                 >
-                  {provinces.map((option) => (
+                  {ALL_US_STATES.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
@@ -650,6 +699,14 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
           </div>
         </div>
       </form>
+
+      {showUnsupportedPopup && (
+        <UnsupportedStatePopup
+          isOpen={showUnsupportedPopup}
+          onClose={closeUnsupportedPopup}
+          selectedState={selectedUnsupportedState}
+        />
+      )}
     </>
   );
 };
