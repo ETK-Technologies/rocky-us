@@ -2,15 +2,18 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
-import { IoCartOutline } from "react-icons/io5";
+import { IoCartOutline, IoClose } from "react-icons/io5";
 import { CiTrash } from "react-icons/ci";
 import { emptyCart } from "@/lib/cart/cartService";
 import { toast } from "react-toastify";
 import { canRemoveItem } from "@/lib/cart/cartService";
+import MobileCartPopup from "./MobileCartPopup";
 
 const CartIcon = () => {
   const [cartItems, setCartItems] = useState([]);
   const [isLocalCart, setIsLocalCart] = useState(false);
+  const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
+  const [isEmptyingCart, setIsEmptyingCart] = useState(false);
 
   const getCartItems = useCallback(async () => {
     try {
@@ -70,23 +73,66 @@ const CartIcon = () => {
     }
   };
 
+  // Remove item handler for mobile popup
+  const handleRemoveItemMobile = async (item) => {
+    try {
+      if (isLocalCart) {
+        const { removeItemFromLocalCart } = require("@/lib/cart/cartService");
+        const result = removeItemFromLocalCart(item.key);
+        if (result.error) {
+          toast.error(result.error);
+          return;
+        }
+        getCartItems();
+      } else {
+        const res = await fetch("/api/cart", {
+          headers: { "Content-Type": "application/json" },
+          method: "DELETE",
+          body: JSON.stringify({ itemKey: item.key }),
+        });
+        const data = await res.json();
+        if (data.error) {
+          toast.error(data.error);
+          return;
+        }
+        if (res.ok) getCartItems();
+      }
+    } catch (error) {
+      toast.error("Failed to remove item from cart. Please try again.");
+    }
+  };
+
+  // Empty cart handler for mobile popup
+  const handleEmptyCartMobile = async () => {
+    if (isEmptyingCart) return;
+    try {
+      setIsEmptyingCart(true);
+      await emptyCart();
+      getCartItems();
+    } catch (error) {
+      toast.error("Failed to empty cart. Please try again.");
+    } finally {
+      setIsEmptyingCart(false);
+    }
+  };
+
   return (
-    <div className="relative group">
-      <span
-        id="cart-refresher"
-        className="hidden"
-        onClick={handleRefreshCart}
-      ></span>
-      <Link href="/cart" className="block relative">
-        <IoCartOutline size={24} />
+    <>
+      <div className="relative group hidden md:block">
+        <span
+          id="cart-refresher"
+          className="hidden"
+          onClick={handleRefreshCart}
+        ></span>
+        <Link href="/cart" className="block relative">
+          <IoCartOutline size={24} />
+          {cartItems.items && (
+            <span className="absolute top-[-40%] right-[-40%] text-[10px] bg-[#A55255] flex items-center justify-center w-5 h-5 text-white rounded-full">
+              {cartItems.items?.length}
+            </span>
+          )}
+        </Link>
         {cartItems.items && (
-          <span className="absolute top-[-40%] right-[-40%] text-[10px] bg-[#A55255] flex items-center justify-center w-5 h-5 text-white rounded-full">
-            {cartItems.items?.length}
-          </span>
-        )}
-      </Link>
-      {cartItems.items && (
-        <>
           <div className="hidden group-hover:flex absolute top-[24px] right-[-13px] md:right-0 bg-white rounded-md min-w-[395px] md:min-w-[450px] min-h-[80px] shadow-md p-4 px-8 w-full z-50">
             <CartItems
               items={cartItems.items}
@@ -94,9 +140,36 @@ const CartIcon = () => {
               isLocalCart={isLocalCart}
             />
           </div>
-        </>
-      )}
-    </div>
+        )}
+      </div>
+      <div className="relative group block md:hidden">
+        <span
+          id="cart-refresher"
+          className="hidden"
+          onClick={handleRefreshCart}
+        ></span>
+        <div
+          className="block relative"
+          onClick={() => setIsMobileCartOpen(true)}
+        >
+          <IoCartOutline size={24} />
+          {cartItems.items && (
+            <span className="absolute top-[-40%] right-[-40%] text-[10px] bg-[#A55255] flex items-center justify-center w-5 h-5 text-white rounded-full">
+              {cartItems.items?.length}
+            </span>
+          )}
+        </div>
+        <MobileCartPopup
+          open={isMobileCartOpen}
+          onClose={() => setIsMobileCartOpen(false)}
+          cartItems={cartItems.items || []}
+          isLocalCart={isLocalCart}
+          onRemoveItem={handleRemoveItemMobile}
+          onEmptyCart={handleEmptyCartMobile}
+          isEmptyingCart={isEmptyingCart}
+        />
+      </div>
+    </>
   );
 };
 

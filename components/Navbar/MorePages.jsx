@@ -2,8 +2,15 @@
 import { useState } from "react";
 import Link from "next/link";
 
-const MorePages = () => {
+const MorePages = ({ setIsOpen }) => {
   const [isOpen, setDropdownOpen] = useState(false);
+
+  const handleLinkClick = () => {
+    setDropdownOpen(false);
+    if (setIsOpen) {
+      setIsOpen(false); // Close the main mobile menu
+    }
+  };
 
   return (
     <div className="relative group px-5 md:px-0">
@@ -26,25 +33,32 @@ const MorePages = () => {
       {/* Dropdown */}
       <div
         className={`
-          absolute md:top-[20px] md:left-0  md:bg-white md:shadow-md md:rounded-md z-50  md:pt-5 md:pb-2 md:min-w-[100px]
+          absolute md:top-[20px] md:left-0  md:bg-white md:shadow-md md:rounded-md z-50  md:pt-5 md:pb-2 md:min-w-[120px]
           transition-opacity duration-200 
           md:opacity-0 md:invisible md:group-hover:opacity-100 md:group-hover:visible
           ${isOpen ? "block" : "hidden"} md:block
         `}
       >
         <Link
-          onClick={() => setDropdownOpen(false)}
+          onClick={handleLinkClick}
           href="/reviews"
           className="block py-1.5 px-2 text-[14px] font-[400] text-[#212121]"
         >
           Reviews
         </Link>
         <Link
-          onClick={() => setDropdownOpen(false)}
+          onClick={handleLinkClick}
           href="/blog"
           className="block py-1.5 px-2 text-[14px] font-[400] text-[#212121]"
         >
           Blogs
+        </Link>
+        <Link
+          onClick={handleLinkClick}
+          href="/mental-health"
+          className="block py-1.5 px-2 text-[14px] font-[400] text-[#212121]"
+        >
+          Mental Health
         </Link>
       </div>
     </div>

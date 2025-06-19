@@ -819,6 +819,7 @@ const CheckoutPageContent = () => {
           setCardType={setCardType}
           isEdFlow={isEdFlow}
           savedCards={savedCards}
+          setSavedCards={setSavedCards}
           selectedCard={selectedCard}
           setSelectedCard={setSelectedCard}
           isLoadingSavedCards={isLoadingSavedCards}
