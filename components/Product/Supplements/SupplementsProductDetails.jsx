@@ -717,7 +717,7 @@ const SupplementsProductDetails = ({ product, variations, isLoading }) => {
         <div className="flex lg:hidden flex-col mt-[40px] lg:flex-row items-start justify-between gap-6">
           {/* Left Side: Slider */}
           <div className="w-full lg:w-[63%]">
-            <div className="pl-[20px]">
+            <div className="px-[20px]">
               <h1 className="text-[32px] headers-font lg:text-[40px] font-[550] leading-[115%] letter-spacing-[-2%] mb-[6px]">
                 {productName}
               </h1>
@@ -800,7 +800,7 @@ const SupplementsProductDetails = ({ product, variations, isLoading }) => {
           </div>
 
           {/* Right Side: Details */}
-          <div className="w-full lg:w-[40%] p-2">
+          <div className="w-full lg:w-[40%] p-2 px-[20px]">
             <ul className="mb-[24px]">
               {keyBenefits.map((benefit, index) => (
                 <li key={index} className="flex items-center gap-2 mb-[8px]">
