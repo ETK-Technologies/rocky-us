@@ -25,8 +25,13 @@ import {
 } from "@/lib/constants/usStates";
 
 // Popup component for unsupported states
-const UnsupportedStatePopup = ({ isOpen, onClose, selectedState }) => {
+const UnsupportedStatePopup = ({ isOpen, onClose, selectedState, router }) => {
   if (!isOpen) return null;
+
+  const handleUnderstood = () => {
+    onClose();
+    router.push("/service-coverage");
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
@@ -48,12 +53,20 @@ const UnsupportedStatePopup = ({ isOpen, onClose, selectedState }) => {
             working to expand our coverage and will notify you once we are
             available in your state.
           </p>
-          <button
-            onClick={onClose}
-            className="bg-black text-white px-6 py-2 rounded-full hover:bg-gray-800 transition-colors"
-          >
-            Understood
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              onClick={handleUnderstood}
+              className="bg-black text-white px-6 py-2 rounded-full hover:bg-gray-800 transition-colors font-medium"
+            >
+              See Where We Serve
+            </button>
+            <button
+              onClick={onClose}
+              className="bg-white border border-gray-300 text-gray-700 px-6 py-2 rounded-full hover:bg-gray-50 transition-colors font-medium"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -705,6 +718,7 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
           isOpen={showUnsupportedPopup}
           onClose={closeUnsupportedPopup}
           selectedState={selectedUnsupportedState}
+          router={router}
         />
       )}
     </>
