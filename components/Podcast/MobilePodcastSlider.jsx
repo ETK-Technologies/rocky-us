@@ -116,7 +116,7 @@ const MobilePodcastSlider = ({ episodes }) => {
       >
         {getSortedEpisodes().map((episode) => (
           <SwiperSlide key={episode.id}>
-            <div className="bg-white rounded-2xl overflow-hidden shadow-lg mb-10 p-6 flex flex-col h-full min-h-[600px]">
+            <div className="bg-white rounded-2xl overflow-hidden shadow-lg mb-10 p-6 flex flex-col h-full min-h-[660px]">
               <div className="relative h-[300px] w-full">
                 <Image
                   src={episode.image}

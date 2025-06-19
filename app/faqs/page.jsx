@@ -99,7 +99,7 @@ const Faqs = () => {
   return (
     <>
       <div className="faqs-cover-gradient relative">
-        <div className="relative z-10 px-5 sectionWidth:px-0 pt-6 pb-14 md:pt-8 md:pb-[96px] max-w-[1184px] mx-auto h-[460px] md:h-[544px] flex flex-col md:justify-center">
+        <div className="relative px-5 sectionWidth:px-0 pt-6 pb-14 md:pt-8 md:pb-[96px] max-w-[1184px] mx-auto h-[460px] md:h-[544px] flex flex-col md:justify-center">
           <div className="mb-10 md:mb-12">
             <h1 className="capitalize text-[40px] md:text-[60px] leading-[115%] tracking-[-0.02em] mb-2 md:mb-4 headers-font">
               How can we help?

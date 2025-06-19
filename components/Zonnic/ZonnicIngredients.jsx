@@ -1,96 +1,61 @@
-const ZonnicIngredients = ({ data: ingredientsData }) => {
-  // Default static data
-  const defaultData = {
-    title: "ZONNIC Ingredients Explained.",
-    subtitle:
-      "Ingredients: Water, plant-based fibres, flavouring, sweetener, and nicotine.",
-    imageUrl:
-      "https://myrocky.b-cdn.net/WP%20Images/zonnic/ingredients-explained.png",
-    bgColor:
-      "bg-[linear-gradient(180deg,#B7F7AD_46.17%,#91D787_99.42%)] md:bg-[linear-gradient(90deg,#B7F7AD_31%,#91D787_99.92%)]",
-    ingredients: [
-      {
-        name: "Plant-based fibres",
-        img: "https://myrocky.b-cdn.net/WP%20Images/zonnic/Plant-based-fibres.png",
-      },
-      {
-        name: "Water",
-        img: "https://myrocky.b-cdn.net/WP%20Images/zonnic/Water.png",
-      },
-      {
-        name: "Sweetener",
-        img: "https://myrocky.b-cdn.net/WP%20Images/zonnic/Sweetener.png",
-      },
-      {
-        name: "Nicotine",
-        img: "https://myrocky.b-cdn.net/WP%20Images/zonnic/Nicotine.png",
-      },
-      {
-        name: "Flavouring",
-        img: "https://myrocky.b-cdn.net/WP%20Images/zonnic/Flavouring.png",
-      },
-    ],
-  };
+import React from "react";
+import Image from "next/image";
 
-  const { title, subtitle, imageUrl, ingredients, bgColor } =
-    ingredientsData || defaultData;
+const ZonnicIngredients = () => {
+  const ingredients = [
+    { name: "Plant-based fibres", iconSrc: "/zonic/planet.svg" },
+    { name: "Water", iconSrc: "/zonic/rain-drop.svg" },
+    { name: "Sweetener", iconSrc: "/zonic/taste.svg" },
+    { name: "Nicotine", iconSrc: "/zonic/Nicotine.svg" },
+    { name: "Flavouring", iconSrc: "/zonic/eyedropper.svg" },
+  ];
 
   return (
-    <div className="mx-auto flex flex-col md:flex-row justify-between rounded-[16px] overflow-hidden md:min-h-[600px] ">
-      <div
-        className={`flex flex-col justify-center px-4 md:px-14 pt-10 md:pt-0 w-full min-h-full md:max-w-[592px] ${bgColor}`}
-      >
-        <h2 className="text-[32px] font-[450] md:text-[48px] leading-9 md:leading-[54px] headers-font mb-3">
-          {title}
-        </h2>
-        <p className="text-[16px] md:text-[20px] font-[400] leading-[24px] md:leading-[30px] max-w-[290px] md:max-w-[462px] mb-8 md:mb-10">
-          <span className="font-bold">ZONNIC</span> {subtitle}
-        </p>
-        <ul className="flex md:gap-5 justify-between max-w-[372px]">
-          <div>
-            {ingredients.slice(0, 3).map((item, index) => (
-              <li key={index} className="flex items-center gap-2 mb-3">
-                {item.img ? (
-                  <img
-                    className="w-[24px] h-[24px]"
-                    src={item.img}
-                    alt={item.name}
-                  />
-                ) : (
-                  <span className="text-[20px] font-bold">•</span>
-                )}
-                <span className="text-[16px] md:text-[18px] font-[500]">
-                  {item.name}
+    <div className="w-full bg-gradient-to-b from-[#C5F5C9] to-[#91D787] md:bg-gradient-to-r md:from-[#C5F5C9] md:to-[#91D787] md rounded-2xl overflow-hidden">
+      <div className="flex flex-col md:flex-row justify-between">
+        {/* Content Section */}
+        <div className="w-full md:w-1/2 pt-8 px-5 md:py-[96.5px] md:pl-20">
+          <h3 className="capitalize text-[32px] font-[550] md:text-[48px] leading-9 md:leading-[54px] headers-font mb-4">
+            ZONNIC Ingredients Explained
+          </h3>
+          <p className="text-[16px] md:text-[18px] leading-[140%] mb-8 md:mb-14">
+            We're serious about what goes into our pouches.{" "}
+            <strong>ZONNIC</strong> only uses high-quality ingredients: Water,
+            plant-based fibres, flavouring, sweetener and nicotine.
+          </p>
+
+          <div className="grid grid-cols-2 gap-4 mt-6">
+            {ingredients.map((ingredient, index) => (
+              <div
+                key={index}
+                className={`flex items-center gap-3 ${
+                  index === 0 ? "col-span-2 md:col-span-1" : ""
+                }`}
+              >
+                <Image
+                  src={ingredient.iconSrc}
+                  alt={ingredient.name}
+                  width={24}
+                  height={24}
+                />
+                <span className="text-[14px] md:text-[16px]">
+                  {ingredient.name}
                 </span>
-              </li>
+              </div>
             ))}
           </div>
-          <div className="flex flex-col justify-end md:justify-start">
-            {ingredients.slice(3).map((item, index) => (
-              <li key={index} className="flex items-center gap-2 mb-3">
-                {item.img ? (
-                  <img
-                    className="w-[24px] h-[24px]"
-                    src={item.img}
-                    alt={item.name}
-                  />
-                ) : (
-                  <span className="text-[20px] font-bold">•</span>
-                )}
-                <span className="text-[16px] md:text-[18px] font-[500]">
-                  {item.name}
-                </span>
-              </li>
-            ))}
+        </div>
+
+        <div className="flex justify-center md:justify-end">
+          <div className="relative w-[335px] h-[300px] md:w-[592px] md:h-[600px]">
+            <Image
+              src="/zonic/zonnic-pouch.png"
+              alt="ZONNIC pouch"
+              fill
+              className="object-cover"
+            />
           </div>
-        </ul>
-      </div>
-      <div className="w-full h-[300px] md:h-full md:w-[592px] self-end">
-        <img
-          className="w-full h-full object-contain object-right"
-          src={imageUrl}
-          alt="ingredients-explained"
-        />
+        </div>
       </div>
     </div>
   );

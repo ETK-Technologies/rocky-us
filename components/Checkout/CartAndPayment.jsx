@@ -18,6 +18,7 @@ const CartAndPayment = ({
   cardType,
   setCardType,
   savedCards,
+  setSavedCards,
   selectedCard,
   setSelectedCard,
   isLoadingSavedCards,
@@ -45,6 +46,7 @@ const CartAndPayment = ({
         cardType={cardType}
         setCardType={setCardType}
         savedCards={savedCards}
+        setSavedCards={setSavedCards}
         selectedCard={selectedCard}
         setSelectedCard={setSelectedCard}
         isLoadingSavedCards={isLoadingSavedCards}
