@@ -60,7 +60,7 @@ export default function Blogs({ params }) {
       }
 
       if (blog.yoast_head_json?.twitter_misc?.["Est. reading time"]) {
-        setEstReadTime(blog.yoast_head_json.twitter_misc["Est. reading time"]);
+        setEstReadTime(blog.yoast_head_json.twitter_misc["Est. reading time"] + " read");
       }
     } catch (error) {
       console.error("Error fetching blogs:", error);

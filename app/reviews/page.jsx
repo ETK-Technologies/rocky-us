@@ -9,6 +9,7 @@ import Section from "@/components/utils/Section";
 import HowRockyWorks from "@/components/HowRockyWorks";
 import RockyInTheNews from "@/components/RockyInTheNews";
 import Categories from "@/components/Reviews/Categories";
+import CustomImage from "@/components/utils/CustomImage";
 
 const HeroSection = () => {
   const countdownDuration = 4 * 24 * 60 * 60 * 1000; // 4 days in milliseconds
@@ -160,9 +161,11 @@ export default function Home() {
     <div>
       <CoverSection bg={"bg-[#f7f9fb]"}>
         <HeroSection />
-        <br />
-        <RockyFeatures />
       </CoverSection>
+
+      <br />
+      <RockyFeatures />
+      <br />
 
       <ReviewsSection />
 
@@ -170,6 +173,14 @@ export default function Home() {
         <HowRockyWorks />
       </Section>
       <RockyInTheNews />
+
+      <div className="flex justify-center items-center mt-[24px] mb-4">
+        <CustomImage
+          src="/OCP-IMGS.webp"
+          width="300"
+          height="300"
+        ></CustomImage>
+      </div>
 
       <Section>
         <Categories />
