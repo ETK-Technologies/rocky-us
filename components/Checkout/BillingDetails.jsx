@@ -1,31 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import DateInput from "../DateInput";
 import FormInput from "./FormInput";
 import Datepicker from "react-tailwindcss-datepicker";
 import PostGridAddressAutocomplete from "./PostGrid/PostGridAddressAutocomplete";
+import { US_STATES_WITH_CODES } from "@/lib/constants/usStates";
 
 const BillingDetails = ({ formData, handleBillingAddressChange }) => {
-  // Initialize date picker value from form data if available
-  const [datePickerValue, setDatePickerValue] = useState(
-    formData.billing_address.date_of_birth
-      ? {
-          startDate: formData.billing_address.date_of_birth,
-          endDate: formData.billing_address.date_of_birth,
-        }
-      : ""
-  );
+  const [datePickerValue, setDatePickerValue] = useState({
+    startDate: formData.billing_address.date_of_birth || null,
+    endDate: formData.billing_address.date_of_birth || null,
+  });
 
-  // Update the date picker value when form data changes
-  useEffect(() => {
-    if (formData.billing_address.date_of_birth) {
-      setDatePickerValue({
-        startDate: formData.billing_address.date_of_birth,
-        endDate: formData.billing_address.date_of_birth,
-      });
-    }
-  }, [formData.billing_address.date_of_birth]);
-
-  // Handle date change in the date picker
   const handleDateChange = (newValue) => {
     setDatePickerValue(newValue);
 
@@ -76,11 +61,11 @@ const BillingDetails = ({ formData, handleBillingAddressChange }) => {
         <FormInput
           title="Country / Region"
           name="country"
-          placeholder="Canada"
+          placeholder="United States"
           required
           readOnly
           disabled
-          value="CA"
+          value="US"
           hidden
           onChange={null}
         />
@@ -89,7 +74,7 @@ const BillingDetails = ({ formData, handleBillingAddressChange }) => {
           readOnly
           disabled
           className="w-full bg-white rounded-[8px] border border-solid border-[#E2E2E1] px-[16px] py-[12px] h-[44px] focus:outline-none focus:border-gray-500"
-          value={"Canada"}
+          value={"United States"}
           onChange={null}
         />
       </div>
@@ -129,7 +114,7 @@ const BillingDetails = ({ formData, handleBillingAddressChange }) => {
             htmlFor="billing_state"
             className="block text-[14px] font-[500] leading-[19.6px] text-[#212121] mb-2"
           >
-            Province*
+            State*
           </label>
           <div className="relative">
             <select
@@ -141,21 +126,15 @@ const BillingDetails = ({ formData, handleBillingAddressChange }) => {
               className="w-full bg-white rounded-[8px] border border-solid border-[#E2E2E1] px-[16px] h-[44px] focus:outline-none focus:border-gray-500 appearance-none"
             >
               <option value="" disabled="">
-                Select your province
+                Select your state
               </option>
-              <option value="AB">Alberta</option>
-              <option value="BC">British Columbia</option>
-              <option value="MB">Manitoba</option>
-              <option value="NB">New Brunswick</option>
-              <option value="NL">Newfoundland and Labrador</option>
-              <option value="NT">Northwest Territories</option>
-              <option value="NS">Nova Scotia</option>
-              <option value="NU">Nunavut</option>
-              <option value="ON">Ontario</option>
-              <option value="PE">Prince Edward Island</option>
-              <option value="QC">Quebec</option>
-              <option value="SK">Saskatchewan</option>
-              <option value="YT">Yukon Territory</option>
+              {US_STATES_WITH_CODES.filter((state) => state.value !== "").map(
+                (state) => (
+                  <option key={state.code} value={state.code}>
+                    {state.label}
+                  </option>
+                )
+              )}
             </select>
             <div className="absolute right-3 top-1/2 w-5 h-5 transform -translate-y-1/2 pointer-events-none">
               <svg
@@ -183,10 +162,10 @@ const BillingDetails = ({ formData, handleBillingAddressChange }) => {
         </div>
 
         <FormInput
-          title="Postal Code"
+          title="ZIP Code"
           name="postcode"
           value={formData.billing_address.postcode}
-          placeholder="Enter your postal code"
+          placeholder="Enter your ZIP code"
           required
           onChange={handleBillingAddressChange}
         />

@@ -23,18 +23,16 @@ export default function ProductClientWrapper({ slug, initialData = null }) {
     slug === "dhm-blend" || slug?.toLowerCase().includes("dhm-blend");
 
   // Check if this is a supplements product
-  // const isSupplementsProduct =
-  //   slug === "essential-night-boost" ||
-  //   slug?.toLowerCase().includes("essential-night-boost") ||
-  //   slug?.toLowerCase().includes("essential-mood-balance") ||
-  //   slug?.toLowerCase().includes("essential-gut-relief") ||
-  //   slug?.toLowerCase().includes("night-boost") ||
-  //   slug?.toLowerCase().includes("mood-balance") ||
-  //   slug?.toLowerCase().includes("gut-relief") ||
-  //   slug?.toLowerCase().includes("testosterone-support") ||
-  //   slug?.toLowerCase().includes("hair-growth-support");
-
-  const isSupplementsProduct = false; 
+  const isSupplementsProduct =
+    slug === "essential-night-boost" ||
+    slug?.toLowerCase().includes("essential-night-boost") ||
+    slug?.toLowerCase().includes("essential-mood-balance") ||
+    slug?.toLowerCase().includes("essential-gut-relief") ||
+    slug?.toLowerCase().includes("night-boost") ||
+    slug?.toLowerCase().includes("mood-balance") ||
+    slug?.toLowerCase().includes("gut-relief") ||
+    slug?.toLowerCase().includes("testosterone-support") ||
+    slug?.toLowerCase().includes("hair-growth-support");
   
   const bodyOptimizationProducts = [
     "ozempic",
