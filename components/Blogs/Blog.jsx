@@ -12,7 +12,7 @@ const Blog = ({ blog }) => {
   // Extract reading time from Twitter meta data if available
   const getReadingTime = () => {
     if (blog.yoast_head_json?.twitter_misc?.["Est. reading time"]) {
-      return blog.yoast_head_json.twitter_misc["Est. reading time"];
+      return blog.yoast_head_json.twitter_misc["Est. reading time"] + " read";
     }
     return "4 mins read"; // Default fallback
   };

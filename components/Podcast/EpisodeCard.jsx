@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { FaPlayCircle } from "react-icons/fa";
 
 export const EpisodeCard = ({ episode }) => {
   return (
@@ -30,8 +31,8 @@ export const EpisodeCard = ({ episode }) => {
           {episode.title}
         </h3>
         <div className="flex-grow"></div>
-        <button className="py-3 w-full text-white bg-black rounded-full mt-auto">
-          Listen Now
+        <button className="py-3 w-full flex items-center justify-center gap-2 text-white bg-black rounded-full mt-auto">
+         <FaPlayCircle className="text-[22px]"/> Listen Now
         </button>
       </div>
     </div>
