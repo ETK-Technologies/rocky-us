@@ -8,7 +8,7 @@ import {
   PHASE_3_STATES,
   getStateLabel,
 } from "@/lib/constants/usStates";
-import { MdArrowBack, MdLocationOn, MdSchedule } from "react-icons/md";
+import { MdLocationOn, MdSchedule } from "react-icons/md";
 
 export default function ServiceCoverage() {
   const router = useRouter();
@@ -18,14 +18,6 @@ export default function ServiceCoverage() {
       {/* Header Section */}
       <Section>
         <div className="max-w-[800px] mx-auto text-center">
-          <button
-            onClick={() => router.back()}
-            className="inline-flex items-center gap-2 text-[#AE7E56] hover:text-[#8B6A47] transition-colors mb-6"
-          >
-            <MdArrowBack size={20} />
-            <span className="text-sm font-medium">Back</span>
-          </button>
-
           <div className="text-[#AE7E56] text-[12px] md:text-[14px] font-[500] uppercase mb-1 md:mb-2">
             Service Availability
           </div>
@@ -49,13 +41,8 @@ export default function ServiceCoverage() {
               <span className="font-medium">Currently Available</span>
             </div>
             <h2 className="text-[24px] md:text-[32px] headers-font font-medium mb-4">
-              Phase 1 States
+              Phase 1
             </h2>
-            <p className="text-gray-600 mb-6">
-              Our services are currently available in these{" "}
-              {PHASE_1_STATES.length} states, covering 83% of the target
-              population.
-            </p>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
@@ -83,11 +70,11 @@ export default function ServiceCoverage() {
               <span className="font-medium">Coming Soon</span>
             </div>
             <h2 className="text-[24px] md:text-[32px] headers-font font-medium mb-4">
-              Phase 2 States
+              Phase 2
             </h2>
             <p className="text-gray-600 mb-6">
-              We're expanding to these {PHASE_2_STATES.length} states on August
-              1st, 2025, covering an additional 7% of the target population.
+              We're expanding to these {PHASE_2_STATES.length} states, covering
+              an additional 7% of the target population.
             </p>
           </div>
 
@@ -103,36 +90,6 @@ export default function ServiceCoverage() {
                 <div className="text-xs text-gray-500 mt-1">{stateCode}</div>
               </div>
             ))}
-          </div>
-        </div>
-      </Section>
-
-      {/* Phase 3 Section */}
-      <Section bg="bg-[#F8F7F5]">
-        <div className="max-w-[900px] mx-auto">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 bg-[#AE7E56] bg-opacity-5 text-[#8B6A47] px-4 py-2 rounded-full mb-4">
-              <MdSchedule size={20} />
-              <span className="font-medium">Planned Expansion</span>
-            </div>
-            <h2 className="text-[24px] md:text-[32px] headers-font font-medium mb-4">
-              Phase 3 State
-            </h2>
-            <p className="text-gray-600 mb-6">
-              We're planning to launch in California on November 1st, 2025,
-              covering an additional 10% of the target population.
-            </p>
-          </div>
-
-          <div className="flex justify-center">
-            <div className="bg-white rounded-lg p-6 text-center shadow-sm border border-[#AE7E56] border-opacity-10 hover:shadow-md hover:border-[#AE7E56] hover:border-opacity-30 transition-all min-w-[200px]">
-              <div className="text-[#8B6A47] font-medium text-lg">
-                {getStateLabel(PHASE_3_STATES[0])}
-              </div>
-              <div className="text-sm text-gray-500 mt-1">
-                {PHASE_3_STATES[0]}
-              </div>
-            </div>
           </div>
         </div>
       </Section>
