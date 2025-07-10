@@ -26,7 +26,7 @@ export default function privacyPolicy() {
           Privacy policy
         </h1>
         <p className="text-[16px] mb-4  md:text-[18px] leading-[140%] font-[400]">
-          Last updated: January 14, 2022
+          Last updated: July 2025
         </p>
       </div>
       <div className="md:flex gap-[120px]">
@@ -38,7 +38,7 @@ export default function privacyPolicy() {
               the Service and tells You about Your privacy rights and how the
               law protects You.
             </p>
-           
+
             <p>
               We use your Personal data to provide and improve the Service. By
               using the Service, You agree to the collection and use of
@@ -79,46 +79,55 @@ export default function privacyPolicy() {
             <p className="text-[16px] mb-4  md:text-[18px] leading-[160%] font-[400]">
               For the purposes of this Privacy Policy:
             </p>
-           
+
             <div className="text-[16px] mb-4  md:text-[18px] leading-[160%] font-[400]">
               <span className="font-[600] opacity-100 mt-4 mb-4">Account </span>means a unique account
               created for You to access our Service or parts of our Service.
             </div>
-           
+
+            <div className="text-[16px] mb-4  md:text-[18px] leading-[160%] font-[400]">
+              <span className="font-[600] opacity-100 mt-4 mb-4">Authorized Healthcare Providers </span>means licensed professional healthcare providers delivering treatment to You through the Service, which may include, without limitation physicians, pharmacists, or nurse practitioners.
+            </div>
+
             <div className="text-[16px] mb-4  md:text-[18px] leading-[160%] font-[400]">
               <span className="font-[600] opacity-100 mt-4 mb-4">Company </span>(referred to as either
               “the Company”, “We”, “Us” or “Our” in this Agreement) refers to
               Rocky Health Inc., 30 Wellington Street West, Toronto, Ontario.
             </div>
-           
+
             <div className="text-[16px] mb-4  md:text-[18px] leading-[160%] font-[400]">
               <span className="font-[600] opacity-100 mt-4 mb-4">Cookies </span>are small files that
               are placed on Your computer, mobile device or any other device by
               a website, containing the details of Your browsing history on that
               website among its many uses.
             </div>
-           
+
             <div className="text-[16px] mb-4  md:text-[18px] leading-[160%] font-[400]">
               <span className="font-[600] opacity-100 mt-4 mb-4">Country </span>refers to: Ontario,
               Canada
             </div>
-           
+
             <div className="text-[16px] mb-4  md:text-[18px] leading-[160%] font-[400]">
               <span className="font-[600] opacity-100 mt-4 mb-4">Device </span>means any device that
               can access the Service such as a computer, a cellphone or a
               digital tablet.
             </div>
-           
+
+            <div className="text-[16px] mb-4  md:text-[18px] leading-[160%] font-[400]">
+              <span className="font-[600] opacity-100 mt-4 mb-4">HIPAA </span>means licensed professional healthcare providers delivering treatment to You through the Service, which may include, without limitation physicians, pharmacists, or nurse practitioners.
+            </div>
+
+
             <div className="text-[16px] mb-4  md:text-[18px] leading-[160%] font-[400]">
               <span className="font-[600] opacity-100 mt-4 mb-4">Personal Data </span>is any
               information that relates to an identified or identifiable
               individual.
             </div>
-           
+
             <div className="text-[16px] mb-4  md:text-[18px] leading-[160%] font-[400]">
               <span className="font-[600] opacity-100 mt-4 mb-4">Service </span>refers to the Website.
             </div>
-           
+
             <div className="text-[16px] mb-4  md:text-[18px] leading-[160%] font-[400]">
               <span className="font-[600] opacity-100 mt-4 mb-4">Service Provider </span>means any
               natural or legal person who processes the data on behalf of the
@@ -128,7 +137,7 @@ export default function privacyPolicy() {
               the Service or to assist the Company in analyzing how the Service
               is used.
             </div>
-           
+
             <div className="text-[16px] mb-4  md:text-[18px] leading-[160%] font-[400]">
               <span className="font-[600] opacity-100 mt-4 mb-4">
                 Third-party Social Media Service{" "}
@@ -136,25 +145,25 @@ export default function privacyPolicy() {
               refers to any website or any social network website through which
               a User can log in or create an account to use the Service.
             </div>
-           
+
             <div className="text-[16px] mb-4  md:text-[18px] leading-[160%] font-[400]">
               <span className="font-[600] opacity-100 mt-4 mb-4">Usage Data </span>
               refers to data collected automatically, either generated by the
               use of the Service or from the Service infrastructure itself (for
               example, the duration of a page visit).
             </div>
-           
+
             <div className="text-[16px] mb-4  md:text-[18px] leading-[160%] font-[400]">
               <span className="font-[600] opacity-100 mt-4 mb-4">Website </span>
-              refers to Rocky, accessible from{" "}
+              means the content and information available {" "}
               <Link
                 href="/"
                 className="duration-300 hover:text-gray-800 underline "
               >
-                www.myrocky.ca
+                www.myrocky.com
               </Link>
             </div>
-           
+
             <div className="text-[16px] mb-4  md:text-[18px] leading-[160%] font-[400] ">
               <span className="font-[600] opacity-100 mt-4 mb-4">You </span>
               means the individual accessing or using the Service, or the
@@ -180,26 +189,26 @@ export default function privacyPolicy() {
                 contact or identify You. Personally identifiable information may
                 include, but is not limited to:
               </p>
-             
+
               <ul className="space-y-4 mb-4">
                 <li>Email address</li>
                 <li>First name and last name</li>
                 <li>Phone number</li>
                 <li>Address, State, Province, ZIP/Postal code, City</li>
                 <li> Bank account information in order to pay for products and/or
-                services within the Service</li>
+                  services within the Service</li>
               </ul>
-            
-             
+
+
               <span className="block mb-2 mt-2">Usage Data</span>
-             
+
               <p>
                 When You pay for a product and/or a service via bank transfer,
                 We may ask You to provide information to facilitate this
                 transaction and to verify Your identity. Such information may
                 include, without limitation:
               </p>
-             
+
               <ul className="space-y-1 list-disc ml-6 md:ml-8">
                 <li>Date of birth</li>
                 <li>Passport or National ID card</li>
@@ -244,13 +253,13 @@ export default function privacyPolicy() {
                 the Service through the following Third-party Social Media
                 Services:
               </p>
-             
+
               <ul className="space-y-` list-disc ml-6 md:ml-8">
                 <li>Google</li>
                 <li>Facebook</li>
                 <li>Twitter</li>
               </ul>
-             
+
               <p>
                 If You decide to register through or otherwise grant us access
                 to a Third-Party Social Media Service, We may collect Personal
@@ -259,7 +268,7 @@ export default function privacyPolicy() {
                 Your activities or Your contact list associated with that
                 account.
               </p>
-             
+
               <p>
                 You may also have the option of sharing additional information
                 with the Company through Your Third-Party Social Media Service’s
@@ -280,7 +289,7 @@ export default function privacyPolicy() {
                 track information and to improve and analyze Our Service. The
                 technologies We use may include:
               </p>
-             
+
               <ul className="space-y-2 list-disc ml-6 md:ml-8">
                 <li>
                   <span className="font-[600] opacity-100 mt-4 mb-4">
@@ -320,25 +329,25 @@ export default function privacyPolicy() {
                   section and verifying system and server integrity).
                 </li>
               </ul>
-             
+
               <p>
                 Cookies can be “Persistent” or “Session” Cookies. Persistent
                 Cookies remain on Your personal computer or mobile device when
                 You go offline, while Session Cookies are deleted as soon as You
                 close Your web browser.
               </p>
-             
+
               <p>
                 We use both Session and Persistent Cookies for the purposes set
                 out below:
               </p>
-             
+
               <p className="font-[600] opacity-100 mt-4 mb-4">Necessary / Essential Cookies</p>
-             
+
               <p>Type: Session Cookies</p>
-             
+
               <p>Administered by: Us</p>
-             
+
               <p>
                 Purpose: These Cookies are essential to provide You with
                 services available through the Website and to enable You to use
@@ -347,26 +356,26 @@ export default function privacyPolicy() {
                 the services that You have asked for cannot be provided, and We
                 only use these Cookies to provide You with those services.
               </p>
-             
+
               <p className="font-[600] opacity-100 mt-4 mb-4">
                 Cookies Policy / Notice Acceptance Cookies
               </p>
-             
+
               <p>Type: Persistent Cookies</p>
-             
+
               <p>Administered by: Us</p>
-             
+
               <p>
                 Purpose: These Cookies identify if users have accepted the use
                 of cookies on the Website.
               </p>
-             
+
               <p className="font-[600] opacity-100 mt-4 mb-4">Functionality Cookies</p>
-             
+
               <p>Type: Persistent Cookies</p>
-             
+
               <p>Administered by: Us</p>
-             
+
               <p>
                 Purpose: These Cookies allow us to remember choices You make
                 when You use the Website, such as remembering your login details
@@ -375,13 +384,13 @@ export default function privacyPolicy() {
                 having to re-enter your preferences every time You use the
                 Website.
               </p>
-             
+
               <p className="font-[600] opacity-100 mt-4 mb-4">Tracking and Performance Cookies</p>
-             
+
               <p>Type: Persistent Cookies</p>
-             
+
               <p>Administered by: Third-Parties</p>
-             
+
               <p>
                 Purpose: These Cookies are used to track information about
                 traffic to the Website and how users use the Website. The
@@ -393,13 +402,13 @@ export default function privacyPolicy() {
                 pages, features or new functionality of the Website to see how
                 our users react to them.
               </p>
-             
+
               <p className="font-[600] opacity-100 mt-4 mb-4">Targeting and Advertising Cookies</p>
-             
+
               <p>Type: Persistent Cookies</p>
-             
+
               <p>Administered by: Third-Parties</p>
-             
+
               <p>
                 Purpose: These Cookies track your browsing habits to enable Us
                 to show advertising which is more likely to be of interest to
@@ -410,7 +419,7 @@ export default function privacyPolicy() {
                 which We think will be relevant to your interests while You are
                 on third party websites.
               </p>
-             
+
               <p>
                 For more information about the cookies we use and your choices
                 regarding cookies, please visit our Cookies Policy or the
@@ -433,7 +442,7 @@ export default function privacyPolicy() {
                 </span>
                 including to monitor the usage of our Service.
               </p>
-             
+
               <p>
                 <span className="font-[600] opacity-100 mt-4 mb-4">To manage Your Account: </span>
                 to manage Your registration as a user of the Service. The
@@ -441,7 +450,7 @@ export default function privacyPolicy() {
                 functionalities of the Service that are available to You as a
                 registered user.
               </p>
-             
+
               <p>
                 <span className="font-[600] opacity-100 mt-4 mb-4">
                   For the performance of a contract:{" "}
@@ -450,7 +459,7 @@ export default function privacyPolicy() {
                 contract for the products, items or services You have purchased
                 or of any other contract with Us through the Service.
               </p>
-             
+
               <p>
                 <span className="font-[600] opacity-100 mt-4 mb-4">To contact You: </span>
                 To contact You by email, telephone calls, SMS, or other
@@ -460,7 +469,7 @@ export default function privacyPolicy() {
                 products or contracted services, including the security updates,
                 when necessary or reasonable for their implementation.
               </p>
-             
+
               <p>
                 <span className="font-[600] opacity-100 mt-4 mb-4">To provide You </span>
                 with news, special offers and general information about other
@@ -468,12 +477,12 @@ export default function privacyPolicy() {
                 those that you have already purchased or enquired about unless
                 You have opted not to receive such information.
               </p>
-             
+
               <p>
                 <span className="font-[600] opacity-100 mt-4 mb-4">To manage Your requests: </span>
                 To attend and manage Your requests to Us.
               </p>
-             
+
               <p>
                 <span className="font-[600] opacity-100 mt-4 mb-4">For business transfers: </span>
                 We may use Your information to evaluate or conduct a merger,
@@ -483,7 +492,7 @@ export default function privacyPolicy() {
                 similar proceeding, in which Personal Data held by Us about our
                 Service users is among the assets transferred.
               </p>
-             
+
               <p>
                 <span className="font-[600] opacity-100 mt-4 mb-4">For other purposes: </span>
                 We may use Your information for other purposes, such as data
@@ -492,12 +501,12 @@ export default function privacyPolicy() {
                 improve our Service, products, services, marketing and your
                 experience.
               </p>
-             
+
               <p>
                 We may share Your personal information in the following
                 situations:
               </p>
-             
+
               <ul className="space-y-3 list-disc ml-6 md:ml-8">
                 <li>
                   <span className="font-[600] opacity-100 mt-4 mb-4">With Service Providers: </span>
@@ -552,36 +561,15 @@ export default function privacyPolicy() {
               Healthcare Services
             </div>
             <p className="text-[16px] mb-4  md:text-[18px] leading-[160%] font-[400] ">
-              Rocky Authorized Physicians may collect Information about you or
-              any Registered Dependent (as defined below) when you provide it
-              during a Healthcare Services consultation (e.g., verbally or in
-              texts), by viewing the Information that you have entered or
-              uploaded to the Rocky Health Platform and/or by creating or
-              compiling Information in the Rocky Health Platform. Information
-              that will be available to Authorized Physicians and includes: the
-              details that you provide in your consultation request; information
-              you’ve entered or uploaded to profiles and medical records;
-              information created during earlier interactions through the Rocky
-              Health Platform with other Authorized Physicians and/or; the name,
-              email address, phone number, gender and date of birth and
-              province/territory that you provided when you registered; and your
-              emergency contact’s name and contact information. Authorized
-              Physicians use Information to provide you with Healthcare Services
-              and/or Informational Services and, as with any healthcare
-              provider, must comply with the privacy legislation and medical
-              record-keeping obligations to which they are subject. Authorized
-              Physicians may create Information such as prescriptions, sick
-              notes and other notes about your interaction with them through the
-              Rocky Health Platform. They may export or print copies of your
-              Information that they collect. Authorized Physicians may, but are
-              not required to email or text your emergency contact if they
-              believe that you are dealing with a medical emergency during a
-              consultation. You are responsible for advising your emergency
-              contact that you are providing their name and contact information
-              to Rocky Health and Authorized Physicians, and for obtaining any
-              necessary consent from them for the provision and use of their
-              information in connection with the Rocky Health Platform.
+              Rocky Authorized Healthcare Providers may collect Information about you or any Registered Dependent (as defined below) when you provide it during a Healthcare Services consultation (e.g., verbally or in texts), by viewing the Information that you have entered or uploaded to the Rocky Health Platform and/or by creating or compiling Information in the Rocky Health Platform. Information that will be available to Authorized Healthcare Providers and includes: the details that you provide in your consultation request; information you’ve entered or uploaded to profiles and medical records; information created during earlier interactions through the Rocky Health Platform with other Authorized Healthcare Providers and/or; the name, email address, phone number, gender and date of birth and province/territory that you provided when you registered; and your emergency contact’s name and contact information. Authorized Healthcare Providers use Information to provide you with Healthcare Services and/or Informational Services and, as with any healthcare provider, must comply with the privacy legislation and medical record-keeping obligations to which they are subject. Authorized Healthcare Providers may create Information such as prescriptions, sick notes and other notes about your interaction with them through the Rocky Health Platform. They may export or print copies of your Information that they collect. Authorized Healthcare Providers may, but are not required to email or text your emergency contact if they believe that you are dealing with a medical emergency during a consultation. You are responsible for advising your emergency contact that you are providing their name and contact information to Rocky Health and Authorized Healthcare Providers, and for obtaining any necessary consent from them for the provision and use of their information in connection with the Rocky Health Platform.
             </p>
+            <p className="text-[16px] mb-4  md:text-[18px] leading-[160%] font-[400] ">
+              <span className="text-base md:text-lg font-medium"> U.S. Users </span><br />
+              Neither Rocky nor Authorized Healthcare Providers are “Covered Entities” as defined in HIPAA. That means the information collected through the Service by Rocky or Authorized Healthcare Providers is not subject to HIPAA. However, Rocky and its Authorized Healthcare Providers are committed to protecting the privacy and security of your Personal Data. We do not sell your Personal Data and we implement reasonable technical, physical, and administrative safeguards to keep it safe.
+              The Service is only available to individuals in AL, AZ, AR, CO, CT, FL, GA, ID, IA, KS, KY, LA, ME, MD, MI, MN, MS, MO, MT, NE, ND, NJ, NY, OH, OK, OR, PA, SC, SD, TN, TX, UT, VA, WA, WV, WI, and WY.
+
+            </p>
+
           </div>
           {/* Retention of Your Personal Data */}
           <div id="retention-of-your-personal-data" className="mb-10 md:mb-14">
@@ -648,7 +636,7 @@ export default function privacyPolicy() {
                 notice before Your Personal Data is transferred and becomes
                 subject to a different Privacy Policy.
               </p>
-             
+
               <div className="text-[22px] leading-[115%] tracking-[-0.01em] mb-4 headers-font">
                 Law enforcement
               </div>
@@ -658,7 +646,7 @@ export default function privacyPolicy() {
                 response to valid requests by public authorities (e.g. a court
                 or a government agency).
               </p>
-             
+
               <div className="text-[22px] leading-[115%] tracking-[-0.01em] mb-4 headers-font">
                 Other legal requirements
               </div>
@@ -666,7 +654,7 @@ export default function privacyPolicy() {
                 The Company may disclose Your Personal Data in the good faith
                 belief that such action is necessary to:
               </p>
-             
+
               <ul className="space-y-2 list-disc ml-6 md:ml-8">
                 <li>Comply with a legal obligation</li>
                 <li>
@@ -973,9 +961,8 @@ export default function privacyPolicy() {
             return (
               <li
                 key={index}
-                className={`text-[18px] font-[400] leading-[140%] text-[#000000A6] hover:underline hover:font-[600] opacity-100 mt-4 mb-4 ${
-                  index === 0 ? "font-[600] opacity-100 mt-4 mb-4 text-black underline" : ""
-                }`}
+                className={`text-[18px] font-[400] leading-[140%] text-[#000000A6] hover:underline hover:font-[600] opacity-100 mt-4 mb-4 ${index === 0 ? "font-[600] opacity-100 mt-4 mb-4 text-black underline" : ""
+                  }`}
               >
                 <a href={`#${sectionId}`}>{text}</a>
               </li>
