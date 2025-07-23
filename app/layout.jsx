@@ -8,10 +8,9 @@ import CacheClearer from "@/components/utils/CacheClearer";
 import CronHitHandler from "@/components/utils/CronHitHandler";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { headers } from "next/headers";
-import { shouldUseMinimalLayout } from "@/utils/layoutConfig";
 import Script from "next/script";
 import ClientLayoutProvider from "@/components/Layout/ClientLayoutProvider";
+import LayoutDetector from "@/components/Layout/LayoutDetector";
 import Tracker from "@/components/Tracker";
 import { VisiOptProvider } from "@/components/VisiOpt";
 import { Analytics } from "@vercel/analytics/react";
@@ -81,27 +80,8 @@ export const metadata = {
   },
 };
 export default async function RootLayout({ children }) {
-  // Get the current path from headers - properly handling the async nature of headers()
-  let path = "";
-  try {
-    const headersList = await headers();
-    // Safe access with fallback
-    const pathFromHeader = headersList?.get?.("x-pathname") || "";
-
-    // Remove query parameters and trailing slashes for consistent path matching
-    path = pathFromHeader
-      ? pathFromHeader.split("?")[0].replace(/\/$/, "")
-      : "";
-  } catch (error) {
-    console.error("Error accessing headers:", error);
-    // Fallback to empty path in case of error
-  }
-
-  // Check if the current path should use minimal layout
-  const useMinimalLayout = shouldUseMinimalLayout(path);
-
-  // For debugging - uncomment if needed to see path in server logs
-  // console.log(`Path: ${path}, Minimal Layout: ${useMinimalLayout}`);
+  // Layout detection is now handled client-side by LayoutDetector component
+  // This prevents dynamic server usage error for static routes like /product/[slug]
 
   return (
     <html lang="en">
@@ -137,7 +117,6 @@ export default async function RootLayout({ children }) {
       <body
         className={`${poppins.variable} ${fellixMedium.variable} ${fellixSemiBold.variable}`}
         suppressHydrationWarning={true}
-        data-layout={useMinimalLayout ? "minimal" : "full"}
       >
         {/* Google Tag Manager (noscript) */}
         <noscript>
@@ -159,9 +138,10 @@ export default async function RootLayout({ children }) {
         {/* End Google Tag Manager (noscript) */} <CacheClearer />
         <LoadingOverlay />
         <CronHitHandler />
-        {!useMinimalLayout && <Navbar className="navbar-main" />}
+        <LayoutDetector />
+        <Navbar className="navbar-main" />
         <ClientLayoutProvider>{children}</ClientLayoutProvider>
-        {!useMinimalLayout && <Footer className="footer-main" />}
+        <Footer className="footer-main" />
         <ToastContainer position="top-right" autoClose={5000} />
         {/* VisiOpt Scripts Provider - Automatically loads the right scripts based on page and URL parameters */}
         <VisiOptProvider />
