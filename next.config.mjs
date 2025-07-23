@@ -52,6 +52,16 @@ const nextConfig = {
         hostname: "dodgerblue-chamois-740307.hostingersite.com",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "myrocky.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "mycdn.myrocky.com",
+        pathname: "/**",
+      },
     ],
   },
 };

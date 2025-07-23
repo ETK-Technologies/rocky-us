@@ -44,11 +44,15 @@ export async function GET(req) {
       total: response.data.total,
     });
   } catch (error) {
-    console.error("Error checking order status:", error.response?.data || error.message);
+    console.error(
+      "Error checking order status:",
+      error.response?.data || error.message
+    );
     return NextResponse.json(
       {
         success: false,
-        message: error.response?.data?.message || "Failed to check order status",
+        message:
+          error.response?.data?.message || "Failed to check order status",
       },
       { status: error.response?.status || 500 }
     );

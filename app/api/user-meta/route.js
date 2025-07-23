@@ -85,7 +85,7 @@ export async function GET(request) {
       billing_city: billing.city || "",
       billing_state: billing.state || userMeta.province || "",
       billing_postcode: billing.postcode || "",
-      billing_country: billing.country || "CA",
+      billing_country: billing.country || "US",
 
       // Shipping address fields
       shipping_address_1: shipping.address_1 || "",
@@ -94,7 +94,7 @@ export async function GET(request) {
       shipping_state:
         shipping.state || billing.state || userMeta.province || "",
       shipping_postcode: shipping.postcode || "",
-      shipping_country: shipping.country || "CA",
+      shipping_country: shipping.country || "US",
     });
   } catch (error) {
     console.error("Error fetching user metadata:", error);
