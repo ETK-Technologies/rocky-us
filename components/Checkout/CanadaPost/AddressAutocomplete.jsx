@@ -1,5 +1,22 @@
 import { useEffect, useRef, useState } from "react";
-import { CANADA_POST_API_KEY, mapProvinceCode } from "./config";
+import { US_STATES_WITH_CODES } from "@/lib/constants/usStates";
+
+// Function to map state codes for USA
+const mapStateCode = (state) => {
+  if (!state) return "";
+
+  // If it's already a 2-letter code, return it
+  if (state.length === 2) return state.toUpperCase();
+
+  // Find the state code from the full name
+  const stateEntry = US_STATES_WITH_CODES.find(
+    (s) => s.name.toLowerCase() === state.toLowerCase()
+  );
+
+  return stateEntry ? stateEntry.code : state;
+};
+
+const ADDRESSY_API_KEY = process.env.CANADA_POST_API_KEY; // Reusing same API key for US addresses
 
 const AddressAutocomplete = ({
   title,
@@ -75,8 +92,8 @@ const AddressAutocomplete = ({
         const fields = [{ element: inputRef.current, field: "Line1" }];
 
         const options = {
-          key: CANADA_POST_API_KEY,
-          search: { countries: "CAN" },
+          key: ADDRESSY_API_KEY,
+          search: { countries: "US" },
           populate: true,
         };
 
@@ -90,7 +107,7 @@ const AddressAutocomplete = ({
               address_1: address.Line1 || "",
               address_2: address.Line2 || "",
               city: address.City || "",
-              state: mapProvinceCode(address.Province || ""),
+              state: mapStateCode(address.State || ""),
               postcode: address.PostalCode || "",
             };
 

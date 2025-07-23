@@ -33,7 +33,7 @@ export async function POST(request) {
       body: JSON.stringify({
         partialStreet: searchTerm,
         index: addressId,
-        countryFilter: "CA",
+        countryFilter: "US",
       }),
     });
 

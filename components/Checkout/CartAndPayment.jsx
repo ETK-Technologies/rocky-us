@@ -22,6 +22,8 @@ const CartAndPayment = ({
   selectedCard,
   setSelectedCard,
   isLoadingSavedCards,
+  saveCard,
+  setSaveCard,
 }) => {
   return (
     <div className="bg-[#f7f7f7] h-full justify-self-start w-full px-4 mt-8 lg:mt-0 lg:pl-[80px] lg:pt-[50px] pb-10">
@@ -50,6 +52,8 @@ const CartAndPayment = ({
         selectedCard={selectedCard}
         setSelectedCard={setSelectedCard}
         isLoadingSavedCards={isLoadingSavedCards}
+        saveCard={saveCard}
+        setSaveCard={setSaveCard}
       />
       <button
         onClick={handleSubmit}

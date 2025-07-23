@@ -6,6 +6,60 @@ import path from "path";
 
 const BASE_URL = process.env.BASE_URL;
 
+// Function to format postcode based on country (USA-focused)
+function formatPostcode(postcode, country) {
+  if (!postcode) return "";
+
+  // Remove all spaces and convert to uppercase
+  let cleanPostcode = postcode.replace(/\s+/g, "").toUpperCase();
+
+  switch (country) {
+    case "US": // United States (primary)
+      // US ZIP codes: 12345 or 12345-6789
+      if (/^\d{5}$/.test(cleanPostcode)) {
+        return cleanPostcode;
+      }
+      if (/^\d{9}$/.test(cleanPostcode)) {
+        return `${cleanPostcode.slice(0, 5)}-${cleanPostcode.slice(5)}`;
+      }
+      // If it looks like a ZIP code with dash, keep it
+      if (/^\d{5}-\d{4}$/.test(cleanPostcode)) {
+        return cleanPostcode;
+      }
+      break;
+    case "CA": // Canada (legacy support)
+      // Canadian postal codes: A1A1A1 -> A1A 1A1
+      if (
+        cleanPostcode.length === 6 &&
+        /^[A-Z]\d[A-Z]\d[A-Z]\d$/.test(cleanPostcode)
+      ) {
+        return `${cleanPostcode.slice(0, 3)} ${cleanPostcode.slice(3)}`;
+      }
+      break;
+    case "GB": // United Kingdom
+      // UK postcodes have various formats, keep as is but ensure proper spacing
+      if (cleanPostcode.length >= 5) {
+        const outward = cleanPostcode.slice(0, -3);
+        const inward = cleanPostcode.slice(-3);
+        return `${outward} ${inward}`;
+      }
+      break;
+    default:
+      // For other countries, if it looks like US ZIP, format as US
+      if (/^\d{5}$/.test(cleanPostcode) || /^\d{9}$/.test(cleanPostcode)) {
+        if (cleanPostcode.length === 9) {
+          return `${cleanPostcode.slice(0, 5)}-${cleanPostcode.slice(5)}`;
+        }
+        return cleanPostcode;
+      }
+      // Otherwise return cleaned version
+      return cleanPostcode;
+  }
+
+  // If no specific formatting applies, return cleaned version
+  return cleanPostcode;
+}
+
 export async function POST(req) {
   try {
     const requestData = await req.json();
@@ -39,7 +93,7 @@ export async function POST(req) {
       shippingAddressTwo,
       shippingCity,
       shippingState,
-      shippingPostCode,
+      shippingPostcode,
       shippingCountry,
       shippingPhone,
       totalAmount, // Ensure it's passed from the frontend
@@ -56,70 +110,44 @@ export async function POST(req) {
       );
     }
 
-    let token = "";
-    let cardNumberLastFourNumbers = "";
-
-    // Process payment token if using new card
-    if (!useSavedCard && cardNumber) {
-      cardNumberLastFourNumbers = cardNumber.slice(-4);
-      try {
-        token = await generateToken({
-          cvd: cardCVD,
-          expiry_month: cardExpMonth,
-          expiry_year: cardExpYear,
-          number: cardNumber,
-        });
-      } catch (error) {
-        return NextResponse.json(
-          { error: "Failed to process card. Check your details." },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Prepare WooCommerce Store API checkout payload
+    // Build checkout data for WooCommerce API
     const checkoutData = {
       billing_address: {
         first_name: firstName,
         last_name: lastName,
-        company: "",
         address_1: addressOne,
-        address_2: addressTwo || "",
-        city,
-        state,
-        postcode,
-        country,
-        email,
-        phone,
+        address_2: addressTwo,
+        city: city,
+        state: state,
+        postcode: formatPostcode(postcode, country),
+        country: country,
+        email: email,
+        phone: phone,
       },
       shipping_address: shipToAnotherAddress
         ? {
-            first_name: shippingFirstName || firstName,
-            last_name: shippingLastName || lastName,
-            company: "",
-            address_1: shippingAddressOne || addressOne,
-            address_2: shippingAddressTwo || addressTwo || "",
-            city: shippingCity || city,
-            state: shippingState || state,
-            postcode: shippingPostCode || postcode,
-            country: shippingCountry || country,
-            phone: shippingPhone || phone,
+            first_name: shippingFirstName,
+            last_name: shippingLastName,
+            address_1: shippingAddressOne,
+            address_2: shippingAddressTwo,
+            city: shippingCity,
+            state: shippingState,
+            postcode: formatPostcode(shippingPostcode, shippingCountry),
+            country: shippingCountry,
           }
         : {
             first_name: firstName,
             last_name: lastName,
-            company: "",
             address_1: addressOne,
-            address_2: addressTwo || "",
-            city,
-            state,
-            postcode,
-            country,
-            phone,
+            address_2: addressTwo,
+            city: city,
+            state: state,
+            postcode: formatPostcode(postcode, country),
+            country: country,
           },
-      customer_note: customerNotes || "",
-      payment_method: "bambora_credit_card",
+      payment_method: "paysafe", // Use the correct WooCommerce payment method name
       payment_data: [],
+      customer_note: customerNotes || "",
       meta_data: [
         {
           key: "_meta_discreet",
@@ -132,104 +160,71 @@ export async function POST(req) {
       ],
     };
 
-    // Add appropriate payment data based on payment method
+    // Add payment data based on whether using saved card or new card
     if (useSavedCard && savedCardToken) {
-      checkoutData.payment_data.push(
+      // Using saved card - Paysafe handles token validation server-side
+      checkoutData.payment_data = [
         {
-          // The token parameter is for the customer profile code in Bambora
-          key: "bambora_credit_card-customer-code",
+          key: "wc-paysafe-payment-token",
           value: savedCardToken,
         },
         {
-          // The card ID parameter
-          key: "bambora_credit_card-card-id",
-          value: savedCardId || "1",
+          key: "wc-paysafe-new-payment-method",
+          value: "false",
         },
+      ];
+    } else {
+      // New card payment - Let WooCommerce Paysafe plugin handle the payment flow
+      // This will create the order and redirect to Paysafe's payment page
+      checkoutData.payment_data = [
         {
-          // This enables payment with saved cards
-          key: "tokenize",
+          key: "wc-paysafe-new-payment-method",
           value: "true",
         },
-        {
-          // Specify that we're using an existing saved card
-          key: "wc-bambora_credit_card-payment-token",
-          value: savedCardToken,
-        },
-        {
-          // This indicates we're not saving a new card
-          key: "wc-bambora_credit_card-new-payment-method",
-          value: "0",
-        }
-      );
+      ];
 
-      // Add CVV if provided
-      if (cardCVD) {
-        checkoutData.payment_data.push({
-          key: "wc-bambora-credit-card-cvv",
-          value: cardCVD,
-        });
-      }
-    } else {
-      // For new cards, continue with the existing implementation
-      checkoutData.payment_data.push(
-        {
-          key: "wc-bambora-credit-card-js-token",
-          value: token,
-        },
-        {
-          key: "wc-bambora-credit-card-account-number",
-          value: cardNumberLastFourNumbers,
-        },
-        {
-          key: "wc-bambora-credit-card-card-type",
-          value: cardType,
-        },
-        {
-          key: "wc-bambora-credit-card-exp-month",
-          value: cardExpMonth,
-        },
-        {
-          key: "wc-bambora-credit-card-exp-year",
-          value: cardExpYear,
-        },
-        {
-          key: "wc-bambora_credit_card-new-payment-method",
-          value: "1",
-        }
-      );
-    }
-
-    // Debug the final checkout data with enhanced logging
-    console.log("FINAL checkoutData", JSON.stringify(checkoutData, null, 2));
-
-    // Write to server log file for debugging
-    const fs = require("fs");
-    const path = require("path");
-    const logDir = path.join(process.cwd(), "tmp");
-
-    try {
-      // Create tmp directory if it doesn't exist
-      if (!fs.existsSync(logDir)) {
-        fs.mkdirSync(logDir, { recursive: true });
-      }
-
-      // Write checkout data to log file
-      fs.writeFileSync(
-        path.join(logDir, `checkout-log-${Date.now()}.json`),
-        JSON.stringify(
+      // Add card details for the Paysafe plugin to process
+      if (cardNumber && cardExpMonth && cardExpYear && cardCVD) {
+        checkoutData.payment_data.push(
           {
-            timestamp: new Date().toISOString(),
-            checkoutData,
-            savedCardUsed: useSavedCard,
-            totalAmount,
+            key: "paysafe-card-number",
+            value: cardNumber.replace(/\s/g, ""), // Remove spaces
           },
-          null,
-          2
-        )
+          {
+            key: "paysafe-expiry-month",
+            value: cardExpMonth,
+          },
+          {
+            key: "paysafe-expiry-year",
+            value: cardExpYear.length === 2 ? `20${cardExpYear}` : cardExpYear,
+          },
+          {
+            key: "paysafe-cvc",
+            value: cardCVD,
+          }
+        );
+      }
+
+      console.log(
+        "Sending card details to WooCommerce Paysafe plugin for processing"
       );
-    } catch (logError) {
-      console.error("Error writing debug log:", logError);
     }
+
+    // Enhanced debug logging before sending to WooCommerce
+    console.log("=== CHECKOUT DEBUG INFO ===");
+    console.log("Payment Method:", checkoutData.payment_method);
+    console.log(
+      "Payment Data:",
+      JSON.stringify(checkoutData.payment_data, null, 2)
+    );
+    console.log("Using Saved Card:", useSavedCard);
+    console.log(
+      "Card Number (last 4):",
+      cardNumber ? cardNumber.slice(-4) : "N/A"
+    );
+    console.log("=== END DEBUG INFO ===");
+
+    console.log("Sending request to WooCommerce API...");
 
     // Call the WooCommerce Store API checkout endpoint
     const response = await axios.post(
@@ -244,6 +239,28 @@ export async function POST(req) {
       }
     );
 
+    console.log("=== WOOCOMMERCE API RESPONSE ===");
+    console.log("Status:", response.status);
+    console.log("Response Data:", JSON.stringify(response.data, null, 2));
+    console.log("Payment Result:", response.data.payment_result);
+    console.log("Order Status:", response.data.status);
+    console.log("=== END RESPONSE ===");
+
+    // Check if payment was processed successfully
+    if (
+      response.data.payment_result &&
+      response.data.payment_result.payment_status === "success"
+    ) {
+      console.log("✅ Payment processed successfully!");
+    } else if (response.data.status === "pending") {
+      console.log("⚠️ Order created but payment is pending");
+      console.log(
+        "This might be normal for Paysafe - payment may be processed asynchronously"
+      );
+    } else {
+      console.log("❌ Payment may have failed or needs additional processing");
+    }
+
     // Return the response in a consistent format
     return NextResponse.json({
       success: true,
@@ -255,29 +272,19 @@ export async function POST(req) {
       },
     });
   } catch (error) {
-    // If checkout failed, try to refresh the cart nonce
-    try {
-      const cartResponse = await axios.get(
-        `${BASE_URL}/wp-json/wc/store/cart`,
-        {
-          headers: {
-            Authorization: encodedCredentials.value,
-          },
-        }
-      );
+    console.error("Error processing checkout:", error);
 
-      // Update the cart nonce if available
-      if (cartResponse.headers && cartResponse.headers.nonce) {
-        cookieStore.set("cart-nonce", cartResponse.headers.nonce);
-      }
-    } catch (refreshError) {
-      console.error("Error refreshing cart nonce:", refreshError);
-    }
+    // Enhanced error handling with more details
+    const errorMessage =
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      "An error occurred during checkout";
 
     return NextResponse.json(
       {
-        error: error.response?.data?.message || "Failed to checkout.",
-        details: error.response?.data || null,
+        error: errorMessage,
+        details: error.response?.data,
       },
       { status: error.response?.status || 500 }
     );
@@ -285,22 +292,46 @@ export async function POST(req) {
 }
 
 async function generateToken({ cvd, expiry_month, expiry_year, number }) {
+  // Paysafe tokenization endpoint
+  const PAYSAFE_ACCOUNT_ID = process.env.PAYSAFE_ACCOUNT_ID;
+  const PAYSAFE_API_USERNAME = process.env.PAYSAFE_API_USERNAME;
+  const PAYSAFE_API_PASSWORD = process.env.PAYSAFE_API_PASSWORD;
+  const PAYSAFE_ENVIRONMENT = process.env.PAYSAFE_ENVIRONMENT || "test"; // 'test' or 'live'
+
+  const baseUrl =
+    PAYSAFE_ENVIRONMENT === "live"
+      ? "https://api.paysafe.com"
+      : "https://api.test.paysafe.com";
+
+  if (!PAYSAFE_ACCOUNT_ID || !PAYSAFE_API_USERNAME || !PAYSAFE_API_PASSWORD) {
+    throw new Error("Missing Paysafe API credentials");
+  }
+
   const res = await axios.post(
-    "https://www.beanstream.com/scripts/tokenization/tokens",
-    { cvd, expiry_month, expiry_year, number },
+    `${baseUrl}/cardpayments/v1/accounts/${PAYSAFE_ACCOUNT_ID}/singlepayments/tokens`,
+    {
+      cvv: cvd,
+      cardExpiry: {
+        month: parseInt(expiry_month),
+        year: parseInt(expiry_year),
+      },
+      cardNum: number,
+    },
     {
       headers: {
         "Content-Type": "application/json",
-        Host: "www.beanstream.com",
-        Origin: "https://libs.na.bambora.com",
-        Referer: "https://libs.na.bambora.com",
+        Authorization:
+          "Basic " +
+          Buffer.from(
+            PAYSAFE_API_USERNAME + ":" + PAYSAFE_API_PASSWORD
+          ).toString("base64"),
       },
     }
   );
 
-  if (!res.data || !res.data.token) {
-    throw new Error("No token from Bambora API");
+  if (!res.data || !res.data.paymentToken) {
+    throw new Error("No token from Paysafe API");
   }
 
-  return res.data.token;
+  return res.data.paymentToken;
 }
