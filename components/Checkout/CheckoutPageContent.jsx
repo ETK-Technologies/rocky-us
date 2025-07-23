@@ -648,6 +648,7 @@ const CheckoutPageContent = () => {
 
                 if (
                   orderStatus.status === "processing" ||
+                  orderStatus.status === "on-hold" ||
                   orderStatus.status === "completed" ||
                   orderStatus.success === false
                 ) {
@@ -732,6 +733,28 @@ const CheckoutPageContent = () => {
           // Get the order ID and key from the payment result
           const paymentOrderId = paymentResult.order_id;
           const paymentOrderKey = paymentResult.order_key || "";
+
+          // Empty the cart after successful payment
+          try {
+            const emptyCartResponse = await fetch("/api/cart/empty", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            });
+
+            if (emptyCartResponse.ok) {
+              console.log("Cart emptied successfully after saved card payment");
+            } else {
+              console.error("Failed to empty cart after saved card payment");
+            }
+          } catch (cartError) {
+            console.error(
+              "Error emptying cart after saved card payment:",
+              cartError
+            );
+            // Don't fail the redirect if cart emptying fails
+          }
 
           // TEMPORARILY DISABLED - Debug mode
           console.log("🎉 SAVED CARD PAYMENT SUCCESS!", {
@@ -844,6 +867,25 @@ const CheckoutPageContent = () => {
             paymentData: paymentData,
           });
 
+          // Empty the cart after successful payment
+          try {
+            const emptyCartResponse = await fetch("/api/cart/empty", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            });
+
+            if (emptyCartResponse.ok) {
+              console.log("Cart emptied successfully after payment");
+            } else {
+              console.error("Failed to empty cart after payment");
+            }
+          } catch (cartError) {
+            console.error("Error emptying cart after payment:", cartError);
+            // Don't fail the redirect if cart emptying fails
+          }
+
           // Redirect to order received page
           router.push(
             `/checkout/order-received/${order_id}?key=${order_key}${buildFlowQueryString()}`
@@ -878,6 +920,30 @@ const CheckoutPageContent = () => {
             order_key,
             full_response: data,
           });
+
+          // Empty the cart after successful order creation
+          try {
+            const emptyCartResponse = await fetch("/api/cart/empty", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            });
+
+            if (emptyCartResponse.ok) {
+              console.log(
+                "Cart emptied successfully after WooCommerce checkout"
+              );
+            } else {
+              console.error("Failed to empty cart after WooCommerce checkout");
+            }
+          } catch (cartError) {
+            console.error(
+              "Error emptying cart after WooCommerce checkout:",
+              cartError
+            );
+            // Don't fail the redirect if cart emptying fails
+          }
 
           router.push(
             `/checkout/order-received/${order_id}?key=${order_key}${buildFlowQueryString()}`
