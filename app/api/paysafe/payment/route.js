@@ -1,17 +1,20 @@
 import { NextResponse } from "next/server";
-import axios from "axios";
 import { cookies } from "next/headers";
+import {
+  validatePaymentInput,
+  validateEnvironmentVariables,
+  sanitizePaymentData,
+} from "@/utils/validation";
+import { PaymentService } from "@/lib/services/PaymentService";
+import { OrderService } from "@/lib/services/OrderService";
+import { CartService } from "@/lib/services/CartService";
+import {
+  PAYMENT_STATUS,
+  RESPONSE_STATUS,
+  ERROR_MESSAGES,
+} from "@/lib/constants/payment";
 
-const BASE_URL = process.env.BASE_URL;
-const PAYSAFE_ACCOUNT_ID = process.env.PAYSAFE_ACCOUNT_ID;
-const PAYSAFE_API_USERNAME = process.env.PAYSAFE_API_USERNAME;
-const PAYSAFE_API_PASSWORD = process.env.PAYSAFE_API_PASSWORD;
-const PAYSAFE_ENVIRONMENT = process.env.PAYSAFE_ENVIRONMENT || "test";
-
-const paysafeBaseUrl =
-  PAYSAFE_ENVIRONMENT === "live"
-    ? "https://api.paysafe.com"
-    : "https://api.test.paysafe.com";
+// Environment variables are now handled by the services
 
 export async function POST(req) {
   try {
@@ -21,11 +24,12 @@ export async function POST(req) {
 
     if (!authToken || !userId) {
       return NextResponse.json(
-        { success: false, message: "Not authenticated" },
+        { success: false, message: ERROR_MESSAGES.NOT_AUTHENTICATED },
         { status: 401 }
       );
     }
 
+    const requestData = await req.json();
     const {
       order_id,
       amount,
@@ -36,217 +40,124 @@ export async function POST(req) {
       cardCVD,
       billing_address,
       saveCard = false,
-    } = await req.json();
+    } = requestData;
 
-    if (
-      !order_id ||
-      !amount ||
-      !cardNumber ||
-      !cardExpMonth ||
-      !cardExpYear ||
-      !cardCVD
-    ) {
+    // Validate input data
+    const validation = validatePaymentInput(requestData);
+    if (!validation.isValid) {
+      // console.error("Payment validation failed:", validation.errors);
       return NextResponse.json(
-        { success: false, message: "Missing required payment information" },
+        {
+          success: false,
+          message: ERROR_MESSAGES.INVALID_PAYMENT_DATA,
+          errors: validation.errors,
+        },
         { status: 400 }
       );
     }
 
-    // Validate Paysafe credentials
-    console.log("Paysafe environment check:", {
-      PAYSAFE_ACCOUNT_ID: PAYSAFE_ACCOUNT_ID ? "✓ Set" : "✗ Missing",
-      PAYSAFE_API_USERNAME: PAYSAFE_API_USERNAME ? "✓ Set" : "✗ Missing",
-      PAYSAFE_API_PASSWORD: PAYSAFE_API_PASSWORD ? "✓ Set" : "✗ Missing",
-      PAYSAFE_ENVIRONMENT: PAYSAFE_ENVIRONMENT,
-      paysafeBaseUrl: paysafeBaseUrl,
-    });
+    // Log sanitized payment data for debugging
+    // console.log(
+    //   "Processing payment with data:",
+    //   sanitizePaymentData(requestData)
+    // );
 
-    console.log("Full Paysafe credentials (for debugging):", {
-      accountId: PAYSAFE_ACCOUNT_ID,
-      username: PAYSAFE_API_USERNAME,
-      password: PAYSAFE_API_PASSWORD
-        ? `${PAYSAFE_API_PASSWORD.substring(0, 20)}...`
-        : "missing",
-      environment: PAYSAFE_ENVIRONMENT,
-    });
-
-    if (!PAYSAFE_ACCOUNT_ID || !PAYSAFE_API_USERNAME || !PAYSAFE_API_PASSWORD) {
-      const missingVars = [];
-      if (!PAYSAFE_ACCOUNT_ID) missingVars.push("PAYSAFE_ACCOUNT_ID");
-      if (!PAYSAFE_API_USERNAME) missingVars.push("PAYSAFE_API_USERNAME");
-      if (!PAYSAFE_API_PASSWORD) missingVars.push("PAYSAFE_API_PASSWORD");
-
-      console.error("Missing Paysafe environment variables:", missingVars);
-
+    // Validate environment variables
+    const envValidation = validateEnvironmentVariables();
+    if (!envValidation.isValid) {
+      // console.error("Missing environment variables:", envValidation.missing);
       return NextResponse.json(
         {
           success: false,
-          message: "Paysafe API not configured",
-          missing_variables: missingVars,
+          message: ERROR_MESSAGES.SERVER_CONFIG_ERROR,
+          missing_variables: envValidation.missing,
         },
         { status: 500 }
       );
     }
 
-    // Prepare Paysafe payment request
-    const paymentData = {
-      merchantRefNum: `order_${order_id}_${Date.now()}`,
-      amount: Math.round(amount * 100), // Convert to cents
-      settleWithAuth: true,
-      currency: currency,
-      card: {
-        cardNum: cardNumber.replace(/\s/g, ""),
-        cardExpiry: {
-          month: parseInt(cardExpMonth),
-          year: parseInt(
-            cardExpYear.length === 2 ? `20${cardExpYear}` : cardExpYear
-          ),
-        },
-        cvv: cardCVD,
-      },
-      billingDetails: {
-        street: billing_address.address_1,
-        city: billing_address.city,
-        state: billing_address.state,
-        country: billing_address.country,
-        zip: billing_address.postcode,
-        // firstName: billing_address.first_name,
-        // lastName: billing_address.last_name,
-        // email: billing_address.email,
-        // phone: billing_address.phone,
-      },
-    };
+    // console.log("Environment validation passed");
 
-    // Note: Profile functionality removed to match Paysafe API documentation
-    // For saved cards, this would need to be handled separately
-
-    console.log("Processing Paysafe payment for order:", order_id);
-    console.log("Paysafe payment request data:", {
-      merchantRefNum: paymentData.merchantRefNum,
-      amount: paymentData.amount,
-      currency: paymentData.currency,
-      card: {
-        cardNum: paymentData.card.cardNum
-          ? `${paymentData.card.cardNum.slice(0, 4)}****`
-          : "empty",
-        cardExpiry: paymentData.card.cardExpiry,
-        cvv: "***",
-      },
-      billingDetails: paymentData.billingDetails,
-    });
-
-    // Make payment request to Paysafe
-    console.log(
-      "Making request to Paysafe API:",
-      `${paysafeBaseUrl}/cardpayments/v1/accounts/${PAYSAFE_ACCOUNT_ID}/auths`
+    // Initialize services
+    const paymentService = new PaymentService();
+    const orderService = new OrderService();
+    const cartService = new CartService(
+      authToken.value,
+      cookieStore.get("cart-nonce")?.value
     );
 
-    // Try the exact endpoint from the documentation
-    const paysafeResponse = await axios.post(
-      `${paysafeBaseUrl}/cardpayments/v1/accounts/${PAYSAFE_ACCOUNT_ID}/auths`,
-      paymentData,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization:
-            "Basic " +
-            Buffer.from(
-              PAYSAFE_API_USERNAME + ":" + PAYSAFE_API_PASSWORD
-            ).toString("base64"),
+    // Process payment
+    const paymentResult = await paymentService.processPayment(requestData);
+
+    if (!paymentResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: ERROR_MESSAGES.PAYMENT_PROCESSING_FAILED,
+          error: paymentResult.error,
+          paysafe_error_code: paymentResult.paysafe_error_code,
+          paysafe_error_message: paymentResult.paysafe_error_message,
         },
-      }
-    );
+        { status: 400 }
+      );
+    }
 
-    console.log("Paysafe payment response:", {
-      status: paysafeResponse.data.status,
-      id: paysafeResponse.data.id,
-      merchantRefNum: paysafeResponse.data.merchantRefNum,
-    });
+    // Payment successful - update order
+    if (paymentResult.data.status === PAYMENT_STATUS.COMPLETED) {
+      // Update order with payment information
+      const orderUpdateResult = await orderService.updateOrderAfterPayment(
+        order_id,
+        paymentResult.data
+      );
 
-    // Check if payment was successful
-    if (paysafeResponse.data.status === "COMPLETED") {
-      // Update WooCommerce order with payment information
-      try {
-        const orderUpdateResponse = await axios.put(
-          `${BASE_URL}/wp-json/wc/v3/orders/${order_id}`,
+      if (!orderUpdateResult.success) {
+        return NextResponse.json(
           {
-            status: "processing",
-            transaction_id: paysafeResponse.data.id,
-            meta_data: [
-              {
-                key: "_paysafe_payment_id",
-                value: paysafeResponse.data.id,
-              },
-              {
-                key: "_paysafe_merchant_ref",
-                value: paysafeResponse.data.merchantRefNum,
-              },
-              {
-                key: "_paysafe_auth_code",
-                value: paysafeResponse.data.authCode,
-              },
-            ],
+            success: false,
+            order_id: order_id,
+            payment_id: paymentResult.data.id,
+            status: RESPONSE_STATUS.PAYMENT_SUCCESS_ORDER_UPDATE_FAILED,
+            message: ERROR_MESSAGES.ORDER_UPDATE_FAILED,
+            error: orderUpdateResult.error,
+            error_details: orderUpdateResult.error_details,
           },
-          {
-            headers: {
-              Authorization: authToken.value,
-              "Content-Type": "application/json",
-            },
-          }
+          { status: 500 }
         );
-
-        return NextResponse.json({
-          success: true,
-          order_id: order_id,
-          payment_id: paysafeResponse.data.id,
-          status: "completed",
-          message: "Payment processed successfully",
-        });
-      } catch (orderUpdateError) {
-        console.error("Error updating WooCommerce order:", orderUpdateError);
-        // Payment was successful but order update failed
-        return NextResponse.json({
-          success: true,
-          order_id: order_id,
-          payment_id: paysafeResponse.data.id,
-          status: "completed",
-          message: "Payment processed but order update failed",
-        });
       }
+
+      // Add order note (non-blocking)
+      await orderService.addPaymentNote(order_id, paymentResult.data.id);
+
+      // Empty cart (non-blocking)
+      await cartService.emptyCart();
+
+      return NextResponse.json({
+        success: true,
+        order_id: order_id,
+        payment_id: paymentResult.data.id,
+        status: RESPONSE_STATUS.SUCCESS,
+        message: "Payment processed successfully",
+      });
     } else {
       return NextResponse.json(
         {
           success: false,
-          message: `Payment failed: ${paysafeResponse.data.status}`,
-          paysafe_error: paysafeResponse.data.error,
+          message: `Payment failed: ${paymentResult.data.status}`,
+          paysafe_error: paymentResult.error,
         },
         { status: 400 }
       );
     }
   } catch (error) {
-    console.error(
-      "Paysafe payment error:",
-      error.response?.data || error.message
-    );
-
-    // Log the full error details for debugging
-    if (error.response?.data?.error) {
-      console.error("Paysafe API Error Details:", {
-        code: error.response.data.error.code,
-        message: error.response.data.error.message,
-        links: error.response.data.error.links,
-      });
-    }
+    // console.error("Payment processing error:", error.message);
 
     return NextResponse.json(
       {
         success: false,
-        message: "Payment processing failed",
-        error: error.response?.data || error.message,
-        paysafe_error_code: error.response?.data?.error?.code,
-        paysafe_error_message: error.response?.data?.error?.message,
+        message: ERROR_MESSAGES.PAYMENT_PROCESSING_FAILED,
+        error: error.message,
       },
-      { status: error.response?.status || 500 }
+      { status: 500 }
     );
   }
 }
