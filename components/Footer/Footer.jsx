@@ -345,15 +345,9 @@ const Footer = ({ className }) => {
       {/* LegitScript Section */}
       <div className="bg-white flex justify-between items-center p-4 max-w-[1200px] mx-auto flex-col md:flex-row gap-2">
         <div className="flex flex-col md:flex-row items-center gap-3">
-          <div className="relative rounded-2xl overflow-hidden w-[80px] h-[80px]">
-            <CustomImage
-              src="https://static.legitscript.com/seals/11382672.png"
-              alt="LegitScript approved"
-              fill
-            />
-          </div>
+          
           <p className="text-[0.7rem] text-center">
-            ©2024 Rocky Health Inc. All rights reserved. Rocky Health Pharmacy
+            ©{new Date().getFullYear()} Rocky Health Inc. All rights reserved. Rocky Health Pharmacy
             Inc. & Rocky Health Clinic Inc. are subsidiaries of Rocky Health
             Inc.
           </p>
