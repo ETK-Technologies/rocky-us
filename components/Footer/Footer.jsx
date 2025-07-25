@@ -258,21 +258,21 @@ const Footer = ({ className }) => {
             <div className="flex flex-col justify-center items-center md:items-start">
               <h1 className="text-[#efe7df] text-[16px]">Have a question?</h1>
               <Link
-                href="mailto:contact@myrocky.ca"
+                href="mailto:contact@myrocky.us"
                 className="underline text-[14px]"
                 prefetch={false}
               >
-                contact@myrocky.ca
+                contact@myrocky.us
               </Link>
             </div>
             <div className="flex flex-col items-center md:items-end">
               <h4 className="text-[#efe7df] text-[16px]">Press inquiries?</h4>
               <Link
-                href="mailto:social@myrocky.ca"
+                href="mailto:social@myrocky.us"
                 className="underline text-[14px]"
                 prefetch={false}
               >
-                social@myrocky.ca
+                social@myrocky.us
               </Link>
             </div>
             <div className="flex flex-col items-center justify-center md:items-start">
@@ -345,11 +345,10 @@ const Footer = ({ className }) => {
       {/* LegitScript Section */}
       <div className="bg-white flex justify-between items-center p-4 max-w-[1200px] mx-auto flex-col md:flex-row gap-2">
         <div className="flex flex-col md:flex-row items-center gap-3">
-          
           <p className="text-[0.7rem] text-center">
-            ©{new Date().getFullYear()} Rocky Health Inc. All rights reserved. Rocky Health Pharmacy
-            Inc. & Rocky Health Clinic Inc. are subsidiaries of Rocky Health
-            Inc.
+            ©{new Date().getFullYear()} Rocky Health Inc. All rights reserved.
+            Rocky Health Pharmacy Inc. & Rocky Health Clinic Inc. are
+            subsidiaries of Rocky Health Inc.
           </p>
         </div>
         <div className="flex gap-3">
