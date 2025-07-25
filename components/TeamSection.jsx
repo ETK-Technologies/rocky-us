@@ -103,7 +103,7 @@ const TeamSection = () => {
             ))}
           </ul>
           <a
-            href="https://www.myrocky.ca/about-us#our-team"
+            href="/about-us#our-team"
             className=" mt-6 md:mt-8 w-full text-center flex items-center justify-center bg-[#FFFFFF] py-3 px-6 rounded-full border-solid border-2 border-[#E2E2E1] hover:bg-gray-200"
           >
             <span className="text-[14px] font-[500]">Meet Our Team</span>{" "}
