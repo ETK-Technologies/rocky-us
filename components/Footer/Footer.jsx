@@ -258,21 +258,21 @@ const Footer = ({ className }) => {
             <div className="flex flex-col justify-center items-center md:items-start">
               <h1 className="text-[#efe7df] text-[16px]">Have a question?</h1>
               <Link
-                href="mailto:contact@myrocky.us"
+                href="mailto:contact@myrocky.com"
                 className="underline text-[14px]"
                 prefetch={false}
               >
-                contact@myrocky.us
+                contact@myrocky.com
               </Link>
             </div>
             <div className="flex flex-col items-center md:items-end">
               <h4 className="text-[#efe7df] text-[16px]">Press inquiries?</h4>
               <Link
-                href="mailto:social@myrocky.us"
+                href="mailto:social@myrocky.com"
                 className="underline text-[14px]"
                 prefetch={false}
               >
-                social@myrocky.us
+                social@myrocky.com
               </Link>
             </div>
             {/* <div className="flex flex-col items-center justify-center md:items-start">
