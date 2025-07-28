@@ -27,7 +27,7 @@ export async function POST(request) {
 
     const url = new URL(POSTGRID_API_URL);
     url.searchParams.append("partialStreet", query);
-    url.searchParams.append("countryFilter", "CA");
+    url.searchParams.append("countryFilter", "US");
 
     const response = await fetch(url.toString(), {
       method: "GET",

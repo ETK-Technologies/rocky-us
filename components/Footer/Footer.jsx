@@ -258,24 +258,24 @@ const Footer = ({ className }) => {
             <div className="flex flex-col justify-center items-center md:items-start">
               <h1 className="text-[#efe7df] text-[16px]">Have a question?</h1>
               <Link
-                href="mailto:contact@myrocky.ca"
+                href="mailto:contact@myrocky.com"
                 className="underline text-[14px]"
                 prefetch={false}
               >
-                contact@myrocky.ca
+                contact@myrocky.com
               </Link>
             </div>
             <div className="flex flex-col items-center md:items-end">
               <h4 className="text-[#efe7df] text-[16px]">Press inquiries?</h4>
               <Link
-                href="mailto:social@myrocky.ca"
+                href="mailto:social@myrocky.com"
                 className="underline text-[14px]"
                 prefetch={false}
               >
-                social@myrocky.ca
+                social@myrocky.com
               </Link>
             </div>
-            <div className="flex flex-col items-center justify-center md:items-start">
+            {/* <div className="flex flex-col items-center justify-center md:items-start">
               <h4 className="text-[#efe7df] text-[16px] text-center md:text-start">
                 Where can you find us?
               </h4>
@@ -292,8 +292,8 @@ const Footer = ({ className }) => {
                   <IoIosArrowDown />
                 </span>
               </p>
-            </div>
-            <div className="flex flex-col items-center md:items-end">
+            </div> */}
+            <div className="flex flex-col items-center md:items-start">
               <h4 className="text-[#efe7df] mb-2 text-[16px]">Social Media</h4>
               <div className="flex gap-4">
                 <Link
@@ -345,17 +345,10 @@ const Footer = ({ className }) => {
       {/* LegitScript Section */}
       <div className="bg-white flex justify-between items-center p-4 max-w-[1200px] mx-auto flex-col md:flex-row gap-2">
         <div className="flex flex-col md:flex-row items-center gap-3">
-          <div className="relative rounded-2xl overflow-hidden w-[80px] h-[80px]">
-            <CustomImage
-              src="https://static.legitscript.com/seals/11382672.png"
-              alt="LegitScript approved"
-              fill
-            />
-          </div>
           <p className="text-[0.7rem] text-center">
-            ©2024 Rocky Health Inc. All rights reserved. Rocky Health Pharmacy
-            Inc. & Rocky Health Clinic Inc. are subsidiaries of Rocky Health
-            Inc.
+            ©{new Date().getFullYear()} Rocky Health Inc. All rights reserved.
+            Rocky Health Pharmacy Inc. & Rocky Health Clinic Inc. are
+            subsidiaries of Rocky Health Inc.
           </p>
         </div>
         <div className="flex gap-3">

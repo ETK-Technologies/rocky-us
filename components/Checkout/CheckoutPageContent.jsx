@@ -56,27 +56,22 @@ const CheckoutPageContent = () => {
         _meta_mail_box: true,
       },
     },
-    payment_method: "bambora_credit_card",
+    payment_method: "paysafe",
     payment_data: [
       {
-        key: "wc-bambora-credit-card-js-token",
-        value: "",
+        key: "wc-paysafe-new-payment-method",
+        value: "true",
+      },
+    ],
+    customer_note: "",
+    meta_data: [
+      {
+        key: "_meta_discreet",
+        value: "0",
       },
       {
-        key: "wc-bambora-credit-card-account-number",
-        value: "",
-      },
-      {
-        key: "wc-bambora-credit-card-card-type",
-        value: "",
-      },
-      {
-        key: "wc-bambora-credit-card-exp-month",
-        value: "",
-      },
-      {
-        key: "wc-bambora-credit-card-exp-year",
-        value: "",
+        key: "_meta_mail_box",
+        value: "0",
       },
     ],
   });
@@ -85,6 +80,7 @@ const CheckoutPageContent = () => {
   const [expiry, setExpiry] = useState("");
   const [cvc, setCvc] = useState("");
   const [cardType, setCardType] = useState("");
+  const [saveCard, setSaveCard] = useState(true);
 
   // Retry mechanism state for saved card payments
   const [shouldUseDirectPayment, setShouldUseDirectPayment] = useState(false);
@@ -548,11 +544,7 @@ const CheckoutPageContent = () => {
 
         // Payment Details
         cardNumber: selectedCard ? "" : cardNumber,
-        cardType: selectedCard
-          ? ""
-          : formData.payment_data.find(
-              (d) => d.key === "wc-bambora-credit-card-card-type"
-            )?.value,
+        cardType: selectedCard ? "" : cardType,
         cardExpMonth: selectedCard ? "" : expiry.slice(0, 2),
         cardExpYear: selectedCard ? "" : expiry.slice(3),
         cardCVD: selectedCard ? "" : cvc,
@@ -623,12 +615,19 @@ const CheckoutPageContent = () => {
                 "Order created and payment processed successfully!"
               );
 
-              // Redirect to order received page with the order details from the initial checkout
-              router.push(
-                `/checkout/order-received/${checkoutResult.data.id}?key=${
-                  checkoutResult.data.order_key || ""
-                }${buildFlowQueryString()}`
-              );
+              // TEMPORARILY DISABLED - Debug mode
+              console.log("🎉 SAVED CARD SUCCESS! Payment processed:", {
+                order_id: checkoutResult.data.id,
+                order_key: checkoutResult.data.order_key,
+                payment_result: checkoutResult.data.payment_result,
+              });
+
+              // TODO: Re-enable redirect after debugging
+              // router.push(
+              //   `/checkout/order-received/${checkoutResult.data.id}?key=${
+              //     checkoutResult.data.order_key || ""
+              //   }${buildFlowQueryString()}`
+              // );
               return;
             }
 
@@ -649,6 +648,7 @@ const CheckoutPageContent = () => {
 
                 if (
                   orderStatus.status === "processing" ||
+                  orderStatus.status === "on-hold" ||
                   orderStatus.status === "completed" ||
                   orderStatus.success === false
                 ) {
@@ -734,15 +734,39 @@ const CheckoutPageContent = () => {
           const paymentOrderId = paymentResult.order_id;
           const paymentOrderKey = paymentResult.order_key || "";
 
-          // Debugging logs
-          console.log(
-            `Redirecting to order received page: /checkout/order-received/${paymentOrderId}?key=${paymentOrderKey}`
-          );
+          // Empty the cart after successful payment
+          try {
+            const emptyCartResponse = await fetch("/api/cart/empty", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            });
 
-          // Redirect to order received page with the correct order details
-          router.push(
-            `/checkout/order-received/${paymentOrderId}?key=${paymentOrderKey}${buildFlowQueryString()}`
-          );
+            if (emptyCartResponse.ok) {
+              console.log("Cart emptied successfully after saved card payment");
+            } else {
+              console.error("Failed to empty cart after saved card payment");
+            }
+          } catch (cartError) {
+            console.error(
+              "Error emptying cart after saved card payment:",
+              cartError
+            );
+            // Don't fail the redirect if cart emptying fails
+          }
+
+          // TEMPORARILY DISABLED - Debug mode
+          console.log("🎉 SAVED CARD PAYMENT SUCCESS!", {
+            paymentOrderId,
+            paymentOrderKey,
+            paymentResult: paymentResult,
+          });
+
+          // TODO: Re-enable redirect after debugging
+          // router.push(
+          //   `/checkout/order-received/${paymentOrderId}?key=${paymentOrderKey}${buildFlowQueryString()}`
+          // );
           return;
         } catch (error) {
           console.error("Error processing order with saved card:", error);
@@ -754,32 +778,177 @@ const CheckoutPageContent = () => {
         }
       }
 
-      // Continue with regular checkout for new cards
-      const res = await fetch("/api/checkout", {
-        method: "POST",
-        body: JSON.stringify(dataToSend),
+      // For new cards, use direct Paysafe payment processing
+      // Extract month and year from expiry string (format: MM/YY)
+      const cardExpMonth = expiry ? expiry.slice(0, 2) : "";
+      const cardExpYear = expiry ? expiry.slice(3) : "";
+
+      console.log("Card details for Paysafe payment:", {
+        cardNumber: cardNumber ? `${cardNumber.slice(0, 4)}****` : "empty",
+        cardExpMonth,
+        cardExpYear,
+        cvc: cvc ? "***" : "empty",
+        expiry,
       });
 
-      const data = await res.json();
+      if (cardNumber && cardExpMonth && cardExpYear && cvc) {
+        try {
+          console.log("Processing new card payment with Paysafe");
 
-      if (data.error) {
-        toast.error(data.error);
-        // Reload the page after showing error for new card payments
-        // setTimeout(() => {
-        //   window.location.reload();
-        // }, 2000); // Wait 2 seconds to show the error message
-        return;
-      }
+          // Step 1: Create order in WooCommerce
+          const orderResponse = await fetch("/api/checkout", {
+            method: "POST",
+            body: JSON.stringify({
+              ...dataToSend,
+              // Remove card details from WooCommerce checkout
+              cardNumber: "",
+              cardExpMonth: "",
+              cardExpYear: "",
+              cardCVD: "",
+              useSavedCard: false, // Ensure this is set to false for new card payments
+            }),
+          });
 
-      if (data.success) {
-        toast.success("Order created successfully!");
-        const order_id = data.data.id || data.data.order_id;
-        const order_key = data.data.order_key || "";
-        router.push(
-          `/checkout/order-received/${order_id}?key=${order_key}${
-            buildFlowQueryString() ? buildFlowQueryString() : ""
-          }`
-        );
+          const orderData = await orderResponse.json();
+
+          if (orderData.error) {
+            toast.error(orderData.error);
+            return;
+          }
+
+          const order_id = orderData.data.id || orderData.data.order_id;
+          const order_key = orderData.data.order_key || "";
+
+          console.log("Order created, processing payment:", order_id);
+
+          // Step 2: Process payment with Paysafe
+          const paymentResponse = await fetch("/api/paysafe/payment", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              order_id: order_id,
+              amount: dataToSend.totalAmount,
+              currency: "USD",
+              cardNumber: cardNumber,
+              cardExpMonth: cardExpMonth,
+              cardExpYear: cardExpYear,
+              cardCVD: cvc,
+              billing_address: {
+                first_name: formData.billing_address.first_name,
+                last_name: formData.billing_address.last_name,
+                address_1: formData.billing_address.address_1,
+                address_2: formData.billing_address.address_2 || "",
+                city: formData.billing_address.city,
+                state: formData.billing_address.state,
+                postcode: formData.billing_address.postcode,
+                country: formData.billing_address.country || "US",
+                email: formData.billing_address.email,
+                phone: formData.billing_address.phone,
+              },
+              saveCard: saveCard,
+            }),
+          });
+
+          const paymentData = await paymentResponse.json();
+
+          if (!paymentData.success) {
+            toast.error(paymentData.message || "Payment failed");
+            return;
+          }
+
+          toast.success("Order created and payment processed successfully!");
+
+          console.log("🎉 PAYSAFE PAYMENT SUCCESS!", {
+            order_id,
+            order_key,
+            payment_id: paymentData.payment_id,
+            paymentData: paymentData,
+          });
+
+          // Empty the cart after successful payment
+          try {
+            const emptyCartResponse = await fetch("/api/cart/empty", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            });
+
+            if (emptyCartResponse.ok) {
+              console.log("Cart emptied successfully after payment");
+            } else {
+              console.error("Failed to empty cart after payment");
+            }
+          } catch (cartError) {
+            console.error("Error emptying cart after payment:", cartError);
+            // Don't fail the redirect if cart emptying fails
+          }
+
+          // Redirect to order received page
+          router.push(
+            `/checkout/order-received/${order_id}?key=${order_key}${buildFlowQueryString()}`
+          );
+          return;
+        } catch (error) {
+          console.error("Error processing Paysafe payment:", error);
+          toast.error("Payment processing failed. Please try again.");
+          return;
+        }
+      } else {
+        // Fallback to regular WooCommerce checkout for non-card payments
+        const res = await fetch("/api/checkout", {
+          method: "POST",
+          body: JSON.stringify(dataToSend),
+        });
+
+        const data = await res.json();
+
+        if (data.error) {
+          toast.error(data.error);
+          return;
+        }
+
+        if (data.success) {
+          toast.success("Order created successfully!");
+          const order_id = data.data.id || data.data.order_id;
+          const order_key = data.data.order_key || "";
+
+          console.log("🎉 SUCCESS! Order created:", {
+            order_id,
+            order_key,
+            full_response: data,
+          });
+
+          // Empty the cart after successful order creation
+          try {
+            const emptyCartResponse = await fetch("/api/cart/empty", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            });
+
+            if (emptyCartResponse.ok) {
+              console.log(
+                "Cart emptied successfully after WooCommerce checkout"
+              );
+            } else {
+              console.error("Failed to empty cart after WooCommerce checkout");
+            }
+          } catch (cartError) {
+            console.error(
+              "Error emptying cart after WooCommerce checkout:",
+              cartError
+            );
+            // Don't fail the redirect if cart emptying fails
+          }
+
+          router.push(
+            `/checkout/order-received/${order_id}?key=${order_key}${buildFlowQueryString()}`
+          );
+        }
       }
     } catch (error) {
       console.error("Checkout Error:", error);
@@ -823,6 +992,8 @@ const CheckoutPageContent = () => {
           selectedCard={selectedCard}
           setSelectedCard={setSelectedCard}
           isLoadingSavedCards={isLoadingSavedCards}
+          saveCard={saveCard}
+          setSaveCard={setSaveCard}
         />
       </div>
     </>

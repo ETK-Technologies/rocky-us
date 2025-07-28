@@ -1,5 +1,4 @@
-import { useState } from "react";
-import DateInput from "../DateInput";
+import { useState, useEffect } from "react";
 import FormInput from "./FormInput";
 import Datepicker from "react-tailwindcss-datepicker";
 import PostGridAddressAutocomplete from "./PostGrid/PostGridAddressAutocomplete";
@@ -10,6 +9,14 @@ const BillingDetails = ({ formData, handleBillingAddressChange }) => {
     startDate: formData.billing_address.date_of_birth || null,
     endDate: formData.billing_address.date_of_birth || null,
   });
+
+  useEffect(() => {
+    setDatePickerValue({
+      startDate: formData.billing_address.date_of_birth || null,
+      endDate: formData.billing_address.date_of_birth || null,
+    });
+  }, [formData.billing_address.date_of_birth]);
+
 
   const handleDateChange = (newValue) => {
     setDatePickerValue(newValue);

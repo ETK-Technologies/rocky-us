@@ -1,5 +1,20 @@
 import { useState, useRef, useEffect } from "react";
-import { mapProvinceCode } from "./config";
+import { US_STATES_WITH_CODES } from "@/lib/constants/usStates";
+
+// Function to map state codes for USA
+const mapStateCode = (state) => {
+  if (!state) return "";
+
+  // If it's already a 2-letter code, return it
+  if (state.length === 2) return state.toUpperCase();
+
+  // Find the state code from the full name
+  const stateEntry = US_STATES_WITH_CODES.find(
+    (s) => s.name.toLowerCase() === state.toLowerCase()
+  );
+
+  return stateEntry ? stateEntry.code : state;
+};
 
 const CustomAddressAutocomplete = ({
   title,
@@ -100,9 +115,7 @@ const CustomAddressAutocomplete = ({
           address_1: address.Line1 || "",
           address_2: address.Line2 || "",
           city: address.City || "",
-          state: mapProvinceCode(
-            address.Province || address.ProvinceName || ""
-          ),
+          state: mapStateCode(address.State || address.StateName || ""),
           postcode: address.PostalCode || "",
         };
 

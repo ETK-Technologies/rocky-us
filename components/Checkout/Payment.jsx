@@ -22,11 +22,12 @@ const Payment = ({
   selectedCard,
   setSelectedCard,
   isLoadingSavedCards = false,
+  saveCard,
+  setSaveCard,
 }) => {
   const [paymentMethod, setPaymentMethod] = useState(
     selectedCard ? "saved" : "new"
   );
-  const [saveCard, setSaveCard] = useState(true);
   const [showDropdown, setShowDropdown] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingCard, setEditingCard] = useState(null);
@@ -122,39 +123,28 @@ const Payment = ({
       payment_data: prev.payment_data.map((item) => {
         if (selectedCard) {
           switch (item.key) {
-            case "wc-bambora-credit-card-js-token":
+            case "wc-paysafe-payment-token":
               return {
                 ...item,
                 value: selectedCard?.token || selectedCard?.id || "",
               };
-            case "wc-bambora_credit_card-new-payment-method":
-              return { ...item, value: false };
-            case "wc-bambora_credit_card-payment-token":
-              return { ...item, value: selectedCard?.id || "" };
-            case "payment_method_id":
-              return { ...item, value: selectedCard?.id || "" };
+            case "wc-paysafe-new-payment-method":
+              return { ...item, value: "false" };
             default:
               return item;
           }
         } else {
+          // For new cards, set the form data to indicate new payment method
           switch (item.key) {
-            case "wc-bambora-credit-card-account-number":
-              return { ...item, value: cardNumber.replace(/\s/g, "") };
-            case "wc-bambora-credit-card-card-type":
-              return { ...item, value: getCardType(cardNumber) };
-            case "wc-bambora-credit-card-exp-month":
-              return { ...item, value: expiry.slice(0, 2) };
-            case "wc-bambora-credit-card-exp-year":
-              return { ...item, value: expiry.slice(3) };
-            case "wc-bambora_credit_card-new-payment-method":
-              return { ...item, value: true };
+            case "wc-paysafe-new-payment-method":
+              return { ...item, value: "true" };
             default:
               return item;
           }
         }
       }),
     }));
-  }, [cardNumber, expiry, cvc, selectedCard, setFormData]);
+  }, [selectedCard, setFormData]);
 
   useEffect(() => {
     if (paymentMethod === "new" && selectedCard !== null) {
@@ -407,7 +397,7 @@ const Payment = ({
                 className="p-3 border w-full rounded-t-lg text-[#ADADAD] focus:outline-none"
                 autoComplete="cc-number"
                 maxLength={19}
-                name="wc-bambora-credit-card-account-number"
+                name="wc-paysafe-checkout-account-number"
               />
             </div>
 
