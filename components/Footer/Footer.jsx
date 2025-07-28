@@ -275,7 +275,7 @@ const Footer = ({ className }) => {
                 social@myrocky.us
               </Link>
             </div>
-            <div className="flex flex-col items-center justify-center md:items-start">
+            {/* <div className="flex flex-col items-center justify-center md:items-start">
               <h4 className="text-[#efe7df] text-[16px] text-center md:text-start">
                 Where can you find us?
               </h4>
@@ -292,8 +292,8 @@ const Footer = ({ className }) => {
                   <IoIosArrowDown />
                 </span>
               </p>
-            </div>
-            <div className="flex flex-col items-center md:items-end">
+            </div> */}
+            <div className="flex flex-col items-center md:items-start">
               <h4 className="text-[#efe7df] mb-2 text-[16px]">Social Media</h4>
               <div className="flex gap-4">
                 <Link
