@@ -24,6 +24,7 @@ const Payment = ({
   isLoadingSavedCards = false,
   saveCard,
   setSaveCard,
+  onValidationChange, // New prop for validation callback
 }) => {
   const [paymentMethod, setPaymentMethod] = useState(
     selectedCard ? "saved" : "new"
@@ -237,6 +238,49 @@ const Payment = ({
     setEditingCard(null);
     setEditExpiry("");
   };
+
+  // Call validation callback whenever payment data changes
+  useEffect(() => {
+    if (onValidationChange) {
+      // Define validation logic inside useEffect to ensure fresh values
+      const validatePayment = () => {
+        // If a saved card is selected, validation passes
+        if (selectedCard) {
+          return true;
+        }
+
+        // For new cards, only validate that fields are not empty
+        if (!cardNumber || !expiry || !cvc) {
+          return false;
+        }
+
+        // Check that fields have actual content (not just whitespace)
+        if (
+          cardNumber.trim() === "" ||
+          expiry.trim() === "" ||
+          cvc.trim() === ""
+        ) {
+          return false;
+        }
+
+        // Validate card number has full card number (13-19 digits)
+        const cleanCardNumber = cardNumber.replace(/\s/g, "");
+        if (cleanCardNumber.length < 13 || cleanCardNumber.length > 19) {
+          return false;
+        }
+
+        // Validate CVC is 3 or 4 digits
+        if (cvc.length < 3 || cvc.length > 4) {
+          return false;
+        }
+
+        return true;
+      };
+
+      const isValid = validatePayment();
+      onValidationChange(isValid);
+    }
+  }, [selectedCard, cardNumber, expiry, cvc, onValidationChange]);
 
   return (
     <>
