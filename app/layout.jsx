@@ -94,7 +94,7 @@ export default async function RootLayout({ children }) {
             new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
             j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-            })(window,document,'script','dataLayer','GTM-MKLLPZV');
+            })(window,document,'script','dataLayer','GTM-K9PC394B');
           `}
           </Script>
         }
@@ -121,19 +121,11 @@ export default async function RootLayout({ children }) {
         {/* Google Tag Manager (noscript) */}
         <noscript>
           <iframe
-            src="https://www.googletagmanager.com/ns.html?id=GTM-MKLLPZV"
+            src="https://www.googletagmanager.com/ns.html?id=GTM-K9PC394B"
             height="0"
             width="0"
-            style={{ display: "none", visibility: "hidden" }}
-          />
-        </noscript>
-        <noscript>
-          <iframe
-            src="https://www.googletagmanager.com/ns.html?id=GTM-MKLLPZV"
-            height="0"
-            width="0"
-            style={{ display: "none", visibility: "hidden" }}
-          />
+            style="display:none;visibility:hidden"
+          ></iframe>
         </noscript>
         {/* End Google Tag Manager (noscript) */} <CacheClearer />
         <LoadingOverlay />
@@ -146,7 +138,7 @@ export default async function RootLayout({ children }) {
         {/* VisiOpt Scripts Provider - Automatically loads the right scripts based on page and URL parameters */}
         <VisiOptProvider />
         <Analytics />
-        <SpeedInsights />
+        <SpeedInsights /> 
       </body>
     </html>
   );
