@@ -11,7 +11,7 @@ const HelpCenterCard = ({ title, imageUrl, linkUrl }) => {
       <div className="relative overflow-hidden rounded-[16px] w-[162px] md:w-[382.66668701171875px] md:h-[400px] h-[220px]">
         <div
           style={{
-            background:
+            backgroundImage:
               "linear-gradient(180deg, rgba(0, 0, 0, 0) 68.95%, rgba(0, 0, 0, 0.8) 100%)",
           }}
           className="w-full h-full absolute top-0 left-0 bottom-0 right-0 z-10"
