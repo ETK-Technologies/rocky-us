@@ -403,7 +403,7 @@ const WlFaqs = [
   {
     question: "How can I get a GLP-1 prescription at Rocky?",
     answer:
-      'Simply click <a href="/wl-pre-consultation" style="text-decoration: underline;">here</a> and get started today!',
+      'Simply click <a href="/wl-pre-consultation" class="underlined-link">here</a> and get started today!',
   },
   {
     question: "Which GLP-1s does Rocky offer?",

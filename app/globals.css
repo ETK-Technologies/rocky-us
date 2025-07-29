@@ -95,3 +95,7 @@ background: linear-gradient(0deg, #f5f4ef, #f5f4ef), linear-gradient( 180deg, rg
 .scrollbar-hide::-webkit-scrollbar { 
     display: none;  /* Older Safari and Chromium */
 }
+
+.underlined-link {
+  text-decoration: underline;
+}
