@@ -2,6 +2,7 @@ import CartItems from "./CartItems";
 import InitialShipping from "../CartCheckoutShared/InitialShipping";
 import CouponApply from "../CartCheckoutShared/CouponApply";
 import Payment from "./Payment";
+import { useState } from "react";
 
 const CartAndPayment = ({
   items,
@@ -25,6 +26,12 @@ const CartAndPayment = ({
   saveCard,
   setSaveCard,
 }) => {
+  const [isPaymentValid, setIsPaymentValid] = useState(false);
+
+  const handleValidationChange = (isValid) => {
+    setIsPaymentValid(isValid);
+  };
+
   return (
     <div className="bg-[#f7f7f7] h-full justify-self-start w-full px-4 mt-8 lg:mt-0 lg:pl-[80px] lg:pt-[50px] pb-10">
       <h1 className="hidden lg:block text-[20px] leading-[24px] text-[#251F20] text-start mt-0 font-[500] mb-[24px]">
@@ -54,14 +61,25 @@ const CartAndPayment = ({
         isLoadingSavedCards={isLoadingSavedCards}
         saveCard={saveCard}
         setSaveCard={setSaveCard}
+        onValidationChange={handleValidationChange}
       />
       <button
         onClick={handleSubmit}
+        disabled={!isPaymentValid}
         type="button"
-        className="bg-black text-white text-sm font-semibold h-[44px] flex items-center justify-center rounded-full w-full lg:max-w-[512px] mt-6 hover:-translate-y-1 transition"
+        className={`text-white text-sm font-semibold h-[44px] flex items-center justify-center rounded-full w-full lg:max-w-[512px] mt-6 transition ${
+          isPaymentValid
+            ? "bg-black hover:-translate-y-1 cursor-pointer"
+            : "bg-gray-400 cursor-not-allowed opacity-60"
+        }`}
       >
         Place order
       </button>
+      {!isPaymentValid && (
+        <p className="text-sm text-gray-500 text-center mt-2 lg:max-w-[512px]">
+          Please complete your payment information to continue
+        </p>
+      )}
     </div>
   );
 };
