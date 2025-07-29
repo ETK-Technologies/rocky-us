@@ -138,7 +138,7 @@ export default async function RootLayout({ children }) {
         {/* VisiOpt Scripts Provider - Automatically loads the right scripts based on page and URL parameters */}
         <VisiOptProvider />
         <Analytics />
-        <SpeedInsights />
+        <SpeedInsights /> 
       </body>
     </html>
   );
