@@ -41,71 +41,71 @@ const sendGA4PurchaseEvent = async (orderData) => {
     // Fetch product details for each line item to get proper categories
     const lineItemPromises = Array.isArray(orderData.line_items)
       ? orderData.line_items.map(async (item) => {
+        console.log(
+          `[GA4] Fetching product details for ID ${item.product_id}...`
+        );
+
+        // Fetch product details including categories
+        const productDetails = await fetchProductDetails(item.product_id);
+
+        console.log(
+          `[GA4] Product details for ID ${item.product_id}:`,
+          productDetails
+        );
+
+        // Extract category information
+        let mainCategory = "";
+        let subCategory = "";
+
+        if (productDetails && productDetails.categories) {
+          mainCategory = productDetails.categories[0]?.name || "";
+          subCategory = productDetails.categories[1]?.name || "";
           console.log(
-            `[GA4] Fetching product details for ID ${item.product_id}...`
+            `[GA4] Categories for product ${item.name}:`,
+            mainCategory,
+            subCategory
           );
+        } else {
+          // Fallback to any categories in the line item
+          const categories =
+            item.categories && item.categories.length > 0
+              ? item.categories
+              : item.meta_data?.find(
+                (meta) => meta.key === "_product_categories"
+              )?.value || [];
 
-          // Fetch product details including categories
-          const productDetails = await fetchProductDetails(item.product_id);
+          console.log("[GA4] Fallback categories found:", categories);
 
-          console.log(
-            `[GA4] Product details for ID ${item.product_id}:`,
-            productDetails
-          );
-
-          // Extract category information
-          let mainCategory = "";
-          let subCategory = "";
-
-          if (productDetails && productDetails.categories) {
-            mainCategory = productDetails.categories[0]?.name || "";
-            subCategory = productDetails.categories[1]?.name || "";
-            console.log(
-              `[GA4] Categories for product ${item.name}:`,
-              mainCategory,
-              subCategory
-            );
-          } else {
-            // Fallback to any categories in the line item
-            const categories =
-              item.categories && item.categories.length > 0
-                ? item.categories
-                : item.meta_data?.find(
-                    (meta) => meta.key === "_product_categories"
-                  )?.value || [];
-
-            console.log("[GA4] Fallback categories found:", categories);
-
-            mainCategory =
-              typeof categories === "object" && categories[0]?.name
-                ? categories[0].name
-                : Array.isArray(categories) && categories.length > 0
+          mainCategory =
+            typeof categories === "object" && categories[0]?.name
+              ? categories[0].name
+              : Array.isArray(categories) && categories.length > 0
                 ? categories[0]
                 : "";
 
-            subCategory =
-              typeof categories === "object" && categories[1]?.name
-                ? categories[1].name
-                : Array.isArray(categories) && categories.length > 1
+          subCategory =
+            typeof categories === "object" && categories[1]?.name
+              ? categories[1].name
+              : Array.isArray(categories) && categories.length > 1
                 ? categories[1]
                 : "";
-          }
+        }
 
-          return {
-            item_id: item.product_id.toString(),
-            item_name: item.name,
-            price: parseFloat(item.total) / Math.max(1, item.quantity) || 0,
-            quantity: item.quantity || 1,
-            item_brand: "Rocky",
-            item_category: mainCategory,
-            item_category2: subCategory,
-            item_variant:
-              item.variation?.attributes
-                ?.map((attr) => `${attr.name}: ${attr.option}`)
-                .join(", ") || "",
-            discount: parseFloat(item.discount || 0) || 0,
-          };
-        })
+        return {
+          item_id: item.product_id.toString(),
+          item_name: item.name,
+          price: parseFloat(item.total) / Math.max(1, item.quantity) || 0,
+          quantity: item.quantity || 1,
+          item_brand: "Rocky",
+          item_category: mainCategory,
+          item_category2: subCategory,
+          item_variant:
+            item.variation?.attributes
+              ?.map((attr) => `${attr.name}: ${attr.option}`)
+              .join(", ") || "",
+          discount: parseFloat(item.discount || 0) || 0,
+        };
+      })
       : [];
 
     // Wait for all product detail requests to complete
@@ -198,25 +198,19 @@ const OrderReceivedContent = ({ userId }) => {
   };
   // Determine the redirect destination
   const getRedirectPath = () => {
-    // Build the base path based on flow type
-    let basePath = "https://www.myrocky.ca";
-    if (mhFlow === "1") basePath += "/mh-quiz";
-    if (edFlow === "1") basePath += "/ed-consultation-quiz";
-    if (wlFlow === "1") basePath += "/wl-consultation";
-    if (hairFlow === "1") basePath += "/hair-main-questionnaire";
-    if (smokingFlow === "1") basePath += "/smoking-consultation/?checked-out=1";
+    // Build the base path based on flow type (internal routes)
+    let basePath = "/";
+    if (mhFlow === "1") basePath += "mh-quiz";
+    if (edFlow === "1") basePath += "ed-consultation-quiz";
+    if (wlFlow === "1") basePath += "wl-consultation";
+    if (hairFlow === "1") basePath += "hair-main-questionnaire";
+    if (smokingFlow === "1") basePath += "smoking-consultation";
 
-    console.log("[Debug] Base path:", basePath);
-    console.log("[Debug] Flow parameters:", {
-      mhFlow,
-      edFlow,
-      wlFlow,
-      hairFlow,
-      smokingFlow,
-    });
-
-    // Build the query parameters
+    // Add checked-out param for smoking flow
     const queryParams = new URLSearchParams();
+    if (smokingFlow === "1") {
+      queryParams.append("checked-out", "1");
+    }
 
     // Add order_id if available
     if (order && order.id) {
