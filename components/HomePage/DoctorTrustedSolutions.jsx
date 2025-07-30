@@ -61,19 +61,13 @@ const DoctorTrustedSolutions = () => {
                   card.height === "480px" ? "lg:h-[480px]" : "lg:h-[685px]"
                 } ${card.text === "vetted" ? "lg:-mt-[205px]" : ""}`}
                 key={card.title}
-                style={{ background: card.gradient }}
+                style={{ backgroundImage: card.gradient }}
               >
                 <div
                   className="absolute w-full h-full z-10"
-                  style={{ background: card.gradient }}
+                  style={{ backgroundImage: card.gradient }}
                 ></div>
-                <CustomImage
-                  style={{ background: card.gradient }}
-                  src={card.image}
-                  alt={card.title}
-                  fill
-                  priority
-                />
+                <CustomImage src={card.image} alt={card.title} fill priority />
                 <div className="absolute w-full left-1/2 -translate-x-1/2 z-20 flex flex-col items-center text-center px-4 py-8 md:px-6 md:py-8">
                   <h3 className="text-[#FFFFFF] text-[28px] md:text-[40px] leading-[32.2px] md:leading-[46px] tracking-[-0.01em] md:tracking-[-0.02em] font-[450] mb-[8px] md:mb-[16px] headers-font">
                     {card.title.split("<br/>").map((line, index) => (

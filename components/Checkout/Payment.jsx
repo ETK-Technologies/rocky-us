@@ -263,6 +263,17 @@ const Payment = ({
           return false;
         }
 
+        // Validate card number has full card number (13-19 digits)
+        const cleanCardNumber = cardNumber.replace(/\s/g, "");
+        if (cleanCardNumber.length < 13 || cleanCardNumber.length > 19) {
+          return false;
+        }
+
+        // Validate CVC is 3 or 4 digits
+        if (cvc.length < 3 || cvc.length > 4) {
+          return false;
+        }
+
         return true;
       };
 

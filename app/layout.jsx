@@ -124,7 +124,7 @@ export default async function RootLayout({ children }) {
             src="https://www.googletagmanager.com/ns.html?id=GTM-K9PC394B"
             height="0"
             width="0"
-            style="display:none;visibility:hidden"
+            style={{ display: "none", visibility: "hidden" }}
           ></iframe>
         </noscript>
         {/* End Google Tag Manager (noscript) */} <CacheClearer />
@@ -138,7 +138,7 @@ export default async function RootLayout({ children }) {
         {/* VisiOpt Scripts Provider - Automatically loads the right scripts based on page and URL parameters */}
         <VisiOptProvider />
         <Analytics />
-        <SpeedInsights /> 
+        <SpeedInsights />
       </body>
     </html>
   );
