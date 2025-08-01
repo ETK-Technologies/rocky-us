@@ -16,34 +16,54 @@ export const validatePaymentInput = (data) => {
     errors.push("Order ID must be a number or string");
   }
 
-  if (!data.amount) {
+  // Amount validation - allow zero for free orders with coupons
+  if (data.amount === undefined || data.amount === null) {
     errors.push("Amount is required");
-  } else if (typeof data.amount !== "number" || data.amount <= 0) {
-    errors.push("Amount must be a positive number");
+  } else if (typeof data.amount !== "number") {
+    errors.push("Amount must be a number");
+  } else if (data.amount < 0) {
+    errors.push("Amount cannot be negative");
+  } else if (data.amount === 0) {
+    // Allow zero amount only if this is explicitly a free order (will be handled differently)
+    console.log(
+      "Zero amount detected - assuming this is a free order with 100% coupon"
+    );
+  } else if (data.amount > 0) {
+    // Normal positive amount - continue with regular validation
+  } else {
+    errors.push("Amount must be zero or positive");
   }
 
-  if (!data.cardNumber) {
-    errors.push("Card number is required");
-  } else if (!/^\d{13,19}$/.test(data.cardNumber.replace(/\s/g, ""))) {
-    errors.push("Invalid card number format");
-  }
+  // Card validation - only required for non-zero amounts (paid orders)
+  const isFreeOrder = data.amount === 0;
 
-  if (!data.cardExpMonth) {
-    errors.push("Card expiry month is required");
-  } else if (!/^(0[1-9]|1[0-2])$/.test(data.cardExpMonth)) {
-    errors.push("Invalid expiry month (must be 01-12)");
-  }
+  if (!isFreeOrder) {
+    // Only validate card details for paid orders
+    if (!data.cardNumber) {
+      errors.push("Card number is required");
+    } else if (!/^\d{13,19}$/.test(data.cardNumber.replace(/\s/g, ""))) {
+      errors.push("Invalid card number format");
+    }
 
-  if (!data.cardExpYear) {
-    errors.push("Card expiry year is required");
-  } else if (!/^\d{2,4}$/.test(data.cardExpYear)) {
-    errors.push("Invalid expiry year format");
-  }
+    if (!data.cardExpMonth) {
+      errors.push("Card expiry month is required");
+    } else if (!/^(0[1-9]|1[0-2])$/.test(data.cardExpMonth)) {
+      errors.push("Invalid expiry month (must be 01-12)");
+    }
 
-  if (!data.cardCVD) {
-    errors.push("CVD is required");
-  } else if (!/^\d{3,4}$/.test(data.cardCVD)) {
-    errors.push("Invalid CVD format (must be 3-4 digits)");
+    if (!data.cardExpYear) {
+      errors.push("Card expiry year is required");
+    } else if (!/^\d{2,4}$/.test(data.cardExpYear)) {
+      errors.push("Invalid expiry year format");
+    }
+
+    if (!data.cardCVD) {
+      errors.push("CVD is required");
+    } else if (!/^\d{3,4}$/.test(data.cardCVD)) {
+      errors.push("Invalid CVD format (must be 3-4 digits)");
+    }
+  } else {
+    console.log("Skipping card validation for free order (zero amount)");
   }
 
   // Optional billing address validation
