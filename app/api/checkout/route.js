@@ -97,6 +97,8 @@ export async function POST(req) {
       shippingCountry,
       shippingPhone,
       totalAmount, // Ensure it's passed from the frontend
+      isFreeOrder, // Flag for zero-amount orders
+      paymentMethod, // Custom payment method for free orders
     } = requestData;
 
     const cookieStore = await cookies();
@@ -145,7 +147,7 @@ export async function POST(req) {
             postcode: formatPostcode(postcode, country),
             country: country,
           },
-      payment_method: "paysafe", // Use the correct WooCommerce payment method name
+      payment_method: "paysafe", // Always use paysafe payment method
       payment_data: [],
       customer_note: customerNotes || "",
       meta_data: [
@@ -157,11 +159,39 @@ export async function POST(req) {
           key: "_meta_mail_box",
           value: toMailBox ? "1" : "0",
         },
+        // Add free order metadata
+        ...(isFreeOrder
+          ? [
+              {
+                key: "_payment_method_title",
+                value: "Paid with 100% Coupon Discount",
+              },
+              {
+                key: "_free_order_coupon_payment",
+                value: "true",
+              },
+            ]
+          : []),
       ],
     };
 
-    // Add payment data based on whether using saved card or new card
-    if (useSavedCard && savedCardToken) {
+    // Add payment data based on whether using saved card, new card, or free order
+    if (isFreeOrder) {
+      // For free orders, use minimal paysafe payment data to indicate no processing needed
+      console.log(
+        "Processing free order with 100% coupon discount - minimal payment data"
+      );
+      checkoutData.payment_data = [
+        {
+          key: "wc-paysafe-new-payment-method",
+          value: "false",
+        },
+        {
+          key: "free-order-coupon-payment",
+          value: "true",
+        },
+      ];
+    } else if (useSavedCard && savedCardToken) {
       // Using saved card - Paysafe handles token validation server-side
       checkoutData.payment_data = [
         {
@@ -210,22 +240,6 @@ export async function POST(req) {
       );
     }
 
-    // Enhanced debug logging before sending to WooCommerce
-    console.log("=== CHECKOUT DEBUG INFO ===");
-    console.log("Payment Method:", checkoutData.payment_method);
-    console.log(
-      "Payment Data:",
-      JSON.stringify(checkoutData.payment_data, null, 2)
-    );
-    console.log("Using Saved Card:", useSavedCard);
-    console.log(
-      "Card Number (last 4):",
-      cardNumber ? cardNumber.slice(-4) : "N/A"
-    );
-    console.log("=== END DEBUG INFO ===");
-
-    console.log("Sending request to WooCommerce API...");
-
     // Call the WooCommerce Store API checkout endpoint
     const response = await axios.post(
       `${BASE_URL}/wp-json/wc/store/v1/checkout`,
@@ -239,26 +253,63 @@ export async function POST(req) {
       }
     );
 
-    console.log("=== WOOCOMMERCE API RESPONSE ===");
-    console.log("Status:", response.status);
-    console.log("Response Data:", JSON.stringify(response.data, null, 2));
-    console.log("Payment Result:", response.data.payment_result);
-    console.log("Order Status:", response.data.status);
-    console.log("=== END RESPONSE ===");
+    // Handle free orders (100% coupon payment)
 
-    // Check if payment was processed successfully
-    if (
-      response.data.payment_result &&
-      response.data.payment_result.payment_status === "success"
-    ) {
-      console.log("✅ Payment processed successfully!");
-    } else if (response.data.status === "pending") {
-      console.log("⚠️ Order created but payment is pending");
-      console.log(
-        "This might be normal for Paysafe - payment may be processed asynchronously"
-      );
-    } else {
-      console.log("❌ Payment may have failed or needs additional processing");
+    // Try to find order ID in different possible locations
+    const orderId =
+      response.data.id ||
+      response.data.order_id ||
+      response.data.order?.id ||
+      response.data.data?.id ||
+      null;
+
+    if (isFreeOrder && orderId) {
+      try {
+        // Update order status to on-hold for free orders (matching ordinary Paysafe flow)
+        const orderUpdateData = {
+          status: "on-hold",
+          payment_method_title: "Paid with 100% Coupon Discount",
+        };
+
+        const updateResponse = await axios.put(
+          `${BASE_URL}/wp-json/wc/v3/orders/${orderId}`,
+          orderUpdateData,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Basic ${Buffer.from(
+                `${process.env.CONSUMER_KEY}:${process.env.CONSUMER_SECRET}`
+              ).toString("base64")}`,
+            },
+          }
+        );
+
+        // Add order note for free orders
+        const orderNoteData = {
+          note: "✅ Order placed on-hold with 100% coupon discount. No payment processing required.",
+          customer_note: false, // This is an admin note
+        };
+
+        await axios.post(
+          `${BASE_URL}/wp-json/wc/v3/orders/${orderId}/notes`,
+          orderNoteData,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Basic ${Buffer.from(
+                `${process.env.CONSUMER_KEY}:${process.env.CONSUMER_SECRET}`
+              ).toString("base64")}`,
+            },
+          }
+        );
+      } catch (updateError) {
+        console.error(
+          "Error updating free order status or adding note:",
+          updateError.message
+        );
+        console.error("Full error details:", updateError.response?.data);
+        // Don't fail the order creation if status update fails
+      }
     }
 
     // Return the response in a consistent format

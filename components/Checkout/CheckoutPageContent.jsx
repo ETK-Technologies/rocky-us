@@ -576,6 +576,77 @@ const CheckoutPageContent = () => {
         totalAmount: dataToSend.totalAmount,
       });
 
+      // Check for zero-amount orders (100% coupon discount)
+      const isFreeOrder = dataToSend.totalAmount === 0;
+
+      if (isFreeOrder) {
+        console.log("Processing free order with 100% coupon discount");
+
+        try {
+          // Create order directly in WooCommerce with free payment method
+          const freeOrderResponse = await fetch("/api/checkout", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              ...dataToSend,
+              // Clear card details for free orders
+              cardNumber: "",
+              cardExpMonth: "",
+              cardExpYear: "",
+              cardCVD: "",
+              useSavedCard: false,
+              savedCardToken: null,
+              savedCardId: null,
+              // Flag to indicate this is a free order
+              isFreeOrder: true,
+              paymentMethod: "coupon_100_percent",
+            }),
+          });
+
+          const freeOrderData = await freeOrderResponse.json();
+
+          if (freeOrderData.error) {
+            toast.error(freeOrderData.error);
+            setSubmitting(false);
+            return;
+          }
+
+          const order_id = freeOrderData.data.id || freeOrderData.data.order_id;
+          const order_key = freeOrderData.data.order_key || "";
+
+          console.log("✅ Free order created successfully:", {
+            order_id,
+            order_key,
+            totalAmount: dataToSend.totalAmount,
+          });
+
+          toast.success(
+            "Order created successfully with 100% coupon discount!"
+          );
+
+          // Empty the cart
+          try {
+            await fetchCartItems();
+          } catch (cartError) {
+            console.error("Error emptying cart after free order:", cartError);
+            // Don't fail the redirect if cart emptying fails
+          }
+
+          // Redirect to order received page
+          router.push(
+            `/checkout/order-received/${order_id}?key=${order_key}${buildFlowQueryString()}`
+          );
+          return;
+        } catch (error) {
+          console.error("Error processing free order:", error);
+          toast.error("Unable to process free order. Please try again.");
+          setSubmitting(false);
+          return;
+        }
+      }
+
       // For saved cards, we'll use a two-step approach but check for duplicate payments
       if (selectedCard && cartItems.totals) {
         try {
