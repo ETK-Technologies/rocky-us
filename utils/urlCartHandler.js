@@ -783,10 +783,8 @@ async function findVariationByPrice(productId, targetPrice) {
 
     if (closestVariation) {
       console.log(
-        `Found closest price match for ${productId}: variation ${
-          closestVariation.id
-        } at $${
-          closestVariation.price
+        `Found closest price match for ${productId}: variation ${closestVariation.id
+        } at $${closestVariation.price
         } (target: $${price}, difference: $${priceDifference.toFixed(2)})`
       );
       return closestVariation.id;
@@ -1008,10 +1006,10 @@ export const createCartUrl = async (
 
     // Special handling for weight loss addons - use their IDs directly
     const wlAddons = {
-      353755: "Rocky Dad Hat", // Dad Hat - CORRECT ID
-      90995: "Essential T-Boost", // Essential T-Boost - CORRECT ID
-      323511: "Ovulation Test Kit", // Ovulation Test Kit
-      323512: "Perimenopause Test Kit", // Perimenopause Test Kit
+      353755: "Rocky Dad Hat", // Dad Hat - WORKING ID from ED flow (both genders)
+      262914: "Essential T-Boost", // Essential T-Boost - WORKING ID from ED flow (changed from 90995)
+      323511: "Ovulation Test Kit", // Ovulation Test Kit - female specific
+      323512: "Perimenopause Test Kit", // Perimenopause Test Kit - female specific
     };
 
     // Check if this is a direct ID that we already know
@@ -1216,12 +1214,12 @@ export const cleanupCartUrlParameters = (flowType = "ed") => {
     flowType === "ed"
       ? "ed-flow=1"
       : flowType === "wl"
-      ? "wl-flow=1"
-      : flowType === "hair"
-      ? "hair-flow=1"
-      : flowType === "mh"
-      ? "mh-flow=1"
-      : `${flowType}-flow=1`;
+        ? "wl-flow=1"
+        : flowType === "hair"
+          ? "hair-flow=1"
+          : flowType === "mh"
+            ? "mh-flow=1"
+            : `${flowType}-flow=1`;
 
   const newUrl = window.location.pathname + `?${flowParam}`;
   console.log(`Cleaning up URL parameters, preserving flow type: ${flowType}`);

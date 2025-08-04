@@ -1,5 +1,5 @@
 const PRODUCT_DATA = {
-  ORAL_SEMAGLUTIDE:{
+  ORAL_SEMAGLUTIDE: {
     id: "490537",
     name: "Oral Semaglutide",
     description: "(semaglutide) sublingual",
@@ -7,8 +7,8 @@ const PRODUCT_DATA = {
     details:
       "No more needles or struggling to swallow tablets- a once-daily, sublingual semaglutide designed for effective weight loss.",
     url: "https://mycdn.myrocky.ca/wp-content/uploads/20250610095755/Sublingual-Semaglutide-Pre-Quiz.png",
-    isDefault: true,
-    supplyAvailable: true,
+    isDefault: false, // This product doesn't exist in WooCommerce - causes 400 errors
+    supplyAvailable: false, // Disabled because it doesn't exist
   },
   OZEMPIC: {
     id: "142975",
@@ -18,6 +18,7 @@ const PRODUCT_DATA = {
     details:
       "Ozempic® is the brand name version of semaglutide. It works in the exactly the same way as our compounded semaglutide.",
     url: "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/ozempic/ozempic_2x.webp",
+    isDefault: true, // Use this as default - it works perfectly
     supplyAvailable: true,
   },
   MOUNJARO: {

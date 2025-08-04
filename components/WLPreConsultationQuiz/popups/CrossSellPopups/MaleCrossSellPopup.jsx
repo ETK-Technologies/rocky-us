@@ -12,25 +12,22 @@ const maleAddOnProducts = [
     bulletPoints: ["One size fits all", "Adjustable strap", "Cotton twill"],
   },
   {
-    id: "90995", // Essential T-Boost - CORRECT ID
+    id: "262914", // Essential T-Boost - WORKING ID from ED flow (changed from 90995)
     name: "Essential T-Boost",
     price: "35.00",
     imageUrl:
-      "https://mycdn.myrocky.ca/wp-content/uploads/20240906120305/Rocky-Health-August-2024-HQ-1-scaled.jpg",
+      "https://myrocky.b-cdn.net/WP%20Images/Sexual%20Health/webp-images/support-removebg-preview.webp",
     bulletPoints: [
-      "Helps improve overall testosterone levels",
-      "Enhances libido",
-      "Promotes a sense of well-being",
+      "Helps improve overall testosterone levels, enhance libido, and promote a sense of well-being.",
+      "60 Capsules",
+      "30-days supply",
     ],
-    showInfoIcon: true,
-    faqContent: `
-      <p class="mb-4"><strong>Q: What is Essential T-Boost?</strong><br>
-        A: Essential T-Boost is a supplement designed to support healthy testosterone levels in men.</p>
-      <p class="mb-4"><strong>Q: How do I take Essential T-Boost?</strong><br>
-        A: Take one capsule daily with food, or as directed by your healthcare provider.</p>
-      <p class="mb-4"><strong>Q: How long does it take to see results?</strong><br>
-        A: While individual results may vary, many users report benefits within 2-4 weeks of consistent use.</p>
-    `,
+    description:
+      "Helps improve overall testosterone levels, enhance libido, and promote a sense of well-being.",
+    dataAddToCart: "262914", // Same as ID for working products
+    dataType: "simple", // Not a subscription for WL flow
+    quantity: "60 Capsules",
+    frequency: "30-days supply",
   },
 ];
 
