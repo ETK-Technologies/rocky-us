@@ -6,7 +6,7 @@ import axios from "axios";
 import { uploadToS3 } from "@/utils/s3";
 
 const crmApi = axios.create({
-  baseURL: "https://crm.myrocky.ca/api",
+  baseURL: "https://crm.myrocky.com/api",
   httpsAgent: new https.Agent({
     rejectUnauthorized: false,
   }),

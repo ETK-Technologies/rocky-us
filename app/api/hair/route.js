@@ -5,7 +5,7 @@ import https from "https";
 import axios from "axios";
 
 const crmApi = axios.create({
-  baseURL: "https://crm.myrocky.ca/api",
+  baseURL: "https://crm.myrocky.com/api",
   httpsAgent: new https.Agent({
     rejectUnauthorized: false,
   }),
