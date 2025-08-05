@@ -17,12 +17,12 @@ const ProductRecommendationsStep = ({
   );
 
   useEffect(() => {
-    setSelectedProduct(products.ORAL_SEMAGLUTIDE);
+    setSelectedProduct(products.OZEMPIC);
   }, []);
 
   const handleShowMoreOptions = () => {
     if (showMoreOptions) {
-      setSelectedProduct(products.ORAL_SEMAGLUTIDE);
+      setSelectedProduct(products.OZEMPIC);
     }
     setShowMoreOptions(!showMoreOptions);
   };
@@ -54,22 +54,20 @@ const ProductRecommendationsStep = ({
 
         <div className="mb-6">
           <WLProductCard
-            product={products.ORAL_SEMAGLUTIDE}
+            product={products.OZEMPIC}
             isRecommended={true}
             onSelect={(product) => setSelectedProduct(product)}
-            isSelected={
-              selectedProduct?.name === products.ORAL_SEMAGLUTIDE.name
-            }
+            isSelected={selectedProduct?.name === products.OZEMPIC.name}
           />
         </div>
 
         {showMoreOptions && (
           <div className="space-y-4 mb-6">
-            <WLProductCard
+            {/* <WLProductCard
               product={products.OZEMPIC}
               onSelect={(product) => setSelectedProduct(product)}
               isSelected={selectedProduct?.name === products.OZEMPIC.name}
-            />
+            /> */}
             <WLProductCard
               product={products.WEGOVY}
               onSelect={(product) => setSelectedProduct(product)}

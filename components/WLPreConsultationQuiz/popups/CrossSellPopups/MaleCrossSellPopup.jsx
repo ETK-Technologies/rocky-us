@@ -12,7 +12,7 @@ const maleAddOnProducts = [
     bulletPoints: ["One size fits all", "Adjustable strap", "Cotton twill"],
   },
   {
-    id: "90995", // Essential T-Boost - CORRECT ID
+    id: "262914", // Essential T-Boost - CORRECT ID
     name: "Essential T-Boost",
     price: "35.00",
     imageUrl:

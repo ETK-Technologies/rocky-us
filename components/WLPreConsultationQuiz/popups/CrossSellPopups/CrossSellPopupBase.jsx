@@ -22,8 +22,23 @@ const CrossSellPopup = ({
   const [deliveryDate, setDeliveryDate] = useState("Thursday");
   const [openDescriptions, setOpenDescriptions] = useState({});
   const [addedProducts, setAddedProducts] = useState([]);
+  const [checkoutUrl, setCheckoutUrl] = useState("#");
 
   if (!isOpen) return null;
+
+  // Function to get full addon product details from its ID
+  const getAddonById = (addonId) => {
+    return addOnProducts.find((addon) => addon.id === addonId);
+  };
+
+  // Toggle adding/removing an addon
+  const toggleAddon = (addonId) => {
+    if (addedProducts.includes(addonId)) {
+      setAddedProducts(addedProducts.filter((id) => id !== addonId));
+    } else {
+      setAddedProducts([...addedProducts, addonId]);
+    }
+  };
 
   // Toggle description visibility
   const toggleDescription = (addonId, event) => {
@@ -34,60 +49,144 @@ const CrossSellPopup = ({
     });
   };
 
-  // Handle adding an add-on product
-  const handleAddProduct = (addon) => {
-    if (!addedProducts.includes(addon.id)) {
-      setAddedProducts([...addedProducts, addon.id]);
-    }
-    updateCheckoutUrl();
-  };
+  // Generate checkout URL using the same approach as ED CrossSellModal
+  const generateCheckoutUrl = () => {
+    try {
+      console.log("=== WL CROSS-SELL POPUP DEBUG ===");
+      console.log("Main Product:", mainProduct);
+      console.log("Selected Product ID:", selectedProductId);
+      console.log("Added Products:", addedProducts);
+      console.log("Addon Products:", addOnProducts);
 
-  // Handle removing an addon from cart
-  const handleRemoveAddon = (addonId) => {
-    setAddedProducts(addedProducts.filter(id => id !== addonId));
-    updateCheckoutUrl();
-  };
-
-  // Update the checkout URL to include selected add-ons
-  const updateCheckoutUrl = () => {
-    const checkoutButton = document.querySelector(".popup-cart-checkout-url");
-    if (!checkoutButton) return;
-
-    const baseUrl =
-      window.location.origin +
-      "/checkout?wl-flow=1&consultation-required=1&onboarding-add-to-cart=";
-
-    // Get all added products
-    let productIds = [selectedProductId]; // Main product ID
-
-    // Add all selected add-on products
-    addedProducts.forEach((productId) => {
-      const addon = addOnProducts.find((p) => p.id === productId);
-      if (addon && addon.dataAddToCart) {
-        productIds.push(addon.dataAddToCart);
-      } else {
-        productIds.push(productId);
+      // Get main product ID
+      const mainProductId = selectedProductId;
+      if (!mainProductId) {
+        console.error("Error: No main product ID found");
+        return "#";
       }
-    });
 
-    // Get the main product price to send with URL
-    const mainProductPrice = document.querySelector(
-      ".popup-cart-main-item-price"
-    );
-    let priceUrl = baseUrl + productIds.join(",");
+      // Build cart URL directly - starting with the base URL
+      let baseUrl = "/checkout";
+      let queryParams = "?";
 
-    // Add price information for variation selection if available
-    if (mainProductPrice) {
-      const price = mainProductPrice.textContent.trim().replace("$", "");
-      if (price) {
-        // Add price parameter for the main product
-        priceUrl += `&price_${selectedProductId}=${encodeURIComponent(price)}`;
+      // Add wl-flow parameter
+      queryParams += "wl-flow=1&consultation-required=1";
+
+      // Define weight loss product IDs that should include Body Optimization Program
+      const weightLossProductIds = [
+        "142975", // Ozempic
+        "160468", // Mounjaro
+        "250827", // Wegovy
+        "369618", // Rybelsus
+        "490537", // Oral Semaglutide (disabled but kept for completeness)
+      ];
+
+      // Start with main product + Body Optimization Program (always included for WL products)
+      let productsString = mainProductId;
+
+      // Always add Body Optimization Program for weight loss products
+      if (weightLossProductIds.includes(mainProductId)) {
+        console.log(
+          `Weight loss product detected (ID: ${mainProductId}). Adding Body Optimization Program (148515) to URL (not displayed in popup)`
+        );
+        productsString += ",148515"; // Add BO Program to products string
       }
-    }
 
-    // Update checkout URL
-    checkoutButton.setAttribute("href", priceUrl);
+      // Array to hold all addon IDs (will be added to productsString later)
+      const addonIds = [];
+
+      // Now handle each addon product parameter - separate addon IDs from addon parameters
+      const additionalParams = [];
+
+      if (addedProducts.length > 0) {
+        addedProducts.forEach((addonId) => {
+          const addon = getAddonById(addonId);
+          if (!addon) return;
+
+          // Add addon ID to our list (to be added to productsString)
+          addonIds.push(addonId);
+
+          // CRITICAL: For subscription products, we need special subscription parameters
+          if (addon.dataType === "subscription") {
+            // Always add the convert_to_sub parameter for subscription products
+            additionalParams.push(
+              `convert_to_sub_${addonId}=${addon.dataVar || "1_month_1"}`
+            );
+
+            // Add the critical add-product-subscription parameter which is needed by WooCommerce
+            additionalParams.push(`add-product-subscription=${addonId}`);
+
+            // Add quantity parameter
+            additionalParams.push(`quantity=1`);
+          }
+        });
+      }
+
+      // Add all addon IDs to the products string
+      if (addonIds.length > 0) {
+        productsString += "%2C" + addonIds.join("%2C"); // URL-encoded comma
+      }
+
+      // Add the complete product string to URL
+      queryParams += `&onboarding-add-to-cart=${productsString}`;
+
+      // Add subscription parameters for main product if it's a subscription
+      if (mainProduct && mainProduct.isSubscription) {
+        queryParams += `&convert_to_sub_${mainProductId}=1_month_1`;
+      }
+
+      // Add price information if available
+      if (mainProduct && mainProduct.price) {
+        queryParams += `&price_${mainProductId}=${encodeURIComponent(
+          mainProduct.price
+        )}`;
+      }
+
+      // Add all the additional parameters for addon products
+      if (additionalParams.length > 0) {
+        queryParams += "&" + additionalParams.join("&");
+      }
+
+      // Combine base URL and query parameters
+      const finalUrl = baseUrl + queryParams;
+
+      console.log("Generated WL checkout URL with BO Program:", finalUrl);
+      return finalUrl;
+    } catch (error) {
+      console.error("Error generating checkout URL:", error);
+      return "#"; // Fallback to hash in case of error
+    }
   };
+
+  // Handle the checkout process
+  const handleCheckout = async () => {
+    try {
+      console.log("=== CHECKOUT BUTTON CLICKED ===");
+
+      // Generate checkout URL
+      const checkoutUrl = generateCheckoutUrl();
+
+      if (checkoutUrl === "#") {
+        throw new Error("Failed to generate checkout URL");
+      }
+
+      console.log("Redirecting to checkout URL:", checkoutUrl);
+
+      // Navigate to the checkout URL
+      window.location.href = checkoutUrl;
+    } catch (error) {
+      console.error("Error during checkout:", error);
+      alert("There was an issue processing your checkout. Please try again.");
+    }
+  };
+
+  // Update checkout URL when dependencies change
+  useEffect(() => {
+    if (isOpen) {
+      const url = generateCheckoutUrl();
+      setCheckoutUrl(url);
+    }
+  }, [selectedProductId, addedProducts, mainProduct, isOpen]);
 
   // Handle slider arrows for mobile scrolling
   const handleSliderArrow = (direction) => {
@@ -136,12 +235,6 @@ const CrossSellPopup = ({
       document.body.style.overflow = "";
     }
   }, [isOpen]);
-
-  // Initialize checkout URL when component mounts
-  useEffect(() => {
-    // Call updateCheckoutUrl after component mount to set initial URL
-    setTimeout(updateCheckoutUrl, 100);
-  }, []);
 
   return (
     <div className="new-cross-sell-popup fixed w-screen m-auto bg-[#FFFFFF] z-[9999] top-[0] left-[0] flex flex-col headers-font tracking-tight h-[100vh] overflow-auto">
@@ -254,49 +347,10 @@ const CrossSellPopup = ({
         <div className="flex justify-end pt-2 popup_cart_url_outer static checkout-btn-new w-auto bg-transparent p-0">
           <a
             className="popup-cart-checkout-url add_to_cart_btn block bg-black border-0 rounded-full text-white p-2 px-10 mt-2 md:mt-4 w-full text-center md:w-fit"
-            href="#"
+            href={checkoutUrl}
             onClick={(e) => {
               e.preventDefault();
-
-              // Create a consistent format for the main product
-              const mainProductForCheckout = {
-                ...mainProduct,
-                id: selectedProductId,
-                isSubscription: mainProduct.isSubscription || false,
-              };
-
-              // Get all selected addon products
-              const selectedAddons = addedProducts
-                .map((addonId) => {
-                  const addon = addOnProducts.find((p) => p.id === addonId);
-                  if (addon) {
-                    return {
-                      id: addon.dataAddToCart || addon.id,
-                      name: addon.name,
-                      price: addon.price,
-                      isSubscription: addon.dataType === "subscription",
-                    };
-                  }
-                  return null;
-                })
-                .filter(Boolean);
-
-              console.log("Main product for checkout:", mainProductForCheckout);
-              console.log("Selected addons for checkout:", selectedAddons);
-
-              // Use the addToCartAndRedirect function which handles cart clearing for WL flow
-              addToCartAndRedirect(mainProductForCheckout, selectedAddons, "wl")
-                .then(() => {
-                  if (typeof onCheckout === "function") {
-                    onCheckout();
-                  }
-                })
-                .catch((error) => {
-                  console.error("Error in checkout process:", error);
-                  alert(
-                    "There was an issue processing your checkout. Please try again."
-                  );
-                });
+              handleCheckout();
             }}
           >
             Checkout
@@ -362,7 +416,9 @@ const CrossSellPopup = ({
                     </div>
 
                     {!openDescriptions[addon.id] ? (
-                      <div className={`addon${addon.id}-box-body relative my-[20px] mx-4`}>
+                      <div
+                        className={`addon${addon.id}-box-body relative my-[20px] mx-4`}
+                      >
                         <div className="text-center">
                           <img
                             loading="lazy"
@@ -384,7 +440,7 @@ const CrossSellPopup = ({
                         </p>
                         <div className="flex items-center gap-2 w-full">
                           <button
-                            onClick={() => handleAddProduct(addon)}
+                            onClick={() => toggleAddon(addon.id)}
                             className={`data-addon-id-${
                               addon.id
                             } add-to-cart-addon-product cursor-pointer border ${
@@ -407,7 +463,7 @@ const CrossSellPopup = ({
                           </button>
                           {addedProducts.includes(addon.id) && (
                             <button
-                              onClick={() => handleRemoveAddon(addon.id)}
+                              onClick={() => toggleAddon(addon.id)}
                               className="remove-addon-item mt-2"
                               aria-label="Remove addon"
                               type="button"
