@@ -1,15 +1,15 @@
 const PRODUCT_DATA = {
-  ORAL_SEMAGLUTIDE: {
-    id: "490537",
-    name: "Oral Semaglutide",
-    description: "(semaglutide) sublingual",
-    price: "240.00",
-    details:
-      "No more needles or struggling to swallow tablets- a once-daily, sublingual semaglutide designed for effective weight loss.",
-    url: "https://mycdn.myrocky.ca/wp-content/uploads/20250610095755/Sublingual-Semaglutide-Pre-Quiz.png",
-    isDefault: false, // This product doesn't exist in WooCommerce - causes 400 errors
-    supplyAvailable: false, // Disabled because it doesn't exist
-  },
+  // ORAL_SEMAGLUTIDE: {
+  //   id: "490537",
+  //   name: "Oral Semaglutide",
+  //   description: "(semaglutide) sublingual",
+  //   price: "240.00",
+  //   details:
+  //     "No more needles or struggling to swallow tablets- a once-daily, sublingual semaglutide designed for effective weight loss.",
+  //   url: "https://mycdn.myrocky.ca/wp-content/uploads/20250610095755/Sublingual-Semaglutide-Pre-Quiz.png",
+  //   isDefault: false, // This product doesn't exist in WooCommerce - causes 400 errors
+  //   supplyAvailable: false, // Disabled because it doesn't exist
+  // },
   OZEMPIC: {
     id: "142975",
     name: "Ozempic",
