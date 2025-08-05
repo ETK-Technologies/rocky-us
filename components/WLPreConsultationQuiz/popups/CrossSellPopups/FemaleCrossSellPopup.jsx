@@ -15,6 +15,9 @@ const femaleAddOnProducts = [
       "10 testing strips",
     ],
     showInfoIcon: true,
+    dataType: "simple",
+    dataVar: "",
+    dataAddToCart: "323511",
     faqContent: `
       <p class="mb-4"><strong>Q: When should I use this test?</strong><br>
         A: If you have 28 day cycles, test between days 10 to 18. Day one is the first day of your period. If your cycle is different, use this formula (length of your cycle - 28 + 10). For example, a 22 day cycle - 28 + 10 = day 4 to 12.</p>
@@ -36,6 +39,9 @@ const femaleAddOnProducts = [
       "3 testing strips",
     ],
     showInfoIcon: true,
+    dataType: "simple",
+    dataVar: "",
+    dataAddToCart: "323512",
     faqContent: `
       <p class="mb-4"><strong>Q: When should I use the test?</strong><br>
         A: For the most accurate result, we recommend using first-morning urine. If you are menstruating, it is advisable to test during the first week of your cycle and retest one week later.</p>
@@ -49,8 +55,12 @@ const femaleAddOnProducts = [
     id: "323576", // Dad Hat
     name: "Rocky Dad Hat",
     price: "29.99",
-    imageUrl: "https://mycdn.myrocky.ca/wp-content/uploads/20241211132726/Copy-of-RockyHealth-15-scaled.webp",
+    imageUrl:
+      "https://mycdn.myrocky.ca/wp-content/uploads/20241211132726/Copy-of-RockyHealth-15-scaled.webp",
     bulletPoints: ["One size fits all", "Adjustable strap", "Cotton twill"],
+    dataType: "simple",
+    dataVar: "",
+    dataAddToCart: "323576",
   },
 ];
 

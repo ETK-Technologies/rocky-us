@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import CustomImage from "../utils/CustomImage";
 import CustomContainImage from "../utils/CustomContainImage";
 import BrandGenericModal from "../EDPlans/BrandGenericModal";
 import DosageSelectionModal from "../EDPlans/DosageSelectionModal";
 import CrossSellModal from "../EDPlans/CrossSellModal";
+import { addToCartAndRedirect } from "@/utils/crossSellCheckout";
 
 const EdTreatment = () => {
   const [selectedFrequency, setSelectedFrequency] = useState("monthly-supply");
@@ -68,11 +68,24 @@ const EdTreatment = () => {
   };
 
   // Handle checkout
-  const handleCheckout = () => {
+  const handleCheckout = (addons = []) => {
+    console.log("Chewalis checkout with addons:", addons);
+
+    // Create main product data
+    const mainProduct = {
+      id: selectedPillOption.variationId,
+      name: "Chewalis",
+      price: currentPrice,
+      isSubscription: selectedFrequency === "monthly-supply",
+    };
+
+    console.log("Chewalis main product:", mainProduct);
+    console.log("Chewalis addons:", addons);
+
     setCrossSellModalOpen(false);
 
-    // Redirect to the checkout URL
-    window.location.href = getCheckoutUrl();
+    // Use the centralized addToCartAndRedirect function
+    addToCartAndRedirect(mainProduct, addons, "ed");
   };
 
   // Prepare selected product data for checkout

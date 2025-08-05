@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import CustomImage from "../utils/CustomImage";
 import CustomContainImage from "../utils/CustomContainImage";
 import DosageSelectionModal from "./DosageSelectionModal";
 import BrandGenericModal from "./BrandGenericModal";
 import CrossSellModal from "./CrossSellModal";
 import { getDosageSelection } from "@/utils/dosageCookieManager";
+import { addToCartAndRedirect } from "@/utils/crossSellCheckout";
 
 const EdProductCard = ({ product }) => {
   // State management for user selections
@@ -143,14 +143,24 @@ const EdProductCard = ({ product }) => {
 
   // Handle checkout
   const handleCheckout = () => {
-    // Log the checkout data
-    console.log("Proceeding to checkout with:", selectedProductData);
+    console.log("ED checkout with addons:", addons);
+
+    // Create main product data
+    const mainProduct = {
+      id: selectedProductData.productIds,
+      name: selectedProductData.name,
+      price: selectedProductData.price,
+      isSubscription: selectedProductData.frequency === "monthly-supply",
+    };
+
+    console.log("ED main product:", mainProduct);
+    console.log("ED addons:", addons);
 
     // Close the modal
     setCrossSellModalOpen(false);
 
-    // Simply redirect to the checkout URL directly
-    window.location.href = selectedProductData.checkoutUrl;
+    // Use the centralized addToCartAndRedirect function
+    addToCartAndRedirect(mainProduct, addons, "ed");
   };
 
   return (

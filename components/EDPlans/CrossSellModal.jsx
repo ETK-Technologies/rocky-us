@@ -1,9 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import CustomImage from "../utils/CustomImage";
-import { addToCartAndRedirect } from "../../utils/crossSellCheckout";
-import { buildEdCheckoutUrl } from "../../utils/edCartHandler";
 import CustomContainImage from "../utils/CustomContainImage";
 import { FaInfoCircle, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { RiDeleteBin6Line } from "react-icons/ri";
@@ -42,7 +39,6 @@ const CrossSellModal = ({
     seconds: 0,
   });
   const [deliveryDate, setDeliveryDate] = useState("Thursday");
-  const [isProcessing, setIsProcessing] = useState(false);
   const [openDescriptions, setOpenDescriptions] = useState({});
   const [checkoutUrl, setCheckoutUrl] = useState("#");
 
@@ -159,12 +155,6 @@ const CrossSellModal = ({
     return () => clearInterval(intervalId);
   }, [isOpen]);
 
-  useEffect(() => {
-    // Only generate the URL once when the component mounts or when dependencies change
-    const url = generateCheckoutUrl();
-    setCheckoutUrl(url);
-  }, [selectedProduct, addedProducts]);
-
   const addOnProducts = [
     {
       id: "262914",
@@ -274,150 +264,47 @@ const CrossSellModal = ({
   };
 
   // Generate checkout URL for the href
-  const generateCheckoutUrl = () => {
-    try {
-      // Get main product IDs from the productIds property
-      const mainProductIds = selectedProduct.productIds || "";
-      console.log("Main Product IDs:", mainProductIds);
-      if (!mainProductIds) {
-        console.error("Error: No product ID found", selectedProduct);
-        return "#"; // Return hash if no valid product ID
-      }
-
-      // Build cart URL directly - starting with the base URL
-      let baseUrl = "/checkout";
-      let queryParams = "?";
-
-      // Add ed-flow parameter
-      queryParams += "ed-flow=1";
-
-      // Build initial product string with all main product IDs
-      let productsString = mainProductIds;
-
-      // Array to hold all addon IDs (will be added to productsString later)
-      const addonIds = [];
-
-      // Now handle each addon product parameter - separate addon IDs from addon parameters
-      const additionalParams = [];
-
-      if (addedProducts.length > 0) {
-        addedProducts.forEach((addonId) => {
-          const addon = getAddonById(addonId);
-          if (!addon) return;
-
-          // Add addon ID to our list (to be added to productsString)
-          addonIds.push(addonId);
-
-          // CRITICAL: For subscription products like Lidocaine, we need special subscription parameters
-          if (addon.dataType === "subscription") {
-            // Always add the convert_to_sub parameter for subscription products
-            additionalParams.push(
-              `convert_to_sub_${addonId}=${addon.dataVar || "1_month_1"}`
-            );
-
-            // Add the critical add-product-subscription parameter which is needed by WooCommerce
-            additionalParams.push(`add-product-subscription=${addonId}`);
-
-            // Add quantity parameter
-            additionalParams.push(`quantity=1`);
-          }
-        });
-      }
-
-      // Add all addon IDs to the products string
-      if (addonIds.length > 0) {
-        productsString += "%2C" + addonIds.join("%2C"); // URL-encoded comma
-      }
-
-      // Add the complete product string to URL
-      queryParams += `&onboarding-add-to-cart=${productsString}`;
-
-      // Add subscription parameters for each main product ID, but skip for variety pack
-      if (selectedProduct.name !== "Cialis + Viagra") {
-        mainProductIds.split(",").forEach((productId) => {
-          queryParams += `&convert_to_sub_${productId}=1_month_1`;
-        });
-      }
-
-      // Add dosage information if available
-      if (selectedProduct.dosage) {
-        mainProductIds.split(",").forEach((productId) => {
-          queryParams += `&dose_${productId}=${encodeURIComponent(
-            selectedProduct.dosage
-          )}`;
-        });
-      }
-
-      // Add all the additional parameters for addon products
-      if (additionalParams.length > 0) {
-        queryParams += "&" + additionalParams.join("&");
-      }
-
-      // Combine base URL and query parameters
-      const finalUrl = baseUrl + queryParams;
-
-      // Only log in development to avoid console spam
-      if (process.env.NODE_ENV === "development") {
-        // Using a less frequent logging approach
-        console.log("Generated checkout URL:", finalUrl);
-      }
-
-      return finalUrl;
-    } catch (error) {
-      console.error("Error generating checkout URL:", error);
-      return "#"; // Fallback to hash in case of error
-    }
-  };
 
   // Handle the checkout process
   const handleCheckout = async () => {
     try {
-      // If we're using the new approach with isLoading prop, use that instead of local processing state
-      if (typeof isLoading !== "undefined") {
-        // Just call the onCheckout function directly, as isLoading is managed by parent
-        if (onCheckout) {
-          onCheckout(addedProducts.map((addonId) => getAddonById(addonId)));
-        }
-        return;
+      console.log("ED checkout clicked with addons:", addedProducts);
+
+      // Create main product data
+      const mainProduct = {
+        id: selectedProduct.productIds,
+        name: selectedProduct.name,
+        price: selectedProduct.price,
+        isSubscription: selectedProduct.frequency === "monthly-supply",
+      };
+
+      // Create addon data with proper structure
+      const selectedAddons = addedProducts
+        .map((addonId) => {
+          const addon = getAddonById(addonId);
+          if (addon) {
+            return {
+              id: addon.dataAddToCart || addon.id,
+              dataAddToCart: addon.dataAddToCart || addon.id,
+              name: addon.title,
+              price: addon.price,
+              isSubscription: addon.dataType === "subscription",
+            };
+          }
+          return null;
+        })
+        .filter(Boolean);
+      console.log("ED main product:", mainProduct);
+      console.log("ED selected addons:", selectedAddons);
+      // Use the centralized addToCartAndRedirect function
+      if (onCheckout) {
+        onCheckout(selectedAddons);
       }
-
-      // For backward compatibility - use the local processing state for older implementations
-      setIsProcessing(true);
-
-      // Use the same URL generation logic as generateCheckoutUrl()
-      const checkoutUrl = generateCheckoutUrl();
-
-      if (checkoutUrl === "#") {
-        throw new Error("Failed to generate checkout URL");
-      }
-
-      // Log the generated URL for debugging
-      console.log("Redirecting to checkout URL:", checkoutUrl);
-
-      // Navigate to the checkout URL
-      window.location.href = checkoutUrl;
     } catch (error) {
-      console.error("Error during checkout:", error);
-      // Display a more specific error message if possible
-      let errorMessage =
-        "There was an issue processing your checkout. Please try again.";
-
-      if (error.message) {
-        errorMessage = error.message;
-      }
-
-      alert(errorMessage);
-    } finally {
-      // Only set processing to false for older implementations
-      if (typeof isLoading === "undefined") {
-        setIsProcessing(false);
-      }
+      console.error("Error during ED checkout:", error);
+      alert("There was an issue processing your checkout. Please try again.");
     }
   };
-
-  // Use isLoading prop if available, otherwise use local processing state
-  const isCheckoutLoading =
-    typeof isLoading !== "undefined" ? isLoading : isProcessing;
 
   /// Handle slider arrows for mobile scrolling
   const handleSliderArrow = (direction) => {
@@ -555,14 +442,12 @@ const CrossSellModal = ({
         </div>
 
         <div className="flex justify-end pt-2 static checkout-btn-new w-auto bg-transparent p-0">
-          <a
-            href={checkoutUrl}
-            className={`block bg-black border-0 rounded-full text-white p-2 px-10 mt-2 md:mt-4 w-full text-center md:w-fit ${
-              isCheckoutLoading ? "opacity-70 pointer-events-none" : ""
-            }`}
+          <button
+            onClick={handleCheckout}
+            className="block bg-black border-0 rounded-full text-white p-2 px-10 mt-2 md:mt-4 w-full text-center md:w-fit"
           >
-            {isCheckoutLoading ? "Processing..." : "Checkout"}
-          </a>
+            Checkout
+          </button>
         </div>
 
         <div className="text-center md:text-end mt-[12px] md:mt-[24px] text-[14px] font-[400]">
@@ -641,7 +526,7 @@ const CrossSellModal = ({
                 key={addon.id}
                 className="basis-1/2 md:basis-1/4 md:min-w-[220px]"
               >
-                <div className="relative shadow rounded-[12px] overflow-hidden bg-[#FFFFFF] border-solid min-h-[220px]">
+                <div className="relative shadow rounded-[12px] overflow-hidden bg-[#FFFFFF] border-solid min-h-[220px] flex flex-col">
                   <div className={`addon${addon.id}-box-top relative`}>
                     <a
                       data-addon-class={`addon${addon.id}-box-body-alt-text`}
@@ -652,10 +537,9 @@ const CrossSellModal = ({
                       !
                     </a>
                   </div>
-
                   {!openDescriptions[addon.id] ? (
                     <div
-                      className={`addon${addon.id}-box-body relative my-[20px] mx-4`}
+                      className={`addon${addon.id}-box-body relative my-[20px] mx-4 flex flex-col flex-grow`}
                     >
                       <div className="text-center">
                         <img
@@ -665,9 +549,10 @@ const CrossSellModal = ({
                           alt={addon.title}
                         />
                       </div>
-                      <div className="text-center mb-2 border-b border-gray-200 border-solid border-1">
-                        <h4 className="text-center font-semibold text-[14px] leading-[19px]">
-                          {addon.title}
+                      <div className="text-center mb-2 border-b border-gray-200 border-solid border-1 flex-grow">
+                        <h4 className="text-center font-semibold text-[14px] leading-[19px] min-h-[38px] flex items-center justify-center">
+                          {" "}
+                          .{addon.title}
                         </h4>
                         <small className="text-center text-[#212121] font-[400] text-[12px] mb-2 inline-block">
                           {addon.quantity}

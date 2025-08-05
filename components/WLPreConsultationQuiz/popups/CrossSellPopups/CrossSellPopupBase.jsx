@@ -37,56 +37,28 @@ const CrossSellPopup = ({
   // Handle adding an add-on product
   const handleAddProduct = (addon) => {
     if (!addedProducts.includes(addon.id)) {
-      setAddedProducts([...addedProducts, addon.id]);
+      setAddedProducts((prevProducts) => {
+        const newProducts = [...prevProducts, addon.id];
+        console.log(`Added WL addon ${addon.id} (${addon.name}) to selection`);
+        console.log("Updated WL added products:", newProducts);
+        return newProducts;
+      });
     }
-    updateCheckoutUrl();
+    if (WEIGHT_LOSS_PRODUCT_IDS.includes(String(addon.id))) {
+      addRequiredConsultation(addon.id, "wl-flow");
+    } else {
+      console.log(`WL addon ${addon.id} (${addon.name}) already in selection`);
+    }
   };
 
   // Handle removing an addon from cart
   const handleRemoveAddon = (addonId) => {
-    setAddedProducts(addedProducts.filter(id => id !== addonId));
-    updateCheckoutUrl();
-  };
-
-  // Update the checkout URL to include selected add-ons
-  const updateCheckoutUrl = () => {
-    const checkoutButton = document.querySelector(".popup-cart-checkout-url");
-    if (!checkoutButton) return;
-
-    const baseUrl =
-      window.location.origin +
-      "/checkout?wl-flow=1&consultation-required=1&onboarding-add-to-cart=";
-
-    // Get all added products
-    let productIds = [selectedProductId]; // Main product ID
-
-    // Add all selected add-on products
-    addedProducts.forEach((productId) => {
-      const addon = addOnProducts.find((p) => p.id === productId);
-      if (addon && addon.dataAddToCart) {
-        productIds.push(addon.dataAddToCart);
-      } else {
-        productIds.push(productId);
-      }
+    setAddedProducts((prevProducts) => {
+      const newProducts = prevProducts.filter((id) => id !== addonId);
+      console.log(`Removed WL addon ${addonId} from selection`);
+      console.log("Updated WL added products:", newProducts);
+      return newProducts;
     });
-
-    // Get the main product price to send with URL
-    const mainProductPrice = document.querySelector(
-      ".popup-cart-main-item-price"
-    );
-    let priceUrl = baseUrl + productIds.join(",");
-
-    // Add price information for variation selection if available
-    if (mainProductPrice) {
-      const price = mainProductPrice.textContent.trim().replace("$", "");
-      if (price) {
-        // Add price parameter for the main product
-        priceUrl += `&price_${selectedProductId}=${encodeURIComponent(price)}`;
-      }
-    }
-
-    // Update checkout URL
-    checkoutButton.setAttribute("href", priceUrl);
   };
 
   // Handle slider arrows for mobile scrolling
@@ -136,12 +108,6 @@ const CrossSellPopup = ({
       document.body.style.overflow = "";
     }
   }, [isOpen]);
-
-  // Initialize checkout URL when component mounts
-  useEffect(() => {
-    // Call updateCheckoutUrl after component mount to set initial URL
-    setTimeout(updateCheckoutUrl, 100);
-  }, []);
 
   return (
     <div className="new-cross-sell-popup fixed w-screen m-auto bg-[#FFFFFF] z-[9999] top-[0] left-[0] flex flex-col headers-font tracking-tight h-[100vh] overflow-auto">
@@ -252,9 +218,8 @@ const CrossSellPopup = ({
         </div>
 
         <div className="flex justify-end pt-2 popup_cart_url_outer static checkout-btn-new w-auto bg-transparent p-0">
-          <a
+          <button
             className="popup-cart-checkout-url add_to_cart_btn block bg-black border-0 rounded-full text-white p-2 px-10 mt-2 md:mt-4 w-full text-center md:w-fit"
-            href="#"
             onClick={(e) => {
               e.preventDefault();
 
@@ -272,6 +237,7 @@ const CrossSellPopup = ({
                   if (addon) {
                     return {
                       id: addon.dataAddToCart || addon.id,
+                      dataAddToCart: addon.dataAddToCart || addon.id,
                       name: addon.name,
                       price: addon.price,
                       isSubscription: addon.dataType === "subscription",
@@ -280,9 +246,6 @@ const CrossSellPopup = ({
                   return null;
                 })
                 .filter(Boolean);
-
-              console.log("Main product for checkout:", mainProductForCheckout);
-              console.log("Selected addons for checkout:", selectedAddons);
 
               // Use the addToCartAndRedirect function which handles cart clearing for WL flow
               addToCartAndRedirect(mainProductForCheckout, selectedAddons, "wl")
@@ -300,7 +263,7 @@ const CrossSellPopup = ({
             }}
           >
             Checkout
-          </a>
+          </button>
         </div>
 
         <div
@@ -349,7 +312,7 @@ const CrossSellPopup = ({
                   key={addon.id}
                   className="basis-1/2 md:basis-1/4 md:min-w-[220px]"
                 >
-                  <div className="relative shadow rounded-[12px] overflow-hidden bg-[#FFFFFF] border-solid min-h-[220px]">
+                  <div className="relative shadow rounded-[12px] overflow-hidden bg-[#FFFFFF] border-solid min-h-[220px] flex flex-col">
                     <div className={`addon${addon.id}-box-top relative`}>
                       <a
                         data-addon-class={`addon${addon.id}-box-body-alt-text`}
@@ -360,9 +323,10 @@ const CrossSellPopup = ({
                         !
                       </a>
                     </div>
-
                     {!openDescriptions[addon.id] ? (
-                      <div className={`addon${addon.id}-box-body relative my-[20px] mx-4`}>
+                      <div
+                        className={`addon${addon.id}-box-body relative my-[20px] mx-4 flex flex-col flex-grow`}
+                      >
                         <div className="text-center">
                           <img
                             loading="lazy"
@@ -371,8 +335,8 @@ const CrossSellPopup = ({
                             alt={addon.name}
                           />
                         </div>
-                        <div className="text-center mb-2 border-b border-gray-200 border-solid border-1">
-                          <h4 className="text-center font-semibold text-[14px] leading-[19px]">
+                        <div className="text-center mb-2 border-b border-gray-200 border-solid border-1 flex-grow">
+                          <h4 className="text-center font-semibold text-[14px] leading-[19px] min-h-[38px] flex items-center justify-center">
                             {addon.name}
                           </h4>
                           <small className="text-center text-[#212121] font-[400] text-[12px] mb-2 inline-block">
@@ -384,7 +348,11 @@ const CrossSellPopup = ({
                         </p>
                         <div className="flex items-center gap-2 w-full">
                           <button
-                            onClick={() => handleAddProduct(addon)}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleAddProduct(addon);
+                            }}
                             className={`data-addon-id-${
                               addon.id
                             } add-to-cart-addon-product cursor-pointer border ${

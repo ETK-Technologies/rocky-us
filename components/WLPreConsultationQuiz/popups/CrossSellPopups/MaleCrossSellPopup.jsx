@@ -10,9 +10,12 @@ const maleAddOnProducts = [
     imageUrl:
       "https://mycdn.myrocky.ca/wp-content/uploads/20241211132726/Copy-of-RockyHealth-15-scaled.webp",
     bulletPoints: ["One size fits all", "Adjustable strap", "Cotton twill"],
+    dataType: "simple",
+    dataVar: "",
+    dataAddToCart: "353755",
   },
   {
-    id: "90995", // Essential T-Boost - CORRECT ID
+    id: "262914", // Essential T-Boost - CORRECT ID
     name: "Essential T-Boost",
     price: "35.00",
     imageUrl:
@@ -23,6 +26,9 @@ const maleAddOnProducts = [
       "Promotes a sense of well-being",
     ],
     showInfoIcon: true,
+    dataType: "simple",
+    dataVar: "",
+    dataAddToCart: "262914",
     faqContent: `
       <p class="mb-4"><strong>Q: What is Essential T-Boost?</strong><br>
         A: Essential T-Boost is a supplement designed to support healthy testosterone levels in men.</p>

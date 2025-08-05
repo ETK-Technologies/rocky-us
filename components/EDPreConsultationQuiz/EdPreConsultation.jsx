@@ -15,6 +15,7 @@ import {
   handleEdProductCheckout,
   buildEdCheckoutUrl,
 } from "@/utils/edCartHandler";
+import { addToCartAndRedirect } from "@/utils/crossSellCheckout";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -91,11 +92,12 @@ const EDPreConsultationQuiz = () => {
     }));
   };
 
-  const handleCheckout = async () => {
+  const handleCheckout = async (addons = []) => {
     setIsCheckoutLoading(true);
     setShowCrossSellModal(false);
 
     try {
+      console.log("ED PreConsultation checkout with addons:", addons);
       // Instead of using hardcoded product IDs, use the actual variationId from selectedProductOptions
       let productId = "";
 
@@ -112,39 +114,18 @@ const EDPreConsultationQuiz = () => {
         setIsCheckoutLoading(false);
         return;
       }
-
-      // Prepare product options for checkout
-      const productOptions = {
-        ...selectedProductOptions,
-        productId, // Use the correct productId from variationId
+      const mainProduct = {
+        id: productId,
         name: selectedProduct?.name,
+        price: selectedProductOptions?.price || 0,
+        isSubscription: selectedProductOptions?.frequency === "monthly-supply",
       };
-
-      console.log(
-        "Checkout with product options:",
-        productOptions,
-        "dosage:",
-        selectedDose
-      );
-
-      // Process checkout with the utility function
-      const checkoutResult = await handleEdProductCheckout(
-        productOptions,
-        selectedDose
-      );
-
-      if (checkoutResult.success) {
-        // Redirect to the checkout or login page
-        window.location.href = checkoutResult.redirectUrl;
-      } else {
-        setError(
-          checkoutResult.error ||
-            "Failed to process checkout. Please try again."
-        );
-        setIsCheckoutLoading(false);
-      }
+      console.log("ED PreConsultation main product:", mainProduct);
+      console.log("ED PreConsultation addons:", addons);
+      // Use the centralized addToCartAndRedirect function
+      addToCartAndRedirect(mainProduct, addons, "ed");
     } catch (error) {
-      console.error("Error during checkout:", error);
+      console.error("Error during ED PreConsultation checkout:", error);
       setError("An unexpected error occurred. Please try again.");
       setIsCheckoutLoading(false);
     }
