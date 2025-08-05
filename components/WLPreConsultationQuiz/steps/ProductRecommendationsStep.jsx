@@ -21,9 +21,7 @@ const ProductRecommendationsStep = ({
   }, []);
 
   const handleShowMoreOptions = () => {
-    if (showMoreOptions) {
-      setSelectedProduct(products.ORAL_SEMAGLUTIDE);
-    }
+
     setShowMoreOptions(!showMoreOptions);
   };
 
@@ -99,11 +97,10 @@ const ProductRecommendationsStep = ({
 
       <div className="sticky bottom-0 py-4 z-30">
         <button
-          className={`w-full py-3 rounded-full font-medium ${
-            isContinueEnabled
-              ? "bg-black text-white"
-              : "bg-gray-300 text-gray-500 cursor-not-allowed"
-          }`}
+          className={`w-full py-3 rounded-full font-medium ${isContinueEnabled
+            ? "bg-black text-white"
+            : "bg-gray-300 text-gray-500 cursor-not-allowed"
+            }`}
           onClick={isContinueEnabled ? onContinue : null}
           disabled={!isContinueEnabled}
           title={
