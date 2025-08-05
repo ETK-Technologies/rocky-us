@@ -112,44 +112,44 @@ const hairProductCard = [
   },
 ];
 
-const smokingProductCard = [
-  {
-    LeadingProductCard: {
-      title: "Smoking Cessation",
-      subtitle: "A New Way to Quit",
-      link: "/zonnic",
-      image: "bg-[url('/zonic/zonnic-cover.png')]",
-    },
-    ProductCard: [
-      {
-        title: "Zonnic",
-        description: "Nicotine pouches",
-        link: "/zonnic",
-        image: "/zonic/zonnic-main.png",
-      },
-    ],
-  },
-];
+// const smokingProductCard = [
+//   {
+//     LeadingProductCard: {
+//       title: "Smoking Cessation",
+//       subtitle: "A New Way to Quit",
+//       link: "/zonnic",
+//       image: "bg-[url('/zonic/zonnic-cover.png')]",
+//     },
+//     ProductCard: [
+//       {
+//         title: "Zonnic",
+//         description: "Nicotine pouches",
+//         link: "/zonnic",
+//         image: "/zonic/zonnic-main.png",
+//       },
+//     ],
+//   },
+// ];
 
-const recoveryProductCard = [
-  {
-    LeadingProductCard: {
-      title: "Recovery",
-      subtitle: "A Smarter Way to Recover",
-      link: "/product/dhm-blend",
-      image:
-        "bg-[url('https://mycdn.myrocky.ca/wp-content/uploads/20250306132419/DHM.jpg')] ",
-    },
-    ProductCard: [
-      {
-        title: "DHM Blend",
-        description: "Herbal Supplement",
-        link: "/product/dhm-blend",
-        image: "https://myrocky.b-cdn.net/WP%20Images/dhm/dhm-prod.webp",
-      },
-    ],
-  },
-];
+// const recoveryProductCard = [
+//   {
+//     LeadingProductCard: {
+//       title: "Recovery",
+//       subtitle: "A Smarter Way to Recover",
+//       link: "/product/dhm-blend",
+//       image:
+//         "bg-[url('https://mycdn.myrocky.ca/wp-content/uploads/20250306132419/DHM.jpg')] ",
+//     },
+//     ProductCard: [
+//       {
+//         title: "DHM Blend",
+//         description: "Herbal Supplement",
+//         link: "/product/dhm-blend",
+//         image: "https://myrocky.b-cdn.net/WP%20Images/dhm/dhm-prod.webp",
+//       },
+//     ],
+//   },
+// ];
 
 const HomeProducts = () => {
   return (
@@ -183,7 +183,7 @@ const HomeProducts = () => {
           ))}
         </div>
       </ProductSection>
-      <ProductSection>
+      {/* <ProductSection>
         <div className="flex flex-nowrap gap-4">
           {smokingProductCard.map((card, index) => (
             <ProductCards key={index} cards={card} />
@@ -196,7 +196,7 @@ const HomeProducts = () => {
             <ProductCards key={index} cards={card} />
           ))}
         </div>
-      </ProductSection>
+      </ProductSection> */}
     </>
   );
 };

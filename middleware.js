@@ -12,6 +12,13 @@ export function middleware(req) {
     return NextResponse.next();
   }
 
+  // Check if the path is blocked (hashed in navbar)
+  if (isBlockedRoute(pathname)) {
+    const blockedUrl = new URL("/blocked", req.url);
+    blockedUrl.searchParams.set("path", pathname);
+    return NextResponse.redirect(blockedUrl);
+  }
+
   const authToken = req.cookies.get("authToken")?.value;
   const isLoginPage = pathname === "/login-register";
   const isPatientPortalLogout =
@@ -126,6 +133,23 @@ function shouldProtectRoute(pathname) {
   );
 }
 
+// Helper function to determine which routes are blocked (hashed in navbar)
+function isBlockedRoute(pathname) {
+  // List of routes that are hashed/blocked in the navbar
+  const blockedRoutes = [
+    "/mental-health",
+    "/product/dhm-blend",
+    "/zonnic",
+    "/product/zonnic",
+    // Add other routes that are hashed in navbar
+  ];
+
+  // Check if the current path should be blocked
+  return blockedRoutes.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
+  );
+}
+
 // Create a simpler, statically analyzable config export
 export const config = {
   matcher: [
@@ -133,6 +157,10 @@ export const config = {
     "/cart/:path*",
     "/login-register/:path*",
     "/profile/:path*",
+    "/mental-health/:path*",
+    "/product/dhm-blend/:path*",
+    "/zonnic/:path*",
+    "/product/zonnic/:path*",
     "/((?!api|_next/static|_next/image|favicon.ico).*)",
   ],
 };

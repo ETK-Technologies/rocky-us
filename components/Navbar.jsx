@@ -180,58 +180,58 @@ const menuItems = [
     ],
   },
   // MENTAL HEALTH
-  {
-    text: "Mental Health",
-    link: "/mental-health",
-    withoutMegaMenu: true,
-  },
+  // {
+  //   text: "Mental Health",
+  //   link: "/mental-health",
+  //   withoutMegaMenu: true,
+  // },
   // RECOVERY
-  {
-    text: "Recovery",
-    link: "/product/dhm-blend",
-    mainText: "See all Recovery",
-    mainLink: "/product/dhm-blend",
-    getStartedText: "A Smarter Way to Recover",
-    getStartedLink: "/product/dhm-blend",
-    getStartedImage:
-      "https://myrocky.b-cdn.net/WP%20Images/dhm/DHMBlendPP.png?v=1",
-    sections: [
-      {
-        title: "Products",
-        name: "Products",
+  // {
+  //   text: "Recovery",
+  //   link: "/product/dhm-blend",
+  //   mainText: "See all Recovery",
+  //   mainLink: "/product/dhm-blend",
+  //   getStartedText: "A Smarter Way to Recover",
+  //   getStartedLink: "/product/dhm-blend",
+  //   getStartedImage:
+  //     "https://myrocky.b-cdn.net/WP%20Images/dhm/DHMBlendPP.png?v=1",
+  //   sections: [
+  //     {
+  //       title: "Products",
+  //       name: "Products",
 
-        products: [
-          {
-            name: "DHM Blend®",
-            link: "/product/dhm-blend/",
-          },
-        ],
-      },
-    ],
-  },
+  //       products: [
+  //         {
+  //           name: "DHM Blend®",
+  //           link: "/product/dhm-blend/",
+  //         },
+  //       ],
+  //     },
+  //   ],
+  // },
   // SMOKING CESSATION
-  {
-    text: "Smoking Cessation",
-    link: "/zonnic",
-    mainText: "See all Smoking Cessation",
-    mainLink: "/zonnic",
-    getStartedText: "A Smarter Way to Quit",
-    getStartedLink: "/product/zonnic",
-    getStartedImage: "/zonic/zonnic-life.webp",
-    sections: [
-      {
-        title: "Products",
-        name: "Products",
+  // {
+  //   text: "Smoking Cessation",
+  //   link: "/zonnic",
+  //   mainText: "See all Smoking Cessation",
+  //   mainLink: "/zonnic",
+  //   getStartedText: "A Smarter Way to Quit",
+  //   getStartedLink: "/product/zonnic",
+  //   getStartedImage: "/zonic/zonnic-life.webp",
+  //   sections: [
+  //     {
+  //       title: "Products",
+  //       name: "Products",
 
-        products: [
-          {
-            name: "Zonnic®",
-            link: "/product/zonnic/",
-          },
-        ],
-      },
-    ],
-  },
+  //       products: [
+  //         {
+  //           name: "Zonnic®",
+  //           link: "/product/zonnic/",
+  //         },
+  //       ],
+  //     },
+  //   ],
+  // },
   // MORE
   // {
   //   text: "More",

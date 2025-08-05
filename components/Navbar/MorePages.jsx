@@ -42,23 +42,38 @@ const MorePages = ({ setIsOpen }) => {
         <Link
           onClick={handleLinkClick}
           href="/reviews"
-          className="block py-1.5 px-2 text-[14px] font-[400] text-[#212121]"
+          className="block py-1.5 px-2 text-[14px] font-[400] text-[#212121] hover:bg-gray-50"
         >
           Reviews
         </Link>
         <Link
           onClick={handleLinkClick}
           href="/blog"
-          className="block py-1.5 px-2 text-[14px] font-[400] text-[#212121]"
+          className="block py-1.5 px-2 text-[14px] font-[400] text-[#212121] hover:bg-gray-50"
         >
           Blogs
         </Link>
-        <Link
+        {/* <Link
           onClick={handleLinkClick}
           href="/mental-health"
-          className="block py-1.5 px-2 text-[14px] font-[400] text-[#212121]"
+          className="block py-1.5 px-2 text-[14px] font-[400] text-[#212121] hover:bg-gray-50"
         >
           Mental Health
+        </Link> */}
+        {/* Example: Add more links here */}
+        <Link
+          onClick={handleLinkClick}
+          href="/about-us"
+          className="block py-1.5 px-2 text-[14px] font-[400] text-[#212121] hover:bg-gray-50"
+        >
+          About Us
+        </Link>
+        <Link
+          onClick={handleLinkClick}
+          href="/contact-us"
+          className="block py-1.5 px-2 text-[14px] font-[400] text-[#212121] hover:bg-gray-50"
+        >
+          Contact Us
         </Link>
       </div>
     </div>
