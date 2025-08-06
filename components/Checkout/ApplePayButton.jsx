@@ -20,7 +20,7 @@ const ApplePayButton = ({
 
   // Check if Apple Pay is available
   useEffect(() => {
-    const checkAvailability = () => {
+    const checkAvailability = async () => {
       console.log("Checking Apple Pay availability...");
 
       try {

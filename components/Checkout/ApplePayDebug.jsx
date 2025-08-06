@@ -29,7 +29,8 @@ const ApplePayDebug = () => {
             : false,
         canMakePaymentsWithActiveCard:
           typeof window !== "undefined" && window.ApplePaySession
-            ? ApplePaySession.canMakePaymentsWithActiveCard()
+            ? typeof ApplePaySession.canMakePaymentsWithActiveCard ===
+              "function"
             : false,
         paysafeDefined: typeof window !== "undefined" && !!window.paysafe,
         environment: "TEST", // Default to test environment
