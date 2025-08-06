@@ -105,14 +105,18 @@ const ApplePayButton = ({
 
       const API_KEY = apiKeyData.apiKey;
       const ACCOUNT_ID = apiKeyData.accountId || "0000000000";
+      const APPLE_PAY_ACCOUNT_ID = apiKeyData.applePayAccountId || ACCOUNT_ID;
+
+      console.log("Using Apple Pay Account ID:", APPLE_PAY_ACCOUNT_ID);
+      console.log("Default Account ID:", ACCOUNT_ID);
+      console.log("Environment:", APPLE_PAY_CONFIG.ENVIRONMENT);
 
       const options = {
         currencyCode: currency,
         environment: APPLE_PAY_CONFIG.ENVIRONMENT,
         accounts: {
           default: ACCOUNT_ID,
-          // Provide an apple pay merchant account if you have more than one configured
-          // applePay: process.env.NEXT_PUBLIC_PAYSAFE_APPLE_PAY_ACCOUNT_ID
+          applePay: APPLE_PAY_ACCOUNT_ID,
         },
         fields: {
           applePay: {
@@ -122,24 +126,72 @@ const ApplePayButton = ({
         },
       };
 
+      console.log("Paysafe options:", options);
+
       // Initialize Paysafe fields
-      const instance = await window.paysafe.fields.setup(API_KEY, options);
-      setApplePayInstance(instance);
+      try {
+        const instance = await window.paysafe.fields.setup(API_KEY, options);
+        setApplePayInstance(instance);
 
-      // Show Apple Pay button
-      const paymentMethods = await instance.show();
+        // Show Apple Pay button
+        const paymentMethods = await instance.show();
 
-      if (paymentMethods.applePay && !paymentMethods.applePay.error) {
-        // Add click event listener
-        if (applePayRef.current) {
-          applePayRef.current.addEventListener("click", handleApplePayClick);
+        if (paymentMethods.applePay && !paymentMethods.applePay.error) {
+          // Add click event listener
+          if (applePayRef.current) {
+            applePayRef.current.addEventListener("click", handleApplePayClick);
+          }
+          console.log("Apple Pay initialized successfully");
+        } else {
+          console.error(
+            "Apple Pay not available:",
+            paymentMethods.applePay?.error
+          );
+          setIsApplePayAvailable(false);
         }
-      } else {
-        console.error(
-          "Apple Pay not available:",
-          paymentMethods.applePay?.error
-        );
-        setIsApplePayAvailable(false);
+      } catch (error) {
+        console.error("Error initializing Paysafe fields:", error);
+
+        // Try with just the default account ID
+        if (error.code === "9061" && APPLE_PAY_ACCOUNT_ID !== ACCOUNT_ID) {
+          console.log("Trying with default account ID only...");
+          const fallbackOptions = {
+            ...options,
+            accounts: {
+              default: ACCOUNT_ID,
+            },
+          };
+
+          try {
+            const instance = await window.paysafe.fields.setup(
+              API_KEY,
+              fallbackOptions
+            );
+            setApplePayInstance(instance);
+            const paymentMethods = await instance.show();
+
+            if (paymentMethods.applePay && !paymentMethods.applePay.error) {
+              if (applePayRef.current) {
+                applePayRef.current.addEventListener(
+                  "click",
+                  handleApplePayClick
+                );
+              }
+              console.log("Apple Pay initialized with fallback account ID");
+            } else {
+              console.error("Apple Pay still not available with fallback");
+              setIsApplePayAvailable(false);
+            }
+          } catch (fallbackError) {
+            console.error(
+              "Fallback initialization also failed:",
+              fallbackError
+            );
+            setIsApplePayAvailable(false);
+          }
+        } else {
+          setIsApplePayAvailable(false);
+        }
       }
     } catch (error) {
       console.error("Error initializing Apple Pay:", error);
