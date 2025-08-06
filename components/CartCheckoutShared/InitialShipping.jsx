@@ -5,9 +5,9 @@ import { toast } from "react-toastify";
 
 const InitialShipping = ({ currencySymbol = "$", cartItems, setCartItems }) => {
   const [removingCode, setRemovingCode] = useState(false);
-  const subTotalPrice = cartItems.totals.total_items / 100;
-  const totalPrice = cartItems.totals.total_price / 100;
-  const totalTax = cartItems.totals.total_tax / 100;
+  const subTotalPrice = cartItems?.totals?.total_items / 100 || 0;
+  const totalPrice = cartItems?.totals?.total_price / 100 || 0;
+  const totalTax = cartItems?.totals?.total_tax / 100 || 0;
 
   const handleCodeRemove = async (code) => {
     setRemovingCode(true);

@@ -555,12 +555,11 @@ const CheckoutPageContent = () => {
         useSavedCard: !!selectedCard,
 
         // Add total amount for saved card payments
-        totalAmount:
-          cartItems.totals && cartItems.totals.total_price
-            ? parseFloat(cartItems.totals.total_price) / 100
-            : cartItems.totals && cartItems.totals.total
-            ? parseFloat(cartItems.totals.total.replace(/[^0-9.]/g, ""))
-            : 0,
+        totalAmount: cartItems?.totals?.total_price
+          ? parseFloat(cartItems.totals.total_price) / 100
+          : cartItems?.totals?.total
+          ? parseFloat(cartItems.totals.total.replace(/[^0-9.]/g, ""))
+          : 0,
 
         // ED Flow parameter
         isEdFlow: isEdFlow,
@@ -571,7 +570,7 @@ const CheckoutPageContent = () => {
         ...dataToSend,
         cardNumber: dataToSend.cardNumber ? "[REDACTED]" : "",
         cardCVD: dataToSend.cardCVD ? "[REDACTED]" : "",
-        cartTotals: cartItems.totals,
+        cartTotals: cartItems?.totals,
         selectedCardId: selectedCard,
         totalAmount: dataToSend.totalAmount,
       });
@@ -626,9 +625,29 @@ const CheckoutPageContent = () => {
             "Order created successfully with 100% coupon discount!"
           );
 
-          // Empty the cart
+          // Empty the cart after successful payment
           try {
-            await fetchCartItems();
+            const emptyCartResponse = await fetch("/api/cart/empty", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            });
+
+            if (emptyCartResponse.ok) {
+              console.log("Cart emptied successfully after free order");
+              // Update local cart state to reflect empty cart
+              setCartItems({
+                items: [],
+                total_items: 0,
+                total_price: "0.00",
+                needs_shipping: false,
+                coupons: [],
+                shipping_rates: [],
+              });
+            } else {
+              console.error("Failed to empty cart after free order");
+            }
           } catch (cartError) {
             console.error("Error emptying cart after free order:", cartError);
             // Don't fail the redirect if cart emptying fails
@@ -648,7 +667,7 @@ const CheckoutPageContent = () => {
       }
 
       // For saved cards, we'll use a two-step approach but check for duplicate payments
-      if (selectedCard && cartItems.totals) {
+      if (selectedCard && cartItems?.totals) {
         try {
           console.log(
             `Processing checkout with saved card: ${selectedCard.id}`
@@ -816,6 +835,15 @@ const CheckoutPageContent = () => {
 
             if (emptyCartResponse.ok) {
               console.log("Cart emptied successfully after saved card payment");
+              // Update local cart state to reflect empty cart
+              setCartItems({
+                items: [],
+                total_items: 0,
+                total_price: "0.00",
+                needs_shipping: false,
+                coupons: [],
+                shipping_rates: [],
+              });
             } else {
               console.error("Failed to empty cart after saved card payment");
             }
@@ -949,6 +977,15 @@ const CheckoutPageContent = () => {
 
             if (emptyCartResponse.ok) {
               console.log("Cart emptied successfully after payment");
+              // Update local cart state to reflect empty cart
+              setCartItems({
+                items: [],
+                total_items: 0,
+                total_price: "0.00",
+                needs_shipping: false,
+                coupons: [],
+                shipping_rates: [],
+              });
             } else {
               console.error("Failed to empty cart after payment");
             }
@@ -1005,6 +1042,15 @@ const CheckoutPageContent = () => {
               console.log(
                 "Cart emptied successfully after WooCommerce checkout"
               );
+              // Update local cart state to reflect empty cart
+              setCartItems({
+                items: [],
+                total_items: 0,
+                total_price: "0.00",
+                needs_shipping: false,
+                coupons: [],
+                shipping_rates: [],
+              });
             } else {
               console.error("Failed to empty cart after WooCommerce checkout");
             }
