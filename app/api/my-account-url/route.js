@@ -20,7 +20,7 @@ export async function GET(req) {
     console.log("API: User is logged in with ID:", userId);
 
     // CRM and Portal URLs from environment variables
-    const crmHostUrl = process.env.CRM_HOST;
+    const crmHostUrl = process.env.CRM_HOST  + "/api";
     const portalHostUrl = process.env.PORTAL_HOST;
     const apiUsername = process.env.CRM_API_USERNAME;
     const apiPasswordEncoded = process.env.CRM_API_PASSWORD;

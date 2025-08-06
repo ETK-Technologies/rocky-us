@@ -1,8 +1,9 @@
 "use client";
+import { Suspense } from "react";
 import BlockedPage from "@/components/BlockedPage";
 import { useSearchParams } from "next/navigation";
 
-const BlockedPageWrapper = () => {
+const BlockedPageContent = () => {
   // Get the blocked path from URL parameters
   const searchParams = useSearchParams();
   const blockedPath = searchParams.get("path") || "unknown";
@@ -10,4 +11,12 @@ const BlockedPageWrapper = () => {
   return <BlockedPage blockedPath={blockedPath} />;
 };
 
-export default BlockedPageWrapper; 
+const BlockedPageWrapper = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <BlockedPageContent />
+    </Suspense>
+  );
+};
+
+export default BlockedPageWrapper;

@@ -3,7 +3,7 @@ import CouponApply from "../CartCheckoutShared/CouponApply";
 import InitialShipping from "../CartCheckoutShared/InitialShipping";
 
 const CartCalculations = ({ cartItems, setCartItems }) => {
-  const currencySymbol = cartItems.totals.currency_symbol || "$";
+  const currencySymbol = cartItems?.totals?.currency_symbol || "$";
 
   // Check if subscriptions data exists before rendering RecurringShipping
   const hasSubscriptions =

@@ -6,9 +6,8 @@ import axios from "axios";
 // Removed AWS import and S3 initialization and importing the utility function instead
 import { uploadToS3 } from "@/utils/s3";
 
-
 const crmApi = axios.create({
-  baseURL: process.env.CRM_HOST,
+  baseURL: process.env.CRM_HOST + "/api",
   httpsAgent: new https.Agent({
     rejectUnauthorized: false,
   }),
@@ -209,7 +208,6 @@ async function handleFileUpload(req, entrykey) {
     const id = formData.get("id") || "";
     const token = formData.get("token") || "";
     const form_id = formData.get("form_id") || "2";
-
 
     const frontHairlineFile = formData.get("photo_upload_1");
     if (frontHairlineFile && frontHairlineFile instanceof Blob) {
