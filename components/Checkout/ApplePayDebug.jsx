@@ -11,6 +11,9 @@ const ApplePayDebug = () => {
     environment: "TEST", // Default to test environment
     accountId: "checking...",
     apiKeyStatus: "not checked",
+    userAgent: "checking...",
+    isSafari: false,
+    isIOS: false,
   });
 
   useEffect(() => {
@@ -32,6 +35,19 @@ const ApplePayDebug = () => {
         environment: "TEST", // Default to test environment
         accountId: "checking...",
         apiKeyStatus: "checking...",
+        userAgent:
+          typeof window !== "undefined"
+            ? window.navigator.userAgent
+            : "server-side",
+        isSafari:
+          typeof window !== "undefined"
+            ? /Safari/.test(window.navigator.userAgent) &&
+              !/Chrome/.test(window.navigator.userAgent)
+            : false,
+        isIOS:
+          typeof window !== "undefined"
+            ? /iPad|iPhone|iPod/.test(window.navigator.userAgent)
+            : false,
       };
 
       setDebugInfo(basicInfo);
@@ -92,6 +108,11 @@ const ApplePayDebug = () => {
         <div>Environment: {debugInfo.environment}</div>
         <div>Account ID: {debugInfo.accountId}</div>
         <div>API Key Status: {debugInfo.apiKeyStatus}</div>
+        <div>
+          Browser:{" "}
+          {debugInfo.isSafari ? "Safari" : debugInfo.isIOS ? "iOS" : "Other"}
+        </div>
+        <div>User Agent: {debugInfo.userAgent.substring(0, 50)}...</div>
       </div>
     </div>
   );

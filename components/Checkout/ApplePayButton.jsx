@@ -23,14 +23,19 @@ const ApplePayButton = ({
     const checkAvailability = () => {
       console.log("Checking Apple Pay availability...");
 
-      const isAvailable = checkApplePayAvailability();
-      console.log("Apple Pay available:", isAvailable);
+      try {
+        const isAvailable = checkApplePayAvailability();
+        console.log("Apple Pay available:", isAvailable);
 
-      if (isAvailable) {
-        setIsApplePayAvailable(true);
-        initializeApplePay();
-      } else {
-        console.log("Apple Pay not available on this device/browser");
+        if (isAvailable === true) {
+          setIsApplePayAvailable(true);
+          initializeApplePay();
+        } else {
+          console.log("Apple Pay not available on this device/browser");
+          setIsApplePayAvailable(false);
+        }
+      } catch (error) {
+        console.error("Error checking Apple Pay availability:", error);
         setIsApplePayAvailable(false);
       }
     };
