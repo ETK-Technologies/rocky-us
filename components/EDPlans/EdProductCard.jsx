@@ -142,7 +142,7 @@ const EdProductCard = ({ product }) => {
   };
 
   // Handle checkout
-  const handleCheckout = () => {
+  const handleCheckout = (addons = []) => {
     console.log("ED checkout with addons:", addons);
 
     // Create main product data

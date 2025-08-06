@@ -170,50 +170,50 @@ const CrossSellModal = ({
       dataVar: "",
       dataAddToCart: "262914",
     },
-    {
-      id: "276",
-      title: "Lidocaine Cream",
-      price: 35,
-      quantity: "(30 applications-30g)",
-      frequency: "One time purchase",
-      image:
-        "https://myrocky.b-cdn.net/WP%20Images/Sexual%20Health/webp-images/RockyHealth-HQ-113-scaled-300x300.webp",
-      description:
-        "- Last 6-8x longer in bed\n- Works in 5-10 mins\n- 20-30 uses",
-      dataType: "subscription",
-      dataVar: "1_month_1",
-      dataAddToCart:
-        "276&convert_to_sub_276=1_month_1&quantity=1&add-product-subscription=276",
-    },
-    {
-      id: "52162",
-      title: "Lidocaine Spray",
-      price: 35,
-      quantity: "(30 applications-30g)",
-      frequency: "One time purchase",
-      image:
-        "https://myrocky.b-cdn.net/WP%20Images/Sexual%20Health/webp-images/RockyHealth-May2022-HQ-137-600x900.webp",
-      description:
-        "- Last 6-8x longer in bed\n- Works in 2-5 mins\n- Easy spray on\n- 20-30 uses",
-      dataType: "subscription",
-      dataVar: "1_month_1",
-      dataAddToCart:
-        "52162&convert_to_sub_52162=1_month_1&quantity=1&add-product-subscription=52162",
-    },
-    {
-      id: "13534",
-      title: "Durex Condoms",
-      price: 10,
-      quantity: "(Pack of 10)",
-      frequency: "One time purchase",
-      image:
-        "https://myrocky.b-cdn.net/WP%20Images/Sexual%20Health/RockyHealth-August-2022-HQ-14-300x300.jpeg",
-      description:
-        "- Fitted shape for exceptional sensitivity and feel\n- 20% thinner than standard condoms",
-      dataType: "simple",
-      dataVar: "",
-      dataAddToCart: "13534",
-    },
+    // {
+    //   id: "276",
+    //   title: "Lidocaine Cream",
+    //   price: 35,
+    //   quantity: "(30 applications-30g)",
+    //   frequency: "One time purchase",
+    //   image:
+    //     "https://myrocky.b-cdn.net/WP%20Images/Sexual%20Health/webp-images/RockyHealth-HQ-113-scaled-300x300.webp",
+    //   description:
+    //     "- Last 6-8x longer in bed\n- Works in 5-10 mins\n- 20-30 uses",
+    //   dataType: "subscription",
+    //   dataVar: "1_month_1",
+    //   dataAddToCart:
+    //     "276&convert_to_sub_276=1_month_1&quantity=1&add-product-subscription=276",
+    // },
+    // {
+    //   id: "52162",
+    //   title: "Lidocaine Spray",
+    //   price: 35,
+    //   quantity: "(30 applications-30g)",
+    //   frequency: "One time purchase",
+    //   image:
+    //     "https://myrocky.b-cdn.net/WP%20Images/Sexual%20Health/webp-images/RockyHealth-May2022-HQ-137-600x900.webp",
+    //   description:
+    //     "- Last 6-8x longer in bed\n- Works in 2-5 mins\n- Easy spray on\n- 20-30 uses",
+    //   dataType: "subscription",
+    //   dataVar: "1_month_1",
+    //   dataAddToCart:
+    //     "52162&convert_to_sub_52162=1_month_1&quantity=1&add-product-subscription=52162",
+    // },
+    // {
+    //   id: "13534",
+    //   title: "Durex Condoms",
+    //   price: 10,
+    //   quantity: "(Pack of 10)",
+    //   frequency: "One time purchase",
+    //   image:
+    //     "https://myrocky.b-cdn.net/WP%20Images/Sexual%20Health/RockyHealth-August-2022-HQ-14-300x300.jpeg",
+    //   description:
+    //     "- Fitted shape for exceptional sensitivity and feel\n- 20% thinner than standard condoms",
+    //   dataType: "simple",
+    //   dataVar: "",
+    //   dataAddToCart: "13534",
+    // },
     {
       id: "353755",
       title: "Rocky Dad Hat",
