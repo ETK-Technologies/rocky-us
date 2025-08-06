@@ -7,6 +7,7 @@ import {
 } from "@/lib/api/savedCardPayment";
 import { toast } from "react-toastify";
 import ApplePayButton from "./ApplePayButton";
+import ApplePayDebug from "./ApplePayDebug";
 
 const Payment = ({
   setFormData,
@@ -310,6 +311,9 @@ const Payment = ({
             />
           </div>
         </h1>
+
+        {/* Apple Pay Debug (development only) */}
+        <ApplePayDebug />
 
         {/* Apple Pay Button */}
         <div className="mb-4">

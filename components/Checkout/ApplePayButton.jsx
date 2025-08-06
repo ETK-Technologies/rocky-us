@@ -21,24 +21,68 @@ const ApplePayButton = ({
   // Check if Apple Pay is available
   useEffect(() => {
     const checkAvailability = () => {
-      if (checkApplePayAvailability()) {
+      console.log("Checking Apple Pay availability...");
+
+      const isAvailable = checkApplePayAvailability();
+      console.log("Apple Pay available:", isAvailable);
+
+      if (isAvailable) {
         setIsApplePayAvailable(true);
         initializeApplePay();
       } else {
+        console.log("Apple Pay not available on this device/browser");
         setIsApplePayAvailable(false);
       }
     };
 
-    checkAvailability();
+    // Delay the check to ensure everything is loaded
+    const timer = setTimeout(checkAvailability, 1000);
+
+    return () => clearTimeout(timer);
   }, []);
 
   // Initialize Apple Pay with Paysafe.js
   const initializeApplePay = async () => {
     try {
-      // Check if Paysafe.js is loaded
+      // Wait for Paysafe.js to load if not already loaded
+      let attempts = 0;
+      const maxAttempts = 10;
+
+      while (typeof window.paysafe === "undefined" && attempts < maxAttempts) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        attempts++;
+      }
+
       if (typeof window.paysafe === "undefined") {
-        console.error("Paysafe.js SDK not loaded");
-        return;
+        console.error("Paysafe.js SDK not loaded after waiting");
+
+        // Try to load the SDK dynamically as fallback
+        try {
+          const script = document.createElement("script");
+          script.src = "https://hosted.paysafe.com/js/v1/latest/paysafe.min.js";
+          script.async = true;
+
+          await new Promise((resolve, reject) => {
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+          });
+
+          // Wait a bit more for initialization
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+
+          if (typeof window.paysafe === "undefined") {
+            console.error(
+              "Paysafe.js SDK still not available after dynamic loading"
+            );
+            setIsApplePayAvailable(false);
+            return;
+          }
+        } catch (error) {
+          console.error("Failed to load Paysafe.js SDK dynamically:", error);
+          setIsApplePayAvailable(false);
+          return;
+        }
       }
 
       // Get API key from backend
@@ -55,12 +99,13 @@ const ApplePayButton = ({
       }
 
       const API_KEY = apiKeyData.apiKey;
+      const ACCOUNT_ID = apiKeyData.accountId || "0000000000";
 
       const options = {
         currencyCode: currency,
         environment: APPLE_PAY_CONFIG.ENVIRONMENT,
         accounts: {
-          default: process.env.NEXT_PUBLIC_PAYSAFE_ACCOUNT_ID,
+          default: ACCOUNT_ID,
           // Provide an apple pay merchant account if you have more than one configured
           // applePay: process.env.NEXT_PUBLIC_PAYSAFE_APPLE_PAY_ACCOUNT_ID
         },

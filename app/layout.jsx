@@ -115,7 +115,7 @@ export default async function RootLayout({ children }) {
         {/* Paysafe.js SDK for Apple Pay */}
         <Script
           id="paysafe-sdk"
-          strategy="beforeInteractive"
+          strategy="lazyOnload"
           src="https://hosted.paysafe.com/js/v1/latest/paysafe.min.js"
         />
         {/* <Tracker /> */}
