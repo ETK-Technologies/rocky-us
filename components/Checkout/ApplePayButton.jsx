@@ -133,11 +133,18 @@ const ApplePayButton = ({
 
       // Initialize Paysafe fields
       try {
+        console.log("About to call paysafe.fields.setup...");
         const instance = await window.paysafe.fields.setup(API_KEY, options);
+        console.log("Paysafe fields setup completed, instance:", instance);
         setApplePayInstance(instance);
 
         // Show Apple Pay button
+        console.log("About to call instance.show()...");
         const paymentMethods = await instance.show();
+        console.log(
+          "Instance.show() completed, paymentMethods:",
+          paymentMethods
+        );
 
         if (paymentMethods.applePay && !paymentMethods.applePay.error) {
           // Add click event listener
@@ -154,6 +161,7 @@ const ApplePayButton = ({
           );
           console.log("Full payment methods response:", paymentMethods);
           setIsApplePayAvailable(false);
+          setInitializationStatus("failed");
         }
       } catch (error) {
         console.error("Error initializing Paysafe fields:", error);
@@ -274,6 +282,32 @@ const ApplePayButton = ({
       }
     };
   }, []);
+
+  // Debug: Always show in development to see what's happening
+  if (!isApplePayAvailable && process.env.NODE_ENV === "development") {
+    return (
+      <div className="apple-pay-container">
+        <div className="text-xs text-red-500 mb-2">
+          Apple Pay NOT Available - Status: {initializationStatus}
+        </div>
+        <div
+          style={{
+            width: "100%",
+            height: "44px",
+            borderRadius: "8px",
+            border: "1px solid #d1d5db",
+            backgroundColor: "#f3f4f6",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#6b7280",
+          }}
+        >
+          Apple Pay Not Available
+        </div>
+      </div>
+    );
+  }
 
   if (!isApplePayAvailable) {
     return null;
