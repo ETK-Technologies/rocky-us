@@ -16,6 +16,8 @@ const ApplePayButton = ({
 }) => {
   const [isApplePayAvailable, setIsApplePayAvailable] = useState(false);
   const [applePayInstance, setApplePayInstance] = useState(null);
+  const [initializationStatus, setInitializationStatus] =
+    useState("not_started");
   const applePayRef = useRef(null);
 
   // Check if Apple Pay is available
@@ -28,8 +30,9 @@ const ApplePayButton = ({
         console.log("Apple Pay available:", isAvailable);
 
         if (isAvailable === true) {
+          console.log("Setting Apple Pay as available and initializing...");
           setIsApplePayAvailable(true);
-          initializeApplePay();
+          await initializeApplePay();
         } else {
           console.log("Apple Pay not available on this device/browser");
           setIsApplePayAvailable(false);
@@ -142,11 +145,14 @@ const ApplePayButton = ({
             applePayRef.current.addEventListener("click", handleApplePayClick);
           }
           console.log("Apple Pay initialized successfully");
+          console.log("Payment methods:", paymentMethods);
+          setInitializationStatus("success");
         } else {
           console.error(
             "Apple Pay not available:",
             paymentMethods.applePay?.error
           );
+          console.log("Full payment methods response:", paymentMethods);
           setIsApplePayAvailable(false);
         }
       } catch (error) {
@@ -275,6 +281,12 @@ const ApplePayButton = ({
 
   return (
     <div className="apple-pay-container">
+      {/* Debug info in development */}
+      {process.env.NODE_ENV === "development" && (
+        <div className="text-xs text-gray-500 mb-2">
+          Apple Pay Status: {initializationStatus}
+        </div>
+      )}
       <div
         id="apple-pay-button"
         ref={applePayRef}
