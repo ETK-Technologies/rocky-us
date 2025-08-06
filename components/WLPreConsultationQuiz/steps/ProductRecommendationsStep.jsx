@@ -17,11 +17,10 @@ const ProductRecommendationsStep = ({
   );
 
   useEffect(() => {
-    setSelectedProduct(products.ORAL_SEMAGLUTIDE);
+    setSelectedProduct(products.OZEMPIC);
   }, []);
 
   const handleShowMoreOptions = () => {
-
     setShowMoreOptions(!showMoreOptions);
   };
 
@@ -52,22 +51,20 @@ const ProductRecommendationsStep = ({
 
         <div className="mb-6">
           <WLProductCard
-            product={products.ORAL_SEMAGLUTIDE}
+            product={products.OZEMPIC}
             isRecommended={true}
             onSelect={(product) => setSelectedProduct(product)}
-            isSelected={
-              selectedProduct?.name === products.ORAL_SEMAGLUTIDE.name
-            }
+            isSelected={selectedProduct?.name === products.OZEMPIC.name}
           />
         </div>
 
         {showMoreOptions && (
           <div className="space-y-4 mb-6">
-            <WLProductCard
+            {/* <WLProductCard
               product={products.OZEMPIC}
               onSelect={(product) => setSelectedProduct(product)}
               isSelected={selectedProduct?.name === products.OZEMPIC.name}
-            />
+            /> */}
             <WLProductCard
               product={products.WEGOVY}
               onSelect={(product) => setSelectedProduct(product)}
@@ -97,10 +94,11 @@ const ProductRecommendationsStep = ({
 
       <div className="sticky bottom-0 py-4 z-30">
         <button
-          className={`w-full py-3 rounded-full font-medium ${isContinueEnabled
-            ? "bg-black text-white"
-            : "bg-gray-300 text-gray-500 cursor-not-allowed"
-            }`}
+          className={`w-full py-3 rounded-full font-medium ${
+            isContinueEnabled
+              ? "bg-black text-white"
+              : "bg-gray-300 text-gray-500 cursor-not-allowed"
+          }`}
           onClick={isContinueEnabled ? onContinue : null}
           disabled={!isContinueEnabled}
           title={

@@ -124,6 +124,12 @@ function shouldProtectRoute(pathname) {
     "/wl-consultation",
     "/mh-quiz",
     "/my-account",
+    "/ed-pre-consultation-quiz",
+    "/wl-pre-consultation",
+    "/hair-pre-consultation-quiz",
+
+
+
     // Add other routes that should require authentication
   ];
 
