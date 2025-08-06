@@ -131,85 +131,69 @@ const ApplePayButton = ({
 
       console.log("Paysafe options:", options);
 
-      // Initialize Paysafe fields
-      try {
-        console.log("About to call paysafe.fields.setup...");
-        const instance = await window.paysafe.fields.setup(API_KEY, options);
-        console.log("Paysafe fields setup completed, instance:", instance);
-        setApplePayInstance(instance);
+      // Initialize Paysafe fields with retry logic
+      let retryCount = 0;
+      const maxRetries = 3;
 
-        // Show Apple Pay button
-        console.log("About to call instance.show()...");
-        const paymentMethods = await instance.show();
-        console.log(
-          "Instance.show() completed, paymentMethods:",
-          paymentMethods
-        );
+      while (retryCount < maxRetries) {
+        try {
+          console.log(`Attempt ${retryCount + 1} to initialize Apple Pay...`);
+          console.log("About to call paysafe.fields.setup...");
 
-        if (paymentMethods.applePay && !paymentMethods.applePay.error) {
-          // Add click event listener
-          if (applePayRef.current) {
-            applePayRef.current.addEventListener("click", handleApplePayClick);
-          }
-          console.log("Apple Pay initialized successfully");
-          console.log("Payment methods:", paymentMethods);
-          setInitializationStatus("success");
-        } else {
-          console.error(
-            "Apple Pay not available:",
-            paymentMethods.applePay?.error
+          const instance = await window.paysafe.fields.setup(API_KEY, options);
+          console.log("Paysafe fields setup completed, instance:", instance);
+          setApplePayInstance(instance);
+
+          // Show Apple Pay button
+          console.log("About to call instance.show()...");
+          const paymentMethods = await instance.show();
+          console.log(
+            "Instance.show() completed, paymentMethods:",
+            paymentMethods
           );
-          console.log("Full payment methods response:", paymentMethods);
-          setIsApplePayAvailable(false);
-          setInitializationStatus("failed");
-        }
-      } catch (error) {
-        console.error("Error initializing Paysafe fields:", error);
 
-        // Try with just the default account ID
-        if (error.code === "9061" && APPLE_PAY_ACCOUNT_ID !== ACCOUNT_ID) {
-          console.log("Trying with default account ID only...");
-          const fallbackOptions = {
-            ...options,
-            accounts: {
-              default: ACCOUNT_ID,
-            },
-          };
-
-          try {
-            const instance = await window.paysafe.fields.setup(
-              API_KEY,
-              fallbackOptions
-            );
-            setApplePayInstance(instance);
-            const paymentMethods = await instance.show();
-
-            if (paymentMethods.applePay && !paymentMethods.applePay.error) {
-              if (applePayRef.current) {
-                applePayRef.current.addEventListener(
-                  "click",
-                  handleApplePayClick
-                );
-              }
-              console.log("Apple Pay initialized with fallback account ID");
-            } else {
-              console.error("Apple Pay still not available with fallback");
-              setIsApplePayAvailable(false);
+          if (paymentMethods.applePay && !paymentMethods.applePay.error) {
+            // Add click event listener
+            if (applePayRef.current) {
+              applePayRef.current.addEventListener(
+                "click",
+                handleApplePayClick
+              );
             }
-          } catch (fallbackError) {
+            console.log("Apple Pay initialized successfully");
+            console.log("Payment methods:", paymentMethods);
+            setInitializationStatus("success");
+            return; // Success, exit the retry loop
+          } else {
             console.error(
-              "Fallback initialization also failed:",
-              fallbackError
+              "Apple Pay not available:",
+              paymentMethods.applePay?.error
             );
+            console.log("Full payment methods response:", paymentMethods);
             setIsApplePayAvailable(false);
+            setInitializationStatus("failed");
+            return; // Failed, exit the retry loop
           }
-        } else {
-          setIsApplePayAvailable(false);
+        } catch (error) {
+          retryCount++;
+          console.error(`Attempt ${retryCount} failed:`, error);
+
+          if (retryCount >= maxRetries) {
+            console.error("All retry attempts failed");
+            setIsApplePayAvailable(false);
+            setInitializationStatus("failed");
+            return;
+          }
+
+          // Wait before retrying
+          console.log(`Waiting 2 seconds before retry ${retryCount + 1}...`);
+          await new Promise((resolve) => setTimeout(resolve, 2000));
         }
       }
     } catch (error) {
       console.error("Error initializing Apple Pay:", error);
       setIsApplePayAvailable(false);
+      setInitializationStatus("failed");
     }
   };
 
