@@ -783,10 +783,8 @@ async function findVariationByPrice(productId, targetPrice) {
 
     if (closestVariation) {
       console.log(
-        `Found closest price match for ${productId}: variation ${
-          closestVariation.id
-        } at $${
-          closestVariation.price
+        `Found closest price match for ${productId}: variation ${closestVariation.id
+        } at $${closestVariation.price
         } (target: $${price}, difference: $${priceDifference.toFixed(2)})`
       );
       return closestVariation.id;
@@ -1012,6 +1010,9 @@ export const createCartUrl = async (
       90995: "Essential T-Boost", // Essential T-Boost - CORRECT ID
       323511: "Ovulation Test Kit", // Ovulation Test Kit
       323512: "Perimenopause Test Kit", // Perimenopause Test Kit
+      471638: "Essential Night Boost", // Essential Night Boost
+      471652: "Essential Mood Balance", // Essential Mood Balance
+      471657: "Essential Gut Relief", // Essential Gut Relief
     };
 
     // Check if this is a direct ID that we already know
@@ -1089,7 +1090,7 @@ export const createCartUrl = async (
       "250827",
       "369618",
       "490537",
-    ]; // Ozempic, Mounjaro, Wegovy, Rybelsus, Oral Semaglutide
+    ]; // Ozempic, Mounjaro, Wegovy, Rybelsus, Sublingual Semaglutide
 
     if (flowType === "wl" && weightLossProductIds.includes(productId)) {
       // Add consultation-required parameter for WL flow
@@ -1106,10 +1107,80 @@ export const createCartUrl = async (
         queryParams += priceParam;
       }
 
-      // Build the final URL and return early
+      // Check if we have addons to add
+      if (addons && addons.length > 0) {
+        console.log(`WL flow has ${addons.length} addons to process:`, addons);
+
+        // Process WL addons before returning
+        const wlAddons = {
+          353755: "Rocky Dad Hat", // Dad Hat - CORRECT ID
+          90995: "Essential T-Boost", // Essential T-Boost - CORRECT ID
+          323511: "Ovulation Test Kit", // Ovulation Test Kit
+          323512: "Perimenopause Test Kit", // Perimenopause Test Kit
+          471638: "Essential Night Boost", // Essential Night Boost
+          471652: "Essential Mood Balance", // Essential Mood Balance
+          471657: "Essential Gut Relief", // Essential Gut Relief
+        };
+
+        const addonIds = addons
+          .map((addon) => {
+            console.log("Processing WL addon:", addon);
+
+            // Use dataAddToCart if available (this is the primary ID for WL addons)
+            if (addon.dataAddToCart) {
+              console.log(
+                `Using dataAddToCart for WL addon: ${addon.dataAddToCart}`
+              );
+              return addon.dataAddToCart;
+            }
+            // If addon is a known WL product, use its ID directly
+            else if (addon.id && wlAddons[addon.id]) {
+              console.log(
+                `Found WL addon by ID: ${addon.id} -> ${wlAddons[addon.id]}`
+              );
+              return addon.id;
+            }
+            // If addon has a name that matches our known products
+            else if (
+              addon.name &&
+              Object.values(wlAddons).includes(addon.name)
+            ) {
+              // Find the ID by name
+              for (const [id, name] of Object.entries(wlAddons)) {
+                if (name === addon.name) {
+                  console.log(`Found WL addon by name: ${addon.name} -> ${id}`);
+                  return id;
+                }
+              }
+            }
+            // Fallback to regular id
+            console.log(`Using fallback ID for WL addon: ${addon.id}`);
+            return addon.id || null;
+          })
+          .filter((id) => id !== null);
+
+        if (addonIds.length > 0) {
+          // Add addons to the existing onboarding-add-to-cart parameter
+          const currentProducts = `${productId},148515`;
+          const allProductIds = [currentProducts, ...addonIds];
+
+          // Replace the onboarding-add-to-cart parameter to include addons
+          queryParams = queryParams.replace(
+            `onboarding-add-to-cart=${productId},148515`,
+            `onboarding-add-to-cart=${allProductIds.join("%2C")}`
+          );
+
+          console.log("Direct addon IDs for WL flow:", addonIds);
+          console.log("Final WL flow URL query params:", queryParams);
+        }
+      } else {
+        console.log("WL flow has no addons to process");
+      }
+
+      // Build the final URL and return
       const redirectUrl = `${baseUrl}${queryParams}`;
       console.log(
-        `Created WL flow URL with product ${productId} + BO Program: ${redirectUrl}`
+        `Created WL flow URL with product ${productId} + BO Program + addons: ${redirectUrl}`
       );
       return redirectUrl;
     }
@@ -1134,10 +1205,24 @@ export const createCartUrl = async (
     if (addons && addons.length > 0) {
       // For WL flow, use direct IDs for addons without API calls
       if (flowType === "wl") {
+        console.log("Processing WL flow addons:", addons);
+
         const addonIds = addons
           .map((addon) => {
+            console.log("Processing WL addon:", addon);
+
+            // Use dataAddToCart if available (this is the primary ID for WL addons)
+            if (addon.dataAddToCart) {
+              console.log(
+                `Using dataAddToCart for WL addon: ${addon.dataAddToCart}`
+              );
+              return addon.dataAddToCart;
+            }
             // If addon is a known WL product, use its ID directly
-            if (addon.id && wlAddons[addon.id]) {
+            else if (addon.id && wlAddons[addon.id]) {
+              console.log(
+                `Found WL addon by ID: ${addon.id} -> ${wlAddons[addon.id]}`
+              );
               return addon.id;
             }
             // If addon has a name that matches our known products
@@ -1148,34 +1233,175 @@ export const createCartUrl = async (
               // Find the ID by name
               for (const [id, name] of Object.entries(wlAddons)) {
                 if (name === addon.name) {
+                  console.log(`Found WL addon by name: ${addon.name} -> ${id}`);
                   return id;
                 }
               }
             }
-
+            // Fallback to regular id
+            console.log(`Using fallback ID for WL addon: ${addon.id}`);
             return addon.id || null;
           })
           .filter((id) => id !== null);
 
         if (addonIds.length > 0) {
-          // Skip if we've already handled the Ozempic + BO Program case
-          if (!(flowType === "wl" && productId === "142975")) {
-            // Start with main product and add all addons
-            const allProductIds = [productId, ...addonIds];
+          // Start with main product and add all addons
+          const allProductIds = [productId, ...addonIds];
 
-            // Replace the onboarding-add-to-cart parameter
-            queryParams = queryParams.replace(
-              `onboarding-add-to-cart=${productId}`,
-              `onboarding-add-to-cart=${allProductIds.join("%2C")}`
-            );
+          // Replace the onboarding-add-to-cart parameter
+          queryParams = queryParams.replace(
+            `onboarding-add-to-cart=${productId}`,
+            `onboarding-add-to-cart=${allProductIds.join("%2C")}`
+          );
 
-            console.log("Direct addon IDs for WL flow:", addonIds);
-          }
+          console.log("Direct addon IDs for WL flow:", addonIds);
+          console.log("Final WL flow URL query params:", queryParams);
+        }
+      } else if (flowType === "hair") {
+        // For hair flow, use direct IDs for addons without API calls
+        const hairAddons = {
+          93366: "Essential Follicle Support",
+          262914: "Essential T-Boost",
+          471638: "Essential Night Boost",
+          471652: "Essential Mood Balance",
+          471657: "Essential Gut Relief",
+          353755: "Rocky Dad Hat",
+        };
+
+        console.log("Processing hair flow addons:", addons);
+
+        const addonIds = addons
+          .map((addon) => {
+            console.log("Processing hair addon:", addon);
+
+            // If addon is a known hair product, use its ID directly
+            if (addon.id && hairAddons[addon.id]) {
+              console.log(
+                `Found hair addon by ID: ${addon.id} -> ${hairAddons[addon.id]}`
+              );
+              return addon.id;
+            }
+            // If addon has a name that matches our known products
+            else if (
+              addon.name &&
+              Object.values(hairAddons).includes(addon.name)
+            ) {
+              // Find the ID by name
+              for (const [id, name] of Object.entries(hairAddons)) {
+                if (name === addon.name) {
+                  console.log(
+                    `Found hair addon by name: ${addon.name} -> ${id}`
+                  );
+                  return id;
+                }
+              }
+            }
+            // Use dataAddToCart if available (this is the primary ID for hair addons)
+            else if (addon.dataAddToCart) {
+              console.log(
+                `Using dataAddToCart for hair addon: ${addon.dataAddToCart}`
+              );
+              return addon.dataAddToCart;
+            }
+            // Fallback to regular id
+            console.log(`Using fallback ID for hair addon: ${addon.id}`);
+            return addon.id || null;
+          })
+          .filter((id) => id !== null);
+
+        if (addonIds.length > 0) {
+          // Start with main product and add all addons
+          const allProductIds = [productId, ...addonIds];
+
+          // Replace the onboarding-add-to-cart parameter
+          queryParams = queryParams.replace(
+            `onboarding-add-to-cart=${productId}`,
+            `onboarding-add-to-cart=${allProductIds.join("%2C")}`
+          );
+
+          console.log("Direct addon IDs for hair flow:", addonIds);
+          console.log("Final hair flow URL query params:", queryParams);
+        }
+      } else if (flowType === "ed") {
+        // For ED flow, use direct IDs for addons without API calls
+        const edAddons = {
+          353755: "Rocky Dad Hat", // Dad Hat
+          90995: "Essential T-Boost", // Essential T-Boost (WL version)
+          262914: "Essential T-Boost", // Essential T-Boost (ED version)
+          471638: "Essential Night Boost", // Essential Night Boost
+          471652: "Essential Mood Balance", // Essential Mood Balance
+          471657: "Essential Gut Relief", // Essential Gut Relief
+          276: "Lidocaine Cream", // Lidocaine Cream
+          52162: "Lidocaine Spray", // Lidocaine Spray
+          13534: "Durex Condoms", // Durex Condoms
+          323576: "Rocky Dad Hat", // Rocky Dad Hat (alternative ID)
+          323626: "DHM Blend", // DHM Blend
+          359245: "DHM Blend", // DHM Blend (alternative ID)
+        };
+
+        console.log("Processing ED flow addons:", addons);
+
+        const addonIds = addons
+          .map((addon) => {
+            console.log("Processing ED addon:", addon);
+
+            // Use dataAddToCart if available (this is the primary ID for ED addons)
+            if (addon.dataAddToCart) {
+              console.log(
+                `Using dataAddToCart for ED addon: ${addon.dataAddToCart}`
+              );
+              return addon.dataAddToCart;
+            }
+            // If addon is a known ED product, use its ID directly
+            else if (addon.id && edAddons[addon.id]) {
+              console.log(
+                `Found ED addon by ID: ${addon.id} -> ${edAddons[addon.id]}`
+              );
+              return addon.id;
+            }
+            // If addon has a name that matches our known products
+            else if (
+              addon.name &&
+              Object.values(edAddons).includes(addon.name)
+            ) {
+              // Find the ID by name
+              for (const [id, name] of Object.entries(edAddons)) {
+                if (name === addon.name) {
+                  console.log(`Found ED addon by name: ${addon.name} -> ${id}`);
+                  return id;
+                }
+              }
+            }
+            // Fallback to regular id
+            console.log(`Using fallback ID for ED addon: ${addon.id}`);
+            return addon.id || null;
+          })
+          .filter((id) => id !== null);
+
+        if (addonIds.length > 0) {
+          // Start with main product and add all addons
+          const allProductIds = [productId, ...addonIds];
+
+          // Replace the onboarding-add-to-cart parameter
+          queryParams = queryParams.replace(
+            `onboarding-add-to-cart=${productId}`,
+            `onboarding-add-to-cart=${allProductIds.join("%2C")}`
+          );
+
+          console.log("Direct addon IDs for ED flow:", addonIds);
+          console.log("Final ED flow URL query params:", queryParams);
         }
       } else {
-        // Process addon products for non-WL flows
+        // Process addon products for other flows (mh, etc.)
         const addonIds = addons
-          .map((addon) => addon.id || null)
+          .map((addon) => {
+            // Use dataAddToCart if available (this is the primary ID for addons)
+            if (addon.dataAddToCart) {
+              return addon.dataAddToCart;
+            }
+            // Fallback to regular id
+            return addon.id || null;
+          })
           .filter((id) => id !== null);
 
         if (addonIds.length > 0) {
@@ -1216,12 +1442,12 @@ export const cleanupCartUrlParameters = (flowType = "ed") => {
     flowType === "ed"
       ? "ed-flow=1"
       : flowType === "wl"
-      ? "wl-flow=1"
-      : flowType === "hair"
-      ? "hair-flow=1"
-      : flowType === "mh"
-      ? "mh-flow=1"
-      : `${flowType}-flow=1`;
+        ? "wl-flow=1"
+        : flowType === "hair"
+          ? "hair-flow=1"
+          : flowType === "mh"
+            ? "mh-flow=1"
+            : `${flowType}-flow=1`;
 
   const newUrl = window.location.pathname + `?${flowParam}`;
   console.log(`Cleaning up URL parameters, preserving flow type: ${flowType}`);

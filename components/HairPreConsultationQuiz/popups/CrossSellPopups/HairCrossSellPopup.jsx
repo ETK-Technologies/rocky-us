@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import { createCartUrl } from "@/utils/urlCartHandler";
 import { FaInfoCircle, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { IoIosCloseCircleOutline } from "react-icons/io";
@@ -14,7 +13,6 @@ const HairCrossSellPopup = ({
 }) => {
   const [addedProducts, setAddedProducts] = useState([]);
   const [openDescriptions, setOpenDescriptions] = useState({});
-  const [isProcessing, setIsProcessing] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState({
     hours: 15,
@@ -158,9 +156,12 @@ const HairCrossSellPopup = ({
   const toggleAddon = (addonId) => {
     if (addedProducts.includes(addonId)) {
       setAddedProducts(addedProducts.filter((id) => id !== addonId));
+      console.log(`Removed addon ${addonId} from selection`);
     } else {
       setAddedProducts([...addedProducts, addonId]);
+      console.log(`Added addon ${addonId} to selection`);
     }
+    console.log("Current added products:", addedProducts);
   };
 
   // Toggle description visibility
@@ -172,108 +173,26 @@ const HairCrossSellPopup = ({
       [addonId]: !openDescriptions[addonId],
     });
   };
-
-  // Generate checkout URL for the href
-  const generateCheckoutUrl = async () => {
-    try {
-      // Check if user is authenticated
-      const isAuthenticated = document.cookie.includes("authToken=");
-
-      // Get main product ID from props
-      const mainProductId = mainProduct?.id;
-      if (!mainProductId) {
-        throw new Error("No main product ID found");
-      }
-
-      // Format main product for cartUrl
-      const mainProductFormatted = {
-        productId: mainProductId,
-        isSubscription: mainProduct.isSubscription,
-      };
-
-      // Format addons - using dataAddToCart instead of id
-      const addons = addedProducts.map((addonId) => {
-        const addon = getAddonById(addonId);
-        return {
-          productId: addon.dataAddToCart || addon.id, // Use dataAddToCart as the primary ID, fallback to id
-          isSubscription: addon.dataType === "subscription",
-        };
-      });
-
-      // Generate URL with the new centralized function (this is async)
-      const url = await createCartUrl(
-        mainProductFormatted,
-        addons,
-        "hair", // flowType - specify hair flow
-        isAuthenticated
-      );
-
-      return url;
-    } catch (error) {
-      console.error("Error generating checkout URL:", error);
-      return "#"; // Fallback to hash in case of error
-    }
-  };
-
   // Handle the checkout process
   const handleCheckout = async () => {
     try {
-      // If we're using the new approach with isLoading prop, use that instead of local processing state
-      if (typeof isLoading !== "undefined") {
-        // Just call the onCheckout function directly, as isLoading is managed by parent
-        if (onCheckout) {
-          // Pass the addon objects with dataAddToCart instead of just using the id
-          onCheckout(
-            addedProducts.map((addonId) => {
-              const addon = getAddonById(addonId);
-              // Modify the addon to use dataAddToCart as the productId
-              return {
-                ...addon,
-                productId: addon.dataAddToCart || addon.id, // Use dataAddToCart as the primary ID, fallback to id
-              };
-            })
-          );
-        }
-        return;
+      if (onCheckout) {
+        const processedAddons = addedProducts.map((addonId) => {
+          const addon = getAddonById(addonId);
+          return {
+            ...addon,
+            id: addon.dataAddToCart || addon.id,
+            dataAddToCart: addon.dataAddToCart || addon.id,
+          };
+        });
+        console.log("Sending addons to checkout:", processedAddons);
+        onCheckout(processedAddons);
       }
-
-      // For backward compatibility - use the local processing state for older implementations
-      setIsProcessing(true);
-
-      // Use the same URL generation logic as generateCheckoutUrl()
-      const checkoutUrl = await generateCheckoutUrl();
-
-      if (checkoutUrl === "#") {
-        throw new Error("Failed to generate checkout URL");
-      }
-
-      // Log the generated URL for debugging
-      console.log("Redirecting to checkout URL:", checkoutUrl);
-
-      // Navigate to the checkout URL
-      window.location.href = checkoutUrl;
     } catch (error) {
       console.error("Error during checkout:", error);
-      // Display a more specific error message if possible
-      let errorMessage =
-        "There was an issue processing your checkout. Please try again.";
-
-      if (error.message) {
-        errorMessage = error.message;
-      }
-
-      alert(errorMessage);
-    } finally {
-      // Only set processing to false for older implementations
-      if (typeof isLoading === "undefined") {
-        setIsProcessing(false);
-      }
+      alert("There was an issue processing your checkout. Please try again.");
     }
   };
-
-  // Use isLoading prop if available, otherwise use local processing state
-  const isCheckoutLoading =
-    typeof isLoading !== "undefined" ? isLoading : isProcessing;
 
   // Handle slider arrows for mobile scrolling
   const handleSliderArrow = (direction) => {
@@ -401,11 +320,9 @@ const HairCrossSellPopup = ({
         <div className="flex justify-end pt-2 popup_cart_url_outer static checkout-btn-new w-auto bg-transparent p-0">
           <button
             onClick={handleCheckout}
-            className={`popup-cart-checkout-url add_to_cart_btn block bg-black border-0 rounded-full text-white p-2 px-10 mt-2 md:mt-4 w-full text-center md:w-fit ${
-              isCheckoutLoading ? "opacity-70 pointer-events-none" : ""
-            }`}
+            className="popup-cart-checkout-url add_to_cart_btn block bg-black border-0 rounded-full text-white p-2 px-10 mt-2 md:mt-4 w-full text-center md:w-fit"
           >
-            {isCheckoutLoading ? "Processing..." : "Checkout"}
+            Checkout
           </button>
         </div>
 
@@ -490,7 +407,7 @@ const HairCrossSellPopup = ({
                 key={addon.id}
                 className="basis-1/2 md:basis-1/4 md:min-w-[220px]"
               >
-                <div className="relative shadow rounded-[12px] overflow-hidden bg-[#FFFFFF] border-solid min-h-[220px]">
+                <div className="relative shadow rounded-[12px] overflow-hidden bg-[#FFFFFF] border-solid min-h-[220px] flex flex-col">
                   <div className={`addon${addon.id}-box-top relative`}>
                     <a
                       data-addon-class={`addon${addon.id}-box-body-alt-text`}
@@ -501,10 +418,9 @@ const HairCrossSellPopup = ({
                       !
                     </a>
                   </div>
-
                   {!openDescriptions[addon.id] ? (
                     <div
-                      className={`addon${addon.id}-box-body relative my-[20px] mx-4`}
+                      className={`addon${addon.id}-box-body relative my-[20px] mx-4 flex flex-col flex-grow`}
                     >
                       <div className="text-center">
                         <img
@@ -514,8 +430,8 @@ const HairCrossSellPopup = ({
                           alt={addon.title}
                         />
                       </div>
-                      <div className="text-center mb-2 border-b border-gray-200 border-solid border-1">
-                        <h4 className="text-center font-semibold text-[14px] leading-[19px]">
+                      <div className="text-center mb-2 border-b border-gray-200 border-solid border-1 flex-grow">
+                        <h4 className="text-center font-semibold text-[14px] leading-[19px] min-h-[38px] flex items-center justify-center">
                           {addon.title}
                         </h4>
                         <small className="text-center text-[#212121] font-[400] text-[12px] mb-2 inline-block">
