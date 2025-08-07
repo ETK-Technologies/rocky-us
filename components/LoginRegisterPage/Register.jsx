@@ -60,12 +60,12 @@ const UnsupportedStatePopup = ({ isOpen, onClose, selectedState, router }) => {
             >
               See Where We Serve
             </button>
-            <Link
-              href="/"
+            <button
+              onClick={onClose}
               className="bg-white border border-gray-300 text-gray-700 px-6 py-2 rounded-full hover:bg-gray-50 transition-colors font-medium"
             >
               Understood
-            </Link>
+            </button>
           </div>
         </div>
       </div>
