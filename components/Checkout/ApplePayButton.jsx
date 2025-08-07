@@ -123,7 +123,6 @@ const ApplePayButton = ({
         environment: APPLE_PAY_CONFIG.ENVIRONMENT,
         accounts: {
           default: 1002990600,
-          applePay: APPLE_PAY_ACCOUNT_ID,
         },
         fields: {
           applePay: {
