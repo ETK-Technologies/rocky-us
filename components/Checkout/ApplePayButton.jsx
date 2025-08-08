@@ -213,6 +213,8 @@ const ApplePayButton = ({
       console.log(
         "Apple Pay incoming amount prop:",
         amount,
+        "type:",
+        typeof amount,
         "currency:",
         currency
       );
@@ -221,13 +223,26 @@ const ApplePayButton = ({
       const isZeroDecimal = zeroDecimalCurrencies.includes(
         String(currency).toUpperCase()
       );
-      // Detect if incoming amount already looks like minor units (e.g., 39900)
-      let normalizedAmount = Math.round(rawAmountNumber);
-      if (!isZeroDecimal) {
-        if (rawAmountNumber > 0 && rawAmountNumber < 1000) {
-          // Looks like dollars → convert to cents
-          normalizedAmount = Math.round(rawAmountNumber * 100);
-        }
+      // Handle amount conversion - cartItems.total_price is often in cents
+      let normalizedAmount;
+      if (rawAmountNumber >= 1000) {
+        // Likely already in cents (e.g., 39900)
+        normalizedAmount = Math.round(rawAmountNumber);
+        console.log(
+          "Amount appears to be in cents:",
+          rawAmountNumber,
+          "→",
+          normalizedAmount
+        );
+      } else {
+        // Likely in dollars (e.g., 399.00)
+        normalizedAmount = Math.round(rawAmountNumber * 100);
+        console.log(
+          "Amount appears to be in dollars:",
+          rawAmountNumber,
+          "→",
+          normalizedAmount
+        );
       }
 
       // Fallback hardcoded test amount ($1.00) if invalid
