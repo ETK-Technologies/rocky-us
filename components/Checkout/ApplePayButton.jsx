@@ -135,9 +135,6 @@ const ApplePayButton = ({
                 handleApplePayClick
               );
             }
-            // Store the instance for later use
-            setApplePayInstance(instance);
-            console.log("Apple Pay instance stored:", instance);
             return; // Success, exit the retry loop
           } else {
             setIsApplePayAvailable(false);
@@ -168,7 +165,6 @@ const ApplePayButton = ({
 
     try {
       if (!applePayInstance) {
-        console.error("Apple Pay instance not found:", applePayInstance);
         throw new Error("Apple Pay not initialized");
       }
 
@@ -236,7 +232,7 @@ const ApplePayButton = ({
   }
 
   return (
-    <div className="apple-pay-container mb-4">
+    <div className="apple-pay-container">
       <div
         id="apple-pay-button"
         ref={applePayRef}
@@ -251,23 +247,8 @@ const ApplePayButton = ({
           backgroundColor: disabled || isProcessing ? "#f3f4f6" : "#ffffff",
           cursor: disabled || isProcessing ? "not-allowed" : "pointer",
           opacity: disabled || isProcessing ? 0.6 : 1,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: "16px",
-          fontWeight: "500",
-          color: "#000000",
         }}
-      >
-        {!isProcessing && (
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
-            </svg>
-            <span>Buy with Apple Pay</span>
-          </div>
-        )}
-      </div>
+      />
       {isProcessing && (
         <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 rounded-lg">
           <div className="w-6 h-6 border-2 border-[#AE7E56] border-t-transparent rounded-full animate-spin"></div>
