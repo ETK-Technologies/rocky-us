@@ -119,7 +119,7 @@ const ApplePayButton = ({
         currencyCode: currency,
         environment: APPLE_PAY_CONFIG.ENVIRONMENT,
         accounts: {
-          default: ACCOUNT_ID,
+          default: 1002990600,
         },
         fields: {
           applePay: {
