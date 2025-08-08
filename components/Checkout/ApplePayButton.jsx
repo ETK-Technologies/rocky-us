@@ -16,6 +16,7 @@ const ApplePayButton = ({
 }) => {
   const [isApplePayAvailable, setIsApplePayAvailable] = useState(false);
   const [applePayInstance, setApplePayInstance] = useState(null);
+  const applePayInstanceRef = useRef(null);
   const [initializationStatus, setInitializationStatus] =
     useState("not_started");
   const applePayRef = useRef(null);
@@ -107,9 +108,8 @@ const ApplePayButton = ({
       }
 
       const API_KEY = apiKeyData.apiKey;
-      // Hard code account IDs for testing
+      // Hard code account ID for testing (numeric as per docs)
       const ACCOUNT_ID = 1002990600;
-      const APPLE_PAY_ACCOUNT_ID = 1002990600;
 
       console.log("Using Apple Pay Account ID:", APPLE_PAY_ACCOUNT_ID);
       console.log("Default Account ID:", ACCOUNT_ID);
@@ -119,11 +119,11 @@ const ApplePayButton = ({
         currencyCode: currency,
         environment: APPLE_PAY_CONFIG.ENVIRONMENT,
         accounts: {
-          default: 1002990600,
+          default: ACCOUNT_ID,
         },
         fields: {
           applePay: {
-            selector: "#apple-pay-button",
+            selector: "#apple-pay",
             ...APPLE_PAY_CONFIG.BUTTON_STYLES,
           },
         },
@@ -143,6 +143,7 @@ const ApplePayButton = ({
           const instance = await window.paysafe.fields.setup(API_KEY, options);
           console.log("Paysafe fields setup completed, instance:", instance);
           setApplePayInstance(instance);
+          applePayInstanceRef.current = instance;
 
           // Show Apple Pay button
           console.log("About to call instance.show()...");
@@ -204,7 +205,8 @@ const ApplePayButton = ({
     }
 
     try {
-      if (!applePayInstance) {
+      const instance = applePayInstanceRef.current;
+      if (!instance) {
         throw new Error("Apple Pay not initialized");
       }
 
@@ -229,11 +231,11 @@ const ApplePayButton = ({
       };
 
       // Tokenize the payment
-      const result = await applePayInstance.tokenize(paymentData);
+      const result = await instance.tokenize(paymentData);
 
       if (result.token) {
         // Close Apple Pay window
-        applePayInstance.complete("success");
+        instance.complete("success");
 
         // Call success callback with token
         onPaymentSuccess({
@@ -249,8 +251,9 @@ const ApplePayButton = ({
       console.error("Apple Pay payment error:", error);
 
       // Close Apple Pay window
-      if (applePayInstance) {
-        applePayInstance.complete("fail");
+      const instance = applePayInstanceRef.current;
+      if (instance) {
+        instance.complete("fail");
       }
 
       // Call error callback
@@ -306,19 +309,34 @@ const ApplePayButton = ({
         </div>
       )}
       <div
-        id="apple-pay-button"
+        id="apple-pay"
         ref={applePayRef}
         className={`apple-pay-button ${
-          disabled || isProcessing ? "disabled" : ""
+          disabled || isProcessing || initializationStatus !== "success"
+            ? "disabled"
+            : ""
         }`}
         style={{
           width: "100%",
           height: "44px",
           borderRadius: "8px",
           border: "1px solid #d1d5db",
-          backgroundColor: disabled || isProcessing ? "#f3f4f6" : "#ffffff",
-          cursor: disabled || isProcessing ? "not-allowed" : "pointer",
-          opacity: disabled || isProcessing ? 0.6 : 1,
+          backgroundColor:
+            disabled || isProcessing || initializationStatus !== "success"
+              ? "#f3f4f6"
+              : "#ffffff",
+          cursor:
+            disabled || isProcessing || initializationStatus !== "success"
+              ? "not-allowed"
+              : "pointer",
+          opacity:
+            disabled || isProcessing || initializationStatus !== "success"
+              ? 0.6
+              : 1,
+          pointerEvents:
+            disabled || isProcessing || initializationStatus !== "success"
+              ? "none"
+              : "auto",
         }}
       />
       {isProcessing && (
