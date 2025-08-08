@@ -108,8 +108,8 @@ const ApplePayButton = ({
 
       const API_KEY = apiKeyData.apiKey;
       // Hard code account IDs for testing
-      const ACCOUNT_ID = "1002990600";
-      const APPLE_PAY_ACCOUNT_ID = "1002990600";
+      const ACCOUNT_ID = 1002990600;
+      const APPLE_PAY_ACCOUNT_ID = 1002990600;
 
       console.log("Using Apple Pay Account ID:", APPLE_PAY_ACCOUNT_ID);
       console.log("Default Account ID:", ACCOUNT_ID);
