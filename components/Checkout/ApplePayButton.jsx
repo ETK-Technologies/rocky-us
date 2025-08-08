@@ -221,9 +221,14 @@ const ApplePayButton = ({
       const isZeroDecimal = zeroDecimalCurrencies.includes(
         String(currency).toUpperCase()
       );
-      let normalizedAmount = isZeroDecimal
-        ? Math.round(rawAmountNumber)
-        : Math.round(rawAmountNumber * 100);
+      // Detect if incoming amount already looks like minor units (e.g., 39900)
+      let normalizedAmount = Math.round(rawAmountNumber);
+      if (!isZeroDecimal) {
+        if (rawAmountNumber > 0 && rawAmountNumber < 1000) {
+          // Looks like dollars → convert to cents
+          normalizedAmount = Math.round(rawAmountNumber * 100);
+        }
+      }
 
       // Fallback hardcoded test amount ($1.00) if invalid
       if (!Number.isFinite(normalizedAmount) || normalizedAmount <= 0) {
