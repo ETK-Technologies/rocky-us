@@ -209,55 +209,20 @@ const ApplePayButton = ({
         throw new Error("Apple Pay not initialized");
       }
 
-      // Normalize amount to minor units and validate (max 11 digits per Paysafe)
-      console.log(
-        "Apple Pay incoming amount prop:",
-        amount,
-        "type:",
-        typeof amount,
-        "currency:",
-        currency
-      );
-      const rawAmountNumber = Number(amount);
-      const zeroDecimalCurrencies = ["JPY", "KRW"];
-      const isZeroDecimal = zeroDecimalCurrencies.includes(
-        String(currency).toUpperCase()
-      );
-      // Handle amount conversion - cartItems.total_price is often in cents
-      let normalizedAmount;
-      if (rawAmountNumber >= 1000) {
-        // Likely already in cents (e.g., 39900)
-        normalizedAmount = Math.round(rawAmountNumber);
-        console.log(
-          "Amount appears to be in cents:",
-          rawAmountNumber,
-          "→",
-          normalizedAmount
-        );
-      } else {
-        // Likely in dollars (e.g., 399.00)
-        normalizedAmount = Math.round(rawAmountNumber * 100);
-        console.log(
-          "Amount appears to be in dollars:",
-          rawAmountNumber,
-          "→",
-          normalizedAmount
-        );
+      // Convert USD amount to cents for Paysafe
+      console.log("Apple Pay incoming amount:", amount, "USD");
+      const amountInCents = Math.round(Number(amount) * 100);
+
+      if (!Number.isFinite(amountInCents) || amountInCents <= 0) {
+        console.error("Invalid Apple Pay amount:", amount, amountInCents);
+        throw new Error("Invalid amount. Please refresh and try again.");
       }
 
-      // Fallback hardcoded test amount ($1.00) if invalid
-      if (!Number.isFinite(normalizedAmount) || normalizedAmount <= 0) {
-        console.warn(
-          "Invalid Apple Pay amount, using fallback $1.00:",
-          amount,
-          normalizedAmount
-        );
-        normalizedAmount = 100; // $1.00 in minor units
-      }
-      if (String(normalizedAmount).length > 11) {
+      console.log("Apple Pay amount in cents:", amountInCents);
+      if (String(amountInCents).length > 11) {
         console.error(
           "Apple Pay amount too large (max 11 digits):",
-          normalizedAmount
+          amountInCents
         );
         throw new Error("Amount too large. Please contact support.");
       }
@@ -305,7 +270,7 @@ const ApplePayButton = ({
         street,
       });
       const paymentData = {
-        amount: normalizedAmount,
+        amount: amountInCents,
         transactionType: APPLE_PAY_CONFIG.TRANSACTION_TYPE,
         paymentType: APPLE_PAY_CONFIG.PAYMENT_TYPE,
         applePay: {

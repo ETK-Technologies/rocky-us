@@ -1226,7 +1226,13 @@ const CheckoutPageContent = () => {
           isLoadingSavedCards={isLoadingSavedCards}
           saveCard={saveCard}
           setSaveCard={setSaveCard}
-          amount={parseFloat(cartItems?.total_price || 0)}
+          amount={
+            cartItems?.totals?.total_price
+              ? parseFloat(cartItems.totals.total_price) / 100
+              : cartItems?.total_price
+              ? parseFloat(cartItems.total_price)
+              : 0
+          }
           billingAddress={formData.billing_address}
           onApplePaySuccess={handleApplePaySuccess}
           onApplePayError={handleApplePayError}
