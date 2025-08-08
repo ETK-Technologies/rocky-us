@@ -16,21 +16,29 @@ const ApplePayButton = ({
 }) => {
   const [isApplePayAvailable, setIsApplePayAvailable] = useState(false);
   const [applePayInstance, setApplePayInstance] = useState(null);
+  const [initializationStatus, setInitializationStatus] =
+    useState("not_started");
   const applePayRef = useRef(null);
 
   // Check if Apple Pay is available
   useEffect(() => {
     const checkAvailability = async () => {
+      console.log("Checking Apple Pay availability...");
+
       try {
         const isAvailable = checkApplePayAvailability();
+        console.log("Apple Pay available:", isAvailable);
 
         if (isAvailable === true) {
+          console.log("Setting Apple Pay as available and initializing...");
           setIsApplePayAvailable(true);
           await initializeApplePay();
         } else {
+          console.log("Apple Pay not available on this device/browser");
           setIsApplePayAvailable(false);
         }
       } catch (error) {
+        console.error("Error checking Apple Pay availability:", error);
         setIsApplePayAvailable(false);
       }
     };
@@ -99,7 +107,13 @@ const ApplePayButton = ({
       }
 
       const API_KEY = apiKeyData.apiKey;
-      const ACCOUNT_ID = apiKeyData.accountId || "1002990600";
+      // Hard code account IDs for testing
+      const ACCOUNT_ID = "1002990600";
+      const APPLE_PAY_ACCOUNT_ID = "1002990600";
+
+      console.log("Using Apple Pay Account ID:", APPLE_PAY_ACCOUNT_ID);
+      console.log("Default Account ID:", ACCOUNT_ID);
+      console.log("Environment:", APPLE_PAY_CONFIG.ENVIRONMENT);
 
       const options = {
         currencyCode: currency,
@@ -115,17 +129,28 @@ const ApplePayButton = ({
         },
       };
 
+      console.log("Paysafe options:", options);
+
       // Initialize Paysafe fields with retry logic
       let retryCount = 0;
       const maxRetries = 3;
 
       while (retryCount < maxRetries) {
         try {
+          console.log(`Attempt ${retryCount + 1} to initialize Apple Pay...`);
+          console.log("About to call paysafe.fields.setup...");
+
           const instance = await window.paysafe.fields.setup(API_KEY, options);
+          console.log("Paysafe fields setup completed, instance:", instance);
           setApplePayInstance(instance);
 
           // Show Apple Pay button
+          console.log("About to call instance.show()...");
           const paymentMethods = await instance.show();
+          console.log(
+            "Instance.show() completed, paymentMethods:",
+            paymentMethods
+          );
 
           if (paymentMethods.applePay && !paymentMethods.applePay.error) {
             // Add click event listener
@@ -135,25 +160,40 @@ const ApplePayButton = ({
                 handleApplePayClick
               );
             }
+            console.log("Apple Pay initialized successfully");
+            console.log("Payment methods:", paymentMethods);
+            setInitializationStatus("success");
             return; // Success, exit the retry loop
           } else {
+            console.error(
+              "Apple Pay not available:",
+              paymentMethods.applePay?.error
+            );
+            console.log("Full payment methods response:", paymentMethods);
             setIsApplePayAvailable(false);
+            setInitializationStatus("failed");
             return; // Failed, exit the retry loop
           }
         } catch (error) {
           retryCount++;
+          console.error(`Attempt ${retryCount} failed:`, error);
 
           if (retryCount >= maxRetries) {
+            console.error("All retry attempts failed");
             setIsApplePayAvailable(false);
+            setInitializationStatus("failed");
             return;
           }
 
           // Wait before retrying
+          console.log(`Waiting 2 seconds before retry ${retryCount + 1}...`);
           await new Promise((resolve) => setTimeout(resolve, 2000));
         }
       }
     } catch (error) {
+      console.error("Error initializing Apple Pay:", error);
       setIsApplePayAvailable(false);
+      setInitializationStatus("failed");
     }
   };
 
@@ -227,12 +267,44 @@ const ApplePayButton = ({
     };
   }, []);
 
+  // Debug: Always show in development to see what's happening
+  if (!isApplePayAvailable && process.env.NODE_ENV === "development") {
+    return (
+      <div className="apple-pay-container">
+        <div className="text-xs text-red-500 mb-2">
+          Apple Pay NOT Available - Status: {initializationStatus}
+        </div>
+        <div
+          style={{
+            width: "100%",
+            height: "44px",
+            borderRadius: "8px",
+            border: "1px solid #d1d5db",
+            backgroundColor: "#f3f4f6",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#6b7280",
+          }}
+        >
+          Apple Pay Not Available
+        </div>
+      </div>
+    );
+  }
+
   if (!isApplePayAvailable) {
     return null;
   }
 
   return (
     <div className="apple-pay-container">
+      {/* Debug info in development */}
+      {process.env.NODE_ENV === "development" && (
+        <div className="text-xs text-gray-500 mb-2">
+          Apple Pay Status: {initializationStatus}
+        </div>
+      )}
       <div
         id="apple-pay-button"
         ref={applePayRef}

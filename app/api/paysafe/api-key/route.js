@@ -29,11 +29,14 @@ export async function GET() {
     // Create Base64-encoded API key
     const apiKey = Buffer.from(username + ":" + password).toString("base64");
     const accountId = process.env.PAYSAFE_ACCOUNT_ID;
+    const applePayAccountId =
+      process.env.PAYSAFE_APPLE_PAY_ACCOUNT_ID || accountId;
 
     return NextResponse.json({
       success: true,
       apiKey: apiKey,
       accountId: accountId,
+      applePayAccountId: applePayAccountId,
     });
   } catch (error) {
     console.error("Error generating API key:", error);
