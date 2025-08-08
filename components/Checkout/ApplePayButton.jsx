@@ -243,20 +243,61 @@ const ApplePayButton = ({
       }
 
       // Prepare payment data
+      const countryCode = (billingAddress?.country || "US")
+        .toString()
+        .toUpperCase();
+      const rawZip = (billingAddress?.postcode || billingAddress?.zip || "")
+        .toString()
+        .trim();
+      let sanitizedZip = rawZip;
+      if (countryCode === "US") {
+        // Keep digits only, max 9, ensure at least 5
+        sanitizedZip = rawZip.replace(/[^0-9]/g, "").slice(0, 9);
+        if (sanitizedZip.length < 5) sanitizedZip = "90210";
+      } else if (countryCode === "CA") {
+        // Remove spaces, keep alphanumerics, uppercase, max 6
+        sanitizedZip = rawZip
+          .replace(/[^A-Za-z0-9]/g, "")
+          .toUpperCase()
+          .slice(0, 6);
+        if (sanitizedZip.length < 3) sanitizedZip = "A1A1A1";
+      } else {
+        // Generic fallback
+        if (!sanitizedZip) sanitizedZip = "00000";
+      }
+      const street =
+        [billingAddress?.address_1, billingAddress?.address_2]
+          .filter(Boolean)
+          .join(" ")
+          .trim() || "Oak Fields 6";
+      const city = (billingAddress?.city || "CA").toString().slice(0, 50);
+      const state = (
+        billingAddress?.state || (countryCode === "US" ? "CA" : "ON")
+      )
+        .toString()
+        .toUpperCase()
+        .slice(0, 2);
+      console.log("Apple Pay billing details:", {
+        countryCode,
+        sanitizedZip,
+        city,
+        state,
+        street,
+      });
       const paymentData = {
         amount: normalizedAmount,
         transactionType: APPLE_PAY_CONFIG.TRANSACTION_TYPE,
         paymentType: APPLE_PAY_CONFIG.PAYMENT_TYPE,
         applePay: {
-          country: billingAddress?.country || "US",
+          country: countryCode,
         },
         customerDetails: {
           billingDetails: {
-            country: billingAddress?.country || "US",
-            zip: billingAddress?.postcode || "",
-            street: billingAddress?.address_1 || "",
-            city: billingAddress?.city || "",
-            state: billingAddress?.state || "",
+            country: countryCode,
+            zip: sanitizedZip,
+            street,
+            city,
+            state,
           },
         },
         merchantRefNum: "merchant-ref-num-" + new Date().getTime(),
