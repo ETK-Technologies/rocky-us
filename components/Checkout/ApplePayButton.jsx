@@ -209,9 +209,31 @@ const ApplePayButton = ({
         throw new Error("Apple Pay not initialized");
       }
 
+      // Normalize amount to minor units and validate (max 11 digits per Paysafe)
+      const rawAmountNumber = Number(amount);
+      const zeroDecimalCurrencies = ["JPY", "KRW"];
+      const isZeroDecimal = zeroDecimalCurrencies.includes(
+        String(currency).toUpperCase()
+      );
+      const normalizedAmount = isZeroDecimal
+        ? Math.round(rawAmountNumber)
+        : Math.round(rawAmountNumber * 100);
+
+      if (!Number.isFinite(normalizedAmount) || normalizedAmount <= 0) {
+        console.error("Invalid Apple Pay amount:", amount, normalizedAmount);
+        throw new Error("Invalid amount. Please try again.");
+      }
+      if (String(normalizedAmount).length > 11) {
+        console.error(
+          "Apple Pay amount too large (max 11 digits):",
+          normalizedAmount
+        );
+        throw new Error("Amount too large. Please contact support.");
+      }
+
       // Prepare payment data
       const paymentData = {
-        amount: Math.round(amount * 100), // Convert to cents
+        amount: normalizedAmount,
         transactionType: APPLE_PAY_CONFIG.TRANSACTION_TYPE,
         paymentType: APPLE_PAY_CONFIG.PAYMENT_TYPE,
         applePay: {
@@ -234,7 +256,16 @@ const ApplePayButton = ({
 
       if (result.token) {
         // Close Apple Pay window
-        instance.complete("success");
+        try {
+          if (typeof instance.complete === "function") {
+            instance.complete("success");
+          }
+        } catch (completeErr) {
+          console.warn(
+            "instance.complete('success') unsupported:",
+            completeErr
+          );
+        }
 
         // Call success callback with token
         onPaymentSuccess({
@@ -251,12 +282,16 @@ const ApplePayButton = ({
 
       // Close Apple Pay window
       const instance = applePayInstanceRef.current;
-      if (instance) {
-        instance.complete("fail");
+      try {
+        if (instance && typeof instance.complete === "function") {
+          instance.complete("fail");
+        }
+      } catch (completeErr) {
+        console.warn("instance.complete('fail') unsupported:", completeErr);
       }
 
       // Call error callback
-      onPaymentError(error.message || "Apple Pay payment failed");
+      onPaymentError(error?.message || "Apple Pay payment failed");
     }
   };
 
