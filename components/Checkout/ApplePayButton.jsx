@@ -94,20 +94,8 @@ const ApplePayButton = ({
         }
       }
 
-      // Get API key from backend
-      const apiKeyResponse = await fetch("/api/paysafe/api-key");
-      const apiKeyData = await apiKeyResponse.json();
-
-      if (!apiKeyData.success || !apiKeyData.apiKey) {
-        console.error(
-          "Failed to get API key from backend:",
-          apiKeyData.message
-        );
-        setIsApplePayAvailable(false);
-        return;
-      }
-
-      const API_KEY = apiKeyData.apiKey;
+      // Get API key (hardcoded for testing purposes)
+      const API_KEY = "test123";
       // Hard code account ID for testing (numeric as per docs)
       const ACCOUNT_ID = 1002990600;
 
