@@ -5,36 +5,37 @@ import { IoClose } from "react-icons/io5";
 import { toast } from "react-toastify";
 
 const CartPopup = ({ isOpen, onClose, productType }) => {
-  const [cartItems, setCartItems] = useState([]);
-  const [isRemoving, setIsRemoving] = useState(null); // item key being removed
-  const [isLoading, setIsLoading] = useState(false);
+  // Remove cart items state and fetching since we're not displaying them
+  // const [cartItems, setCartItems] = useState([]);
+  // const [isRemoving, setIsRemoving] = useState(null);
+  // const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    setIsLoading(true);
-    const fetchCartItems = async () => {
-      try {
-        const res = await fetch("/api/cart", {
-          headers: {
-            "Cache-Control": "no-cache",
-            Pragma: "no-cache",
-          },
-        });
-        const data = await res.json();
-        setCartItems(data.items || []);
-      } catch (error) {
-        setCartItems([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchCartItems();
-  }, [isOpen]);
+  // Remove cart fetching useEffect since we're not displaying cart items
+  // useEffect(() => {
+  //   if (!isOpen) return;
+  //   setIsLoading(true);
+  //   const fetchCartItems = async () => {
+  //     try {
+  //       const res = await fetch("/api/cart", {
+  //         headers: {
+  //           "Cache-Control": "no-cache",
+  //           Pragma: "no-cache",
+  //         },
+  //       });
+  //       const data = await res.json();
+  //       setCartItems(data.items || []);
+  //     } catch (error) {
+  //       setCartItems([]);
+  //     } finally {
+  //       setIsLoading(false);
+  //     }
+  //   };
+  //   fetchCartItems();
+  // }, [isOpen]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const isMobile = window.innerWidth < 768;
-    if (isOpen && isMobile) {
+    if (isOpen) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";
@@ -44,51 +45,10 @@ const CartPopup = ({ isOpen, onClose, productType }) => {
     };
   }, [isOpen]);
 
-  // Remove item handler
-  const handleRemoveItem = async (item) => {
-    if (isRemoving === item.key) return;
-    setIsRemoving(item.key);
-    try {
-      // Determine if cart is local or server
-      const cartRes = await fetch("/api/cart", {
-        headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
-      });
-      const cartData = await cartRes.json();
-      const isLocalCart = cartData.is_local_cart || false;
-
-      if (isLocalCart) {
-        const { removeItemFromLocalCart } = require("@/lib/cart/cartService");
-        const result = removeItemFromLocalCart(item.key);
-        if (result.error) {
-          toast.error(result.error);
-          setIsRemoving(null);
-          return;
-        }
-      } else {
-        const res = await fetch("/api/cart", {
-          headers: { "Content-Type": "application/json" },
-          method: "DELETE",
-          body: JSON.stringify({ itemKey: item.key }),
-        });
-        const data = await res.json();
-        if (data.error) {
-          toast.error(data.error);
-          setIsRemoving(null);
-          return;
-        }
-      }
-      // Always refresh cart
-      const res = await fetch("/api/cart", {
-        headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
-      });
-      const data = await res.json();
-      setCartItems(data.items || []);
-    } catch (error) {
-      toast.error("Failed to remove item from cart. Please try again.");
-    } finally {
-      setIsRemoving(null);
-    }
-  };
+  // Remove item handler since we're not displaying cart items
+  // const handleRemoveItem = async (item) => {
+  //   // ... removed
+  // };
 
   if (!isOpen) return null;
 
@@ -107,32 +67,35 @@ const CartPopup = ({ isOpen, onClose, productType }) => {
 
   return (
     <>
-      {/* Desktop Modal */}
-      <div className="hidden md:flex fixed inset-0 bg-black bg-opacity-50 z-50 items-center justify-center">
-        <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 relative">
+      {/* Responsive Modal - Works on both Desktop and Mobile */}
+      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg p-4 md:p-6 max-w-md w-full mx-4 relative">
           <button
             onClick={onClose}
-            className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+            className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 z-10"
           >
-            <span className="text-xl font-bold">&times;</span>
+            <IoClose size={24} />
           </button>
 
           <div className="text-center">
-            <h3 className="text-xl font-semibold mb-2">Item Added to Cart</h3>
-            <p className="text-gray-600 mb-6">
+            <h3 className="text-lg md:text-xl font-semibold mb-2">
+              Item Added to Cart
+            </h3>
+            <p className="text-gray-600 text-sm md:text-base mb-6">
               Your item has been added to your cart successfully.
             </p>
 
+            {/* Action Buttons */}
             <div className="flex flex-col space-y-3">
               <Link href={checkoutUrl} className="w-full">
-                <button className="w-full bg-black text-white py-2.5 px-4 rounded-full hover:bg-gray-900 transition-colors">
+                <button className="w-full bg-black text-white py-2.5 px-4 rounded-full hover:bg-gray-900 transition-colors text-sm md:text-base">
                   Proceed to Checkout
                 </button>
               </Link>
 
               <button
                 onClick={onClose}
-                className="w-full bg-white text-black py-2.5 px-4 rounded-full border border-gray-300 hover:bg-gray-50 transition-colors"
+                className="w-full bg-white text-black py-2.5 px-4 rounded-full border border-gray-300 hover:bg-gray-50 transition-colors text-sm md:text-base"
               >
                 Continue Shopping
               </button>
@@ -141,23 +104,20 @@ const CartPopup = ({ isOpen, onClose, productType }) => {
         </div>
       </div>
 
-      {/* Mobile Bottom Sheet */}
+      {/* Mobile Bottom Sheet - COMMENTED OUT */}
+      {/* 
       <div className="md:hidden fixed inset-0 z-[9999] flex flex-col justify-end">
-        {/* Overlay */}
         <div
           className="absolute inset-0 bg-black bg-opacity-30"
           onClick={onClose}
         ></div>
-        {/* Bottom Sheet */}
         <div className="relative w-full max-h-[450px] bg-white rounded-t-2xl shadow-lg flex flex-col animate-slideUp">
-          {/* Header */}
           <div className="flex items-center justify-between px-5 pt-5 pb-2">
             <span className="font-semibold text-[#454545] text-base">CART</span>
             <button onClick={onClose}>
               <IoClose size={32} />
             </button>
           </div>
-          {/* Cart Items */}
           <div className="flex-1 overflow-y-auto px-5 pb-2">
             {isLoading ? (
               <>
@@ -224,7 +184,6 @@ const CartPopup = ({ isOpen, onClose, productType }) => {
               </div>
             )}
           </div>
-          {/* Footer Buttons */}
           <div className="px-5 pb-5 pt-2 flex flex-col gap-3">
             <Link href={checkoutUrl} className="w-full">
               <button
@@ -243,6 +202,7 @@ const CartPopup = ({ isOpen, onClose, productType }) => {
           </div>
         </div>
       </div>
+      */}
     </>
   );
 };
