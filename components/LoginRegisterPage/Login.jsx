@@ -69,12 +69,12 @@ const LoginContent = ({ setActiveTab, loginRef }) => {
           searchParams.get("ed-flow") === "1"
             ? "ed"
             : searchParams.get("wl-flow") === "1"
-            ? "wl"
-            : searchParams.get("hair-flow") === "1"
-            ? "hair"
-            : searchParams.get("mh-flow") === "1"
-            ? "mh"
-            : savedProducts.flowType || "ed"; // Use saved flow type or default to "ed"
+              ? "wl"
+              : searchParams.get("hair-flow") === "1"
+                ? "hair"
+                : searchParams.get("mh-flow") === "1"
+                  ? "mh"
+                  : savedProducts.flowType || "ed"; // Use saved flow type or default to "ed"
 
         console.log("Using flow type for redirect after login:", flowType);
 
@@ -260,16 +260,29 @@ const LoginContent = ({ setActiveTab, loginRef }) => {
 
         console.log("Final redirect path:", redirectPath);
 
-        // Use window.location for more reliable redirection on production
-        if (process.env.NODE_ENV === "production") {
-          window.location.href = redirectPath;
+
+        if (redirectPath.includes("/checkout")) {
+          console.log("[Login] Using checkout redirect with delay:", redirectPath);
+
+          setTimeout(() => {
+            console.log("[Login] Redirecting to checkout after delay:", redirectPath);
+            window.location.href = redirectPath;
+          }, 300);
         } else {
-          router.push(redirectPath);
+
+          if (process.env.NODE_ENV === "production") {
+            window.location.href = redirectPath;
+          } else {
+            router.push(redirectPath);
+          }
         }
 
-        setTimeout(() => {
-          router.refresh();
-        }, 300);
+
+        if (!redirectPath.includes("/checkout")) {
+          setTimeout(() => {
+            router.refresh();
+          }, 300);
+        }
       } else {
         // Handle error responses - display error in toast notification
         let errorMessage =
@@ -404,9 +417,8 @@ const LoginContent = ({ setActiveTab, loginRef }) => {
             </div>
             <div className="basis-1/2">
               <Link
-                href={`/forgot-password${
-                  redirectTo ? "?redirect_to=" + redirectTo : ""
-                }${isEdFlow ? (redirectTo ? "&" : "?") + "ed-flow=1" : ""}`}
+                href={`/forgot-password${redirectTo ? "?redirect_to=" + redirectTo : ""
+                  }${isEdFlow ? (redirectTo ? "&" : "?") + "ed-flow=1" : ""}`}
                 className="text-[#AE7E56] text-sm font-normal block text-right underline"
               >
                 Forgot Password?
