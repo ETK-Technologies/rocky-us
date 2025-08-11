@@ -6,6 +6,8 @@ import {
   editSavedPaymentMethod,
 } from "@/lib/api/savedCardPayment";
 import { toast } from "react-toastify";
+import ApplePayButton from "./ApplePayButton";
+import ApplePayDebug from "./ApplePayDebug";
 
 const Payment = ({
   setFormData,
@@ -25,10 +27,16 @@ const Payment = ({
   saveCard,
   setSaveCard,
   onValidationChange, // New prop for validation callback
+  amount, // Add amount for Apple Pay
+  billingAddress, // Add billing address for Apple Pay
+  onApplePaySuccess, // Add Apple Pay success callback
+  onApplePayError, // Add Apple Pay error callback
+  isProcessingApplePay = false, // Add Apple Pay processing state
 }) => {
   const [paymentMethod, setPaymentMethod] = useState(
     selectedCard ? "saved" : "new"
   );
+  const [showApplePay, setShowApplePay] = useState(false);
   const [showDropdown, setShowDropdown] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingCard, setEditingCard] = useState(null);
@@ -283,7 +291,7 @@ const Payment = ({
   }, [selectedCard, cardNumber, expiry, cvc, onValidationChange]);
 
   return (
-    <>
+    <div>
       <div className="my-6">
         <h1 className="text-lg font-semibold">Payment</h1>
         <p className="text-gray-700 text-sm">
@@ -293,7 +301,7 @@ const Payment = ({
 
       <div className="bg-white w-full lg:max-w-[512px] p-6 rounded-[16px] shadow-sm border border-gray-300">
         <h1 className="flex items-center justify-between">
-          <span className="font-semibold text-sm">Card Information</span>
+          <span className="font-semibold text-sm">Payment Methods</span>
           <div className="h-8 w-[50%] relative">
             <Image
               fill
@@ -304,243 +312,262 @@ const Payment = ({
           </div>
         </h1>
 
-        {isLoadingSavedCards ? (
-          <div className="my-4 p-3 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-500">Loading saved cards...</p>
-          </div>
-        ) : savedCards && savedCards.length > 0 ? (
-          <div className="my-1 space-y-3">
-            {savedCards.map((card) => (
-              <div
-                key={card.id}
-                onClick={() => handleCardSelection(card)}
-                className={`border-b border-[#E2E2E1] cursor-pointer flex justify-between items-center`}
-              >
-                <div className="py-3 flex items-center gap-3">
-                  <input
-                    type="radio"
-                    name="payment-option"
-                    checked={
-                      paymentMethod === "saved" &&
-                      selectedCard &&
-                      selectedCard.id === card.id
-                    }
-                    onChange={() => handleCardSelection(card)}
-                    className="h-4 w-4 accent-[#AE7E56]  border border-[#00000033] cursor-pointer "
-                  />
+        {/* Apple Pay Debug (development only) */}
+        <ApplePayDebug />
 
-                  <Image
-                    src={getCardIcon(card.brand)}
-                    alt={`${card.brand} card`}
-                    width={40}
-                    height={24}
-                    className="object-contain h-full"
-                  />
-                  <span className="text-sm text-gray-500">
-                    **** **** **** {card.last4}
-                  </span>
-                  {card.is_default && (
-                    <span className="text-xs border border-[#F6F6F5] bg-[#E2E2E152] text-[#00000080] py-1 px-2 rounded-md">
-                      Default
-                    </span>
-                  )}
-                </div>
-                <div className="relative" ref={dropdownRef}>
-                  <div
-                    className="rounded-full cursor-pointer p-2 border border-[#E2E2E180] hover:border-[#AE7E56] hover:bg-[#AE7E56] hover:bg-opacity-5 transition-all duration-200 group"
-                    onClick={(e) => handleMenuClick(card.id, e)}
-                  >
-                    <Image
-                      src="/checkout-icons/menu-dots.svg"
-                      alt="menu-dots"
-                      width={16}
-                      height={16}
-                      className="group-hover:opacity-80 transition-opacity duration-200"
+        {/* Apple Pay Button */}
+        <div className="mb-4">
+          <ApplePayButton
+            amount={amount}
+            billingAddress={billingAddress}
+            onPaymentSuccess={onApplePaySuccess}
+            onPaymentError={onApplePayError}
+            isProcessing={isProcessingApplePay}
+            disabled={isProcessingApplePay}
+          />
+        </div>
+
+        <div className="border-t border-gray-200 pt-4">
+          <h2 className="font-semibold text-sm mb-4">Card Information</h2>
+
+          {isLoadingSavedCards ? (
+            <div className="my-4 p-3 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-500">Loading saved cards...</p>
+            </div>
+          ) : savedCards && savedCards.length > 0 ? (
+            <div className="my-1 space-y-3">
+              {savedCards.map((card) => (
+                <div
+                  key={card.id}
+                  onClick={() => handleCardSelection(card)}
+                  className={`border-b border-[#E2E2E1] cursor-pointer flex justify-between items-center`}
+                >
+                  <div className="py-3 flex items-center gap-3">
+                    <input
+                      type="radio"
+                      name="payment-option"
+                      checked={
+                        paymentMethod === "saved" &&
+                        selectedCard &&
+                        selectedCard.id === card.id
+                      }
+                      onChange={() => handleCardSelection(card)}
+                      className="h-4 w-4 accent-[#AE7E56]  border border-[#00000033] cursor-pointer "
                     />
+
+                    <Image
+                      src={getCardIcon(card.brand)}
+                      alt={`${card.brand} card`}
+                      width={40}
+                      height={24}
+                      className="object-contain h-full"
+                    />
+                    <span className="text-sm text-gray-500">
+                      **** **** **** {card.last4}
+                    </span>
+                    {card.is_default && (
+                      <span className="text-xs border border-[#F6F6F5] bg-[#E2E2E152] text-[#00000080] py-1 px-2 rounded-md">
+                        Default
+                      </span>
+                    )}
                   </div>
-                  {showDropdown === card.id && (
-                    <div className="absolute right-0 top-full mt-1 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                      <div className="py-1">
-                        <button
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEdit(card);
-                          }}
-                        >
-                          <Image
-                            src="/checkout-icons/edit-icon.svg"
-                            alt="edit-icon"
-                            width={16}
-                            height={16}
-                          />
-                          Edit
-                        </button>
-                        <button
-                          className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRemoveCard(card.id);
-                          }}
-                          disabled={deletingCardId === card.id}
-                        >
-                          {deletingCardId === card.id ? (
-                            <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
-                          ) : (
+                  <div className="relative" ref={dropdownRef}>
+                    <div
+                      className="rounded-full cursor-pointer p-2 border border-[#E2E2E180] hover:border-[#AE7E56] hover:bg-[#AE7E56] hover:bg-opacity-5 transition-all duration-200 group"
+                      onClick={(e) => handleMenuClick(card.id, e)}
+                    >
+                      <Image
+                        src="/checkout-icons/menu-dots.svg"
+                        alt="menu-dots"
+                        width={16}
+                        height={16}
+                        className="group-hover:opacity-80 transition-opacity duration-200"
+                      />
+                    </div>
+                    {showDropdown === card.id && (
+                      <div className="absolute right-0 top-full mt-1 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                        <div className="py-1">
+                          <button
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEdit(card);
+                            }}
+                          >
                             <Image
-                              src="/checkout-icons/delete.svg"
-                              alt="delete mark"
+                              src="/checkout-icons/edit-icon.svg"
+                              alt="edit-icon"
                               width={16}
                               height={16}
                             />
-                          )}
-                          {deletingCardId === card.id
-                            ? "Removing..."
-                            : "Remove"}
-                        </button>
+                            Edit
+                          </button>
+                          <button
+                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveCard(card.id);
+                            }}
+                            disabled={deletingCardId === card.id}
+                          >
+                            {deletingCardId === card.id ? (
+                              <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                            ) : (
+                              <Image
+                                src="/checkout-icons/delete.svg"
+                                alt="delete mark"
+                                width={16}
+                                height={16}
+                              />
+                            )}
+                            {deletingCardId === card.id
+                              ? "Removing..."
+                              : "Remove"}
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-            <div
-              className="flex items-center gap-3 cursor-pointer"
-              onClick={handleNewCardSelection}
-            >
-              <input
-                type="radio"
-                name="payment-option"
-                checked={paymentMethod === "new"}
-                onChange={handleNewCardSelection}
-                className="h-4 w-4 accent-[#AE7E56] border border-[#00000033] cursor-pointer "
-              />
-              <span className="text-sm font-medium text-[#212121]">
-                Use a new card
-              </span>
-            </div>
-          </div>
-        ) : (
-          <div className="my-4 p-3 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-500">
-              No saved cards found. Please enter your card details below.
-            </p>
-          </div>
-        )}
-
-        {!selectedCard && (
-          <>
-            <div className="mt-2">
-              <input
-                type="tel"
-                value={cardNumber ?? ""}
-                onChange={(e) =>
-                  setCardNumber(formatCardNumber(e.target.value))
-                }
-                placeholder="1234 1234 1234 1234"
-                className="p-3 border w-full rounded-t-lg text-[#ADADAD] focus:outline-none"
-                autoComplete="cc-number"
-                maxLength={19}
-                name="wc-paysafe-checkout-account-number"
-              />
-            </div>
-
-            <div className="flex">
-              <input
-                type="tel"
-                value={expiry ?? ""}
-                onChange={(e) => setExpiry(formatExpiryDate(e.target.value))}
-                placeholder="MM/YY"
-                className="p-3 border w-full rounded-bl-lg text-[#ADADAD] focus:outline-none"
-                autoComplete="cc-exp"
-                maxLength={5}
-              />
-              <input
-                type="tel"
-                value={cvc ?? ""}
-                onChange={(e) =>
-                  setCvc(e.target.value.replace(/\D/g, "").slice(0, 4))
-                }
-                placeholder="CVC"
-                className="p-3 border w-full rounded-br-lg text-[#ADADAD] focus:outline-none"
-                autoComplete="cc-csc"
-                maxLength={4}
-              />
-            </div>
-
-            <p className="mt-2 text-xs text-gray-600">
-              {cardNumber.length > 0
-                ? `Detected: ${getCardType(cardNumber.replace(/\s/g, ""))}`
-                : ""}
-            </p>
-
-            <div className="flex items-center mt-2">
-              <input
-                id="save-card"
-                type="checkbox"
-                checked={saveCard}
-                onChange={() => setSaveCard(!saveCard)}
-                className="h-4 w-4 accent-[#AE7E56] border-2 border-[#AE7E56] rounded mr-2 cursor-pointer rounded-md"
-              />
-              <label
-                htmlFor="save-card"
-                className="text-sm text-[#000000] cursor-pointer"
+              ))}
+              <div
+                className="flex items-center gap-3 cursor-pointer"
+                onClick={handleNewCardSelection}
               >
-                Save payment details for future purchases.
-              </label>
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* Edit Card Modal */}
-      {showEditModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold mb-4">Edit Card</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Card Number
-                </label>
-                <p className="text-sm text-gray-500">
-                  **** **** **** {editingCard?.last4}
-                </p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Expiry Date
-                </label>
                 <input
-                  type="text"
-                  value={editExpiry}
+                  type="radio"
+                  name="payment-option"
+                  checked={paymentMethod === "new"}
+                  onChange={handleNewCardSelection}
+                  className="h-4 w-4 accent-[#AE7E56] border border-[#00000033] cursor-pointer "
+                />
+                <span className="text-sm font-medium text-[#212121]">
+                  Use a new card
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="my-4 p-3 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-500">
+                No saved cards found. Please enter your card details below.
+              </p>
+            </div>
+          )}
+
+          {!selectedCard && (
+            <>
+              <div className="mt-2">
+                <input
+                  type="tel"
+                  value={cardNumber ?? ""}
                   onChange={(e) =>
-                    setEditExpiry(formatExpiryDate(e.target.value))
+                    setCardNumber(formatCardNumber(e.target.value))
                   }
-                  placeholder="MM/YY"
-                  className="p-3 border w-full rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#AE7E56]"
-                  maxLength={5}
+                  placeholder="1234 1234 1234 1234"
+                  className="p-3 border w-full rounded-t-lg text-[#ADADAD] focus:outline-none"
+                  autoComplete="cc-number"
+                  maxLength={19}
+                  name="wc-paysafe-checkout-account-number"
                 />
               </div>
-            </div>
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={handleCancelEdit}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveEdit}
-                className="flex-1 px-4 py-2 bg-[#AE7E56] text-white rounded-lg hover:bg-[#9d6f4a]"
-              >
-                Save Changes
-              </button>
+
+              <div className="flex">
+                <input
+                  type="tel"
+                  value={expiry ?? ""}
+                  onChange={(e) => setExpiry(formatExpiryDate(e.target.value))}
+                  placeholder="MM/YY"
+                  className="p-3 border w-full rounded-bl-lg text-[#ADADAD] focus:outline-none"
+                  autoComplete="cc-exp"
+                  maxLength={5}
+                />
+                <input
+                  type="tel"
+                  value={cvc ?? ""}
+                  onChange={(e) =>
+                    setCvc(e.target.value.replace(/\D/g, "").slice(0, 4))
+                  }
+                  placeholder="CVC"
+                  className="p-3 border w-full rounded-br-lg text-[#ADADAD] focus:outline-none"
+                  autoComplete="cc-csc"
+                  maxLength={4}
+                />
+              </div>
+
+              <p className="mt-2 text-xs text-gray-600">
+                {cardNumber.length > 0
+                  ? `Detected: ${getCardType(cardNumber.replace(/\s/g, ""))}`
+                  : ""}
+              </p>
+
+              <div className="flex items-center mt-2">
+                <input
+                  id="save-card"
+                  type="checkbox"
+                  checked={saveCard}
+                  onChange={() => setSaveCard(!saveCard)}
+                  className="h-4 w-4 accent-[#AE7E56] border-2 border-[#AE7E56] rounded mr-2 cursor-pointer rounded-md"
+                />
+                <label
+                  htmlFor="save-card"
+                  className="text-sm text-[#000000] cursor-pointer"
+                >
+                  Save payment details for future purchases.
+                </label>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Edit Card Modal */}
+        {showEditModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+              <h3 className="text-lg font-semibold mb-4">Edit Card</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Card Number
+                  </label>
+                  <p className="text-sm text-gray-500">
+                    **** **** **** {editingCard?.last4}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Expiry Date
+                  </label>
+                  <input
+                    type="text"
+                    value={editExpiry}
+                    onChange={(e) =>
+                      setEditExpiry(formatExpiryDate(e.target.value))
+                    }
+                    placeholder="MM/YY"
+                    className="p-3 border w-full rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#AE7E56]"
+                    maxLength={5}
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={handleCancelEdit}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveEdit}
+                  className="flex-1 px-4 py-2 bg-[#AE7E56] text-white rounded-lg hover:bg-[#9d6f4a]"
+                >
+                  Save Changes
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </>
+        )}
+      </div>
+    </div>
   );
 };
 

@@ -86,6 +86,7 @@ const CheckoutPageContent = () => {
   const [shouldUseDirectPayment, setShouldUseDirectPayment] = useState(false);
   const [savedOrderId, setSavedOrderId] = useState("");
   const [savedOrderKey, setSavedOrderKey] = useState("");
+  const [isProcessingApplePay, setIsProcessingApplePay] = useState(false);
 
   // Function to check if cart contains Zonnic products
   const hasZonnicProducts = (cartItems) => {
@@ -102,6 +103,120 @@ const CheckoutPageContent = () => {
         item.name.toLowerCase().includes("zonnic")
       );
     });
+  };
+
+  // Apple Pay success handler
+  const handleApplePaySuccess = async (paymentData) => {
+    try {
+      setIsProcessingApplePay(true);
+      console.log("Apple Pay payment successful:", paymentData);
+
+      // Create order first
+      const orderResponse = await fetch("/api/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...formData,
+          // Clear card details for Apple Pay
+          cardNumber: "",
+          cardExpMonth: "",
+          cardExpYear: "",
+          cardCVD: "",
+          useSavedCard: false,
+          paymentMethod: "apple_pay",
+        }),
+      });
+
+      const orderData = await orderResponse.json();
+
+      if (orderData.error) {
+        toast.error(orderData.error);
+        return;
+      }
+
+      const order_id = orderData.data.id || orderData.data.order_id;
+      const order_key = orderData.data.order_key || "";
+
+      console.log("Order created for Apple Pay, processing payment:", order_id);
+
+      // Process Apple Pay payment
+      const paymentResponse = await fetch("/api/paysafe/apple-pay", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          order_id: order_id,
+          amount: cartItems?.total_price || 0,
+          currency: "USD",
+          applePayToken: paymentData.token,
+          billing_address: formData.billing_address,
+          saveCard: false, // Apple Pay doesn't support saving cards in the same way
+        }),
+      });
+
+      const paymentResult = await paymentResponse.json();
+
+      if (!paymentResult.success) {
+        toast.error(paymentResult.message || "Apple Pay payment failed");
+        return;
+      }
+
+      toast.success("Apple Pay payment processed successfully!");
+
+      console.log("🎉 APPLE PAY SUCCESS!", {
+        order_id,
+        order_key,
+        payment_id: paymentResult.payment_id,
+        paymentResult: paymentResult,
+      });
+
+      // Empty the cart after successful payment
+      try {
+        const emptyCartResponse = await fetch("/api/cart/empty", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (emptyCartResponse.ok) {
+          console.log("Cart emptied successfully after Apple Pay payment");
+          setCartItems({
+            items: [],
+            total_items: 0,
+            total_price: "0.00",
+            needs_shipping: false,
+            coupons: [],
+            shipping_rates: [],
+          });
+        }
+      } catch (cartError) {
+        console.error(
+          "Error emptying cart after Apple Pay payment:",
+          cartError
+        );
+      }
+
+      // Redirect to order received page
+      router.push(
+        `/checkout/order-received/${order_id}?key=${order_key}${buildFlowQueryString()}`
+      );
+    } catch (error) {
+      console.error("Error processing Apple Pay payment:", error);
+      toast.error("Apple Pay payment processing failed. Please try again.");
+    } finally {
+      setIsProcessingApplePay(false);
+    }
+  };
+
+  // Apple Pay error handler
+  const handleApplePayError = (error) => {
+    console.error("Apple Pay error:", error);
+    toast.error(error || "Apple Pay payment failed");
+    setIsProcessingApplePay(false);
   };
 
   // Function to update URL with smoking-flow parameter
@@ -1111,6 +1226,17 @@ const CheckoutPageContent = () => {
           isLoadingSavedCards={isLoadingSavedCards}
           saveCard={saveCard}
           setSaveCard={setSaveCard}
+          amount={
+            cartItems?.totals?.total_price
+              ? parseFloat(cartItems.totals.total_price) / 100
+              : cartItems?.total_price
+              ? parseFloat(cartItems.total_price)
+              : 0
+          }
+          billingAddress={formData.billing_address}
+          onApplePaySuccess={handleApplePaySuccess}
+          onApplePayError={handleApplePayError}
+          isProcessingApplePay={isProcessingApplePay}
         />
       </div>
     </>
