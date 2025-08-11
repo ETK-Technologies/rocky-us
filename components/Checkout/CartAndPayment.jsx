@@ -25,6 +25,11 @@ const CartAndPayment = ({
   isLoadingSavedCards,
   saveCard,
   setSaveCard,
+  amount, // Add amount for Apple Pay
+  billingAddress, // Add billing address for Apple Pay
+  onApplePaySuccess, // Add Apple Pay success callback
+  onApplePayError, // Add Apple Pay error callback
+  isProcessingApplePay = false, // Add Apple Pay processing state
 }) => {
   const [isPaymentValid, setIsPaymentValid] = useState(false);
 
@@ -62,6 +67,11 @@ const CartAndPayment = ({
         saveCard={saveCard}
         setSaveCard={setSaveCard}
         onValidationChange={handleValidationChange}
+        amount={amount}
+        billingAddress={billingAddress}
+        onApplePaySuccess={onApplePaySuccess}
+        onApplePayError={onApplePayError}
+        isProcessingApplePay={isProcessingApplePay}
       />
       <button
         onClick={handleSubmit}
