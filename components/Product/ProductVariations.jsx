@@ -23,12 +23,6 @@ const VariationButton = ({ selected, onClick, children, disabled = false }) => (
 );
 
 const SubscriptionOption = ({ option, selected, onSelect }) => {
-  // Check if this is a lidocaine product option by the label format
-  const isLidocaineOption =
-    option.label.includes("(30g)") ||
-    option.label.includes("(90g)") ||
-    option.label === "One Time Purchase";
-
   // Check if this is a hair product option
   const isHairOption = option.isHairProduct === true;
 
@@ -53,38 +47,16 @@ const SubscriptionOption = ({ option, selected, onSelect }) => {
     );
   }
 
-  if (isLidocaineOption) {
-    return (
-      <button
-        className={`flex-1 px-3 py-2 border rounded-lg transition-all ${
-          selected
-            ? "border-[#AE7E56] border-2 bg-white text-[#AE7E56]"
-            : "border-gray-300 bg-white text-gray-700 hover:border-gray-400"
-        }`}
-        onClick={() => onSelect(option)}
-        type="button"
-      >
-        <div className="flex flex-col items-center">
-          <span
-            className={`font-medium text-sm ${
-              selected ? "text-[#AE7E56]" : ""
-            }`}
-          >
-            {option.label}
-          </span>
-        </div>
-      </button>
-    );
-  }
-
-  // Regular subscription option layout for other products
+  // Unified design for all Lidocaine subscription options (and regular options)
   return (
     <div
       className={`flex items-center justify-between p-3 rounded-lg border-2 transition-all duration-200 ${
         selected ? "border-[#AE7E56]" : "border-gray-300 text-gray-500"
       }`}
+      onClick={() => onSelect(option)}
+      style={{ cursor: "pointer" }}
     >
-      <label className="flex items-center gap-2 cursor-pointer">
+      <label className="flex items-center gap-2 cursor-pointer mb-0">
         <input
           type="radio"
           name="subscription-type"
@@ -93,7 +65,13 @@ const SubscriptionOption = ({ option, selected, onSelect }) => {
           onChange={() => onSelect(option)}
           className="w-4 h-4"
         />
-        <span className="font-semibold text-[#AE7E56]">{option.label}</span>
+        <span
+          className={`font-semibold ${
+            selected ? "text-[#AE7E56]" : "text-black"
+          }`}
+        >
+          {option.label.replace(/-/g, " ")}
+        </span>
       </label>
       <span className="subscription-price text-black font-semibold">
         ${option.price}
@@ -124,7 +102,7 @@ const ForcedSubscriptionOptions = ({ options, selected, onSelect }) => {
                   type="radio"
                   value={option.id}
                   id={`convert_to_sub_${option.id}`}
-                  name={`convert_to_sub_${new Date().getTime()}`}
+                  name="convert_to_sub_forced_subscription"
                   checked={selected?.id === option.id}
                   onChange={() => onSelect(option)}
                   className="w-4 h-4"
@@ -452,8 +430,8 @@ const ProductVariations = ({
         <h3 className="text-base font-medium">Please choose one</h3>
 
         {isLidocaineProduct ? (
-          // Grid layout for lidocaine products (2 columns)
-          <div className="grid grid-cols-2 gap-2">
+          // Vertical layout for lidocaine products (one per row)
+          <div className="flex flex-col space-y-2">
             {subscriptionOptions.map((option) => (
               <SubscriptionOption
                 key={option.id}
