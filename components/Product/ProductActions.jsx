@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import CartPopup from "../Cart/CartPopup";
 import { addItemToCart } from "@/lib/cart/cartService";
+// import { addRequiredConsultation } from "@/utils/requiredConsultation";
 
 const ProductActions = ({
   price = 90,
@@ -48,6 +49,28 @@ const ProductActions = ({
         return;
       }
 
+      // --- FLOW DETECTION AND LOCALSTORAGE LOGIC ---
+      const url = product.meta_data.find(
+        (m) => m.key === "add_to_cart_url"
+      )?.value;
+      if (url && typeof window !== "undefined") {
+        //const url = product.add_to_cart_url;
+        console.log("add to cart url", url);
+        const flowMatch = url.match(
+          /(ed-flow|hair-flow|wl-flow|smoking-flow)=1/
+        );
+        if (flowMatch) {
+          console.log("flow match", flowMatch);
+          const flowType = flowMatch[1];
+          // Use selected variation ID if present, otherwise product ID
+          const selectedId = selectedVariation?.variation_id || product.id;
+          // addRequiredConsultation(selectedId, flowType);
+        }
+      } else {
+        console.log("no add to cart url");
+      }
+      // --- END FLOW DETECTION AND LOCALSTORAGE LOGIC ---
+
       // Make sure we have the correct product image URL
       const productImageUrl =
         product.images && product.images.length > 0
@@ -75,7 +98,9 @@ const ProductActions = ({
 
       // Add variation information if selected
       if (selectedVariation) {
-        cartData.variationId = selectedVariation.variation_id;
+        console.log("selectedVariation", selectedVariation);
+        cartData.variationId =
+          selectedVariation.variation_id || selectedVariation.id;
 
         // Add variation attributes for display
         if (selectedVariation.attributes) {
@@ -95,13 +120,30 @@ const ProductActions = ({
         // For variable products that aren't being converted to subscriptions,
         // use the variation ID as the product ID
         if (isVariableProduct && !cartData.convertToSub) {
+          const varId = selectedVariation.variation_id || selectedVariation.id;
           console.log(
-            `Variable product detected, using variation ID ${
-              selectedVariation.variation_id
-            } as productId for ${product.name || product.id}`
+            `Variable product detected, using variation ID ${varId} as productId for ${
+              product.name || product.id
+            }`
           );
-          cartData.productId = selectedVariation.variation_id;
+          cartData.productId = varId;
         }
+      }
+
+      // Always set 'id' to the correct value for the API
+      if (
+        selectedVariation &&
+        (product.type === "variable" ||
+          product.type === "variable-subscription")
+      ) {
+        cartData.id = selectedVariation.variation_id || selectedVariation.id;
+        console.log(
+          "variation id",
+          selectedVariation.variation_id || selectedVariation.id
+        );
+      } else {
+        cartData.id = product.id;
+        console.log("product id", product.id);
       }
 
       // Use the cart service instead of direct API call
