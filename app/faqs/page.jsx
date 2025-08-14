@@ -141,9 +141,8 @@ const Faqs = () => {
               <p className="text-gray-600">
                 {displayedFaqs.length === 0
                   ? `No results found for "${debouncedValue}"`
-                  : `Found ${displayedFaqs.length} result${
-                      displayedFaqs.length === 1 ? "" : "s"
-                    } for "${debouncedValue}"`}
+                  : `Found ${displayedFaqs.length} result${displayedFaqs.length === 1 ? "" : "s"
+                  } for "${debouncedValue}"`}
               </p>
             ) : null}
           </div>
@@ -160,11 +159,10 @@ const Faqs = () => {
                 <li
                   key={index}
                   onClick={() => setSelectedCategory(faq)}
-                  className={`capitalize text-nowrap py-4 px-6 text-[14px] md:text-[16px] leading-[140%] cursor-pointer rounded-[64px] transition-all ${
-                    selectedCategory === faq
-                      ? "bg-black text-white"
-                      : "bg-[#0000000A] text-black"
-                  }`}
+                  className={`capitalize text-nowrap py-4 px-6 text-[14px] md:text-[16px] leading-[140%] cursor-pointer rounded-[64px] transition-all ${selectedCategory === faq
+                    ? "bg-black text-white"
+                    : "bg-[#0000000A] text-black"
+                    }`}
                 >
                   {faq === "weight loss" ? (
                     <>
@@ -277,6 +275,11 @@ const HomeFaqs = [
     question: "How can I contact Rocky for support?",
     answer:
       "For support, message us through the portal, email the appropriate department, or call +1 (416) 900-1444 (Mon–Fri, 6 PM–8 PM EST)",
+  },
+  {
+    question: "What is the name and address of our affiliate partner pharmacy?",
+    answer:
+      "Affiliate Partner Pharmacy: Dania Discount Drugs Inc. 5420 NW 33rd Ave Suite 7B Fort Lauderdale, FL 33309",
   },
 ];
 const HairLossFaqs = [
