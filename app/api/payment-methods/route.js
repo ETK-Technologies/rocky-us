@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server";
-import axios from "axios";
 import { cookies } from "next/headers";
+import { PaymentService } from "@/lib/services/PaymentService";
 
-const BASE_URL = process.env.BASE_URL;
+const paymentService = new PaymentService();
 
 export async function GET() {
   try {
     const cookieStore = cookies();
     const authToken = cookieStore.get("authToken");
     const userId = cookieStore.get("userId");
+    const paysafeProfileId = cookieStore.get("paysafeProfileId");
 
     // Check if user is authenticated
     if (!authToken || !userId) {
@@ -22,35 +23,33 @@ export async function GET() {
       );
     }
 
-    // Call the custom endpoint in WordPress
-    const response = await axios.get(
-      `${BASE_URL}/wp-json/custom/v1/payment_tokens?customer_id=${userId.value}`,
-      {
-        headers: {
-          Authorization: `${authToken.value}`,
+    // Check if we have a Paysafe profile ID
+    if (!paysafeProfileId) {
+      return NextResponse.json({
+        success: true,
+        message: "No saved cards found",
+        cards: [],
+      });
+    }
+
+    // Get saved cards directly from Paysafe vault
+    const result = await paymentService.getSavedCards(paysafeProfileId.value);
+
+    if (!result.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Failed to fetch saved cards",
+          error: result.error,
+          cards: [],
         },
-      }
-    );
-
-    const raw = response.data;
-
-    const savedCards = Array.isArray(raw.cards)
-      ? raw.cards.map((card) => ({
-        id: card.id.toString(),
-        last4: card.last4,
-        brand: card.brand?.toLowerCase() ?? "unknown",
-        exp_month: parseInt(card.expiry_month),
-        exp_year: parseInt(card.expiry_year),
-        is_default: card.is_default,
-        token: card.token,
-      }))
-      : [];
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
-      message: response.message,
-      data: response.data,
-      cards: savedCards,
+      cards: result.data,
     });
   } catch (error) {
     console.error(
@@ -63,8 +62,76 @@ export async function GET() {
         success: false,
         message: "Failed to fetch saved payment methods",
         error: error.message,
-        respone: error.response?.data,
         cards: [],
+      },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(req) {
+  try {
+    const cookieStore = cookies();
+    const authToken = cookieStore.get("authToken");
+    const userId = cookieStore.get("userId");
+    const paysafeProfileId = cookieStore.get("paysafeProfileId");
+
+    // Check if user is authenticated
+    if (!authToken || !userId || !paysafeProfileId) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Not authenticated or missing Paysafe profile",
+        },
+        { status: 401 }
+      );
+    }
+
+    const data = await req.json();
+    const { cardId } = data;
+
+    if (!cardId) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Card ID is required",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Delete card from Paysafe vault
+    const result = await paymentService.deleteCard(
+      paysafeProfileId.value,
+      cardId
+    );
+
+    if (!result.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Failed to delete card",
+          error: result.error,
+        },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: "Card deleted successfully",
+    });
+  } catch (error) {
+    console.error(
+      "Error deleting card:",
+      error.response?.data || error.message
+    );
+
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Failed to delete card",
+        error: error.message,
       },
       { status: 500 }
     );

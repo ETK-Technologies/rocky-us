@@ -1,24 +1,24 @@
 import { NextResponse } from "next/server";
-import axios from "axios";
 import { cookies } from "next/headers";
+import { PaymentService } from "@/lib/services/PaymentService";
+import { OrderService } from "@/lib/services/OrderService";
 
-const BASE_URL = process.env.BASE_URL;
-const API_SECRET_KEY =
-  process.env.SAVED_CARD_API_SECRET ||
-  "+i/h/yeqsqqlEg9pA/niaDqS4WzRh7YTCFNwOma/rXQ=";
+const paymentService = new PaymentService();
+const orderService = new OrderService();
 
 export async function POST(req) {
   try {
     const cookieStore = cookies();
     const authToken = cookieStore.get("authToken");
     const userId = cookieStore.get("userId");
+    const paysafeProfileId = cookieStore.get("paysafeProfileId");
 
     // Check if user is authenticated
-    if (!authToken || !userId) {
+    if (!authToken || !userId || !paysafeProfileId) {
       return NextResponse.json(
         {
           success: false,
-          message: "Not authenticated",
+          message: "Not authenticated or missing Paysafe profile",
         },
         { status: 401 }
       );
@@ -26,52 +26,76 @@ export async function POST(req) {
 
     // Parse the request body
     const data = await req.json();
-    const {
-      order_id,
-      savedCardToken,
-      cardId = 1,
-      cvv = "",
-      billing_address = null, // Add billing address parameter
-    } = data;
+    const { order_id, cardId, cvv = "", billing_address = null } = data;
 
     // Validate required fields
-    if (!order_id || !savedCardToken) {
+    if (!order_id || !cardId) {
       return NextResponse.json(
         {
           success: false,
-          message:
-            "Missing required fields: order_id and savedCardToken are required",
+          message: "Missing required fields: order_id and cardId are required",
         },
         { status: 400 }
       );
     }
 
-    // Call the WordPress custom endpoint to process the payment with a saved card
-    const response = await axios.post(
-      `${BASE_URL}/wp-json/custom/v1/pay-order-with-saved-card`,
-      {
-        order_id,
-        savedCardToken,
-        cardId,
-        cvv,
-        billing_address, // Pass the billing address to the WordPress endpoint
-      },
-      {
-        headers: {
-          Authorization: `${authToken.value}`,
-          "x-api-secret": API_SECRET_KEY,
-          "Content-Type": "application/json",
+    // Get order details to get the amount
+    const orderDetails = await orderService.getOrder(order_id);
+    if (!orderDetails.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Failed to get order details",
+          error: orderDetails.error,
         },
-      }
-    );
+        { status: 500 }
+      );
+    }
+
+    // Process payment with saved card
+    const paymentResult = await paymentService.processSavedCardPayment({
+      order_id,
+      amount: orderDetails.data.total,
+      currency: "USD", // Using USD as per memory
+      profileId: paysafeProfileId.value,
+      cardToken: cardId, // Updated parameter name
+      cvv,
+      billing_address,
+    });
+
+    if (!paymentResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Payment processing failed",
+          error: paymentResult.error,
+          paysafe_error_code: paymentResult.paysafe_error_code,
+          paysafe_error_message: paymentResult.paysafe_error_message,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Update order status
+    const orderUpdateResult = await orderService.updateOrder(order_id, {
+      status: "processing",
+      transaction_id: paymentResult.data.id,
+      payment_method: "paysafe",
+      payment_method_title: "Credit Card (Paysafe)",
+    });
+
+    if (!orderUpdateResult.success) {
+      console.error("Failed to update order status:", orderUpdateResult.error);
+      // Payment succeeded but order update failed - should be handled by webhook
+    }
 
     // Return the response data
     return NextResponse.json({
       success: true,
-      order_id: response.data.order_id,
-      order_key: response.data.order_key,
-      order_status: response.data.order_status,
-      transaction_id: response.data.transaction_id,
+      order_id: order_id,
+      order_key: orderDetails.data.order_key,
+      order_status: "processing",
+      transaction_id: paymentResult.data.id,
       message: "Payment processed successfully",
     });
   } catch (error) {
@@ -80,35 +104,13 @@ export async function POST(req) {
       error.response?.data || error.message
     );
 
-    // If payment failed, try to refresh the cart nonce
-    try {
-      const cartResponse = await axios.get(
-        `${BASE_URL}/wp-json/wc/store/cart`,
-        {
-          headers: {
-            Authorization: authToken.value,
-          },
-        }
-      );
-
-      // Update the cart nonce if available
-      if (cartResponse.headers && cartResponse.headers.nonce) {
-        const cookieStore = cookies();
-        cookieStore.set("cart-nonce", cartResponse.headers.nonce);
-      }
-    } catch (refreshError) {
-      console.error("Error refreshing cart nonce:", refreshError);
-    }
-
     return NextResponse.json(
       {
         success: false,
-        message:
-          error.response?.data?.message ||
-          "Payment processing failed. Please try again.",
+        message: "Payment processing failed. Please try again.",
         error: error.response?.data || error.message,
       },
-      { status: error.response?.status || 500 }
+      { status: 500 }
     );
   }
 }
