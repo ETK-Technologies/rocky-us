@@ -145,7 +145,8 @@ export async function POST(req) {
         },
         paysafeProfileId,
         currency,
-        `save_card_${order_id}_${Date.now()}`
+        `save_card_${order_id}_${Date.now()}`,
+        amount
       );
 
       if (handleResult.success) {
