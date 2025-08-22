@@ -135,6 +135,10 @@ export async function POST(req) {
     // Create payment handle with card saving if profile exists
     let paymentHandleToken;
     if (saveCard && paysafeProfileId) {
+      console.log(
+        "Creating payment handle for card saving with profile:",
+        paysafeProfileId
+      );
       const handleResult = await paymentService.createPaymentHandle(
         {
           cardNumber,
@@ -149,8 +153,16 @@ export async function POST(req) {
         amount
       );
 
+      console.log("Payment handle creation result:", handleResult);
+
       if (handleResult.success) {
-        paymentHandleToken = handleResult.data.paymentHandleToken;
+        // Try different possible field names for the token
+        paymentHandleToken =
+          handleResult.data.paymentHandleToken ||
+          handleResult.data.id ||
+          handleResult.data.token;
+        console.log("Extracted payment handle token:", paymentHandleToken);
+
         cardSaveInfo = {
           willSave: true,
           paymentHandleCreated: true,
@@ -165,9 +177,22 @@ export async function POST(req) {
       }
     }
 
+    console.log(
+      "Payment flow decision - saveCard:",
+      saveCard,
+      "paysafeProfileId:",
+      paysafeProfileId,
+      "paymentHandleToken:",
+      paymentHandleToken ? "exists" : "none"
+    );
+
     // Process payment using payment handle or regular method
     let paymentResult;
     if (paymentHandleToken) {
+      console.log(
+        "Using processPaymentWithHandle with token:",
+        paymentHandleToken
+      );
       paymentResult = await paymentService.processPaymentWithHandle({
         order_id,
         amount,
@@ -176,7 +201,7 @@ export async function POST(req) {
         billing_address,
       });
     } else {
-      // Fall back to original method
+      console.log("Falling back to processPayment method");
       paymentResult = await paymentService.processPayment(requestData);
     }
 
