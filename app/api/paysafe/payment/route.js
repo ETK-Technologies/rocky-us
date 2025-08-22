@@ -223,7 +223,8 @@ export async function POST(req) {
     // Payment successful - update order
     if (
       paymentResult.data.status === PAYMENT_STATUS.COMPLETED ||
-      paymentResult.data.status === "SUCCESS"
+      paymentResult.data.status === "SUCCESS" ||
+      paymentResult.data.status === "AUTHORIZED" // Authorization-only transactions
     ) {
       // Update order with payment information
       const orderUpdateResult = await orderService.updateOrderAfterPayment(
