@@ -191,17 +191,26 @@ export async function POST(req) {
       paymentHandleToken ? "exists" : "none"
     );
 
-    // Only create payment handle - let WordPress handle the actual payment processing
+    // Two-step payment flow: 1) Create payment handle, 2) Process payment (authorize)
     let paymentResult;
     if (paymentHandleToken && handleResult && handleResult.success) {
       console.log(
-        "Payment handle created successfully, WordPress will handle payment processing"
+        "Payment handle created successfully, now processing payment authorization"
       );
-      // Return success with the actual payment handle response data
-      paymentResult = {
-        success: true,
-        data: handleResult.data, // Use the actual response from payment handle creation
-      };
+
+      // Step 2: Process payment using the payment handle token
+      paymentResult = await paymentService.processPaymentWithHandle({
+        order_id,
+        amount,
+        currency,
+        paymentHandleToken,
+        billing_address,
+        customerIp:
+          req.headers["x-forwarded-for"] ||
+          req.headers["x-real-ip"] ||
+          "127.0.0.1",
+        description: `Order #${order_id} payment`,
+      });
     } else {
       console.log("Falling back to processPayment method");
       paymentResult = await paymentService.processPayment(requestData);
@@ -226,8 +235,8 @@ export async function POST(req) {
     if (
       paymentResult.data.status === PAYMENT_STATUS.COMPLETED ||
       paymentResult.data.status === "SUCCESS" ||
-      paymentResult.data.status === "AUTHORIZED" || // Authorization-only transactions
-      paymentResult.data.status === "PAYABLE" // Payment handle ready for WordPress
+      paymentResult.data.status === "COMPLETED" || // Payment Hub API completed status
+      paymentResult.data.status === "AUTHORIZED" // Authorization-only transactions
     ) {
       // Update order with payment information
       const orderUpdateResult = await orderService.updateOrderAfterPayment(
