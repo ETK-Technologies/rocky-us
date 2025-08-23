@@ -134,12 +134,13 @@ export async function POST(req) {
 
     // Create payment handle with card saving if profile exists
     let paymentHandleToken;
+    let handleResult = null; // Declare in broader scope
     if (saveCard && paysafeProfileId) {
       console.log(
         "Creating payment handle for card saving with profile:",
         paysafeProfileId
       );
-      const handleResult = await paymentService.createPaymentHandle(
+      handleResult = await paymentService.createPaymentHandle(
         {
           cardNumber,
           cardExpMonth,
@@ -149,11 +150,15 @@ export async function POST(req) {
         },
         paysafeProfileId,
         currency,
-        `save_card_${order_id}_${Date.now()}`,
+        `${order_id}${Date.now()}${Math.floor(Math.random() * 1000)}`, // Generate numeric MRN
         amount
       );
 
       console.log("Payment handle creation result:", handleResult);
+      console.log(
+        "Payment handle response data:",
+        JSON.stringify(handleResult.data, null, 2)
+      );
 
       if (handleResult.success) {
         // Try different possible field names for the token
@@ -186,20 +191,17 @@ export async function POST(req) {
       paymentHandleToken ? "exists" : "none"
     );
 
-    // Process payment using payment handle or regular method
+    // Only create payment handle - let WordPress handle the actual payment processing
     let paymentResult;
-    if (paymentHandleToken) {
+    if (paymentHandleToken && handleResult && handleResult.success) {
       console.log(
-        "Using processPaymentWithHandle with token:",
-        paymentHandleToken
+        "Payment handle created successfully, WordPress will handle payment processing"
       );
-      paymentResult = await paymentService.processPaymentWithHandle({
-        order_id,
-        amount,
-        currency,
-        paymentHandleToken,
-        billing_address,
-      });
+      // Return success with the actual payment handle response data
+      paymentResult = {
+        success: true,
+        data: handleResult.data, // Use the actual response from payment handle creation
+      };
     } else {
       console.log("Falling back to processPayment method");
       paymentResult = await paymentService.processPayment(requestData);
@@ -224,7 +226,8 @@ export async function POST(req) {
     if (
       paymentResult.data.status === PAYMENT_STATUS.COMPLETED ||
       paymentResult.data.status === "SUCCESS" ||
-      paymentResult.data.status === "AUTHORIZED" // Authorization-only transactions
+      paymentResult.data.status === "AUTHORIZED" || // Authorization-only transactions
+      paymentResult.data.status === "PAYABLE" // Payment handle ready for WordPress
     ) {
       // Update order with payment information
       const orderUpdateResult = await orderService.updateOrderAfterPayment(
@@ -304,6 +307,7 @@ export async function POST(req) {
         message: "Payment processed successfully",
         profile: profileInfo,
         cardSave: cardSaveInfo,
+        paymentData: paymentResult.data, // Include the full payment handle response for debugging
       });
     } else {
       return NextResponse.json(
