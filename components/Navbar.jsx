@@ -93,28 +93,29 @@ const menuItems = [
   // HAIR LOSS
   {
     text: "Hair Loss",
-    link: "/hair",
-    mainText: "See all Hair Loss",
-    mainLink: "/hair",
-    getStartedText: "Stop Hair Loss in Its Tracks",
-    getStartedLink: "/hair-flow",
-    getStartedImage:
-      "https://myrocky.b-cdn.net/WP%20Images/Hair%20Loss/hair.webp",
+    link: "/product/finasteride",
+    // mainText: "See all Hair Loss",
+    // mainLink: "/hair",
+    // getStartedText: "Stop Hair Loss in Its Tracks",
+    // getStartedLink: "/hair-flow",
+    // getStartedLink: "/product/finasteride",
+    // getStartedImage:
+    //   "https://myrocky.b-cdn.net/WP%20Images/Hair%20Loss/hair.webp",
     sections: [
       {
         title: "Hair Loss",
         name: "Products",
 
         products: [
-          {
-            name: "Finasteride & Minoxidil Topical Foam",
-            link: "/product/finasteride-minoxidil-topical-foam/",
-          },
+          // {
+          //   name: "Finasteride & Minoxidil Topical Foam",
+          //   link: "/product/finasteride-minoxidil-topical-foam/",
+          // },
           {
             name: "Finasteride (Propecia)",
             link: "/product/finasteride/",
           },
-          { name: "Minoxidil (Rogaine)", link: "/product/minoxidil/" },
+          // { name: "Minoxidil (Rogaine)", link: "/product/minoxidil/" },
         ],
       },
       // {
@@ -138,15 +139,15 @@ const menuItems = [
       //     { name: "Essential V Oil", link: "/product/essential-v/" },
       //   ],
       // },
-      {
-        title: "SUPPLEMENTS",
-        products: [
-          {
-            name: "Hair Growth Support",
-            link: "/product/hair-growth-support/",
-          },
-        ],
-      },
+      // {
+      //   title: "SUPPLEMENTS",
+      //   products: [
+      //     {
+      //       name: "Hair Growth Support",
+      //       link: "/product/hair-growth-support/",
+      //     },
+      //   ],
+      // },
     ],
   },
   // BODY OPTIMIZATION
