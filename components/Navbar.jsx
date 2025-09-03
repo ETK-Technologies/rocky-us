@@ -91,64 +91,64 @@ const menuItems = [
     ],
   },
   // HAIR LOSS
-  {
-    text: "Hair Loss",
-    link: "/hair",
-    mainText: "See all Hair Loss",
-    mainLink: "/hair",
-    getStartedText: "Stop Hair Loss in Its Tracks",
-    getStartedLink: "/hair-flow",
-    getStartedImage:
-      "https://myrocky.b-cdn.net/WP%20Images/Hair%20Loss/hair.webp",
-    sections: [
-      {
-        title: "Hair Loss",
-        name: "Products",
+  // {
+  //   text: "Hair Loss",
+  //   link: "/hair",
+  //   mainText: "See all Hair Loss",
+  //   mainLink: "/hair",
+  //   getStartedText: "Stop Hair Loss in Its Tracks",
+  //   getStartedLink: "/hair-flow",
+  //   getStartedImage:
+  //     "https://myrocky.b-cdn.net/WP%20Images/Hair%20Loss/hair.webp",
+  //   sections: [
+  //     {
+  //       title: "Hair Loss",
+  //       name: "Products",
 
-        products: [
-          {
-            name: "Finasteride & Minoxidil Topical Foam",
-            link: "/product/finasteride-minoxidil-topical-foam/",
-          },
-          {
-            name: "Finasteride (Propecia)",
-            link: "/product/finasteride/",
-          },
-          { name: "Minoxidil (Rogaine)", link: "/product/minoxidil/" },
-        ],
-      },
-      // {
-      //   title: "Hair Kits",
-      //   products: [
-      //     { name: "My Rocky Kit", link: "/my-rocky-combo-pack/" },
-      //     {
-      //       name: "Prescription Kit",
-      //       link: "/my-rocky-combo-pack/#prescription-kit",
-      //     },
-      //     { name: "Organic Kit", link: "/my-rocky-combo-pack/#organic-kit" },
-      //   ],
-      // },
-      // {
-      //   title: "Hair care",
-      //   products: [
-      //     {
-      //       name: "Essential IX Shampoo",
-      //       link: "/product/essential-ix/",
-      //     },
-      //     { name: "Essential V Oil", link: "/product/essential-v/" },
-      //   ],
-      // },
-      {
-        title: "SUPPLEMENTS",
-        products: [
-          {
-            name: "Hair Growth Support",
-            link: "/product/hair-growth-support/",
-          },
-        ],
-      },
-    ],
-  },
+  //       products: [
+  //         {
+  //           name: "Finasteride & Minoxidil Topical Foam",
+  //           link: "/product/finasteride-minoxidil-topical-foam/",
+  //         },
+  //         {
+  //           name: "Finasteride (Propecia)",
+  //           link: "/product/finasteride/",
+  //         },
+  //         { name: "Minoxidil (Rogaine)", link: "/product/minoxidil/" },
+  //       ],
+  //     },
+  //     // {
+  //     //   title: "Hair Kits",
+  //     //   products: [
+  //     //     { name: "My Rocky Kit", link: "/my-rocky-combo-pack/" },
+  //     //     {
+  //     //       name: "Prescription Kit",
+  //     //       link: "/my-rocky-combo-pack/#prescription-kit",
+  //     //     },
+  //     //     { name: "Organic Kit", link: "/my-rocky-combo-pack/#organic-kit" },
+  //     //   ],
+  //     // },
+  //     // {
+  //     //   title: "Hair care",
+  //     //   products: [
+  //     //     {
+  //     //       name: "Essential IX Shampoo",
+  //     //       link: "/product/essential-ix/",
+  //     //     },
+  //     //     { name: "Essential V Oil", link: "/product/essential-v/" },
+  //     //   ],
+  //     // },
+  //     {
+  //       title: "SUPPLEMENTS",
+  //       products: [
+  //         {
+  //           name: "Hair Growth Support",
+  //           link: "/product/hair-growth-support/",
+  //         },
+  //       ],
+  //     },
+  //   ],
+  // },
   // BODY OPTIMIZATION
   {
     text: "Body Optimization",
