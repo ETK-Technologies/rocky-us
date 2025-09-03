@@ -118,7 +118,8 @@ export async function POST(req) {
       // Update order with payment information
       const orderUpdateResult = await orderService.updateOrderAfterPayment(
         order_id,
-        paymentResult.data
+        paymentResult.data,
+        null // No profile info for Apple Pay
       );
 
       if (!orderUpdateResult.success) {

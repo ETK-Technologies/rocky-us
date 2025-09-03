@@ -86,8 +86,135 @@ export async function POST(req) {
       cookieStore.get("cart-nonce")?.value
     );
 
-    // Process payment
-    const paymentResult = await paymentService.processPayment(requestData);
+    // Handle profile creation and card saving logic
+    let profileInfo = {};
+    let cardSaveInfo = {};
+
+    // Get or create Paysafe profile if saveCard is true
+    let paysafeProfileId = cookieStore.get("paysafeProfileId")?.value;
+
+    if (saveCard) {
+      if (!paysafeProfileId) {
+        // Create new profile
+        const profileResult = await paymentService.createCustomerProfile({
+          email: billing_address.email,
+          firstName: billing_address.first_name,
+          lastName: billing_address.last_name,
+          phone: billing_address.phone,
+        });
+
+        if (profileResult.success) {
+          paysafeProfileId = profileResult.data.id;
+          profileInfo = {
+            created: true,
+            profileId: paysafeProfileId,
+          };
+
+          // Store profile ID in cookie
+          cookieStore.set("paysafeProfileId", paysafeProfileId, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+          });
+        } else {
+          console.error("Failed to create profile:", profileResult.error);
+          profileInfo = {
+            created: false,
+            error: profileResult.error,
+          };
+        }
+      } else {
+        profileInfo = {
+          created: false,
+          profileId: paysafeProfileId,
+          existing: true,
+        };
+      }
+    }
+
+    // Create payment handle with card saving if profile exists
+    let paymentHandleToken;
+    let handleResult = null; // Declare in broader scope
+    if (saveCard && paysafeProfileId) {
+      console.log(
+        "Creating payment handle for card saving with profile:",
+        paysafeProfileId
+      );
+      handleResult = await paymentService.createPaymentHandle(
+        {
+          cardNumber,
+          cardExpMonth,
+          cardExpYear,
+          cardCVD,
+          billingAddress: billing_address,
+        },
+        paysafeProfileId,
+        currency,
+        `${order_id}${Date.now()}${Math.floor(Math.random() * 1000)}`, // Generate numeric MRN
+        amount
+      );
+
+      console.log("Payment handle creation result:", handleResult);
+      console.log(
+        "Payment handle response data:",
+        JSON.stringify(handleResult.data, null, 2)
+      );
+
+      if (handleResult.success) {
+        // Try different possible field names for the token
+        paymentHandleToken =
+          handleResult.data.paymentHandleToken ||
+          handleResult.data.id ||
+          handleResult.data.token;
+        console.log("Extracted payment handle token:", paymentHandleToken);
+
+        cardSaveInfo = {
+          willSave: true,
+          paymentHandleCreated: true,
+        };
+      } else {
+        console.error("Failed to create payment handle:", handleResult.error);
+        cardSaveInfo = {
+          willSave: false,
+          error: handleResult.error,
+        };
+        // Fall back to regular payment without saving
+      }
+    }
+
+    console.log(
+      "Payment flow decision - saveCard:",
+      saveCard,
+      "paysafeProfileId:",
+      paysafeProfileId,
+      "paymentHandleToken:",
+      paymentHandleToken ? "exists" : "none"
+    );
+
+    // Two-step payment flow: 1) Create payment handle, 2) Process payment (authorize)
+    let paymentResult;
+    if (paymentHandleToken && handleResult && handleResult.success) {
+      console.log(
+        "Payment handle created successfully, now processing payment authorization"
+      );
+
+      // Step 2: Process payment using the payment handle token
+      paymentResult = await paymentService.processPaymentWithHandle({
+        order_id,
+        amount,
+        currency,
+        paymentHandleToken,
+        billing_address,
+        customerIp:
+          req.headers["x-forwarded-for"] ||
+          req.headers["x-real-ip"] ||
+          "127.0.0.1",
+        description: `Order #${order_id} payment`,
+      });
+    } else {
+      console.log("Falling back to processPayment method");
+      paymentResult = await paymentService.processPayment(requestData);
+    }
 
     if (!paymentResult.success) {
       return NextResponse.json(
@@ -97,17 +224,25 @@ export async function POST(req) {
           error: paymentResult.error,
           paysafe_error_code: paymentResult.paysafe_error_code,
           paysafe_error_message: paymentResult.paysafe_error_message,
+          profile: profileInfo,
+          cardSave: cardSaveInfo,
         },
         { status: 400 }
       );
     }
 
     // Payment successful - update order
-    if (paymentResult.data.status === PAYMENT_STATUS.COMPLETED) {
+    if (
+      paymentResult.data.status === PAYMENT_STATUS.COMPLETED ||
+      paymentResult.data.status === "SUCCESS" ||
+      paymentResult.data.status === "COMPLETED" || // Payment Hub API completed status
+      paymentResult.data.status === "AUTHORIZED" // Authorization-only transactions
+    ) {
       // Update order with payment information
       const orderUpdateResult = await orderService.updateOrderAfterPayment(
         order_id,
-        paymentResult.data
+        paymentResult.data,
+        profileInfo // Pass the profile information
       );
 
       if (!orderUpdateResult.success) {
@@ -120,9 +255,51 @@ export async function POST(req) {
             message: ERROR_MESSAGES.ORDER_UPDATE_FAILED,
             error: orderUpdateResult.error,
             error_details: orderUpdateResult.error_details,
+            profile: profileInfo,
+            cardSave: cardSaveInfo,
           },
           { status: 500 }
         );
+      }
+
+      // Try to save card after successful payment
+      if (saveCard && paysafeProfileId) {
+        if (paymentHandleToken) {
+          // If payment handle was used, card should be automatically saved
+          cardSaveInfo.saved = true;
+          cardSaveInfo.method = "automatic_with_payment";
+        } else {
+          // If payment handle failed, try direct card vault after successful payment
+          try {
+            const cardSaveResult = await paymentService.addCardDirectlyToVault(
+              paysafeProfileId,
+              {
+                cardNumber,
+                cardExpMonth,
+                cardExpYear,
+                cardCVD,
+                holderName: `${billing_address.first_name} ${billing_address.last_name}`,
+                billingAddress: billing_address,
+              }
+            );
+
+            if (cardSaveResult.success) {
+              cardSaveInfo.saved = true;
+              cardSaveInfo.method = "direct_vault_after_payment";
+              cardSaveInfo.cardId = cardSaveResult.data.id;
+            } else {
+              cardSaveInfo.saved = false;
+              cardSaveInfo.fallbackError = cardSaveResult.error;
+            }
+          } catch (fallbackError) {
+            console.error(
+              "Failed to save card using fallback method:",
+              fallbackError
+            );
+            cardSaveInfo.saved = false;
+            cardSaveInfo.fallbackError = fallbackError.message;
+          }
+        }
       }
 
       // Add order note (non-blocking)
@@ -137,6 +314,9 @@ export async function POST(req) {
         payment_id: paymentResult.data.id,
         status: RESPONSE_STATUS.SUCCESS,
         message: "Payment processed successfully",
+        profile: profileInfo,
+        cardSave: cardSaveInfo,
+        paymentData: paymentResult.data, // Include the full payment handle response for debugging
       });
     } else {
       return NextResponse.json(

@@ -159,6 +159,7 @@ export async function POST(req) {
           key: "_meta_mail_box",
           value: toMailBox ? "1" : "0",
         },
+        // Paysafe profile ID will be added after payment via order update
         // Add free order metadata
         ...(isFreeOrder
           ? [
