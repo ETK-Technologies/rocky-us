@@ -1,13 +1,23 @@
 import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import { FaCreditCard } from "react-icons/fa";
-import {
-  removeSavedPaymentMethod,
-  editSavedPaymentMethod,
-} from "@/lib/api/savedCardPayment";
+// Stripe payment methods API functions
+const removeSavedPaymentMethod = async (paymentMethodId) => {
+  const response = await fetch("/api/stripe/payment-methods", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ paymentMethodId }),
+  });
+  return response.json();
+};
+
+const editSavedPaymentMethod = async (paymentMethodId, month, year) => {
+  // Note: Stripe doesn't allow editing payment methods after creation
+  // This would typically require creating a new payment method
+  console.log("Stripe doesn't support editing payment methods");
+  throw new Error("Payment method editing not supported with Stripe");
+};
 import { toast } from "react-toastify";
-import ApplePayButton from "./ApplePayButton";
-import ApplePayDebug from "./ApplePayDebug";
 
 const Payment = ({
   setFormData,
@@ -27,16 +37,10 @@ const Payment = ({
   saveCard,
   setSaveCard,
   onValidationChange, // New prop for validation callback
-  amount, // Add amount for Apple Pay
-  billingAddress, // Add billing address for Apple Pay
-  onApplePaySuccess, // Add Apple Pay success callback
-  onApplePayError, // Add Apple Pay error callback
-  isProcessingApplePay = false, // Add Apple Pay processing state
 }) => {
   const [paymentMethod, setPaymentMethod] = useState(
     selectedCard ? "saved" : "new"
   );
-  const [showApplePay, setShowApplePay] = useState(false);
   const [showDropdown, setShowDropdown] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingCard, setEditingCard] = useState(null);
@@ -132,12 +136,12 @@ const Payment = ({
       payment_data: prev.payment_data.map((item) => {
         if (selectedCard) {
           switch (item.key) {
-            case "wc-paysafe-payment-token":
+            case "wc-stripe-payment-token":
               return {
                 ...item,
                 value: selectedCard?.token || selectedCard?.id || "",
               };
-            case "wc-paysafe-new-payment-method":
+            case "wc-stripe-new-payment-method":
               return { ...item, value: "false" };
             default:
               return item;
@@ -145,7 +149,7 @@ const Payment = ({
         } else {
           // For new cards, set the form data to indicate new payment method
           switch (item.key) {
-            case "wc-paysafe-new-payment-method":
+            case "wc-stripe-new-payment-method":
               return { ...item, value: "true" };
             default:
               return item;
@@ -235,7 +239,6 @@ const Payment = ({
       setShowEditModal(false);
       setEditingCard(null);
       setEditExpiry("");
-      // TODO: Trigger a refresh of saved cards
     } catch (error) {
       toast.error("Failed to update card");
     }
@@ -311,21 +314,6 @@ const Payment = ({
             />
           </div>
         </h1>
-
-        {/* Apple Pay Debug (development only) */}
-        <ApplePayDebug />
-
-        {/* Apple Pay Button */}
-        <div className="mb-4">
-          <ApplePayButton
-            amount={amount}
-            billingAddress={billingAddress}
-            onPaymentSuccess={onApplePaySuccess}
-            onPaymentError={onApplePayError}
-            isProcessing={isProcessingApplePay}
-            disabled={isProcessingApplePay}
-          />
-        </div>
 
         <div className="border-t border-gray-200 pt-4">
           <h2 className="font-semibold text-sm mb-4">Card Information</h2>
@@ -467,7 +455,7 @@ const Payment = ({
                   className="p-3 border w-full rounded-t-lg text-[#ADADAD] focus:outline-none"
                   autoComplete="cc-number"
                   maxLength={19}
-                  name="wc-paysafe-checkout-account-number"
+                  name="wc-stripe-checkout-account-number"
                 />
               </div>
 

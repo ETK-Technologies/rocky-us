@@ -100,9 +100,10 @@ export const validatePaymentInput = (data) => {
 export const validateEnvironmentVariables = () => {
   const required = [
     "BASE_URL",
-    "PAYSAFE_ACCOUNT_ID",
-    "PAYSAFE_API_USERNAME",
-    "PAYSAFE_API_PASSWORD",
+    "STRIPE_SECRET_KEY",
+    "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+    "CONSUMER_KEY",
+    "CONSUMER_SECRET",
     "ADMIN_TOKEN",
   ];
 
