@@ -78,7 +78,8 @@ const hairProductCard = [
     LeadingProductCard: {
       title: "Hair Loss",
       subtitle: "Hair Treatment Formulated for You",
-      link: "/hair",
+      link: "/product/finasteride-minoxidil-topical-foam",
+      // link: "/hair",
       image:
         "bg-[url('https://myrocky.b-cdn.net/WP%20Images/Homepage/hair-leading.webp')]",
     },
@@ -90,24 +91,24 @@ const hairProductCard = [
         image:
           "https://myrocky.b-cdn.net/WP%20Images/Homepage/minoxidil-spray.webp",
       },
-      {
-        title: "Finasteride & Minoxidil",
-        description: "Prevents hair loss & stimulates hair regrowth",
-        link: "/hair-flow/?onboarding=1&showonly=finasteride-minoxidil",
-        image: "/popular-treatments/combination-2.webp",
-      },
-      {
-        title: "Minoxidil (Rogaine)",
-        description: "Stimulates hair regrowth",
-        link: "/hair-flow/?onboarding=1&showonly=minoxidil",
-        image: "/popular-treatments/minoxidil-1.webp",
-      },
-      {
-        title: "Finasteride (Propecia)",
-        description: "Prevents hair loss",
-        link: "/hair-flow/?onboarding=1&showonly=finasteride-propecia",
-        image: "/popular-treatments/finasteride1.webp",
-      },
+      // {
+      //   title: "Finasteride & Minoxidil",
+      //   description: "Prevents hair loss & stimulates hair regrowth",
+      //   link: "/hair-flow/?onboarding=1&showonly=finasteride-minoxidil",
+      //   image: "/popular-treatments/combination-2.webp",
+      // },
+      // {
+      //   title: "Minoxidil (Rogaine)",
+      //   description: "Stimulates hair regrowth",
+      //   link: "/hair-flow/?onboarding=1&showonly=minoxidil",
+      //   image: "/popular-treatments/minoxidil-1.webp",
+      // },
+      // {
+      //   title: "Finasteride (Propecia)",
+      //   description: "Prevents hair loss",
+      //   link: "/hair-flow/?onboarding=1&showonly=finasteride-propecia",
+      //   image: "/popular-treatments/finasteride1.webp",
+      // },
     ],
   },
 ];
