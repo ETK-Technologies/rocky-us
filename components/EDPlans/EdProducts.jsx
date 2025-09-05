@@ -13,8 +13,8 @@ const EdProducts = ({ showonly }) => {
     const productsMap = {
       cialis: cialisProduct,
       viagra: viagraProduct,
-      chewalis: chewalisProduct,
-      variety: varietyPackProduct,
+      // chewalis: chewalisProduct,
+      // variety: varietyPackProduct,
     };
 
     if (!showonly) {
@@ -22,8 +22,8 @@ const EdProducts = ({ showonly }) => {
       return [
         cialisProduct,
         viagraProduct,
-        chewalisProduct,
-        varietyPackProduct,
+        // chewalisProduct,
+        // varietyPackProduct,
       ];
     }
 
@@ -36,7 +36,7 @@ const EdProducts = ({ showonly }) => {
     }
 
     // If no match is found, return all products as fallback
-    return [cialisProduct, viagraProduct, chewalisProduct, varietyPackProduct];
+    return [cialisProduct, viagraProduct, /* chewalisProduct, varietyPackProduct */];
   };
 
   const filteredProducts = getFilteredProducts();
@@ -51,7 +51,7 @@ const EdProducts = ({ showonly }) => {
           Pause or cancel at any time
         </p>
       </div>
-      <div className="overflow-x-auto !no-scrollbar relative">
+      <div className="overflow-x-auto !no-scrollbar relative ">
         <div className="mx-auto">
           <div className="relative">
             {/* Only show scroll arrows when there's more than one product */}
@@ -61,20 +61,12 @@ const EdProducts = ({ showonly }) => {
 
             <div
               ref={scrollContainerRef}
-              className={`flex gap-2 md:gap-4 items-start ${
-                filteredProducts.length > 1
-                  ? "overflow-x-auto snap-x snap-mandatory no-scrollbar"
-                  : "justify-center"
-              }`}
+              className="flex gap-2 md:gap-4 items-start justify-center"
             >
               {filteredProducts.map((product, index) => (
                 <div
                   key={index}
-                  className={`${
-                    filteredProducts.length === 1
-                      ? "w-full max-w-[450px]"
-                      : "flex-shrink-0"
-                  }`}
+                  className="flex-shrink-0"
                 >
                   <EdProductCard product={product} />
                 </div>

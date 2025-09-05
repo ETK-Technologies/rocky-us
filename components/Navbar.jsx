@@ -67,27 +67,27 @@ const menuItems = [
         products: [
           { name: "Sildenafil (Generic)", link: "/product/sildenafil-viagra/" },
           { name: "Tadalafil (Generic)", link: "/product/tadalafil-cialis/" },
-          { name: "Viagra (Brand)", link: "/product/viagra/" },
-          { name: "Cialis (Brand)", link: "/product/cialis/" },
-          {
-            name: "Dissolvable Tadalafil",
-            link: "/product/chewable-tadalafil/",
-          },
+          // { name: "Viagra (Brand)", link: "/product/viagra/" },
+          // { name: "Cialis (Brand)", link: "/product/cialis/" },
+          // {
+          //   name: "Dissolvable Tadalafil",
+          //   link: "/product/chewable-tadalafil/",
+          // },
         ],
       },
-      {
-        title: "PREMATURE EJACULATION",
-        products: [
-          { name: "Numb Ointment", link: "/product/lidocaine/" },
-          { name: "Numb Spray", link: "/product/lidocaine-spray/" },
-        ],
-      },
-      {
-        title: "TESTOSTERONE SUPPLEMENTS",
-        products: [
-          { name: "Essential T-Boost", link: "/product/testosterone-support/" },
-        ],
-      },
+      // {
+      //   title: "PREMATURE EJACULATION",
+      //   products: [
+      //     { name: "Numb Ointment", link: "/product/lidocaine/" },
+      //     { name: "Numb Spray", link: "/product/lidocaine-spray/" },
+      //   ],
+      // },
+      // {
+      //   title: "TESTOSTERONE SUPPLEMENTS",
+      //   products: [
+      //     { name: "Essential T-Boost", link: "/product/testosterone-support/" },
+      //   ],
+      // },
     ],
   },
   // HAIR LOSS
