@@ -148,6 +148,7 @@ function isBlockedRoute(pathname) {
     "/zonnic",
     "/product/zonnic",
     "/hair",
+
     // Add other routes that are hashed in navbar
   ];
 
