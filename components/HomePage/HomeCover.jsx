@@ -28,7 +28,8 @@ const coverCards = [
     description: "Stop Hair Loss In Its Tracks",
     image:
       "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/New%20Home%20Page/hero-4.webp",
-    link: "/hair",
+    // link: "/hair",
+    link: "/product/finasteride-minoxidil-topical-foam/",
   },
   // {
   //   title: "Smoking Cessation",
