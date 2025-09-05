@@ -107,14 +107,14 @@ const menuItems = [
         name: "Products",
 
         products: [
-          // {
-          //   name: "Finasteride & Minoxidil Topical Foam",
-          //   link: "/product/finasteride-minoxidil-topical-foam/",
-          // },
           {
-            name: "Finasteride (Propecia)",
-            link: "/product/finasteride/",
+            name: "Finasteride & Minoxidil Topical Foam",
+            link: "/product/finasteride-minoxidil-topical-foam/",
           },
+          // {
+          //   name: "Finasteride (Propecia)",
+          //   link: "/product/finasteride/",
+          // },
           // { name: "Minoxidil (Rogaine)", link: "/product/minoxidil/" },
         ],
       },
