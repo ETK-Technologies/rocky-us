@@ -384,7 +384,7 @@ const CartItem = ({ item, refreshCart, isLocalCart, allItems }) => {
               Monthly membership:
             </p>
             <p className="text-sm text-[#212121]">
-              Initial fee $99 | Monthly fee $40
+              Consultation fee $99 | Monthly follow-up fee $99
             </p>
             <p className="text-sm font-[500] text-[#212121] mt-2 underline">
               Includes:

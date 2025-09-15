@@ -7,7 +7,7 @@ import PropTypes from "prop-types";
 const ProductDisplay = ({ product, productSlug }) => {
   const productImageSrc = product?.images?.[0]?.src || product?.image;
   const productName = product?.name || "";
-  const productPrice = product?.price || "$395";
+  const productPrice = product?.price || "$299";
   const productDescription =
     product?.short_description ||
     "A weekly semaglutide shot to improve insulin sensitivity, reduce appetite, and regulate blood sugar.*";
