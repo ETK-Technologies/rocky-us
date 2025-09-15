@@ -9,6 +9,7 @@ const Content = [
   "Healthcare Services",
   "Retention of Your Personal Data",
   "Transfer of Your Personal Data",
+  "Disclosure of Your Personal Data",
   "Security of Your Personal Data",
   "Analytics",
   "Advertising",
@@ -197,11 +198,9 @@ export default function privacyPolicy() {
                 <li>Email address</li>
                 <li>First name and last name</li>
                 <li>Phone number</li>
-                <li>Address, State, Province, ZIP/Postal code, City</li>
-                <li> Bank account information in order to pay for products and/or
-                  services within the Service</li>
+                <li>Address, State, ZIP/Postal code, City</li>
+                <li>Bank account information in order to pay for products and/or services within the Service</li>
               </ul>
-
 
               <span className="block mb-2 mt-2">Usage Data</span>
 
@@ -214,7 +213,7 @@ export default function privacyPolicy() {
 
               <ul className="space-y-1 list-disc ml-6 md:ml-8">
                 <li>Date of birth</li>
-                <li>Passport or National ID card</li>
+                <li>Passport, National ID card, or other acceptable form of identification</li>
                 <li>Bank card statement</li>
                 <li>Other information linking You to an address</li>
               </ul>
@@ -624,7 +623,7 @@ export default function privacyPolicy() {
             </p>
           </div>
           {/* Disclosure of Your Personal Data */}
-          <div id="security-of-your-personal-data" className="mb-10 md:mb-14">
+          <div id="disclosure-of-your-personal-data" className="mb-10 md:mb-14">
             <div className="text-[32px] md:text-[40px] leading-[115%] tracking-[-0.01em] md:tracking-[-0.02em] mb-6 headers-font">
               Disclosure of Your Personal Data
             </div>
@@ -675,7 +674,7 @@ export default function privacyPolicy() {
             </div>
           </div>
           {/* Security of Your Personal Data */}
-          <div id="security-of-your-personal-data" className="mb-10 md:mb-14">
+          <div className="mb-10 md:mb-14">
             <div className="text-[32px] md:text-[40px] leading-[115%] tracking-[-0.01em] md:tracking-[-0.02em] mb-6 headers-font">
               Security of Your Personal Data
             </div>
@@ -788,15 +787,15 @@ export default function privacyPolicy() {
               emails to You.
             </p>
             <div className="text-[22px] leading-[115%] tracking-[-0.01em] mb-6 headers-font">
-              Klavyo
+              Klaviyo
             </div>
 
             <p className="text-[16px] mb-4  md:text-[18px] leading-[160%] font-[400] mb-6">
-              Clavio is an email marketing sending service provided by The
+              Klaviyo is an email marketing sending service provided by The
               Rocket Science Group LLC.
             </p>
             <p className="text-[16px] mb-4  md:text-[18px] leading-[160%] font-[400] ">
-              For more information on the privacy practices of Clavio, please
+              For more information on the privacy practices of Klaviyo, please
               visit their Privacy policy:{" "}
               <a
                 href="https://mailchimp.com/legal/privacy/"
@@ -947,10 +946,10 @@ export default function privacyPolicy() {
               <li>
                 <span className="font-[600] opacity-100 mt-4 mb-4">By email: </span>
                 <a
-                  href="mailto:contact@myrocky.ca"
+                  href="mailto:contact@myrocky.com"
                   className="hover:underline hover:text-gray-900 duration-300"
                 >
-                  contact@myrocky.ca
+                  contact@myrocky.com
                 </a>
               </li>
             </ul>
