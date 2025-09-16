@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import FormInput from "./FormInput";
 import Datepicker from "react-tailwindcss-datepicker";
 import PostGridAddressAutocomplete from "./PostGrid/PostGridAddressAutocomplete";
-import { US_STATES_WITH_CODES } from "@/lib/constants/usStates";
+import { US_STATES_WITH_CODES, PHASE_1_STATES } from "@/lib/constants/usStates";
 
 const BillingDetails = ({ formData, handleBillingAddressChange }) => {
   const [datePickerValue, setDatePickerValue] = useState({
@@ -16,7 +16,6 @@ const BillingDetails = ({ formData, handleBillingAddressChange }) => {
       endDate: formData.billing_address.date_of_birth || null,
     });
   }, [formData.billing_address.date_of_birth]);
-
 
   const handleDateChange = (newValue) => {
     setDatePickerValue(newValue);
@@ -135,13 +134,14 @@ const BillingDetails = ({ formData, handleBillingAddressChange }) => {
               <option value="" disabled="">
                 Select your state
               </option>
-              {US_STATES_WITH_CODES.filter((state) => state.value !== "").map(
-                (state) => (
-                  <option key={state.code} value={state.code}>
-                    {state.label}
-                  </option>
-                )
-              )}
+              {US_STATES_WITH_CODES.filter(
+                (state) =>
+                  state.value !== "" && PHASE_1_STATES.includes(state.code)
+              ).map((state) => (
+                <option key={state.code} value={state.code}>
+                  {state.label}
+                </option>
+              ))}
             </select>
             <div className="absolute right-3 top-1/2 w-5 h-5 transform -translate-y-1/2 pointer-events-none">
               <svg

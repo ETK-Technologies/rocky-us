@@ -641,7 +641,11 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
                   style={{ outlineColor: "black" }}
                   required
                 >
-                  {ALL_US_STATES.map((option) => (
+                  {ALL_US_STATES.filter(
+                    (option) =>
+                      option.value === "" ||
+                      PHASE_1_STATES.includes(option.value)
+                  ).map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
