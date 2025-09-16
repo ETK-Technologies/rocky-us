@@ -1,7 +1,7 @@
 import { useState } from "react";
 import FormInput from "./FormInput";
 import PostGridAddressAutocomplete from "./PostGrid/PostGridAddressAutocomplete";
-import { US_STATES_WITH_CODES } from "@/lib/constants/usStates";
+import { US_STATES_WITH_CODES, PHASE_1_STATES } from "@/lib/constants/usStates";
 
 const ShippingAddress = ({
   formData,
@@ -121,7 +121,8 @@ const ShippingAddress = ({
                     Select your state
                   </option>
                   {US_STATES_WITH_CODES.filter(
-                    (state) => state.value !== ""
+                    (state) =>
+                      state.value !== "" && PHASE_1_STATES.includes(state.code)
                   ).map((state) => (
                     <option key={state.code} value={state.code}>
                       {state.label}
