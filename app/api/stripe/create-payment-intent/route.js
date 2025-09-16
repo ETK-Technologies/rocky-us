@@ -28,13 +28,16 @@ export async function POST(req) {
       customerId: customerId ? `${customerId.substring(0, 10)}...` : "none",
     });
 
-    // Create payment intent
+    // Create payment intent with manual capture and off_session setup
     const paymentIntentData = {
       amount: Math.round(amount * 100), // Stripe expects amount in cents
       currency: currency.toLowerCase(),
       description: description || "Order payment",
+      capture_method: "manual", // Manual capture for pre-authorization
+      setup_future_usage: "off_session", // Always save cards for future use (subscriptions)
       automatic_payment_methods: {
         enabled: true,
+        allow_redirects: "never", // Disable redirect-based payment methods
       },
     };
 
@@ -58,10 +61,8 @@ export async function POST(req) {
       };
     }
 
-    // Set setup for future usage if saving card
-    if (saveCard) {
-      paymentIntentData.setup_future_usage = "off_session";
-    }
+    // setup_future_usage is already set above for all payments
+    // This ensures cards can be saved for future use
 
     const paymentIntent = await stripe.paymentIntents.create(paymentIntentData);
 

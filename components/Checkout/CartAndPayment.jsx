@@ -30,6 +30,7 @@ const CartAndPayment = ({
   onApplePaySuccess, // Add Apple Pay success callback
   onApplePayError, // Add Apple Pay error callback
   isProcessingApplePay = false, // Add Apple Pay processing state
+  clientSecret, // Add client secret for Payment Element
 }) => {
   const [isPaymentValid, setIsPaymentValid] = useState(false);
 
@@ -50,7 +51,6 @@ const CartAndPayment = ({
 
       <Payment
         setFormData={setFormData}
-        handleSubmit={handleSubmit}
         cardNumber={cardNumber}
         setCardNumber={setCardNumber}
         expiry={expiry}
@@ -59,19 +59,9 @@ const CartAndPayment = ({
         setCvc={setCvc}
         cardType={cardType}
         setCardType={setCardType}
-        savedCards={savedCards}
-        setSavedCards={setSavedCards}
-        selectedCard={selectedCard}
-        setSelectedCard={setSelectedCard}
-        isLoadingSavedCards={isLoadingSavedCards}
-        saveCard={saveCard}
-        setSaveCard={setSaveCard}
         onValidationChange={handleValidationChange}
-        amount={amount}
+        clientSecret={clientSecret}
         billingAddress={billingAddress}
-        onApplePaySuccess={onApplePaySuccess}
-        onApplePayError={onApplePayError}
-        isProcessingApplePay={isProcessingApplePay}
       />
       <button
         onClick={handleSubmit}
