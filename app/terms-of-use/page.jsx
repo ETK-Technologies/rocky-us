@@ -113,7 +113,7 @@ export default function privacyPolicy() {
               Availability
             </div>
             <p class="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              Rocky offers access to [list services available to U.S. users] services to U.S. Users (defined in our Privacy Policy) located in <a href="/service-coverage" class="text-blue-600 hover:underline">the following States</a>.
+              Rocky offers access to [Sexual Health, Hairloss, Weight Loss] services to U.S. Users (defined in our Privacy Policy) located in <a href="/service-coverage" class="text-blue-600 hover:underline">the following States</a>.
             </p>
           </div>
           {/* Acknowledgement */}
