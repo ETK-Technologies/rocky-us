@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Section from "@/components/utils/Section";
 import {
@@ -12,6 +13,7 @@ import { MdLocationOn, MdSchedule } from "react-icons/md";
 
 export default function ServiceCoverage() {
   const router = useRouter();
+  const [activePhase, setActivePhase] = useState(1);
 
   return (
     <>
@@ -29,37 +31,61 @@ export default function ServiceCoverage() {
             professional healthcare. Here's where we currently serve and our
             expansion plans.
           </p>
+          <div className="inline-flex items-center justify-center gap-2 bg-gray-100 rounded-full p-1">
+            <button
+              onClick={() => setActivePhase(1)}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                activePhase === 1
+                  ? "bg-white text-black shadow"
+                  : "text-gray-600 hover:text-black"
+              }`}
+            >
+              Phase 1
+            </button>
+            <button
+              onClick={() => setActivePhase(2)}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                activePhase === 2
+                  ? "bg-white text-black shadow"
+                  : "text-gray-600 hover:text-black"
+              }`}
+            >
+              Phase 2
+            </button>
+          </div>
         </div>
       </Section>
 
       {/* Current Coverage Section */}
-      <Section bg="bg-[#F8F7F5]">
-        <div className="max-w-[900px] mx-auto">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 bg-[#AE7E56] bg-opacity-10 text-[#AE7E56] px-4 py-2 rounded-full mb-4">
-              <MdLocationOn size={20} />
-              <span className="font-medium">Currently Available</span>
-            </div>
-            <h2 className="text-[24px] md:text-[32px] headers-font font-medium mb-4">
-              Phase 1
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-            {PHASE_1_STATES.map((stateCode) => (
-              <div
-                key={stateCode}
-                className="bg-white rounded-lg p-4 text-center shadow-sm border border-[#AE7E56] border-opacity-20 hover:shadow-md hover:border-[#AE7E56] hover:border-opacity-40 transition-all"
-              >
-                <div className="text-[#AE7E56] font-medium text-sm md:text-base">
-                  {getStateLabel(stateCode)}
-                </div>
-                <div className="text-xs text-gray-500 mt-1">{stateCode}</div>
+      {activePhase === 1 && (
+        <Section bg="bg-[#F8F7F5]">
+          <div className="max-w-[900px] mx-auto">
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center gap-2 bg-[#AE7E56] bg-opacity-10 text-[#AE7E56] px-4 py-2 rounded-full mb-4">
+                <MdLocationOn size={20} />
+                <span className="font-medium">Currently Available</span>
               </div>
-            ))}
+              <h2 className="text-[24px] md:text-[32px] headers-font font-medium mb-4">
+                Phase 1
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+              {PHASE_1_STATES.map((stateCode) => (
+                <div
+                  key={stateCode}
+                  className="bg-white rounded-lg p-4 text-center shadow-sm border border-[#AE7E56] border-opacity-20 hover:shadow-md hover:border-[#AE7E56] hover:border-opacity-40 transition-all"
+                >
+                  <div className="text-[#AE7E56] font-medium text-sm md:text-base">
+                    {getStateLabel(stateCode)}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">{stateCode}</div>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      </Section>
+        </Section>
+      )}
 
       {/* Coming Soon Section */}
       <Section>
