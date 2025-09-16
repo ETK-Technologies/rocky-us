@@ -13,6 +13,13 @@ import {
   cleanupCartUrlParameters,
 } from "@/utils/urlCartHandler";
 import QuestionnaireNavbar from "../EdQuestionnaire/QuestionnaireNavbar";
+import {
+  log,
+  logPayment,
+  logOrder,
+  logError,
+  logDebug,
+} from "@/lib/utils/logger";
 
 // Initialize Stripe
 const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
@@ -169,7 +176,7 @@ const CheckoutPageContent = () => {
 
       return data;
     } catch (error) {
-      console.error("Error fetching cart items:", error);
+      logError("Error fetching cart items:", error);
       return null;
     }
   };
@@ -190,7 +197,7 @@ const CheckoutPageContent = () => {
       });
 
       if (!res.ok) {
-        console.error("API returned error status:", res.status);
+        logError("API returned error status:", res.status);
         throw new Error(`API error: ${res.status}`);
       }
 
@@ -223,7 +230,7 @@ const CheckoutPageContent = () => {
         setSavedCards([]);
       }
     } catch (error) {
-      console.error("Error fetching saved cards:", error);
+      logError("Error fetching saved cards:", error);
       setSavedCards([]);
     } finally {
       setIsLoadingSavedCards(false);
@@ -738,12 +745,12 @@ const CheckoutPageContent = () => {
               checkoutResult.success &&
               checkoutResult.data?.payment_result?.payment_status === "success"
             ) {
-              console.log("Payment already successful in initial checkout!");
+              logPayment("Payment already successful in initial checkout!");
               toast.success(
                 "Order created and payment processed successfully!"
               );
 
-              console.log("🎉 SAVED CARD SUCCESS! Payment processed:", {
+              logOrder("🎉 SAVED CARD SUCCESS! Payment processed:", {
                 order_id: checkoutResult.data.id,
                 order_key: checkoutResult.data.order_key,
                 payment_result: checkoutResult.data.payment_result,
@@ -832,7 +839,7 @@ const CheckoutPageContent = () => {
           );
 
           const paymentResult = await paymentResponse.json();
-          console.log("Payment result:", paymentResult);
+          logPayment("Payment result:", paymentResult);
 
           if (!paymentResult.success) {
             // Store order details for retry mechanism
@@ -891,7 +898,7 @@ const CheckoutPageContent = () => {
             // Don't fail the redirect if cart emptying fails
           }
 
-          console.log("🎉 SAVED CARD PAYMENT SUCCESS!", {
+          logOrder("🎉 SAVED CARD PAYMENT SUCCESS!", {
             paymentOrderId,
             paymentOrderKey,
             paymentResult: paymentResult,
@@ -1048,7 +1055,7 @@ const CheckoutPageContent = () => {
             const order_id = checkoutData.data.id || checkoutData.data.order_id;
             const order_key = checkoutData.data.order_key || "";
 
-            console.log("🎉 ORDER CREATED SUCCESS!", {
+            logOrder("🎉 ORDER CREATED SUCCESS!", {
               order_id,
               order_key,
               payment_result: checkoutData.data.payment_result,
@@ -1104,7 +1111,7 @@ const CheckoutPageContent = () => {
                   decodedData.client_secret &&
                   decodedData.status === "requires_payment_method"
                 ) {
-                  console.log("Payment requires confirmation with Stripe");
+                  logPayment("Payment requires confirmation with Stripe");
 
                   // Implement Stripe payment confirmation
                   try {
@@ -1184,7 +1191,7 @@ const CheckoutPageContent = () => {
                     }
 
                     const updateResult = await updateResponse.json();
-                    console.log("PaymentIntent updated successfully");
+                    logPayment("PaymentIntent updated successfully");
 
                     // Now confirm the payment
                     const { error, paymentIntent } =
@@ -1234,8 +1241,8 @@ const CheckoutPageContent = () => {
                         console.log(
                           "✅ Order status updated to on-hold successfully"
                         );
-                        console.log("✅ Payment note added to order");
-                        console.log("✅ Payment Intent ID:", paymentIntent.id);
+                        logOrder("✅ Payment note added to order");
+                        logPayment("✅ Payment Intent ID:", paymentIntent.id);
                       } catch (confirmError) {
                         console.error("❌ Order update failed:", confirmError);
                         toast.error(
@@ -1289,7 +1296,7 @@ const CheckoutPageContent = () => {
 
             // Only proceed with cart emptying and redirect if payment was confirmed
             if (!paymentConfirmed) {
-              console.log("Payment not confirmed, staying on checkout page");
+              logPayment("Payment not confirmed, staying on checkout page");
               return;
             }
 
@@ -1361,7 +1368,7 @@ const CheckoutPageContent = () => {
           const order_id = data.data.id || data.data.order_id;
           const order_key = data.data.order_key || "";
 
-          console.log("🎉 SUCCESS! Order created:", {
+          logOrder("🎉 SUCCESS! Order created:", {
             order_id,
             order_key,
             full_response: data,

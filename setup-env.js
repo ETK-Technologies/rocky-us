@@ -32,6 +32,12 @@ console.log("BASE_URL=https://your-wordpress-site.com");
 console.log("CONSUMER_KEY=ck_your_consumer_key");
 console.log("CONSUMER_SECRET=cs_your_consumer_secret");
 console.log("");
+console.log("# Optional Logger Configuration");
+console.log("LOG_LEVEL=DEBUG  # ERROR, WARN, INFO, DEBUG, TRACE");
+console.log("LOG_ENABLED=true  # Enable/disable logging");
+console.log("LOG_TIMESTAMP=true  # Show timestamps in logs");
+console.log("LOG_CALLER=false  # Show file/line info (expensive)");
+console.log("");
 
 if (!envExists) {
   console.log(
@@ -48,3 +54,4 @@ console.log("2. Restart your development server");
 console.log("3. Visit your checkout page");
 console.log("4. Check the debug info panel for status");
 console.log("5. Test the API endpoint: /api/stripe/create-payment-intent");
+console.log("6. Test the logger: node lib/utils/logger-test.js");
