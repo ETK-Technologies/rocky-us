@@ -141,8 +141,9 @@ const Faqs = () => {
               <p className="text-gray-600">
                 {displayedFaqs.length === 0
                   ? `No results found for "${debouncedValue}"`
-                  : `Found ${displayedFaqs.length} result${displayedFaqs.length === 1 ? "" : "s"
-                  } for "${debouncedValue}"`}
+                  : `Found ${displayedFaqs.length} result${
+                      displayedFaqs.length === 1 ? "" : "s"
+                    } for "${debouncedValue}"`}
               </p>
             ) : null}
           </div>
@@ -159,10 +160,11 @@ const Faqs = () => {
                 <li
                   key={index}
                   onClick={() => setSelectedCategory(faq)}
-                  className={`capitalize text-nowrap py-4 px-6 text-[14px] md:text-[16px] leading-[140%] cursor-pointer rounded-[64px] transition-all ${selectedCategory === faq
-                    ? "bg-black text-white"
-                    : "bg-[#0000000A] text-black"
-                    }`}
+                  className={`capitalize text-nowrap py-4 px-6 text-[14px] md:text-[16px] leading-[140%] cursor-pointer rounded-[64px] transition-all ${
+                    selectedCategory === faq
+                      ? "bg-black text-white"
+                      : "bg-[#0000000A] text-black"
+                  }`}
                 >
                   {faq === "weight loss" ? (
                     <>
