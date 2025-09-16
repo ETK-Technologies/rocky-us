@@ -99,3 +99,6 @@ background: linear-gradient(0deg, #f5f4ef, #f5f4ef), linear-gradient( 180deg, rg
 .underlined-link {
   text-decoration: underline;
 }
+.test{
+  background-color: #7d7c78;
+}
