@@ -99,6 +99,7 @@ export async function POST(req) {
       totalAmount, // Ensure it's passed from the frontend
       isFreeOrder, // Flag for zero-amount orders
       paymentMethod, // Custom payment method for free orders
+      payment_data, // Stripe payment data array
     } = requestData;
 
     const cookieStore = await cookies();
@@ -147,8 +148,8 @@ export async function POST(req) {
             postcode: formatPostcode(postcode, country),
             country: country,
           },
-      payment_method: "paysafe", // Always use paysafe payment method
-      payment_data: [],
+      payment_method: paymentMethod || "stripe_cc", // Use Stripe credit card payment method
+      payment_data: payment_data || [],
       customer_note: customerNotes || "",
       meta_data: [
         {
@@ -159,7 +160,7 @@ export async function POST(req) {
           key: "_meta_mail_box",
           value: toMailBox ? "1" : "0",
         },
-        // Paysafe profile ID will be added after payment via order update
+        // Payment profile ID will be added after payment via order update
         // Add free order metadata
         ...(isFreeOrder
           ? [
@@ -176,70 +177,17 @@ export async function POST(req) {
       ],
     };
 
-    // Add payment data based on whether using saved card, new card, or free order
+    // Handle payment data - use what's passed from frontend or set defaults for free orders
     if (isFreeOrder) {
-      // For free orders, use minimal paysafe payment data to indicate no processing needed
-      console.log(
-        "Processing free order with 100% coupon discount - minimal payment data"
-      );
+      console.log("Processing free order with 100% coupon discount");
       checkoutData.payment_data = [
-        {
-          key: "wc-paysafe-new-payment-method",
-          value: "false",
-        },
         {
           key: "free-order-coupon-payment",
           value: "true",
         },
       ];
-    } else if (useSavedCard && savedCardToken) {
-      // Using saved card - Paysafe handles token validation server-side
-      checkoutData.payment_data = [
-        {
-          key: "wc-paysafe-payment-token",
-          value: savedCardToken,
-        },
-        {
-          key: "wc-paysafe-new-payment-method",
-          value: "false",
-        },
-      ];
-    } else {
-      // New card payment - Let WooCommerce Paysafe plugin handle the payment flow
-      // This will create the order and redirect to Paysafe's payment page
-      checkoutData.payment_data = [
-        {
-          key: "wc-paysafe-new-payment-method",
-          value: "true",
-        },
-      ];
-
-      // Add card details for the Paysafe plugin to process
-      if (cardNumber && cardExpMonth && cardExpYear && cardCVD) {
-        checkoutData.payment_data.push(
-          {
-            key: "paysafe-card-number",
-            value: cardNumber.replace(/\s/g, ""), // Remove spaces
-          },
-          {
-            key: "paysafe-expiry-month",
-            value: cardExpMonth,
-          },
-          {
-            key: "paysafe-expiry-year",
-            value: cardExpYear.length === 2 ? `20${cardExpYear}` : cardExpYear,
-          },
-          {
-            key: "paysafe-cvc",
-            value: cardCVD,
-          }
-        );
-      }
-
-      console.log(
-        "Sending card details to WooCommerce Paysafe plugin for processing"
-      );
     }
+    // For regular payments, payment_data is already set from the frontend (Stripe data)
 
     // Call the WooCommerce Store API checkout endpoint
     const response = await axios.post(
@@ -266,7 +214,7 @@ export async function POST(req) {
 
     if (isFreeOrder && orderId) {
       try {
-        // Update order status to on-hold for free orders (matching ordinary Paysafe flow)
+        // Update order status to on-hold for free orders
         const orderUpdateData = {
           status: "on-hold",
           payment_method_title: "Paid with 100% Coupon Discount",
@@ -321,6 +269,8 @@ export async function POST(req) {
         order_key: response.data.order_key,
         status: response.data.status,
         payment_result: response.data.payment_result,
+        data_sent: checkoutData,
+        order_data: response.data,
       },
     });
   } catch (error) {
@@ -341,49 +291,4 @@ export async function POST(req) {
       { status: error.response?.status || 500 }
     );
   }
-}
-
-async function generateToken({ cvd, expiry_month, expiry_year, number }) {
-  // Paysafe tokenization endpoint
-  const PAYSAFE_ACCOUNT_ID = process.env.PAYSAFE_ACCOUNT_ID;
-  const PAYSAFE_API_USERNAME = process.env.PAYSAFE_API_USERNAME;
-  const PAYSAFE_API_PASSWORD = process.env.PAYSAFE_API_PASSWORD;
-  const PAYSAFE_ENVIRONMENT = process.env.PAYSAFE_ENVIRONMENT || "test"; // 'test' or 'live'
-
-  const baseUrl =
-    PAYSAFE_ENVIRONMENT === "live"
-      ? "https://api.paysafe.com"
-      : "https://api.test.paysafe.com";
-
-  if (!PAYSAFE_ACCOUNT_ID || !PAYSAFE_API_USERNAME || !PAYSAFE_API_PASSWORD) {
-    throw new Error("Missing Paysafe API credentials");
-  }
-
-  const res = await axios.post(
-    `${baseUrl}/cardpayments/v1/accounts/${PAYSAFE_ACCOUNT_ID}/singlepayments/tokens`,
-    {
-      cvv: cvd,
-      cardExpiry: {
-        month: parseInt(expiry_month),
-        year: parseInt(expiry_year),
-      },
-      cardNum: number,
-    },
-    {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization:
-          "Basic " +
-          Buffer.from(
-            PAYSAFE_API_USERNAME + ":" + PAYSAFE_API_PASSWORD
-          ).toString("base64"),
-      },
-    }
-  );
-
-  if (!res.data || !res.data.paymentToken) {
-    throw new Error("No token from Paysafe API");
-  }
-
-  return res.data.paymentToken;
 }

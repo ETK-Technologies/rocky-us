@@ -22,7 +22,7 @@ const products = [
     tooltip:
       "A prescription hair loss treatment, our topical finasteride and minoxidil foam is a dual-action solution promoting hair regrowth while curbing hair loss.",
     supply: "2 Months Supply",
-    price: 185,
+    price: 135,
     addToCartLink:
       "/login-register/?onboarding=1&view=account&viewshow=login&consultation-required=1&onboarding-add-to-cart=96913",
   },
@@ -103,15 +103,14 @@ const HairProducts = () => {
       <div className="overflow-x-auto !no-scrollbar relative">
         <div className=" mx-auto ">
           <div className="relative">
-            <ScrollArrows scrollContainerRef={scrollContainerRef} />
+            {/* <ScrollArrows scrollContainerRef={scrollContainerRef} /> */}
 
-            <div
-              ref={scrollContainerRef}
-              className="flex gap-2 md:gap-4 items-start overflow-x-auto snap-x snap-mandatory no-scrollbar"
-            >
-              {products.map((product, index) => (
-                <HairProductCard key={index} {...product} />
-              ))}
+            <div ref={scrollContainerRef} className=" max-w-[384px] mx-auto">
+              {products
+                .filter((product) => product.id === "96913")
+                .map((product, index) => (
+                  <HairProductCard key={index} {...product} />
+                ))}
             </div>
           </div>
         </div>

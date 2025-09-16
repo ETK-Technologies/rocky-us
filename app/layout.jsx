@@ -112,12 +112,6 @@ export default async function RootLayout({ children }) {
           src="//cdn-4.convertexperiments.com/v1/js/10045956-10046753.js?environment=production"
         />
         {/* End Convert Experiences */}
-        {/* Paysafe.js SDK for Apple Pay */}
-        <Script
-          id="paysafe-sdk"
-          strategy="lazyOnload"
-          src="https://hosted.paysafe.com/js/v1/latest/paysafe.min.js"
-        />
         {/* <Tracker /> */}
       </head>
       <body

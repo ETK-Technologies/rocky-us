@@ -4,14 +4,14 @@ import Section from "@/components/utils/Section";
 const Content = [
   "Introduction",
   "Availability",
+  "Acknowledgement",
   "Eligibility Requirements",
   "Requirements for use",
   "Special consent to telehealth services",
   "Prescription Products",
   "Cancellation Policy",
-  "Weight Loss Program Fees and Refund Policy",
   "Refill Policy",
-  "Privacy policy",
+  "Privacy Policy",
   "Your relationship with Rocky",
   "Consultative service",
   "Site content",
@@ -30,12 +30,11 @@ const Content = [
   "Pharmacy services",
   "Payment",
   "Governing law; dispute resolution; arbitration; venue; severability of provisions",
+  "Extent of Applicability",
   "No waiver",
-  "Consultation fee for Sexual Dysfunction Care",
   "No agency relationship",
   "Remedies",
   "Assignment",
-  "Rocky Health Inc. & Rocky Health Pharmacy Inc. Refund Policy",
 ];
 
 export default function privacyPolicy() {
@@ -46,69 +45,10 @@ export default function privacyPolicy() {
           Terms & Conditions
         </h1>
         <p className="text-[18px] opacity-85 md:text-[18px] leading-[140%] font-[400]">
-          Last updated: January 14, 2022
+          Last updated: September 2025
         </p>
       </div>
-      <div className="text-[22px] md:text-[30px] leading-[115%] tracking-[-0.01em] md:tracking-[-0.02em] mb-4 md:mb-6 headers-font">
-        Professional Disclosure:
-      </div>
-      <div className="text-[18px] md:text-[18px] text-[#000000D9] leading-[160%] mb-10 md:mb-14">
-        <p className="mb-6">
-          THE USER HEREBY ACKNOWLEDGES DOCTORS UNDER ROCKY HEALTH INC. MAY BE
-          DIRECTORS AND/OR SHAREHOLDERS IN ROCKY HEALTH INC. AND THEREFORE MAY
-          HAVE AN INDIRECT FINANCIAL INTEREST THROUGH YOUR USE OF THE SERVICES
-          OFFERED ON THIS PLATFORM. BY YOUR CONTINUED USE OF THIS PLATFORM, YOU
-          ACCEPT AND ACKNOWLEDGE THE FOREGOING.
-        </p>
-        <br className="md:hidden" />
-        <p className="mb-6">
-          By agreeing to these Terms of Use, you acknowledge that you understand
-          the services provided by Rocky, the limitations of those services, and
-          the importance of your participation and compliance with the
-          established guidelines. This document will cover the following key
-          areas, including professional disclosures, eligibility requirements,
-          cancellation policies, privacy obligations, and more, to ensure that
-          you have a clear understanding of both your rights as a user and the
-          responsibilities of the Rocky team.
-        </p>
-        <br className="md:hidden" />
-        <p className="mb-6">
-          AMONG OTHER ACTIVITIES, ROCKY'S SERVICES ENABLE COORDINATION AND
-          COMMUNICATION WITH A HEALTH CARE PROVIDER. IT DOES NOT REPLACE YOUR
-          RELATIONSHIP WITH ANY PHYSICIAN. THESE SERVICES MIGHT NOT BE
-          APPROPRIATE FOR ALL MEDICAL CONDITIONS OR CONCERNS. IF YOU HAVE A
-          MEDICAL EMERGENCY, IMMEDIATELY CALL YOUR DOCTOR OR DIAL 911.
-        </p>
-        <p className="mb-6">
-          PLEASE READ THESE TERMS AND CONDITIONS CAREFULLY BECAUSE THEY SET
-          FORTH THE IMPORTANT TERMS YOU WILL NEED TO KNOW ABOUT THE SERVICES.
-        </p>
-        <p className="mb-6">
-          YOU UNDERSTAND THAT BY ACCESSING OR USING THE SITES OR SERVICES, YOU
-          ACKNOWLEDGE THAT YOU HAVE READ, UNDERSTOOD, AND AGREED TO BE LEGALLY
-          BOUND BY AND COMPLY WITH THESE TERMS OF USE. IF YOU DO NOT OR CANNOT
-          AGREE WITH ANY PART OF THESE TERMS OF USE, YOU MAY NOT USE THE SITES
-          OR ANY SERVICES PROVIDED ON OR THROUGH THE SITES.
-        </p>
-        <p className="mb-6">
-          ARBITRATION NOTICE: YOU AGREE THAT DISPUTES BETWEEN YOU AND US OR YOU
-          AND THE MEDICAL GROUPS OR PROVIDERS ARISING OUT OF OR RELATED TO THESE
-          TERMS AND CONDITIONS OR THE SERVICE WILL BE RESOLVED BY BINDING,
-          INDIVIDUAL ARBITRATION AND YOU WAIVE YOUR RIGHTS TO A JURY TRIAL AND
-          TO PARTICIPATE IN A CLASS ACTION LAWSUIT OR CLASS-WIDE ARBITRATION, AS
-          FURTHER SET FORTH BELOW. WE EXPLAIN SOME EXCEPTIONS AND HOW YOU CAN
-          OPT OUT OF ARBITRATION BELOW.
-        </p>
-        <p className="mb-6">
-          IF YOU HAVE A MEDICAL EMERGENCY, SEEK IN-PERSON EMERGENCY CARE
-          IMMEDIATELY OR DIAL 911. THE SERVICE IS NOT APPROPRIATE FOR ALL
-          MEDICAL CONDITIONS OR CONCERNS. THIS AGREEMENT IS SUBJECT TO CHANGE AS
-          PROVIDED HEREIN.
-        </p>
-        <p className="mb-6">
-          THE TERMS OF USE ARE SUBJECT TO CHANGE AS PROVIDED HEREIN.
-        </p>
-      </div>
+
       <div className="flex flex-col-reverse md:flex-row gap-10 md:gap-[120px]">
         <div className="md:w-[784px]">
           {/* Introduction */}
@@ -117,17 +57,16 @@ export default function privacyPolicy() {
               Introduction
             </div>
             <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              Rocky Health Inc., Rocky Pharmacy Inc., and their respective
-              affiliates (collectively, “<b>Rocky</b>,” “<b>we</b> ”, “<b>us</b>”, or “<b>our</b>”) own and
+              Rocky Health USA, LLC, and their respective affiliates (collectively, "<b>Rocky</b>," "<b>we</b> ", "<b>us</b>", or "<b>our</b>") own and
               operate the websites located at www.rockyhealth.com,
-              (collectively, the “<b>Websites</b>,” and collectively with any
-              affiliated mobile application (“<b>App</b>”), the “<b>Sites</b>”) as well as the
-              Trademarks, Rocky Health ™, My Rocky ™, myrocky.ca ™
-              (collectively, the “<b>Trademarks</b>” and attached hereto as Appendix
+              (collectively, the "<b>Websites</b>," and collectively with any
+              affiliated mobile application ("<b>App</b>"), the "<b>Sites</b>") as well as the
+              Trademarks, Rocky ™, Rocky Health ™, My Rocky ™, myrocky.ca ™
+              (collectively, the "<b>Trademarks</b>" and attached hereto as Appendix
               A). The Sites are intended to facilitate the provision of the
-              Services to registered users. The “<b>Services</b>” may include (i)
+              Services to registered users. The "<b>Services</b>" may include (i)
               providing individuals with information on health care and wellness
-              (“<b>Content</b>”); (ii) providing individuals with pharmaceutical
+              ("<b>Content</b>"); (ii) providing individuals with pharmaceutical
               services; (iii) development and gathering of health care records
               and health care information with retention of the same for use in
               health care provider appointments, communications, and
@@ -173,10 +112,35 @@ export default function privacyPolicy() {
             <div className="text-[22px] md:text-[30px] leading-[115%] tracking-[-0.01em] md:tracking-[-0.02em] mb-4 md:mb-6 headers-font">
               Availability
             </div>
+            <p class="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
+              Rocky offers access to [Sexual Health, Hairloss, Weight Loss] services to U.S. Users (defined in our Privacy Policy) located in <a href="/service-coverage" class="text-blue-600 hover:underline">the following States</a>.
+            </p>
+          </div>
+          {/* Acknowledgement */}
+          <div id="acknowledgement" className="mb-10 md:mb-14">
+            <div className="text-[22px] md:text-[30px] leading-[115%] tracking-[-0.01em] md:tracking-[-0.02em] mb-4 md:mb-6 headers-font">
+              Acknowledgement
+            </div>
             <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              Some of our services are currently only available to individuals
-              located in Ontario, British Columbia, Alberta, Nova Scotia, New
-              Brunswick, Quebec, Newfoundland and Labrador.
+              By agreeing to these Terms of Use, you acknowledge that you understand the services provided by Rocky, the limitations of those services, and the importance of your participation and compliance with the established guidelines. This document will cover the following key areas, including professional disclosures, eligibility requirements, cancellation policies, privacy obligations, and more, to ensure that you have a clear understanding of both your rights as a user and the responsibilities of the Rocky team.
+            </p>
+            <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
+              AMONG OTHER ACTIVITIES, ROCKY'S SERVICES ENABLE COORDINATION AND COMMUNICATION WITH A HEALTH CARE PROVIDER. IT DOES NOT REPLACE YOUR RELATIONSHIP WITH ANY PHYSICIAN. THESE SERVICES MIGHT NOT BE APPROPRIATE FOR ALL MEDICAL CONDITIONS OR CONCERNS. IF YOU HAVE A MEDICAL EMERGENCY, IMMEDIATELY CALL YOUR DOCTOR OR DIAL 911.
+            </p>
+            <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
+              PLEASE READ THESE TERMS AND CONDITIONS CAREFULLY BECAUSE THEY SET FORTH THE IMPORTANT TERMS YOU WILL NEED TO KNOW ABOUT THE SERVICES.
+            </p>
+            <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
+              YOU UNDERSTAND THAT BY ACCESSING OR USING THE SITES OR SERVICES, YOU ACKNOWLEDGE THAT YOU HAVE READ, UNDERSTOOD, AND AGREED TO BE LEGALLY BOUND BY AND COMPLY WITH THESE TERMS OF USE. IF YOU DO NOT OR CANNOT AGREE WITH ANY PART OF THESE TERMS OF USE, YOU MAY NOT USE THE SITES OR ANY SERVICES PROVIDED ON OR THROUGH THE SITES.
+            </p>
+            <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
+              ARBITRATION NOTICE: YOU AGREE THAT DISPUTES BETWEEN YOU AND US OR YOU AND THE MEDICAL GROUPS OR PROVIDERS ARISING OUT OF OR RELATED TO THESE TERMS AND CONDITIONS OR THE SERVICE WILL BE RESOLVED BY BINDING, INDIVIDUAL ARBITRATION AND YOU WAIVE YOUR RIGHTS TO A JURY TRIAL AND TO PARTICIPATE IN A CLASS ACTION LAWSUIT OR CLASS-WIDE ARBITRATION, AS FURTHER SET FORTH BELOW. WE EXPLAIN SOME EXCEPTIONS AND HOW YOU CAN OPT OUT OF ARBITRATION BELOW.
+            </p>
+            <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
+              IF YOU HAVE A MEDICAL EMERGENCY, SEEK IN-PERSON EMERGENCY CARE IMMEDIATELY OR DIAL 911. THE SERVICE IS NOT APPROPRIATE FOR ALL MEDICAL CONDITIONS OR CONCERNS. THIS AGREEMENT IS SUBJECT TO CHANGE AS PROVIDED HEREIN.
+            </p>
+            <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
+              THE TERMS OF USE ARE SUBJECT TO CHANGE AS PROVIDED HEREIN.
             </p>
           </div>
           {/* Eligibility Requirements */}
@@ -190,7 +154,7 @@ export default function privacyPolicy() {
             <ul className="space-y-1 list-disc text-[16px] md:text-[18px] font-[400] ml-6 md:ml-8">
               <li>You must be 18 years or older.</li>
               <li>
-                You are located in a Province Where We Operate (depending on the
+                You are located in a State (U.S. users) Where We Operate (depending on the
                 type of Services).
               </li>
               <li>
@@ -238,37 +202,7 @@ export default function privacyPolicy() {
               Special consent to telehealth services
             </div>
             <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              Telemedicine and Telehealth involves the delivery of health care
-              services using electronic communications, information technology,
-              or other means between a health care provider and a patient who
-              are not in the same physical location. Telemedicine may be used
-              for diagnosis, treatment, follow-up and/or related patient
-              education, and may include, but is not limited to:
-            </p>
-            <ul className="space-y-1 list-disc text-[16px] md:text-[18px] font-[400] ml-6 md:ml-8">
-              <li>
-                Electronic transmission of medical records, photo images,
-                personal health information, or other data between a patient and
-                health care provider;
-              </li>
-              <li>
-                Interactions between a patient and health care provider via
-                audio, video, and/or data communications; and
-              </li>
-              <li>
-                Use of output data from medical devices, sound, and video files.
-              </li>
-            </ul>
-            <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              The electronic systems used in the Services will incorporate
-              network and software security protocols to protect the privacy and
-              security of health information and imaging data, and will include
-              measures to safeguard the data to ensure its integrity against
-              intentional or unintentional corruption. Please see our Telehealth
-              Consent Form for a description of the risks and benefits of
-              telemedicine. The Consent to Telehealth is hereby incorporated
-              into these Terms of Use by reference and constitutes a part of
-              these Terms of Use.
+              Prior to accessing the Services, You will by required to review and accept a separate Informed Consent.
             </p>
           </div>
 
@@ -278,38 +212,19 @@ export default function privacyPolicy() {
               Prescription Products
             </div>
             <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              Certain products available through the Platform require a valid
-              prescription by a licensed healthcare provider. You will not be
-              able to obtain a prescription product unless you have completed a
-              consultation with one of the Rocky Health Care Providers, the
-              Provider has determined the prescription product is appropriate
-              for you and the Provider has written a prescription.
+              Certain products available through the Platform require a valid prescription by a licensed healthcare provider. You will not be able to obtain a prescription product unless you have completed a consultation with a licensed healthcare provider and received a valid written or electronic prescription.
             </p>
             <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              If a Provider determines a prescription product is appropriate for
-              you and writes a prescription, you will receive information about
-              your options for filling the prescription. Certain prescriptions
-              can be filled through the Rocky Health Pharmacy by using the
-              Platform (or you may fill the prescription at any pharmacy of your
-              choice as prompted during your use of the Service).
+              If a Provider determines a prescription product is appropriate for you and writes a prescription, you will receive information about your options for filling the prescription. Certain prescriptions can be filled through the Rocky Health Pharmacy or one of our pharmacy partners by using the Platform (or you may fill the prescription at any pharmacy of your choice as prompted during your use of the Service).
             </p>
             <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              If you complete a consultation with a Provider and fill a
-              prescription through one of Rocky Health Pharmacies, the
-              prescription product is shipped to you by the Rocky Health
-              Pharmacy and the costs associated with the prescription are
-              included in the total charged to you by the Service as described
-              in the "Subscription Products" section above. If you fill a
-              prescription with a pharmacy other than Rocky Health Pharmacy, the
-              Service will send the prescription to your selected pharmacy, but
-              you will be responsible for picking up or otherwise obtaining the
-              prescription product and paying the pharmacy directly for the cost
-              of the prescription product.
+              If you complete a consultation with a Provider and fill a prescription through a Rocky Health Pharmacy or one of our pharmacy partners, the prescription product is shipped to you by the Rocky Health Pharmacy and the costs associated with the prescription are included in the total charged to you by the Service as described in the "Subscription Products" section above.
             </p>
             <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              Prescription products available through the Platform are
-              "Third-Party Goods and Services" as described in the Third-Party
-              Goods and Services section of this Agreement.
+              If you fill a prescription with a pharmacy other than Rocky Health Pharmacy, the Service will send the prescription to your selected pharmacy, but you will be responsible for picking up or otherwise obtaining the prescription product and paying the pharmacy directly for the cost of the prescription product.
+            </p>
+            <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
+              All prescription products available through the Service, including those obtained from a Rocky Health Pharmacy or one of our pharmacy partners, are "Third-Party Goods and Services" as described in the Third-Party Goods and Services section of this Agreement.
             </p>
           </div>
 
@@ -319,77 +234,30 @@ export default function privacyPolicy() {
               Cancellation Policy
             </div>
             <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              Rocky reserves the right to charge a cancellation fee in the
-              amount of $45.00 CAD (hereinafter referred to as the "cancellation
-              fee") on all prescription orders. The cancellation fee shall be
-              automatically billed after seven (7) days if user questionnaire or
-              ID verification is incomplete. A failure to respond to any emails
-              from Rocky for more than seven (7) days shall also incur the
-              cancellation fee.
+              Rocky reserves the right to charge a service fee in the amount of $45.00 USD (hereinafter referred to as the "Service Fee") on all consultations You initiate but do not complete. The cancellation fee shall be automatically billed after seven (7) days if user questionnaire or ID verification is incomplete. A failure to respond to any emails or communications from Rocky for more than seven (7) days shall also incur the Service Fee.
             </p>
             <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              Rocky reserves the right to charge a cancellation fee in the
-              amount of $60.00 CAD (hereinafter referred to as the "MH
-              cancellation fee") on all mental health services and/or orders.
-              The MH cancellation fee shall be automatically billed after seven
-              (7) days if user questionnaire or ID verification is incomplete. A
-              failure to respond to any emails or phone call appointments from
-              Rocky for more than seven (7) days shall also incur the MH
-              cancellation fee.
+              Rocky reserves the right to charge a $45.00 USD service (hereinafter referred to as the "USWL") for all weight loss services and orders. This fee will be automatically billed after seven (7) days if the consultation form or ID has not been submitted or if consent remains pending. However, if consent for treatment is rejected, a full refund will be issued. The full price of the medical consultation ($99) will be charged once completed, regardless of whether a prescription is issued.
             </p>
             <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              Rocky reserves the right to charge a $45.00 CAD cancellation fee
-              (hereinafter referred to as the "WL cancellation fee") for all
-              weight loss services and orders. This fee will be automatically
-              billed after seven (7) days if the consultation form or ID has not
-              been submitted or if consent remains pending. However, if consent
-              for treatment is rejected, a full refund will be issued. The full
-              price of the medical consultation ($99) will be charged once
-              completed, regardless of whether a prescription is issued.
+              Fees and refunds applicable to U.S. Users are described in our U.S. Membership Agreement.
             </p>
           </div>
 
-          {/* Weight Loss Program Fees and Refund Policy */}
-          <div
-            id="weight-loss-program-fees-and-refund-policy"
-            className="mb-10 md:mb-14"
-          >
-            <div className="text-[22px] md:text-[30px] leading-[115%] tracking-[-0.01em] md:tracking-[-0.02em] mb-4 md:mb-6 headers-font">
-              Weight Loss Program Fees and Refund Policy
-            </div>
-            <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              As part of our weight loss program, the following policies apply
-              for any patients who are enrolled:
-            </p>
-            <ul className="space-y-1 list-disc text-[16px] md:text-[18px] font-[400] ml-6 md:ml-8">
-              <li>
-                Non-Refundable Monthly Fee: The monthly program fee of $40 is
-                non-refundable once it has renewed. To avoid unwanted charges,
-                you must cancel or pause your treatment prior to the renewal
-                date.
-              </li>
-              <li>
-                Advance Medication Refills: If you request medication refills in
-                advance to cover multiple months, the monthly program fee will
-                be charged upfront. For example, if you request a three-month
-                supply of medication, you will be charged $120, at the time of
-                the request.
-              </li>
-            </ul>
-          </div>
+
 
           {/* Refill Policy */}
-          <div id="refill-policy" className="mb-10 md:mb-14">
-            <div className="text-[22px] md:text-[30px] leading-[115%] tracking-[-0.01em] md:tracking-[-0.02em] mb-4 md:mb-6 headers-font">
+          <div id="refill-policy" class="mb-10 md:mb-14">
+            <div class="text-[22px] md:text-[30px] leading-[115%] tracking-[-0.01em] md:tracking-[-0.02em] mb-4 md:mb-6 headers-font">
               Refill Policy
             </div>
-            <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
+            <p class="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
               Once a refill has renewed, it cannot be cancelled. To avoid being
               charged for a renewal, patients must pause their subscription
               prior to renewal. This can be done at any time through your
               account. We strongly recommend pausing your subscription before
               the renewal date to prevent unwanted orders. For assistance, you
-              can contact us at contact@myrocky.ca.
+              can contact us at <a href="mailto:contact@myrocky.com" class="text-black hover:underline">contact@myrocky.com</a>.
             </p>
           </div>
 
@@ -461,8 +329,8 @@ export default function privacyPolicy() {
               reduce the risk to you of this limitation, Rocky strongly
               encourages you to provide all relevant information and discuss any
               and all diagnosis and treatment options with a health care
-              provider. Moreover, a health care provider utilizing Rocky may be
-              limited by provincial law in prescribing certain medications to
+              provider. Moreover, a health care               provider utilizing Rocky may be
+              limited by state law in prescribing certain medications to
               you without first conducting an in-person physical examination.
             </p>
             <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
@@ -514,7 +382,7 @@ export default function privacyPolicy() {
               use of the Services. You also agree to immediately notify Rocky of
               any unauthorized use of your username, password or any other
               breach of security that you become aware of involving or relating
-              to the Services by emailing Rocky contact@myrocky.ca. Rocky may
+              to the Services by emailing Rocky <a href="mailto:contact@myrocky.com" class="text-black hover:underline">contact@myrocky.com</a>. Rocky may
               take any and all actions it deems necessary or reasonable to
               maintain the security of the Sites, Services and your Secure User
               account.
@@ -567,7 +435,7 @@ export default function privacyPolicy() {
               Subject to your compliance with these Terms of Use, we hereby
               grant to you a personal, limited, revocable, non-exclusive, and
               non-transferable right to view, download, access, and use the
-              Sites in Provinces in which we operate, to use the Services solely
+              Sites in States in which we operate, to use the Services solely
               for your personal and non-commercial use and only as permitted
               under these Terms of Use, the Consent to Telehealth, and the
               Privacy Policy. No other right, title, or interest in or to the
@@ -895,136 +763,7 @@ export default function privacyPolicy() {
               Pharmacy services
             </div>
             <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              If you receive a prescription as a result of the Services, you may
-              select Rocky Health Pharmacy Inc. (collectively, the "Rocky
-              Pharmacy") to ship your prescription. You give us consent to send
-              and disclose to the Rocky Pharmacy all information provided by
-              you, health care records, and other applicable health care
-              information and personal information (such as your name, location
-              and demographic information) so that you may receive
-              pharmaceutical services.
-            </p>
-            <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              Patients of Rocky Pharmacy will be provided the relevant and
-              appropriate counselling points for new and repeat prescriptions
-              every time the pharmacy dispenses the medication. Counselling
-              points shall be provided via 4 methods:
-            </p>
-            <ul className="space-y-1 list-disc text-[16px] md:text-[18px] font-[400] ml-6 md:ml-8 mb-6">
-              <li>
-                Each product page on myrocky.ca has counselling points on what
-                to expect from the medication, the medication's appropriate use,
-                side effects, why it may be useful, and FAQ's about the
-                medication and condition being treated.
-              </li>
-              <li>
-                Once dispensed, each patient shall receive an email which
-                includes all relevant counselling points and relevant
-                information provided above.
-              </li>
-              <li>
-                Once the tracked package is received, the patient will find a
-                leaflet inside which will include further counselling points, in
-                case they did not read the counselling points online, or see the
-                email that was sent.
-              </li>
-              <li>
-                The patient can call Rocky Pharmacy during the hours in which
-                the designated manager informs the Ontario College of
-                Pharmacists ("OCP") that there is a pharmacist present. In
-                addition, the patient has an online portal in which they can: a.
-                ask any clinical questions and b. request a phone call from the
-                pharmacist.
-              </li>
-            </ul>
-            <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              Delivery will be via Canada Post, Fedex, UPS, or DHL depending on
-              location and availability. All items will be shipped via express
-              tracked shipping to ensure the medication arrives safely and in a
-              timely manner. Furthermore, unless stated otherwise, prices,
-              shipments and risk of loss are Free on Board (hereinafter referred
-              to as "FOB") at the Rocky's facilities. Title and risk of loss
-              pass to Consumer in accordance with the definition of FOB in
-              Incoterms 2010. Rocky Pharmacy will NOT be shipping anything that
-              requires maintaining cold chain, or any Schedule 1 narcotics or
-              controlled substances.
-            </p>
-            <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              Rocky Pharmacy will be accepting returns in person or shipped at
-              the patient's cost. Rocky Pharmacy will not be issuing refunds,
-              exchanges or store credit as we are unable to guarantee the
-              safety, storage, and handling of the medication/product once the
-              patient receives it. Returns accepted will solely be for the
-              reason to safely dispose of the medication/product.
-            </p>
-            <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              Patients can file a complaint if required. In order to file a
-              complaint, send an email clearly outlining the patient name,
-              address, order number, product/medication purchased, and explain
-              the problem thoroughly. Emails can be sent to pharmacy@myrocky.ca.
-            </p>
-            <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              <strong>Packaging and fulfillment restrictions</strong>
-            </p>
-            <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              If you select to use Rocky Pharmacy to fulfill any prescriptions
-              provided by health care providers through the Services, you
-              acknowledge that your medication, if approved, may not be shipped
-              in child-resistant packaging and that you must keep it out of the
-              reach of children. You agree to assume any and all liability in
-              keeping any of our products out of the reach of children.
-            </p>
-            <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              Prior to dispensing, and at your request we will provide the price
-              of your prescription without obligation.
-            </p>
-            <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              Our usual and customary fee for professional services when
-              dispensing a drug product is $0.00.
-            </p>
-            <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              Certain prescriptions may warrant a different fee. The services
-              included in our fees, in addition to professional dispensing, are
-              as highlighted below:
-            </p>
-            <ul className="space-y-1 list-disc text-[16px] md:text-[18px] font-[400] ml-6 md:ml-8 mb-6">
-              <li>Patient medication profiles</li>
-              <li>Professional consultation</li>
-              <li>Health care service information</li>
-              <li>Delivery service</li>
-            </ul>
-            <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              Some of the services listed above may be available at an extra
-              charge.
-            </p>
-            <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              <strong>Notice to Patients</strong>
-            </p>
-            <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              When dispensing your prescription your pharmacist may select an
-              alternate brand of the same drug where permitted by Ontario law.
-            </p>
-            <ul className="space-y-1 list-disc text-[16px] md:text-[18px] font-[400] ml-6 md:ml-8 mb-6">
-              <li>You have the right to request an interchangeable product.</li>
-              <li>
-                Ask your pharmacist if a lower priced drug is being used to
-                dispense your prescription.
-              </li>
-              <li>
-                Please feel free to consult your pharmacist about your
-                prescription.
-              </li>
-            </ul>
-            <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              <strong>
-                NOTICE TO ONTARIANS RECEIVING DRUGS AND PHARMACY SERVICES
-              </strong>
-            </p>
-            <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              The Ministry of Health and Long-Term Care (Ministry) will provide
-              access to information about the publicly funded drugs and pharmacy
-              services, or monitored drugs you receive to your health care
-              providers to help them provide high quality health care to you.
+              If you receive a prescription as a result of the Services, you may select a Rocky Health Pharmacy or one of our independent pharmacy partners (collectively, the "Rocky Pharmacy") to ship your prescription. You give us consent to send and disclose to the Rocky Pharmacy all information provided by you, health care records, and other applicable health care information and personal information (such as your name, location and demographic information) so that you may receive pharmaceutical services.
             </p>
           </div>
 
@@ -1066,34 +805,22 @@ export default function privacyPolicy() {
               severability of provisions
             </div>
             <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              PLEASE READ THIS SECTION CAREFULLY BECAUSE IT REQUIRES YOU AND RO
-              TO RESOLVE ALL DISPUTES BETWEEN US THROUGH BINDING INDIVIDUAL
-              ARBITRATION AND LIMITS THE MANNER IN WHICH YOU CAN SEEK RELIEF
-              FROM ROCKY
+              PLEASE READ THIS SECTION CAREFULLY BECAUSE IT REQUIRES YOU AND ROCKY TO RESOLVE ALL DISPUTES BETWEEN US THROUGH BINDING INDIVIDUAL ARBITRATION AND LIMITS THE MANNER IN WHICH YOU CAN SEEK RELIEF FROM ROCKY.
             </p>
+            <div className="text-[22px] leading-[115%] tracking-[-0.01em] mb-4 headers-font">
+              Users
+            </div>
             <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              These Terms of Use and your use of the Sites shall be governed by
-              the laws of the Province of Ontario, without giving effect to the
-              principles of conflict of laws. Any dispute arising under or
-              relating in any way to these Terms of Use will be resolved
-              exclusively by final and binding arbitration in Toronto, Ontario
-              under the rules of the International Arbitration Association,
-              except that either party may bring a claim related to intellectual
-              property rights, or seek temporary and preliminary specific
-              performance and injunctive relief, in any court of competent
-              jurisdiction. The parties agree that the courts located in
-              Toronto, Ontario shall have exclusive personal jurisdiction,
-              subject matter jurisdiction, and venue for any such claim.
+              These Terms of Use and your use of the Sites shall be governed by the laws of the State of Delaware, without giving effect to the principles of conflict of laws. Any dispute arising under or relating in any way to these Terms of Use will be resolved exclusively by final and binding arbitration in Wilmington, Delaware under the rules of the American Arbitration Association, except that either party may bring a claim related to intellectual property rights, or seek temporary and preliminary specific performance and injunctive relief, in any court of competent jurisdiction. The parties agree that the courts located in Wilmington, Delaware shall have exclusive personal jurisdiction, subject matter jurisdiction, and venue for any such claim.
             </p>
+          </div>
+
+          <div id="extent-of-applicability" className="mb-10 md:mb-14">
+            <div className="text-[22px] md:text-[30px] leading-[115%] tracking-[-0.01em] md:tracking-[-0.02em] mb-4 md:mb-6 headers-font">
+              Extent of Applicability
+            </div>
             <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              All parts of these Terms of Use apply to the maximum extent
-              permitted by law. Ro and you both agree that if we cannot enforce
-              a part of this contract as written, then that part will be
-              replaced with terms that most closely match the intent of the part
-              we cannot enforce, to the extent permitted by law. The invalidity
-              of part of these Terms of Use will not affect the validity and
-              enforceability of the remaining provisions. The section headings
-              are for convenience only and do not have any force or effect.
+              All parts of these Terms of Use apply to the maximum extent permitted by law. Rocky and you both agree that if we cannot enforce a part of this contract as written, then that part will be replaced with terms that most closely match the intent of the part we cannot enforce, to the extent permitted by law. The invalidity of part of these Terms of Use will not affect the validity and enforceability of the remaining provisions. The section headings are for convenience only and do not have any force or effect.
             </p>
           </div>
 
@@ -1109,20 +836,15 @@ export default function privacyPolicy() {
               these Terms of Use shall not constitute a waiver of such right or
               provision.
             </p>
-          </div>
-
-          <div
-            id="consultation-fee-for-sexual-dysfunction-care"
-            className="mb-10 md:mb-14"
-          >
-            <div className="text-[22px] md:text-[30px] leading-[115%] tracking-[-0.01em] md:tracking-[-0.02em] mb-4 md:mb-6 headers-font">
-              Consultation fee for Sexual Dysfunction Care
+            <div className="text-[22px] leading-[115%] tracking-[-0.01em] mb-4 headers-font underline">
+              U.S. Users
             </div>
             <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              A fee of $40 shall be charged if a patient wishes to have a
-              prescription issued and dispensed from a local pharmacy.
+              U.S. Users Fees and refunds applicable to U.S. Users are described in our U.S. Membership Agreement.
             </p>
           </div>
+
+
 
           <div id="no-agency-relationship" className="mb-10 md:mb-14">
             <div className="text-[22px] md:text-[30px] leading-[115%] tracking-[-0.01em] md:tracking-[-0.02em] mb-4 md:mb-6 headers-font">
@@ -1166,115 +888,6 @@ export default function privacyPolicy() {
             </p>
           </div>
 
-          <div
-            id="rocky-health-inc.-&-rocky-health-pharmacy-inc.-refund-policy"
-            className="mb-10 md:mb-14"
-          >
-            <div className="text-[22px] md:text-[30px] leading-[115%] tracking-[-0.01em] md:tracking-[-0.02em] mb-4 md:mb-6 headers-font">
-              Rocky Health Inc. & Rocky Health Pharmacy Inc. Refund Policy
-            </div>
-            <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              Refunds per our money-back guarantee policy can only be requested
-              during the following days (refund period*) for these products:
-            </p>
-            <ul className="space-y-1 list-disc text-[16px] md:text-[18px] font-[400] ml-6 md:ml-8 mb-6">
-              <li>
-                Finasteride purchased through myrocky.ca between 90 and 180
-                days.
-              </li>
-              <li>
-                Essential IX Shampoo and/or Essential V Oil purchased through
-                myrocky.ca between 60-90 days.
-              </li>
-            </ul>
-            <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              You may be eligible for a full refund of prescription/OTC products
-              if the following terms and conditions are satisfied:
-            </p>
-            <ul className="space-y-1 list-disc text-[16px] md:text-[18px] font-[400] ml-6 md:ml-8 mb-6">
-              <li>
-                The prescription product was used as directed by your prescriber
-                leading up to the refund period*
-              </li>
-              <li>
-                The OTC product was used as recommended leading up to the refund
-                period*
-              </li>
-              <li>
-                You submitted a refund request within the refund period* to
-                contact@myrocky.ca
-              </li>
-            </ul>
-            <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              Please note: Refund requests will not be accepted if made outside
-              of the refund period* stated above. If/when a request has been
-              approved, the payment method used to make the original purchase
-              will be refunded. We accept prescription products back for
-              destruction purposes only. Limit one refund per customer per
-              eligible product. Returning customers who sign up through
-              myrocky.ca are not eligible for a refund. Additional items from
-              your order may not be eligible for a refund.
-            </p>
-            <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              Rocky Health Inc. and Rocky Health Pharmacy Inc. reserve the right
-              to forfeit the guarantee if abuse of our money-back guarantee is
-              suspected.
-            </p>
-            <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              For other drug-related inquiries (ie dose, side effects,
-              directions, etc.), contact our healthcare providers directly
-              through our platform.
-            </p>
-            <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              90-Day Money-Back Guarantee Terms & Conditions:
-            </p>
-            <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              If you experience any problems or dissatisfaction with the hair loss products you have purchased (finasteride or minoxidil) please email us at contact@myrocky.ca and let's see whether we can help you in the first instance. If you are not satisfied with the our response or the results obtained using our prescription treatment, we will refund you the actual price paid in accordance with the following terms and conditions:
-            </p>
-            <ol className="list-decimal text-[16px] md:text-[18px] font-[400] ml-6 md:ml-8 mb-6 space-y-2">
-              <li>
-                This offer is open to individuals who have purchased finasteride and/or minoxidil from myrocky.ca and used it in accordance with the product directions. If after 90 days you are not satisfied with results you may apply for a refund in accordance with these terms and conditions.
-              </li>
-              <li>
-                For the purpose of this guarantee, results mean a lack of response to see noticeable hair growth, which can be objectively substantiated with proof of images.
-              </li>
-              <li>
-                The money back guarantee period is eligible after a minimum of 90 days of continuous use of finasteride and/or minoxidil (anything less than a three months supply is automatically ineligible for this offer).
-              </li>
-              <li>
-                To qualify, the product must be purchased directly from myrocky.ca. and you must retain proof of purchase. Medications used that were not purchased through myrocky.ca DO NOT qualify.
-              </li>
-              <li>
-                Side effects experienced from either finasteride or minoxidil DO NOT qualify for this offer.
-              </li>
-              <li>
-                This guarantee can only be redeemed directly with Rocky Health
-              </li>
-              <li>
-                Requests for refunds must be made in writing after a minimum of 90-days from the date medications were delivered, but no longer than 120-days. Anything requests made after 120-days have lapsed will be void.
-              </li>
-              <li>
-                Reimbursement will be via the card or payment method used for the original purchase. Please allow up to 28 days for refund after confirmation that your request has been approved, although we aim to provide refunds more quickly.
-              </li>
-              <li>
-                We will refund the actual price paid, net of any promotional discount, as evidenced by our administration system or confirmation email. The maximum amount refunded is $165 CAD.
-              </li>
-            </ol>
-            <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              To request a refund, please contact Rocky Health directly at contact@myrocky.ca and include the following information:
-            </p>
-            <ol className="list-decimal text-[16px] md:text-[18px] font-[400] ml-6 md:ml-8 mb-6 space-y-2">
-              <li>Product purchased</li>
-              <li>Date of purchase</li>
-              <li>Reason for refund</li>
-              <li>Name and address</li>
-              <li>Proof of purchase.</li>
-              <li>Clear images of your scalp with your hairline AND crown dated before first purchase (dated no earlier than 28 days from date of first purchase) and a minimum of 90 days after starting treatment.</li>
-              <li>Images sent must be provided with evidence of time stamp from your phone</li>
-              <li>Clear images of the products used with labels intact (This offer does not apply if the products have been altered in any way or made illegible).</li>
-              <li>Returns must be initiated by the purchasing customer who used the product.</li>
-            </ol>
-          </div>
         </div>
         {/* Deskotp */}
         <ul className="w-[280px] space-y-3">
@@ -1283,9 +896,8 @@ export default function privacyPolicy() {
             return (
               <li
                 key={index}
-                className={`text-[18px] font-[400] leading-[140%] text-[#000000A6] hover:underline hover:font-[600] ${
-                  index === 0 ? "font-[600] text-black underline" : ""
-                }`}
+                className={`text-[18px] font-[400] leading-[140%] text-[#000000A6] hover:underline hover:font-[600] ${index === 0 ? "font-[600] text-black underline" : ""
+                  }`}
               >
                 <a href={`#${sectionId}`}>{text}</a>
               </li>

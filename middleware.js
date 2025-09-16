@@ -128,8 +128,6 @@ function shouldProtectRoute(pathname) {
     "/wl-pre-consultation",
     "/hair-pre-consultation-quiz",
 
-
-
     // Add other routes that should require authentication
   ];
 
@@ -147,8 +145,7 @@ function isBlockedRoute(pathname) {
     "/product/dhm-blend",
     "/zonnic",
     "/product/zonnic",
-    "/hair",
-
+    // "/hair",
     // Add other routes that are hashed in navbar
   ];
 
