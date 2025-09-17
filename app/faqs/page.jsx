@@ -8,13 +8,7 @@ import { useState, useMemo } from "react";
 import { IoSearch } from "react-icons/io5";
 import { useSearch } from "@/components/utils/UseSearch";
 
-const FaqsButton = [
-  "all",
-  "hair loss",
-  "weight loss",
-  "mental health",
-  "sexual health",
-];
+const FaqsButton = ["all", "hair loss", "weight loss", "sexual health"];
 
 const Faqs = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -26,7 +20,6 @@ const Faqs = () => {
       ...HairLossFaqs.map((faq) => ({ ...faq, category: "hair loss" })),
       ...WlFaqs.map((faq) => ({ ...faq, category: "weight loss" })),
       ...SexualHealthFaqs.map((faq) => ({ ...faq, category: "sexual health" })),
-      ...MentalHealthfaqs.map((faq) => ({ ...faq, category: "mental health" })),
     ];
   }, []);
 
@@ -61,8 +54,6 @@ const Faqs = () => {
 
     // Otherwise, filter by category
     switch (selectedCategory) {
-      case "mental health":
-        return MentalHealthfaqs;
       case "weight loss":
         return WlFaqs;
       case "hair loss":
@@ -249,12 +240,9 @@ const HomeFaqs = [
         
         <p>Rocky offers a range of treatments across the following categories:</p>
         
-        <div><span class="font-[700]">Sexual health:</span> Sildenafil (Generic), Tadalafil (Generic), Viagra (Brand), Cialis (Brand), Dissolvable Tadalafil, Numb Ointment, Numb Spray, Testosterone Supplements. </div>
-        <div><span class="font-[700]">Hair loss:</span> Finasteride & Minoxidil Topical Foam, Finasteride (Propecia), Minoxidil (Rogaine), Hair Kits, Hair Care Products, Hair Growth Supplements. </div>
+        <div><span class="font-[700]">Sexual health:</span> Sildenafil (Generic), Tadalafil (Generic) </div>
+        <div><span class="font-[700]">Hair loss:</span> Finasteride & Minoxidil Topical Foam </div>
         <div><span class="font-[700]">Body optimization:</span> Ozempic®, Mounjaro®, Wegovy®, Rybelsus®. </div>
-        <div><span class="font-[700]">Mental health:</span> Buproprion XL (Generic), Wellbutrin XL® (Brand), Citalopram (generic), Celexa® (brand), Escitalopram (generic), Cipralex® (brand), Fluoxetine (generic), Prozac® (brand), Paroxetine (generic), Paxil® (brand), Sertraline (generic), Zoloft® (brand), Trazadone (generic), Venlafaxine XR® (generic), Effexor (brand). </div>
-        <div><span class="font-[700]">Recovery:</span> DHM Blend®. </div>
-        <div><span class="font-[700]">Smoking cessation:</span> Zonnic®. </div>
       </div>
     `,
   },
@@ -335,7 +323,7 @@ const SexualHealthFaqs = [
   {
     question: "What is the safest medication for ED?",
     answer:
-      "All medications go through extensive clinical trials and quality checks before getting approved by Health Canada. The safety and effectiveness of erectile dysfunction medications is well established, which is why it is an excellent treatment option for most men. Our online questionnaire will take into account your personal medical history and determine if these pills are right for you!",
+      "All medications go through extensive clinical trials and quality checks before getting approved by the U.S. FDA. The safety and effectiveness of erectile dysfunction medications is well established, which is why it is an excellent treatment option for most men. Our online questionnaire will take into account your personal medical history and determine if these pills are right for you!",
   },
   {
     question: "What is the most effective medication for ED?",
@@ -355,7 +343,7 @@ const SexualHealthFaqs = [
   {
     question: "Are ED medications available OTC?",
     answer:
-      "In Canada, erectile dysfunction medications are not available over-the-counter (OTC) and can only be obtained with a prescription. ED medications sold without a prescription are illegal and could potentially result in harm; ED medication in the counterfeit market does not undergo the correct production, testing, and approval and thus is not safe. Rocky provides access to a licensed health care team so you can be certain that you are getting safe and effective care. Through our online platform, you will be guided through a series of medical questions which are then reviewed by a licensed Canadian physician. Once the medical questionnaire is reviewed, you will be notified if you have been approved, and if so, the appropriate treatment is delivered to your doorstep.",
+      "In the United States, erectile dysfunction medications are not available over-the-counter (OTC) and can only be obtained with a prescription. ED medications sold without a prescription are illegal and could potentially result in harm; ED medication in the counterfeit market does not undergo the correct production, testing, and approval and thus is not safe. Rocky provides access to a licensed health care team so you can be certain that you are getting safe and effective care. Through our online platform, you will be guided through a series of medical questions which are then reviewed by a licensed U.S. physician. Once the medical questionnaire is reviewed, you will be notified if you have been approved, and if so, the appropriate treatment is delivered to your doorstep.",
   },
   {
     question: "How can I improve my ED?",
@@ -393,7 +381,7 @@ const WlFaqs = [
   {
     question: "How do I schedule a call with my provider?",
     answer:
-      "After submitting your questionnaire, you will be able to schedule a call with a licensed Canadian prescriber. To request this, simply send a message to your prescriber through your account by clicking on messages. They will send you a link to schedule a call at your convenience.",
+      "After submitting your questionnaire, you will be able to schedule a call with a licensed U.S. prescriber. To request this, simply send a message to your prescriber through your account by clicking on messages. They will send you a link to schedule a call at your convenience.",
   },
   {
     question: "Can I cancel at any time?",
@@ -431,7 +419,7 @@ const MentalHealthfaqs = [
   {
     question: "What anxiety treatments are available?",
     answer:
-      "We provide various Health Canada approved medications prescribed by licensed Canadian healthcare professionals. These daily medications are intended for managing long-term anxiety. We also provide a hub where you can find self-help resources.",
+      "We provide various FDA-approved medications prescribed by licensed U.S. healthcare professionals. These daily medications are intended for managing long-term anxiety. We also provide a hub where you can find self-help resources.",
   },
   {
     question: "What is depression?",
@@ -446,11 +434,11 @@ const MentalHealthfaqs = [
   {
     question: "What kinds of depression treatments are available?",
     answer:
-      "Every person is treated with a personalized plan to match their needs. We provide different treatment options to guide you after your assessment. We provide various Health Canada approved medications prescribed by licensed Canadian healthcare professionals. These daily medications are intended for managing long-term depression. We also provide a hub where you can find self-help resources.",
+      "Every person is treated with a personalized plan to match their needs. We provide different treatment options to guide you after your assessment. We provide various FDA-approved medications prescribed by licensed U.S. healthcare professionals. These daily medications are intended for managing long-term depression. We also provide a hub where you can find self-help resources.",
   },
   {
     question: "Does health insurance cover my treatment?",
     answer:
-      "Treatment coverage varies among plans and provinces, with specific eligibility criteria. To make the most of available coverage, we can provide you with an invoice post-purchase to submit for an insurance claim. Your insurance provider will then reimburse you according to your plan.",
+      "Treatment coverage varies among plans and states, with specific eligibility criteria. To make the most of available coverage, we can provide you with an invoice post-purchase to submit for an insurance claim. Your insurance provider will then reimburse you according to your plan.",
   },
 ];
