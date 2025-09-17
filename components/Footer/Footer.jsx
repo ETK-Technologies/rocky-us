@@ -102,17 +102,15 @@ const Footer = ({ className }) => {
           >
             Popular Products
             <span
-              className={`inline-block w-3.5 h-3.5 ml-2 transform transition-transform ${
-                isProductsOpen ? "rotate-180" : ""
-              }`}
+              className={`inline-block w-3.5 h-3.5 ml-2 transform transition-transform ${isProductsOpen ? "rotate-180" : ""
+                }`}
             >
               <IoIosArrowDown />
             </span>
           </p>
           <div
-            className={`flex flex-col gap-4 px-4 pb-4 border-b-2 border-[#faebd724] ${
-              isProductsOpen ? "block" : "hidden"
-            }`}
+            className={`flex flex-col gap-4 px-4 pb-4 border-b-2 border-[#faebd724] ${isProductsOpen ? "block" : "hidden"
+              }`}
           >
             {products.map((link) => (
               <Link
@@ -133,17 +131,15 @@ const Footer = ({ className }) => {
           >
             Learn More
             <span
-              className={`inline-block w-3.5 h-3.5 ml-2 transform transition-transform ${
-                isLearnMoreOpen ? "rotate-180" : ""
-              }`}
+              className={`inline-block w-3.5 h-3.5 ml-2 transform transition-transform ${isLearnMoreOpen ? "rotate-180" : ""
+                }`}
             >
               <IoIosArrowDown />
             </span>
           </p>
           <div
-            className={`flex flex-wrap justify-between gap-4 px-4 pb-4 border-b-2 border-[#faebd724] ${
-              isLearnMoreOpen ? "block" : "hidden"
-            }`}
+            className={`flex flex-wrap justify-between gap-4 px-4 pb-4 border-b-2 border-[#faebd724] ${isLearnMoreOpen ? "block" : "hidden"
+              }`}
           >
             {[
               { href: "/how-it-works/", text: "How It Works" },
@@ -171,25 +167,23 @@ const Footer = ({ className }) => {
           >
             Contact
             <span
-              className={`inline-block w-3.5 h-3.5 ml-2 transform transition-transform ${
-                isContactOpen ? "rotate-180" : ""
-              }`}
+              className={`inline-block w-3.5 h-3.5 ml-2 transform transition-transform ${isContactOpen ? "rotate-180" : ""
+                }`}
             >
               <IoIosArrowDown />
             </span>
           </p>
           <div
-            className={`flex flex-wrap justify-between gap-4 px-4 pb-4 border-b-2 border-[#faebd724] ${
-              isContactOpen ? "block" : "hidden"
-            }`}
+            className={`flex flex-wrap justify-between gap-4 px-4 pb-4 border-b-2 border-[#faebd724] ${isContactOpen ? "block" : "hidden"
+              }`}
           >
             {[
               { href: "/contact-us/", text: "Contact Us" },
               { href: "/terms-of-use/", text: "Terms & Conditions" },
               { href: "/privacy-policy/", text: "Privacy Policy" },
               {
-                href: "/service-across-canada/",
-                text: "Service Across Canada",
+                href: "/service-coverage",
+                text: "Service Coverage",
               },
             ].map((link) => (
               <Link
@@ -323,9 +317,8 @@ const Footer = ({ className }) => {
 
           {/* Locations */}
           <div
-            className={`flex justify-between text-[14px] ${
-              isLocationsOpen ? "block" : "hidden"
-            }`}
+            className={`flex justify-between text-[14px] ${isLocationsOpen ? "block" : "hidden"
+              }`}
           >
             <div>
               <p>Rocky Pharmacy (308582)</p>

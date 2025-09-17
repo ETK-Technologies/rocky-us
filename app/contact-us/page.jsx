@@ -40,7 +40,7 @@ export default async function ContactUs() {
                   href="mailto:contact@myrocky.ca"
                   className="text-[14px] md:text-[16px] leading-[140%] font-[600] text-[#814b00] hover:text-[#4e340fec]  "
                 >
-                  contact@myrocky.ca
+                  contact@myrocky.com
                 </Link>
               </div>
 
@@ -98,14 +98,14 @@ export default async function ContactUs() {
                     +1 (289) 276-1173
                   </Link>
                 </div>
-                <div>
+                {/* <div>
                   <p className="text-[14px] md:text-[16px] font-[500] leading-[140%] mb-1">
                     Pharmacy address:
                   </p>
                   <p className="text-[14px] md:text-[16px] leading-[140%] font-[600] text-[#814b00] hover:text-[#4e340fec]  ">
                     15 - 5270 Solar Dr. <br /> Mississauga, ON L4W 5M8
                   </p>
-                </div>
+                </div> */}
                 <div>
                   <p className="text-[14px] md:text-[16px] font-[500] leading-[140%] mb-1">
                     Hours:
