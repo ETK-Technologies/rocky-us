@@ -239,9 +239,6 @@ export default function privacyPolicy() {
             <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
               Rocky reserves the right to charge a $45.00 USD service (hereinafter referred to as the "USWL") for all weight loss services and orders. This fee will be automatically billed after seven (7) days if the consultation form or ID has not been submitted or if consent remains pending. However, if consent for treatment is rejected, a full refund will be issued. The full price of the medical consultation ($99) will be charged once completed, regardless of whether a prescription is issued.
             </p>
-            <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
-              Fees and refunds applicable to U.S. Users are described in our U.S. Membership Agreement.
-            </p>
           </div>
 
 
