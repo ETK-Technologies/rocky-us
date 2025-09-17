@@ -48,7 +48,11 @@ class PaymentElementErrorBoundary extends React.Component {
 }
 
 // Separate component for Payment Element that only renders inside Elements provider
-const PaymentElementWrapper = ({ clientSecret, billingAddress }) => {
+const PaymentElementWrapper = ({
+  clientSecret,
+  billingAddress,
+  onElementsReady,
+}) => {
   const stripe = useStripe();
   const elements = useElements();
 
@@ -67,6 +71,13 @@ const PaymentElementWrapper = ({ clientSecret, billingAddress }) => {
         }
       : "missing",
   });
+
+  // Notify parent when Elements are ready
+  useEffect(() => {
+    if (stripe && elements && onElementsReady) {
+      onElementsReady(elements);
+    }
+  }, [stripe, elements, onElementsReady]);
 
   if (!stripe || !elements || !clientSecret) {
     return (
@@ -88,14 +99,10 @@ const PaymentElementWrapper = ({ clientSecret, billingAddress }) => {
             wallets: {
               applePay: "auto",
               googlePay: "auto",
+              link: "auto",
             },
             fields: {
-              billingDetails: {
-                country: "never",
-                name: "auto",
-                email: "auto",
-                phone: "auto",
-              },
+              billingDetails: "never",
             },
             defaultValues: {
               billingDetails: {
@@ -105,7 +112,11 @@ const PaymentElementWrapper = ({ clientSecret, billingAddress }) => {
                     : undefined,
                 email: billingAddress?.email || undefined,
                 phone: billingAddress?.phone || undefined,
+                country: billingAddress?.country || "US",
               },
+            },
+            terms: {
+              card: "never", // Hide the "Save my information" checkbox
             },
           }}
           className="payment-element"
@@ -128,6 +139,7 @@ const Payment = ({
   onValidationChange, // New prop for validation callback
   clientSecret, // New prop for Stripe client secret
   billingAddress, // New prop for billing address
+  onElementsReady, // New prop for Elements ready callback
 }) => {
   // Debug logging
   useEffect(() => {
@@ -183,6 +195,7 @@ const Payment = ({
             <PaymentElementWrapper
               clientSecret={clientSecret}
               billingAddress={billingAddress}
+              onElementsReady={onElementsReady}
             />
           ) : (
             <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">

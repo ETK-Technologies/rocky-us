@@ -31,6 +31,7 @@ const CartAndPayment = ({
   onApplePayError, // Add Apple Pay error callback
   isProcessingApplePay = false, // Add Apple Pay processing state
   clientSecret, // Add client secret for Payment Element
+  onElementsReady, // Add Elements ready callback
 }) => {
   const [isPaymentValid, setIsPaymentValid] = useState(false);
 
@@ -62,6 +63,7 @@ const CartAndPayment = ({
         onValidationChange={handleValidationChange}
         clientSecret={clientSecret}
         billingAddress={billingAddress}
+        onElementsReady={onElementsReady}
       />
       <button
         onClick={handleSubmit}

@@ -61,6 +61,7 @@ const CheckoutPageContent = () => {
   const [selectedCard, setSelectedCard] = useState(null);
   const [isLoadingSavedCards, setIsLoadingSavedCards] = useState(false);
   const [clientSecret, setClientSecret] = useState(null);
+  const [stripeElements, setStripeElements] = useState(null);
   const [formData, setFormData] = useState({
     additional_fields: [],
     shipping_address: {},
@@ -1008,31 +1009,77 @@ const CheckoutPageContent = () => {
             "Processing new card payment with Payment Element and manual capture"
           );
 
-          // Step 1: Confirm the payment with Stripe
+          // Step 1: Confirm the payment with Stripe Payment Element
           const stripe = await stripePromise;
           if (!stripe) {
             toast.error("Stripe is not initialized. Please refresh the page.");
             return;
           }
 
-          // For Payment Element, we need to confirm the payment
-          // This will be handled by the Payment Element's built-in confirmation
-          // We'll proceed directly to create the order with the client secret
-          console.log("Proceeding with Payment Element confirmation");
+          // For Payment Element, we need to confirm the payment first
+          console.log("Confirming Payment Element payment...");
 
-          // Step 2: Assemble the Store API checkout payload with client secret
+          // Use the Elements instance from the Payment component
+          if (!stripeElements) {
+            toast.error("Payment form not ready. Please try again.");
+            return;
+          }
+
+          console.log("Using Elements instance for confirmation:", {
+            elementsType: typeof stripeElements,
+            elementsConstructor: stripeElements?.constructor?.name,
+            hasElements: !!stripeElements,
+          });
+
+          // Confirm the payment using the Payment Element
+          const { error, paymentIntent } = await stripe.confirmPayment({
+            elements: stripeElements,
+            confirmParams: {
+              return_url: `${window.location.origin}/checkout/confirmation`,
+            },
+            redirect: "if_required",
+          });
+
+          if (error) {
+            console.error("Payment confirmation failed:", error);
+            toast.error(`Payment failed: ${error.message}`);
+            return;
+          }
+
+          if (
+            paymentIntent.status !== "succeeded" &&
+            paymentIntent.status !== "requires_capture"
+          ) {
+            console.error("Payment not in valid state:", paymentIntent.status);
+            toast.error("Payment confirmation failed. Please try again.");
+            return;
+          }
+
+          console.log("Payment authorized successfully:", {
+            status: paymentIntent.status,
+            id: paymentIntent.id,
+            amount: paymentIntent.amount,
+          });
+
+          console.log("Payment confirmed successfully:", {
+            paymentIntentId: paymentIntent.id,
+            status: paymentIntent.status,
+            amount: paymentIntent.amount,
+          });
+
+          // Step 2: Assemble the Store API checkout payload with confirmed payment intent
           const payload = {
             ...dataToSend,
-            // Clear sensitive card details - we now have the client secret
+            // Clear sensitive card details - we now have the confirmed payment
             cardNumber: "",
             cardExpMonth: "",
             cardExpYear: "",
             cardCVD: "",
-            // Update payment_data with client secret for manual capture
+            // Update payment_data with confirmed payment intent for manual capture
             payment_data: [
               {
                 key: "stripe_source",
-                value: clientSecret,
+                value: paymentIntent.id, // Use the confirmed payment intent ID
               },
               {
                 key: "billing_email",
@@ -1066,14 +1113,17 @@ const CheckoutPageContent = () => {
             useSavedCard: false,
           };
 
-          console.log("Checkout payload with Stripe payment intent:", {
-            ...payload,
-            payment_data: payload.payment_data.map((item) => ({
-              ...item,
-              value: item.key === "stripe_source" ? "***" : item.value,
-            })),
-            clientSecret: clientSecret ? "***" : "none",
-          });
+          console.log(
+            "Checkout payload with confirmed Stripe payment intent:",
+            {
+              ...payload,
+              payment_data: payload.payment_data.map((item) => ({
+                ...item,
+                value: item.key === "stripe_source" ? "***" : item.value,
+              })),
+              paymentIntentId: paymentIntent.id,
+            }
+          );
 
           // Step 3: POST to /wc/store/v1/checkout (via our API)
           const checkoutResponse = await fetch("/api/checkout", {
@@ -1158,162 +1208,69 @@ const CheckoutPageContent = () => {
                 ) {
                   logPayment("Payment requires confirmation with Stripe");
 
-                  // Implement Stripe payment confirmation
+                  // For Payment Element, the payment should already be confirmed
+                  // We just need to check the status
+                  console.log(
+                    "Payment Element flow - payment already confirmed, checking status"
+                  );
+
+                  // Since we already confirmed the payment above, we need to update the order status
+                  console.log(
+                    "Updating order status after payment confirmation..."
+                  );
+
+                  // Use the confirmed payment intent ID from the payment confirmation above
+                  const confirmedPaymentIntentId = paymentIntent.id;
+                  console.log(
+                    "Using confirmed Payment Intent ID:",
+                    confirmedPaymentIntentId
+                  );
+
                   try {
-                    if (!stripePromise) {
-                      throw new Error(
-                        "Stripe publishable key not configured. Please add NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY to your environment variables."
-                      );
-                    }
-
-                    const stripe = await stripePromise;
-
-                    if (!stripe) {
-                      throw new Error("Stripe failed to initialize");
-                    }
-
-                    // Get the original client_secret from our stored payment_data
-                    const originalClientSecret =
-                      checkoutData.data.data_sent?.payment_data?.find(
-                        (item) => item.key === "stripe_source"
-                      )?.value;
-
-                    console.log(
-                      "Using original client_secret:",
-                      originalClientSecret
-                    );
-                    console.log(
-                      "WooCommerce client_secret:",
-                      decodedData.client_secret
-                    );
-
-                    // Since Stripe requires Elements for card data, let's try a different approach
-                    // We'll update the PaymentIntent on the backend with card details, then confirm it
-                    console.log(
-                      "Updating PaymentIntent with card details via backend..."
-                    );
-
-                    const updateResponse = await fetch(
-                      `/api/stripe/update-payment-intent`,
+                    const confirmResponse = await fetch(
+                      `/api/orders/${order_id}/confirm-payment`,
                       {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
-                          payment_intent_id: originalPaymentIntentId,
-                          card_details: {
-                            number: cardNumber.replace(/\s/g, ""),
-                            exp_month: parseInt(cardExpMonth),
-                            exp_year: parseInt(cardExpYear),
-                            cvc: cvc,
-                          },
-                          billing_details: {
-                            name: `${formData.billing_address.first_name} ${formData.billing_address.last_name}`,
-                            email: formData.billing_address.email,
-                            phone: formData.billing_address.phone,
-                            address: {
-                              line1: formData.billing_address.address_1,
-                              line2: formData.billing_address.address_2,
-                              city: formData.billing_address.city,
-                              state: formData.billing_address.state,
-                              postal_code: formData.billing_address.postcode,
-                              country: formData.billing_address.country,
-                            },
-                          },
+                          payment_intent_id: confirmedPaymentIntentId,
+                          order_key: order_key,
                         }),
                       }
                     );
 
-                    if (!updateResponse.ok) {
-                      const updateError = await updateResponse.json();
-                      console.error(
-                        "PaymentIntent update failed:",
-                        updateError
+                    if (!confirmResponse.ok) {
+                      throw new Error(
+                        `Order update failed: ${confirmResponse.status}`
                       );
-                      toast.error(
-                        "Failed to update payment details. Please try again."
-                      );
-                      return;
                     }
 
-                    const updateResult = await updateResponse.json();
-                    logPayment("PaymentIntent updated successfully");
+                    const confirmResult = await confirmResponse.json();
 
-                    // Now confirm the payment
-                    const { error, paymentIntent } =
-                      await stripe.confirmCardPayment(originalClientSecret);
-
-                    if (error) {
-                      console.error(
-                        "Stripe payment confirmation failed:",
-                        error
+                    if (!confirmResult.success) {
+                      throw new Error(
+                        `Order update failed: ${confirmResult.message}`
                       );
-                      toast.error(`Payment failed: ${error.message}`);
-                      return;
                     }
 
-                    if (paymentIntent.status === "succeeded") {
-                      console.log("Stripe payment confirmed successfully!");
-                      paymentConfirmed = true;
-
-                      // REQUIRED: Update order status and add payment note
-                      try {
-                        const confirmResponse = await fetch(
-                          `/api/orders/${order_id}/confirm-payment`,
-                          {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                              payment_intent_id: paymentIntent.id,
-                              order_key: order_key,
-                            }),
-                          }
-                        );
-
-                        if (!confirmResponse.ok) {
-                          throw new Error(
-                            `Order update failed: ${confirmResponse.status}`
-                          );
-                        }
-
-                        const confirmResult = await confirmResponse.json();
-
-                        if (!confirmResult.success) {
-                          throw new Error(
-                            `Order update failed: ${confirmResult.message}`
-                          );
-                        }
-
-                        console.log(
-                          "✅ Order status updated to on-hold successfully"
-                        );
-                        logOrder("✅ Payment note added to order");
-                        logPayment("✅ Payment Intent ID:", paymentIntent.id);
-                      } catch (confirmError) {
-                        console.error("❌ Order update failed:", confirmError);
-                        toast.error(
-                          "Order update failed. Payment succeeded but order status could not be updated. Please contact support."
-                        );
-
-                        // IMPORTANT: Don't redirect if order update fails
-                        // Payment succeeded but order wasn't updated properly
-                        return;
-                      }
-                    } else {
-                      console.warn(
-                        "Payment intent status:",
-                        paymentIntent.status
-                      );
-                      toast.error(
-                        "Payment confirmation failed. Please try again."
-                      );
-                      return; // Don't continue with redirect
-                    }
-                  } catch (stripeError) {
-                    console.error(
-                      "Error confirming payment with Stripe:",
-                      stripeError
+                    console.log(
+                      "✅ Order status updated to on-hold successfully"
                     );
-                    toast.error("Error confirming payment. Please try again.");
+                    logOrder("✅ Payment note added to order");
+                    logPayment(
+                      "✅ Payment Intent ID:",
+                      confirmedPaymentIntentId
+                    );
+
+                    paymentConfirmed = true;
+                  } catch (confirmError) {
+                    console.error("❌ Order update failed:", confirmError);
+                    toast.error(
+                      "Order update failed. Payment succeeded but order status could not be updated. Please contact support."
+                    );
+
+                    // IMPORTANT: Don't redirect if order update fails
+                    // Payment succeeded but order wasn't updated properly
                     return;
                   }
                 } else {
@@ -1522,6 +1479,7 @@ const CheckoutPageContent = () => {
               }
               billingAddress={formData.billing_address}
               clientSecret={clientSecret}
+              onElementsReady={setStripeElements}
             />
           </Elements>
         ) : (
@@ -1557,6 +1515,7 @@ const CheckoutPageContent = () => {
             }
             billingAddress={formData.billing_address}
             clientSecret={clientSecret}
+            onElementsReady={setStripeElements}
           />
         )}
       </div>

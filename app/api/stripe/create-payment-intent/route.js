@@ -59,6 +59,11 @@ export async function POST(req) {
           country: billingAddress.country || "US",
         },
       };
+
+      // Add customer email for Link authentication
+      if (billingAddress.email) {
+        paymentIntentData.receipt_email = billingAddress.email;
+      }
     }
 
     // setup_future_usage is already set above for all payments
