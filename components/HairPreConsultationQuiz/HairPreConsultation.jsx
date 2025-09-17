@@ -7,7 +7,7 @@ import { QuestionLayout } from "../EdQuestionnaire/QuestionLayout";
 import { QuestionOption } from "../EdQuestionnaire/QuestionOption";
 import QuestionnaireNavbar from "../EdQuestionnaire/QuestionnaireNavbar";
 import { WarningPopup } from "../EdQuestionnaire/WarningPopup";
-import Datepicker from "react-tailwindcss-datepicker";
+import DOBInput from "@/components/DOBInput";
 
 const HairPreConsultationQuiz = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -54,10 +54,20 @@ const HairPreConsultationQuiz = () => {
     }
   };
 
-  const handleDateChange = (e) => {
-    const value = e.startDate;
-    const formattedValue = formatDateInput(value);
-    setDateValInput(e);
+  const handleDateChange = (newValue) => {
+    setDateValInput(newValue);
+    // Normalize to MM/DD/YYYY for internal validation/age calc
+    let formattedValue = newValue;
+    if (typeof newValue === "string" && newValue.includes("-")) {
+      const parts = newValue.split("-");
+      if (parts.length === 3) {
+        const [year, month, day] = parts;
+        formattedValue = `${month.padStart(2, "0")}/${day.padStart(
+          2,
+          "0"
+        )}/${year}`;
+      }
+    }
     setDateInput(formattedValue);
     if (isValidDate(formattedValue)) {
       const calculatedAge = getAge(formattedValue);
@@ -77,28 +87,7 @@ const HairPreConsultationQuiz = () => {
     }
   };
 
-  const formatDateInput = (value) => {
-    const date = new Date(value);
-    const formattedDate = `${(date.getMonth() + 1)
-      .toString()
-      .padStart(2, "0")}/${date
-      .getDate()
-      .toString()
-      .padStart(2, "0")}/${date.getFullYear()}`;
-    return formattedDate;
-
-    // const digits = value.replace(/\D/g, "");
-    // if (digits.length <= 2) {
-    //   return digits;
-    // } else if (digits.length <= 4) {
-    //   return `${digits.substring(0, 2)}/${digits.substring(2)}`;
-    // } else {
-    //   return `${digits.substring(0, 2)}/${digits.substring(
-    //     2,
-    //     4
-    //   )}/${digits.substring(4, 8)}`;
-    // }
-  };
+  const formatDateInput = (value) => value;
 
   const isValidDate = (dateString) => {
     const regex = /^\d{2}\/\d{2}\/\d{4}$/;
@@ -547,16 +536,13 @@ const HairPreConsultationQuiz = () => {
                   value={dateInput}
                   onChange={handleDateChange}
                 /> */}
-                <Datepicker
+                <DOBInput
                   value={dateValInput}
                   onChange={(newValue) => handleDateChange(newValue)}
-                  useRange={false}
-                  asSingle={true}
-                  displayFormat="MM/DD/YYYY"
+                  required
                   name="158"
-                  popoverDirection="down"
-                  inputClassName="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#AE7E56] focus:border-[#AE7E56]"
-                ></Datepicker>
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#AE7E56] focus:border-[#AE7E56]"
+                />
                 <WarningPopup
                   isOpen={showUnderagePopup}
                   onClose={() => setShowUnderagePopup(false)}

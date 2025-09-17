@@ -5,13 +5,13 @@ import QuestionnaireNavbar from "../EdQuestionnaire/QuestionnaireNavbar";
 import { ProgressBar } from "../EdQuestionnaire/ProgressBar";
 import { WarningPopup } from "../EdQuestionnaire/WarningPopup";
 import Image from "next/image";
-import Datepicker from "react-tailwindcss-datepicker";
+import DOBInput from "@/components/DOBInput";
 
 const MHPreConsultation = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showExitPopup, setShowExitPopup] = useState(false);
   const [dateOfBirth, setDateOfBirth] = useState("");
-  const [selectedDate, setSelectedDate] = useState();
+  const [selectedDate, setSelectedDate] = useState("");
   const [province, setProvince] = useState("");
   const [hearSeeOption, setHearSeeOption] = useState(null);
   const [watchingHurtOption, setWatchingHurtOption] = useState(null);
@@ -266,13 +266,18 @@ const MHPreConsultation = () => {
 
   const HandleDatePickerChange = (newValue) => {
     setSelectedDate(newValue);
-    const date = new Date(newValue.startDate);
-    const formattedDate = `${(date.getMonth() + 1)
-      .toString()
-      .padStart(2, "0")}/${date
-      .getDate()
-      .toString()
-      .padStart(2, "0")}/${date.getFullYear()}`;
+    // Convert YYYY-MM-DD to MM/DD/YYYY if needed for getAge function
+    let formattedDate = newValue;
+    if (typeof newValue === "string" && newValue.includes("-")) {
+      const parts = newValue.split("-");
+      if (parts.length === 3) {
+        const [year, month, day] = parts;
+        formattedDate = `${month.padStart(2, "0")}/${day.padStart(
+          2,
+          "0"
+        )}/${year}`;
+      }
+    }
     setDateOfBirth(formattedDate);
   };
 
@@ -304,15 +309,12 @@ const MHPreConsultation = () => {
                   placeholder="mm/dd/yyyy"
                 /> */}
 
-                <Datepicker
+                <DOBInput
                   value={selectedDate}
                   onChange={(newValue) => HandleDatePickerChange(newValue)}
-                  useRange={false}
-                  asSingle={true}
-                  popoverDirection="down"
-                  displayFormat="MM/DD/YYYY"
-                  inputClassName="w-full p-3 border border-gray-200 rounded-lg text-center bg-white"
-                ></Datepicker>
+                  required
+                  className="w-full p-3 border border-gray-200 rounded-lg text-center bg-white"
+                />
               </div>
 
               <div className="mb-8">

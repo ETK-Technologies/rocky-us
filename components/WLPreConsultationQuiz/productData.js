@@ -1,5 +1,5 @@
 const PRODUCT_DATA = {
-  ORAL_SEMAGLUTIDE:{
+  ORAL_SEMAGLUTIDE: {
     id: "490537",
     name: "Oral Semaglutide",
     description: "(semaglutide) sublingual",
@@ -14,7 +14,7 @@ const PRODUCT_DATA = {
     id: "142975",
     name: "Ozempic",
     description: "(semaglutide) injection",
-    price: "300.00",
+    price: "299.00",
     details:
       "Ozempic® is the brand name version of semaglutide. It works in the exactly the same way as our compounded semaglutide.",
     url: "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/ozempic/ozempic_2x.webp",
