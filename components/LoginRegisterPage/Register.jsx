@@ -12,7 +12,7 @@ import {
 import { toast } from "react-toastify";
 import { useSearchParams, useRouter } from "next/navigation";
 import Loader from "@/components/Loader";
-import Datepicker from "react-tailwindcss-datepicker";
+import DOBInput from "@/components/DOBInput";
 import {
   getSavedProducts,
   clearSavedProducts,
@@ -87,7 +87,7 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
     province: "", // We'll keep this field name for backend compatibility but use it for states
     gender: "",
   });
-  const [datePickerValue, setDatePickerValue] = useState(null);
+  const [datePickerValue, setDatePickerValue] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -288,26 +288,22 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
 
   const handleDateChange = (newValue) => {
     setDatePickerValue(newValue);
-
-    if (newValue?.startDate) {
-      const date = new Date(newValue.startDate);
-      const formattedDate = `${(date.getMonth() + 1)
-        .toString()
-        .padStart(2, "0")}/${date
-        .getDate()
-        .toString()
-        .padStart(2, "0")}/${date.getFullYear()}`;
-
-      setFormData((prev) => ({
-        ...prev,
-        date_of_birth: formattedDate,
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        date_of_birth: "",
-      }));
+    // Convert YYYY-MM-DD to MM/DD/YYYY if needed for form processing
+    let formattedDate = newValue;
+    if (typeof newValue === "string" && newValue.includes("-")) {
+      const parts = newValue.split("-");
+      if (parts.length === 3) {
+        const [year, month, day] = parts;
+        formattedDate = `${month.padStart(2, "0")}/${day.padStart(
+          2,
+          "0"
+        )}/${year}`;
+      }
     }
+    setFormData((prev) => ({
+      ...prev,
+      date_of_birth: formattedDate,
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -617,16 +613,14 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
               <div className="w-full flex flex-col items-start justify-center gap-2">
                 <label htmlFor="date_of_birth">Date of Birth</label>
                 <div className="relative w-full">
-                  <Datepicker
+                  <DOBInput
                     value={datePickerValue}
                     onChange={handleDateChange}
-                    useRange={false}
-                    asSingle={true}
-                    popoverDirection="down"
-                    displayFormat="MM/DD/YYYY"
-                    toggleClassName="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
-                    inputClassName="block w-[100%] rounded-[8px] h-[40px] text-md m-auto border-gray-500 border px-4 focus:outline focus:outline-2 focus:outline-black focus:ring-0 focus:border-transparent pr-10"
-                    placeholder="mm/dd/yyyy"
+                    required
+                    name="date_of_birth"
+                    id="date_of_birth"
+                    className="block w-[100%] rounded-[8px] h-[40px] text-md m-auto border-gray-500 border px-4 focus:outline focus:outline-2 focus:outline-black focus:ring-0 focus:border-transparent pr-10"
+                    placeholder="MM/DD/YYYY"
                   />
                 </div>
               </div>

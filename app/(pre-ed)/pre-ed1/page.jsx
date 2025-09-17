@@ -19,7 +19,7 @@ const SexualHealthFaqs = [
   {
     question: "What is the safest medication for ED?",
     answer:
-      "All medications go through extensive clinical trials and quality checks before getting approved by Health Canada. The safety and effectiveness of erectile dysfunction medications is well established, which is why it is an excellent treatment option for most men. Our online questionnaire will take into account your personal medical history and determine if these pills are right for you!",
+      "All medications go through extensive clinical trials and quality checks before getting approved by the U.S. FDA. The safety and effectiveness of erectile dysfunction medications is well established, which is why it is an excellent treatment option for most men. Our online questionnaire will take into account your personal medical history and determine if these pills are right for you!",
   },
   {
     question: "What is the most effective medication for ED?",
@@ -39,7 +39,7 @@ const SexualHealthFaqs = [
   {
     question: "Are ED medications available OTC?",
     answer:
-      "In Canada, erectile dysfunction medications are not available over-the-counter (OTC) and can only be obtained with a prescription. ED medications sold without a prescription are illegal and could potentially result in harm; ED medication in the counterfeit market does not undergo the correct production, testing, and approval and thus is not safe. Rocky provides access to a licensed health care team so you can be certain that you are getting safe and effective care. Through our online platform, you will be guided through a series of medical questions which are then reviewed by a licensed Canadian physician. Once the medical questionnaire is reviewed, you will be notified if you have been approved, and if so, the appropriate treatment is delivered to your doorstep.",
+      "In the United States, erectile dysfunction medications are not available over-the-counter (OTC) and can only be obtained with a prescription. ED medications sold without a prescription are illegal and could potentially result in harm; ED medication in the counterfeit market does not undergo the correct production, testing, and approval and thus is not safe. Rocky provides access to a licensed health care team so you can be certain that you are getting safe and effective care. Through our online platform, you will be guided through a series of medical questions which are then reviewed by a licensed U.S. physician. Once the medical questionnaire is reviewed, you will be notified if you have been approved, and if so, the appropriate treatment is delivered to your doorstep.",
   },
   {
     question: "How can I improve my ED?",

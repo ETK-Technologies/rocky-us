@@ -93,7 +93,7 @@ const menuItems = [
   // HAIR LOSS
   {
     text: "Hair Loss",
-    link: "/product/finasteride",
+    link: "/hair",
     // mainText: "See all Hair Loss",
     // mainLink: "/hair",
     // getStartedText: "Stop Hair Loss in Its Tracks",
