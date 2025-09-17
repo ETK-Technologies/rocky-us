@@ -11,7 +11,7 @@ import { ProgressBar } from "../EdQuestionnaire/ProgressBar";
 import { WarningPopup } from "../EdQuestionnaire/WarningPopup";
 import hairQuestionList from "./hairQuestion";
 import Logo from "../Navbar/Logo";
-import Datepicker from "react-tailwindcss-datepicker";
+import DOBInput from "@/components/DOBInput";
 import Link from "next/link";
 import AppointmentBooking from "../MentalHealthQuestionnaire/components/AppointmentBooking";
 const { uploadFileToS3WithProgress } = await import(
@@ -1720,24 +1720,28 @@ export default function HairConsultationQuiz({
     }
   };
 
-  const handleBirthDateChange = (e) => {
-    setDatePickerValue(e);
-    const date = new Date(e.startDate);
-    const birthDate = `${(date.getMonth() + 1)
-      .toString()
-      .padStart(2, "0")}/${date
-      .getDate()
-      .toString()
-      .padStart(2, "0")}/${date.getFullYear()}`;
+  const handleBirthDateChange = (newValue) => {
+    setDatePickerValue(newValue);
+    // Convert YYYY-MM-DD to MM/DD/YYYY if needed
+    let birthDate = newValue;
+    if (typeof newValue === "string" && newValue.includes("-")) {
+      const parts = newValue.split("-");
+      if (parts.length === 3) {
+        const [year, month, day] = parts;
+        birthDate = `${month.padStart(2, "0")}/${day.padStart(2, "0")}/${year}`;
+      }
+    }
     const updates = { 158: birthDate };
     updateFormDataAndStorage(updates);
 
+    // Calculate age for validation
     const today = new Date();
-    let age = today.getFullYear() - date.getFullYear();
-    const monthDiff = today.getMonth() - date.getMonth();
+    const birthDateObj = new Date(birthDate);
+    let age = today.getFullYear() - birthDateObj.getFullYear();
+    const monthDiff = today.getMonth() - birthDateObj.getMonth();
     if (
       monthDiff < 0 ||
-      (monthDiff === 0 && today.getDate() < date.getDate())
+      (monthDiff === 0 && today.getDate() < birthDateObj.getDate())
     ) {
       age--;
     }
@@ -3181,18 +3185,15 @@ export default function HairConsultationQuiz({
                                                         onBlur={handleBirthDateChange}
                                                         required
                                                     /> */}
-                          <Datepicker
+                          <DOBInput
                             value={datePickerValue}
-                            popoverDirection="down"
                             onChange={(newValue) =>
                               handleBirthDateChange(newValue)
                             }
-                            useRange={false}
-                            asSingle={true}
-                            displayFormat="MM/DD/YYYY"
+                            required
                             name="158"
-                            inputClassName="w-full p-4 border-2 border-gray-300 rounded-lg focus:border-[#A7885A] focus:outline-none"
-                          ></Datepicker>
+                            className="w-full p-4 border-2 border-gray-300 rounded-lg focus:border-[#A7885A] focus:outline-none"
+                          />
                           <WarningPopup
                             isOpen={showUnder18Popup}
                             onClose={() => setShowUnder18Popup(false)}

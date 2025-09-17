@@ -1,31 +1,25 @@
 import { useState, useEffect } from "react";
 import FormInput from "./FormInput";
-import Datepicker from "react-tailwindcss-datepicker";
+import DOBInput from "../DOBInput";
 import PostGridAddressAutocomplete from "./PostGrid/PostGridAddressAutocomplete";
 import { US_STATES_WITH_CODES, PHASE_1_STATES } from "@/lib/constants/usStates";
 
 const BillingDetails = ({ formData, handleBillingAddressChange }) => {
-  const [datePickerValue, setDatePickerValue] = useState({
-    startDate: formData.billing_address.date_of_birth || null,
-    endDate: formData.billing_address.date_of_birth || null,
-  });
+  const [datePickerValue, setDatePickerValue] = useState(
+    formData.billing_address.date_of_birth || ""
+  );
 
   useEffect(() => {
-    setDatePickerValue({
-      startDate: formData.billing_address.date_of_birth || null,
-      endDate: formData.billing_address.date_of_birth || null,
-    });
+    setDatePickerValue(formData.billing_address.date_of_birth || "");
   }, [formData.billing_address.date_of_birth]);
 
   const handleDateChange = (newValue) => {
+    // newValue can be MM/DD/YYYY or YYYY-MM-DD from DOBInput
     setDatePickerValue(newValue);
-
-    // Update the form data with the new date
-    const newDate = newValue?.startDate || "";
     handleBillingAddressChange({
       target: {
         name: "date_of_birth",
-        value: newDate,
+        value: newValue,
       },
     });
   };
@@ -196,16 +190,14 @@ const BillingDetails = ({ formData, handleBillingAddressChange }) => {
             Date of Birth *
           </label>
         </div>
-        <Datepicker
+        <DOBInput
           value={datePickerValue}
-          popoverDirection="down"
           onChange={handleDateChange}
-          useRange={false}
-          asSingle={true}
+          required
           name="date_of_birth"
-          displayFormat="MM/DD/YYYY"
-          inputClassName="w-full !bg-white !rounded-[8px] !border !border-solid !border-[#E2E2E1] !px-[16px] py-[12px] h-[44px] !focus:outline-none !focus:border-gray-500"
-        ></Datepicker>
+          id="date_of_birth"
+          className="w-full bg-white rounded-[8px] border border-solid border-[#E2E2E1] px-[16px] py-[12px] h-[44px] focus:outline-none focus:border-gray-500"
+        />
       </div>
     </>
   );
