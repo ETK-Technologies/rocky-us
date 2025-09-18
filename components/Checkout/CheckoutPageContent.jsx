@@ -1036,6 +1036,21 @@ const CheckoutPageContent = () => {
             elements: stripeElements,
             confirmParams: {
               return_url: `${window.location.origin}/checkout/confirmation`,
+              payment_method_data: {
+                billing_details: {
+                  name: `${formData.billing_address.first_name} ${formData.billing_address.last_name}`,
+                  email: formData.billing_address.email,
+                  phone: formData.billing_address.phone,
+                  address: {
+                    line1: formData.billing_address.address_1,
+                    line2: formData.billing_address.address_2 || undefined,
+                    city: formData.billing_address.city,
+                    state: formData.billing_address.state,
+                    postal_code: formData.billing_address.postcode,
+                    country: formData.billing_address.country || "US",
+                  },
+                },
+              },
             },
             redirect: "if_required",
           });
