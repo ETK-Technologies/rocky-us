@@ -52,7 +52,7 @@ export default async function ContactUs() {
                   href="mailto:clinic@myrocky.ca"
                   className="text-[14px] md:text-[16px] leading-[140%] font-[600] text-[#814b00] hover:text-[#4e340fec]  "
                 >
-                  clinic@myrocky.ca
+                  clinic@myrocky.com
                 </Link>
               </div>
 
@@ -68,7 +68,7 @@ export default async function ContactUs() {
                     href="mailto:info@myrocky.ca"
                     className="text-[14px] md:text-[16px] leading-[140%] font-[600] text-[#814b00] hover:text-[#4e340fec]  "
                   >
-                    pharmacy@myrocky.ca
+                    pharmacy@myrocky.com
                   </Link>
                 </div>
                 <div>
@@ -83,7 +83,7 @@ export default async function ContactUs() {
                     href="tel:+14169001444"
                     className="text-[14px] md:text-[16px] leading-[140%] font-[600] text-[#814b00] hover:text-[#4e340fec]  "
                   >
-                    +1 (416) 900-1444
+                    +1 (888) 739-1444
                   </Link>
                 </div>
                 <div>
@@ -106,14 +106,14 @@ export default async function ContactUs() {
                     15 - 5270 Solar Dr. <br /> Mississauga, ON L4W 5M8
                   </p>
                 </div> */}
-                <div>
+                {/* <div>
                   <p className="text-[14px] md:text-[16px] font-[500] leading-[140%] mb-1">
                     Hours:
                   </p>
                   <p className="text-[14px] md:text-[16px] leading-[140%] font-[600] text-[#814b00] hover:text-[#4e340fec]  ">
                     Mon-Fri 6-8pm EST
                   </p>
-                </div>
+                </div> */}
               </div>
             </div>
           </div>
