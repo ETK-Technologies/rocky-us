@@ -13,8 +13,8 @@ const products = [
   { href: "/product/tadalafil-cialis/", text: "Tadalafil" },
   { href: "/product/finasteride-minoxidil-topical-foam/", text: "Hair Foam" },
   { href: "/product/ozempic/", text: "Ozempic" },
-  { href: "/product/testosterone-support/", text: "Testosterone Support" },
-  { href: "/product/lidocaine-spray/", text: "Lido Spray" },
+  // { href: "/product/testosterone-support/", text: "Testosterone Support" },
+  // { href: "/product/lidocaine-spray/", text: "Lido Spray" },
 ];
 
 const Footer = ({ className }) => {
