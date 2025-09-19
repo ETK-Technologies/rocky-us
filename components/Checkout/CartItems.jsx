@@ -1,6 +1,15 @@
 import Image from "next/image";
 
 const CartItems = ({ items }) => {
+  // Handle case where items might be undefined or empty
+  if (!items || items.length === 0) {
+    return (
+      <div className="w-full text-center py-8">
+        <p className="text-gray-500">No items in cart</p>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full">
       {items.map((item) => (
