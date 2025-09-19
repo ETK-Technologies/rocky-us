@@ -69,6 +69,13 @@ const wlProductCard = [
         link: "/wl-pre-consultation",
         image: "https://myrocky.b-cdn.net/WP%20Images/Homepage/wegovy.webp",
       },
+      {
+        title: "Rybelsus®",
+        description: "(semaglutide) injection",
+        link: "/wl-pre-consultation",
+        image: "/products/rybelsus.png",
+ 
+      }
     ],
   },
 ];
