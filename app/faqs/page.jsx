@@ -269,7 +269,7 @@ const HomeFaqs = [
   {
     question: "What is the name and address of our affiliate partner pharmacy?",
     answer:
-      "Affiliate Partner Pharmacy: Dania Discount Drugs Inc. 5420 NW 33rd Ave Suite 7B Fort Lauderdale, FL 33309",
+      "Affiliate Partner Pharmacy: Dania Discount Drugs Inc.5420 NW 33rd Ave Suite 7B Fort Lauderdale, FL 33309",
   },
 ];
 const HairLossFaqs = [
