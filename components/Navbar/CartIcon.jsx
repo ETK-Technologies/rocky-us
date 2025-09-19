@@ -3,7 +3,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import { logger } from "@/utils/devLogger";
-import { IoCartOutline, IoClose } from "react-icons/io5";
 import { CiTrash } from "react-icons/ci";
 import { emptyCart } from "@/lib/cart/cartService";
 import { toast } from "react-toastify";
@@ -120,30 +119,6 @@ const CartIcon = ({ handleToggle }) => {
 
   return (
     <>
-      {/* <div className="relative group hidden md:block">
-        <span
-          id="cart-refresher"
-          className="hidden"
-          onClick={handleRefreshCart}
-        ></span>
-        <Link href="/cart" className="block relative">
-          <IoIosCart size={24} />
-          {cartItems.items && (
-            <span className="absolute top-[-40%] right-[-40%] text-[10px] bg-[#A55255] flex items-center justify-center w-5 h-5 text-white rounded-full">
-              {cartItems.items?.length}
-            </span>
-          )}
-        </Link>
-        {cartItems.items && (
-          <div className="hidden group-hover:flex absolute top-[24px] right-[-13px] md:right-0 bg-white rounded-md min-w-[395px] md:min-w-[450px] min-h-[80px] shadow-md p-4 px-8 w-full z-50">
-            <CartItems
-              items={cartItems.items}
-              refreshCart={getCartItems}
-              isLocalCart={isLocalCart}
-            />
-          </div>
-        )}
-      </div> */}
       <div className="relative group block cursor-pointer p-2 hover:bg-[#F5F4EF] hover:rounded-full">
         <span
           id="cart-refresher"

@@ -54,23 +54,6 @@ const SearchIcon = ({ onClose }) => {
         const { data } = await res.json();
         logger.log("data", data);
 
-        // Filter to only show products
-        // const productsOnly = data.filter(
-        //   (item) =>
-        //     item.subtype === "product" ||
-        //     item.object_type === "product" ||
-        //     item.type === "product"
-        // );
-
-        // setSuggestions(productsOnly.slice(0, 6));
-        // const filtered = data.filter(
-        //   (item) =>
-        //     (item.subtype === "product" || item.object_type === "product") &&
-        //     (item.name?.toLowerCase().includes(searchValue.toLowerCase()) ||
-        //       item.title?.rendered
-        //         ?.toLowerCase()
-        //         .includes(searchValue.toLowerCase()))
-        // );
         const filtered = data.filter((item) => {
           const isProduct =
             item.subtype === "product" || item.object_type === "product";

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { IoClose } from "react-icons/io5";
 import { useState, useEffect } from "react";
 
-export default function MobileCartPopup({
+export default function ({
   open,
   onClose,
   cartItems,

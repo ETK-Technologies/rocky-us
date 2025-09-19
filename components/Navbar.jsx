@@ -1,9 +1,7 @@
 import NavContainer from "./Navbar/NavContainer";
-// import DesktopIcons from "./Navbar/DesktopIcons";
 import Logo from "./Navbar/Logo";
 import Trustpilot from "./Navbar/Trustpilot";
-import Navlinks from "./Navbar/Navlinks"; // Changed from MegaMenu to Navlinks, which is the correct component name
-// import MobileMenu from "./Navbar/MobileMenu";
+import Navlinks from "./Navbar/Navlinks";
 import { cookies } from "next/headers";
 import HeaderProudPartner from "./Navbar/HeaderProudPartner";
 
@@ -32,14 +30,8 @@ const Navbar = async ({ className }) => {
       <Trustpilot />
       <HeaderProudPartner />
       <NavContainer>
-        {/* <MobileMenu
-          menuItems={menuItems}
-          token={token}
-          displayName={nameToShow}
-        /> */}
         <Logo />
         <Navlinks menuItems={menuItems} token={token} nameToShow={nameToShow} />
-        {/* Changed from MegaMenu to Navlinks */}
       </NavContainer>
     </header>
   );
@@ -78,8 +70,8 @@ const menuItems = [
       // { text: "Dissolvable Tadalafil", link: "/product/chewable-tadalafil/" },
     ],
   },
-  // BODY OPTIMIZATION
 
+  // BODY OPTIMIZATION
   {
     category: "Weight Loss",
     image: "https://myrocky.b-cdn.net/WP%20Images/Weight%20Loss/wl.webp",
@@ -99,6 +91,7 @@ const menuItems = [
       { text: "Rybelsus®", link: "/product/rybelsus/" },
     ],
   },
+
   // HAIR LOSS
   {
     category: "Hair Loss",

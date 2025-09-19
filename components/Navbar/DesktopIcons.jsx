@@ -1,8 +1,6 @@
 import { CiUser } from "react-icons/ci";
 import CartIcon from "./CartIcon";
 import Link from "next/link";
-// import { cookies } from "next/headers";
-import { FaUserCircle } from "react-icons/fa";
 
 const DesktopIcons = ({ token, nameToShow, handleToggle }) => {
   return (
@@ -12,7 +10,6 @@ const DesktopIcons = ({ token, nameToShow, handleToggle }) => {
         nameToShow={nameToShow}
         handleToggle={handleToggle}
       />
-      {/* <FaUserCircle className="text-[20px]"/> */}
       <CartIcon handleToggle={handleToggle} />
     </div>
   );
@@ -23,11 +20,8 @@ export default DesktopIcons;
 const ProfileIcon = ({ token, nameToShow, handleToggle }) => {
   return (
     <div className="block relative group">
-      <div
-        // href={token ? "/my-account" : "/login-register?viewshow=login"}
-        className="flex gap-2 p-2 hover:bg-[#F5F4EF] hover:rounded-full"
-      >
-        <CiUser size={22} />{" "}
+      <div className="flex gap-2 p-2 hover:bg-[#F5F4EF] hover:rounded-full">
+        <CiUser size={22} />
         {token && nameToShow && (
           <span className="capitalize">Hi, {nameToShow}!</span>
         )}
