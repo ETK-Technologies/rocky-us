@@ -97,11 +97,7 @@ const MobileMenu = ({ menuItems, displayName, token }) => {
           </div>
         ) : (
           <div className="flex items-center justify-between pl-5 pr-3.5 py-2 border-b border-solid">
-            <Link
-              className="headers-font"
-              href="/login-register?viewshow=login"
-              onClick={() => setIsOpen(false)}
-            >
+            <Link className="headers-font" onClick={() => setIsOpen(false)}>
               Sign In
             </Link>
 
@@ -189,6 +185,48 @@ const MenuItem = ({ item, isOpen, toggleMenu, setIsOpen }) => {
 };
 
 const MegaMenu = ({ item, setIsOpen }) => {
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
+
+  const nextSlide = () => {
+    if (item.getStarted) {
+      setCurrentSlide((prev) => (prev + 1) % item.getStarted.length);
+    }
+  };
+
+  const prevSlide = () => {
+    if (item.getStarted) {
+      setCurrentSlide(
+        (prev) => (prev - 1 + item.getStarted.length) % item.getStarted.length
+      );
+    }
+  };
+
+  // Touch handlers
+  const handleTouchStart = (e) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    if (isLeftSwipe) {
+      nextSlide();
+    } else if (isRightSwipe) {
+      prevSlide();
+    }
+  };
+
   return (
     <div className="py-5">
       {item.mainText && (
@@ -230,52 +268,125 @@ const MegaMenu = ({ item, setIsOpen }) => {
           </div>
         ))}
       </ul>
-      {item.getStartedLink && (
-        <div className="">
-          <h2 className="text-[12px] font-[600]  mb-5 border-hover text-[#454545]">
-            <Link
-              onClick={() => setIsOpen(false)}
-              href={item.getStartedLink}
-              prefetch={true}
-            >
-              GET STARTED
-            </Link>
+      {item.getStarted ? (
+        <div className="relative mt-8">
+          <h2 className="text-[12px] font-[600] mb-5 border-hover text-[#454545]">
+            GET STARTED
           </h2>
           <div
-            className="relative rounded-[16px] overflow-hidden"
-            style={{
-              background:
-                "linear-gradient(180deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 26.27%)",
-            }}
+            className="relative w-full h-[266px] overflow-hidden"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
           >
-            <p className="absolute !z-[9999] p-4 text-[18px] font-[450] text-[#ffffff] headers-font">
-              {item.getStartedText}
-            </p>
-            <Link
-              prefetch={true}
-              onClick={() => setIsOpen(false)}
-              href={item.getStartedLink}
-              className="absolute !z-[99999] bg-white p-3 flex items-center justify-center rounded-full bottom-4 left-4"
+            <div
+              className="flex transition-transform duration-300 ease-in-out h-full"
+              style={{ transform: `translateX(-${currentSlide * 100}%)` }}
             >
-              <FaArrowRightLong />
-            </Link>
-            <div className="relative w-full h-[266px]">
-              <div
-                className="absolute left-0 bottom-0 w-full h-full z-50"
-                style={{
-                  background:
-                    "linear-gradient(180deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 26.27%)",
-                }}
-              ></div>
-              <Image
-                className="w-full h-full object-cover"
-                fill
-                src={item.getStartedImage}
-                alt="nav-image"
-              />
+              {item.getStarted.map((card, index) => (
+                <Link
+                  key={index}
+                  onClick={() => setIsOpen(false)}
+                  href={card.getStartedLink}
+                  className="w-full h-full flex-shrink-0 relative rounded-[16px] overflow-hidden bg-[linear-gradient(0deg,#a8886c_0%,#d6bba2_100%)] block cursor-pointer group"
+                >
+                  <div className="absolute left-0 bottom-0 w-full h-full z-10 bg-[linear-gradient(180deg,rgba(0,0,0,0.7)_0%,rgba(0,0,0,0.3)_30%,rgba(0,0,0,0)_50%)]"></div>
+                  <p className="absolute z-20 p-4 text-[18px] font-[450] text-white headers-font">
+                    {card.getStartedText}
+                  </p>
+                  <div className="absolute z-20 bg-white p-3 flex items-center justify-center rounded-full bottom-4 left-4 group-hover:scale-110 transition-transform">
+                    <FaArrowRightLong />
+                  </div>
+                  <div className="relative w-full h-full flex items-center justify-center p-8">
+                    <div className="relative w-[180px] h-[180px] mt-4">
+                      <Image
+                        className="w-full h-full object-contain"
+                        fill
+                        src={card.getStartedImage}
+                        alt="nav-image"
+                      />
+                    </div>
+                  </div>
+                </Link>
+              ))}
             </div>
+            {item.getStarted.length > 1 && (
+              <>
+                <button
+                  onClick={prevSlide}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 text-white hover:text-gray-700 text-2xl z-30 transition-colors"
+                >
+                  &#8249;
+                </button>
+                <button
+                  onClick={nextSlide}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-white  hover:text-gray-700 text-2xl z-30 transition-colors"
+                >
+                  &#8250;
+                </button>
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2 z-30">
+                  {item.getStarted.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentSlide(index)}
+                      className={`w-3 h-3 rounded-full transition-colors ${
+                        index === currentSlide ? "bg-white" : "bg-white/50"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </div>
+      ) : (
+        item.getStartedLink && (
+          <div className="">
+            <h2 className="text-[12px] font-[600] mb-5 border-hover text-[#454545]">
+              <Link
+                onClick={() => setIsOpen(false)}
+                href={item.getStartedLink}
+                prefetch={true}
+              >
+                GET STARTED
+              </Link>
+            </h2>
+            <div
+              className="relative rounded-[16px] overflow-hidden"
+              style={{
+                background:
+                  "linear-gradient(180deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 26.27%)",
+              }}
+            >
+              <p className="absolute !z-[9999] p-4 text-[18px] font-[450] text-[#ffffff] headers-font">
+                {item.getStartedText}
+              </p>
+              <Link
+                prefetch={true}
+                onClick={() => setIsOpen(false)}
+                href={item.getStartedLink}
+                className="absolute !z-[99999] bg-white p-3 flex items-center justify-center rounded-full bottom-4 left-4"
+              >
+                <FaArrowRightLong />
+              </Link>
+              <div className="relative w-full h-[266px]">
+                <div
+                  className="absolute left-0 bottom-0 w-full h-full z-50"
+                  style={{
+                    background:
+                      "linear-gradient(180deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 26.27%)",
+                  }}
+                ></div>
+                <Image
+                  className="w-full h-full object-cover"
+                  fill
+                  src={item.getStartedImage}
+                  alt="nav-image"
+                />
+              </div>
+            </div>
+          </div>
+        )
       )}
     </div>
   );

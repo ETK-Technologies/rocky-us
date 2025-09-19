@@ -16,6 +16,7 @@ const DOBInput = ({
   useEffect(() => {
     if (value) {
       if (value.includes("-")) {
+        // Handle YYYY-MM-DD format
         const parts = value.split("-");
         if (parts.length === 3) {
           const formatted = `${parts[1].padStart(2, "0")}/${parts[2].padStart(
@@ -24,7 +25,15 @@ const DOBInput = ({
           )}/${parts[0]}`;
           setInputValue(formatted);
         }
+      } else if (value.length === 8 && /^\d{8}$/.test(value)) {
+        // Handle YYYYMMDD format (old user data)
+        const year = value.substring(0, 4);
+        const month = value.substring(4, 6);
+        const day = value.substring(6, 8);
+        const formatted = `${month}/${day}/${year}`;
+        setInputValue(formatted);
       } else {
+        // Handle MM/DD/YYYY format or other formats
         setInputValue(value);
       }
     }

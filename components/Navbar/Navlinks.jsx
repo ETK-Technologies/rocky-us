@@ -1,231 +1,120 @@
 "use client";
-import { useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
-import { FaArrowRightLong } from "react-icons/fa6";
-import MorePages from "./MorePages";
+import { useState, useEffect, useRef } from "react";
+import { logger } from "@/utils/devLogger";
+import { IoClose } from "react-icons/io5";
+import { GiHamburgerMenu } from "react-icons/gi";
+import MenuContainer from "./MenuContainer";
+import NavHeader from "./NavHeader";
 
-const Navlinks = ({ menuItems }) => {
-  const [hoveredItem, setHoveredItem] = useState(null);
-  const handleMouseEnter = (item) => {
-    setHoveredItem(item);
+const Navlinks = ({ menuItems, userData, token, nameToShow }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [selectedTab, setSelectedTab] = useState("Treatments");
+  const [selectedTreatment, setSelectedTreatment] = useState(null);
+  const menuScrollRef = useRef(null);
+
+  // Reset menu state when component mounts (new page navigation)
+  useEffect(() => {
+    setSelectedTab("Treatments");
+    setSelectedTreatment(null);
+  }, []);
+
+  const handleToggle = () => {
+    if (isOpen) {
+      setMenuVisible(false);
+      setTimeout(() => {
+        setIsOpen(false);
+        // Reset menu state when closing
+        setSelectedTab("Treatments");
+        setSelectedTreatment(null);
+      }, 500);
+    } else {
+      setIsOpen(true);
+      setTimeout(() => setMenuVisible(true), 50);
+    }
   };
 
-  const handleMouseLeave = () => {
-    setHoveredItem(null);
-  };
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
 
-  const handleLinkClick = () => {
-    setHoveredItem(null);
-  };
+      logger.log(document.body.style.overflow);
+    } else {
+      document.body.style.overflow = "auto";
+      document.documentElement.style.overflow = "auto";
+
+      logger.log(document.body.style.overflow);
+    }
+    return () => {
+      document.body.style.overflow = "auto";
+      document.documentElement.style.overflow = "auto";
+    };
+  }, [isOpen]);
 
   return (
-    <div className="hidden md:flex items-center gap-[24px] z-20">
-      {menuItems.map((item) => (
-        <MenuItem
-          key={item.text}
-          item={item}
-          isHovered={hoveredItem === item}
-          onMouseEnter={() => handleMouseEnter(item)}
-          onMouseLeave={handleMouseLeave}
-          onLinkClick={handleLinkClick}
-        />
-      ))}
-      <MorePages />
-    </div>
-  );
-};
-
-export default Navlinks;
-
-const MenuItem = ({
-  item,
-  isHovered,
-  onMouseEnter,
-  onMouseLeave,
-  onLinkClick,
-}) => {
-  return (
-    <div
-      className="group z-20"
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-    >
-      <Link
-        href={item.link}
-        className="menu-item py-[21px] text-black font-semibold hover:text-gray-500 group-hover:border-b-[1.5px] group-hover:border-b-[#000000] z-10"
-        prefetch={true}
-        onClick={onLinkClick}
+    <div className="items-center gap-[24px] z-50 relative">
+      <button
+        onClick={handleToggle}
+        className="text-black focus:outline-none z-50"
+        aria-label="Toggle menu"
       >
-        {item.text}
-      </Link>
-      {!item.withoutMegaMenu && (
-        <MegaMenu item={item} isHovered={isHovered} onLinkClick={onLinkClick} />
+        {isOpen ? <IoClose size={24} /> : <GiHamburgerMenu size={24} />}
+      </button>
+      {isOpen && (
+        <>
+          <div
+            className={`fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-500 ease-in-out will-change-transform
+               ${
+                 isOpen
+                   ? menuVisible
+                     ? "opacity-100 visible"
+                     : "opacity-0"
+                   : "opacity-0 invisible"
+               }`}
+            onClick={handleToggle}
+          ></div>
+          <div
+            className={`
+              fixed top-0 right-0 w-full h-full md:w-[520px] bg-white shadow-lg z-50
+              transition-transform duration-500 ease-in-out transform
+              ${
+                isOpen
+                  ? menuVisible
+                    ? "translate-x-0"
+                    : "translate-x-full"
+                  : "translate-x-full"
+              }
+            `}
+          >
+            <div className="h-full flex flex-col ">
+              <NavHeader
+                menuScrollRef={menuScrollRef}
+                selectedTreatment={selectedTreatment}
+                handleToggle={handleToggle}
+                token={token}
+                nameToShow={nameToShow}
+                setSelectedTreatment={setSelectedTreatment}
+              />
+              {/* Only show search and popular treatments if not in detail view */}
+
+              {/* Pass selectedTreatment and setSelectedTreatment to MenuContainer */}
+              <MenuContainer
+                menuItems={menuItems}
+                onClose={handleToggle}
+                selectedTreatment={selectedTreatment}
+                setSelectedTreatment={setSelectedTreatment}
+                selectedTab={selectedTab}
+                setSelectedTab={setSelectedTab}
+                userData={userData}
+                menuScrollRef={menuScrollRef}
+              />
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
 };
 
-const MegaMenu = ({ item, isHovered, onLinkClick }) => {
-  return (
-    <div
-      className={`${
-        isHovered ? "block" : "hidden"
-      } absolute left-0 top-[calc(100%-16px)] pt-4 w-full z-50`}
-    >
-      <div className="bg-[white] p-5 border-t border-solid border-[#E2E2E1]">
-        <div className="w-full max-w-[1224px] mx-auto flex gap-[40px]">
-          {item.mainText && (
-            <p className="text-[14px] font-[450] h-fit leading-[15.4px] headers-font w-[266px]">
-              <Link onClick={onLinkClick} href={item.mainLink} prefetch={true}>
-                {item.mainText}
-              </Link>
-            </p>
-          )}
-          <ul className="grid grid-cols-2 gap-10">
-            {item.sections &&
-              item.sections.map((section, index) => {
-                return (
-                  <div key={index} className="w-[266px]">
-                    {section.title && (
-                      <h2 className="p-2 pt-0 text-[12px] md:text-[14px] font-bold text-[#454545]">
-                        {section.title}
-                      </h2>
-                    )}
-                    {section.products.map((product, productIndex) => {
-                      return (
-                        <li
-                          key={`${product.name}-${productIndex}`}
-                          className="p-1.5 border-hover text-[14px] font-[400] text-[#212121]"
-                        >
-                          <Link
-                            href={product.link}
-                            prefetch={true}
-                            onClick={onLinkClick} // Close the MegaMenu on link click
-                          >
-                            {product.name}
-                          </Link>
-                        </li>
-                      );
-                    })}
-                  </div>
-                );
-              })}
-          </ul>
-          {item.getStartedLink && (
-            <div className="">
-              <h2 className="text-[12px] font-[600]  mb-5 border-hover text-[#454545]">
-                <Link
-                  href={item.getStartedLink}
-                  prefetch={true}
-                  onClick={onLinkClick} // Close the MegaMenu on link click
-                >
-                  GET STARTED
-                </Link>
-              </h2>
-              <div className="relative rounded-[16px] overflow-hidden bg-[linear-gradient(180deg,rgba(0,0,0,0.8)_0%,rgba(0,0,0,0)_26.27%)]">
-                <p className="absolute z-20 p-4 text-[18px] font-[450] text-[#ffffff] headers-font">
-                  {item.getStartedText}
-                </p>
-                <Link
-                  onClick={onLinkClick} // Close the MegaMenu on link click
-                  href={item.getStartedLink}
-                  className="absolute z-20 bg-white p-3 flex items-center justify-center rounded-full bottom-4 left-4 "
-                >
-                  <FaArrowRightLong />
-                </Link>
-                <div className="relative w-[266px] h-[266px]">
-                  <div className="absolute left-0 bottom-0 w-full h-full z-10 bg-[linear-gradient(180deg,rgba(0,0,0,0.8)_0%,rgba(0,0,0,0)_26.27%)]"></div>
-                  <Image
-                    className="w-full h-full object-cover"
-                    fill
-                    src={item.getStartedImage}
-                    alt="nav-image"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// const MegaMenu = ({ item }) => {
-//   return (
-//     <div className="hidden group-hover:block absolute left-0 top-[calc(100%-16px)] pt-4 w-full">
-//       <div className="bg-[white] p-5 border-t border-solid border-[#E2E2E1]">
-//         <div className="w-full max-w-[1224px] mx-auto flex gap-[40px]">
-//           {/* Left Column */}
-//           {item.mainLink && item.mainText && (
-//             <p className="text-[14px] font-[450] h-fit leading-[15.4px] headers-font w-[266px]">
-//               <Link href={item.mainLink}>{item.mainText}</Link>
-//             </p>
-//           )}
-
-//           {/* Middle Columns */}
-//           <ul className="grid grid-cols-2 gap-10">
-//             {item.sections &&
-//               item.sections.map((section) => (
-//                 <div
-//                   key={section.title || section.products?.[0]?.name}
-//                   className="w-[266px]"
-//                 >
-//                   {section.title && (
-//                     <h2 className="p-2 pt-0 text-[12px] md:text-[14px] font-bold text-[#454545]">
-//                       {section.title}
-//                     </h2>
-//                   )}
-//                   {section.products.map((product) => (
-//                     <li
-//                       key={product.name}
-//                       className="p-1.5 border-hover text-[14px] font-[400] text-[#212121]"
-//                     >
-//                       {product.link ? (
-//                         <Link href={product.link}>{product.name}</Link>
-//                       ) : (
-//                         <span>{product.name}</span>
-//                       )}
-//                     </li>
-//                   ))}
-//                 </div>
-//               ))}
-//           </ul>
-
-//           {/* Right Column */}
-//           {item.getStartedLink && item.getStartedImage && (
-//             <div>
-//               {item.getStartedText && (
-//                 <h2 className="text-[12px] font-[600] mb-5 border-hover text-[#454545]">
-//                   <Link href={item.getStartedLink}>GET STARTED</Link>
-//                 </h2>
-//               )}
-//               <div className="relative rounded-[16px] overflow-hidden bg-[linear-gradient(180deg,rgba(0,0,0,0.8)_0%,rgba(0,0,0,0)_26.27%)]">
-//                 {item.getStartedText && (
-//                   <p className="absolute z-20 p-4 text-[18px] font-[450] text-[#ffffff] headers-font">
-//                     {item.getStartedText}
-//                   </p>
-//                 )}
-//                 <Link
-//                   href={item.getStartedLink}
-//                   className="absolute z-10 bg-white p-3 flex items-center justify-center rounded-full bottom-4 left-4"
-//                 >
-//                   <FaArrowRightLong />
-//                 </Link>
-//                 <div className="relative w-[266px] h-[266px]">
-//                   <Image
-//                     className="w-full h-full object-cover"
-//                     fill
-//                     src={item.getStartedImage}
-//                     alt="nav-image"
-//                   />
-//                 </div>
-//               </div>
-//             </div>
-//           )}
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
+export default Navlinks;

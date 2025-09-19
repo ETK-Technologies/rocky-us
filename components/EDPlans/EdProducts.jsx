@@ -51,7 +51,7 @@ const EdProducts = ({ showonly }) => {
           Pause or cancel at any time
         </p>
       </div>
-      <div className="overflow-x-auto !no-scrollbar relative ">
+      <div className="overflow-x-auto !no-scrollbar relative px-2 sm:px-4 md:px-0">
         <div className="mx-auto">
           <div className="relative">
             {/* Only show scroll arrows when there's more than one product */}
@@ -61,12 +61,12 @@ const EdProducts = ({ showonly }) => {
 
             <div
               ref={scrollContainerRef}
-              className="flex gap-2 md:gap-4 items-start justify-center"
+              className="flex gap-3 sm:gap-4 items-start justify-start md:justify-center snap-x snap-mandatory"
             >
               {filteredProducts.map((product, index) => (
                 <div
                   key={index}
-                  className="flex-shrink-0"
+                  className="flex-shrink-0 min-w-[80vw] md:min-w-max snap-center"
                 >
                   <EdProductCard product={product} />
                 </div>

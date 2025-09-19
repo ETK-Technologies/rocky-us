@@ -3,7 +3,7 @@ import Link from "next/link";
 import { IoClose } from "react-icons/io5";
 import { useState, useEffect } from "react";
 
-export default function MobileCartPopup({
+export default function ({
   open,
   onClose,
   cartItems,
@@ -11,8 +11,18 @@ export default function MobileCartPopup({
   onRemoveItem,
   onEmptyCart,
   isEmptyingCart,
+  handleToggle,
 }) {
   const [isRemoving, setIsRemoving] = useState(null);
+  const [cartVisible, setCartVisible] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setCartVisible(true);
+    } else {
+      setTimeout(() => setCartVisible(false), 500); // Match transition duration
+    }
+  }, [open]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -27,22 +37,37 @@ export default function MobileCartPopup({
     };
   }, [open]);
 
-  if (!open) return null;
+  // Only unmount when both open and cartVisible are false
+  if (!open && !cartVisible) return null;
 
   const isLoading = cartItems === undefined || cartItems === null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex justify-end md:hidden">
-      <div className="relative  w-full h-full bg-white shadow-lg flex flex-col">
+    <>
+      <div
+        className={` fixed inset-0 bg-black bg-opacity-50 z-[9998] transition-opacity duration-500 ease-in-out will-change-opacity ${
+          open && cartVisible ? "opacity-100 visible" : "opacity-0 invisible"
+        }`}
+        onClick={onClose}
+      ></div>
+      <div
+        className={`cursor-auto fixed top-0 right-0 w-full h-full bg-white shadow-lg z-[9999] flex flex-col transition-transform duration-500 ease-in-out transform will-change-transform ${
+          open && cartVisible ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-6 ">
-          <span className="font-semibold text-[#454545] text-sm">CART</span>
-          <button onClick={onClose}>
+        <div className="flex items-center justify-between px-5 py-6 md:p-10">
+          <span className="headers-font md:text-[32px]">CART</span>
+          <button
+            onClick={onClose}
+            aria-label="Close cart"
+            className="p-2 hover:bg-[#F5F4EF] hover:rounded-full"
+          >
             <IoClose size={32} />
           </button>
         </div>
         {/* Cart Items */}
-        <div className="flex-1 overflow-y-auto px-4 pb-4">
+        <div className="flex-1 overflow-y-auto px-5 pb-4 md:px-10">
           {isLoading ? (
             <>
               {[1, 2].map((i) => (
@@ -114,11 +139,16 @@ export default function MobileCartPopup({
           )}
         </div>
         {/* Buttons */}
-        <div className="p-4 flex flex-col gap-3">
+        <div className="px-5 md:px-10 py-4 flex flex-col gap-3">
           <Link
             href="/cart"
             className="w-full py-3 rounded-full bg-black text-white text-center font-medium text-sm disabled:opacity-60"
-            onClick={onClose}
+            onClick={() => {
+              onClose();
+              if (handleToggle) {
+                handleToggle();
+              }
+            }}
           >
             <button disabled={isEmptyingCart || !!isRemoving}>View Cart</button>
           </Link>
@@ -143,6 +173,6 @@ export default function MobileCartPopup({
           </button>
         </div>
       </div>
-    </div>
+    </>
   );
 }

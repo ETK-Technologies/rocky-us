@@ -14,7 +14,7 @@ const Logo = ({ withLink = true }) => {
   );
 
   return (
-    <div className="text-2xl py-4 font-bold text-gray-800 w-1/2 ml-10 md:ml-0 md:w-auto flex justify-center">
+    <div className="text-2xl py-4 font-bold text-gray-800 flex justify-center">
       {withLink ? (
         <Link href="/" aria-label="Rocky Homepage">
           {logoContent}

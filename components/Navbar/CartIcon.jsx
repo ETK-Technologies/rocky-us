@@ -2,14 +2,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
-import { IoCartOutline, IoClose } from "react-icons/io5";
+import { logger } from "@/utils/devLogger";
 import { CiTrash } from "react-icons/ci";
 import { emptyCart } from "@/lib/cart/cartService";
 import { toast } from "react-toastify";
 import { canRemoveItem } from "@/lib/cart/cartService";
 import MobileCartPopup from "./MobileCartPopup";
+import { IoIosCart } from "react-icons/io";
 
-const CartIcon = () => {
+const CartIcon = ({ handleToggle }) => {
   const [cartItems, setCartItems] = useState([]);
   const [isLocalCart, setIsLocalCart] = useState(false);
   const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
@@ -27,7 +28,7 @@ const CartIcon = () => {
       setCartItems(data);
       setIsLocalCart(data.is_local_cart || false);
     } catch (error) {
-      console.error("Error fetching cart items:", error);
+      logger.error("Error fetching cart items:", error);
     }
   }, []);
 
@@ -118,31 +119,7 @@ const CartIcon = () => {
 
   return (
     <>
-      <div className="relative group hidden md:block">
-        <span
-          id="cart-refresher"
-          className="hidden"
-          onClick={handleRefreshCart}
-        ></span>
-        <Link href="/cart" className="block relative">
-          <IoCartOutline size={24} />
-          {cartItems.items && (
-            <span className="absolute top-[-40%] right-[-40%] text-[10px] bg-[#A55255] flex items-center justify-center w-5 h-5 text-white rounded-full">
-              {cartItems.items?.length}
-            </span>
-          )}
-        </Link>
-        {cartItems.items && (
-          <div className="hidden group-hover:flex absolute top-[24px] right-[-13px] md:right-0 bg-white rounded-md min-w-[395px] md:min-w-[450px] min-h-[80px] shadow-md p-4 px-8 w-full z-50">
-            <CartItems
-              items={cartItems.items}
-              refreshCart={getCartItems}
-              isLocalCart={isLocalCart}
-            />
-          </div>
-        )}
-      </div>
-      <div className="relative group block md:hidden">
+      <div className="relative group block cursor-pointer p-2 hover:bg-[#F5F4EF] hover:rounded-full">
         <span
           id="cart-refresher"
           className="hidden"
@@ -152,7 +129,7 @@ const CartIcon = () => {
           className="block relative"
           onClick={() => setIsMobileCartOpen(true)}
         >
-          <IoCartOutline size={24} />
+          <IoIosCart size={24} />
           {cartItems.items && (
             <span className="absolute top-[-40%] right-[-40%] text-[10px] bg-[#A55255] flex items-center justify-center w-5 h-5 text-white rounded-full">
               {cartItems.items?.length}
@@ -167,6 +144,7 @@ const CartIcon = () => {
           onRemoveItem={handleRemoveItemMobile}
           onEmptyCart={handleEmptyCartMobile}
           isEmptyingCart={isEmptyingCart}
+          handleToggle={handleToggle}
         />
       </div>
     </>
@@ -194,7 +172,7 @@ const CartItems = ({ items, refreshCart, isLocalCart }) => {
         refresher.setAttribute("data-refreshed", Date.now().toString());
       }
     } catch (error) {
-      console.error("Error emptying cart:", error);
+      logger.error("Error emptying cart:", error);
     } finally {
       setIsEmptyingCart(false);
     }
@@ -232,6 +210,7 @@ const CartItems = ({ items, refreshCart, isLocalCart }) => {
         <Link
           className="flex-1 py-2 text-center bg-gray-200 rounded-full text-sm font-semibold"
           href="/cart"
+          onClick={handleToggle}
         >
           View Cart
         </Link>
@@ -335,7 +314,7 @@ const CartItem = ({ item, refreshCart, isLocalCart, allItems }) => {
         refresher.click();
       }
     } catch (error) {
-      console.error("Error removing item from cart:", error);
+      logger.error("Error removing item from cart:", error);
       toast.error("Failed to remove item from cart. Please try again.");
     } finally {
       setIsRemoving(false);
@@ -384,7 +363,7 @@ const CartItem = ({ item, refreshCart, isLocalCart, allItems }) => {
               Monthly membership:
             </p>
             <p className="text-sm text-[#212121]">
-              Consultation fee $99 | Monthly follow-up fee $99
+              Initial fee $99 | Monthly fee $60
             </p>
             <p className="text-sm font-[500] text-[#212121] mt-2 underline">
               Includes:
