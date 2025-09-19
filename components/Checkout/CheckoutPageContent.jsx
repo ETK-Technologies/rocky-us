@@ -516,6 +516,8 @@ const CheckoutPageContent = () => {
         // Start all data loading operations in parallel
         const cartPromise = fetchCartItems();
 
+        let finalCartData = null;
+
         // Process URL parameters if needed
         if (onboardingAddToCart) {
           setIsProcessingUrlParams(true);
@@ -524,42 +526,41 @@ const CheckoutPageContent = () => {
           // Wait for cart to load first as we need it for proper display
           const cartData = await cartPromise;
           setCartItems(cartData);
+          finalCartData = cartData;
 
-          // Then process the URL parameters in parallel with other data loading
-          await urlParamsPromise
-            .then(async (result) => {
-              if (result.status === "success") {
-                // Refresh cart after adding products
-                const updatedCart = await fetchCartItems();
-                setCartItems(updatedCart);
-                toast.success("Products added to your cart!");
+          // Process URL parameters and wait for completion
+          const urlResult = await urlParamsPromise;
 
-                // Clean up URL parameters - use the detected flow type from result
-                cleanupCartUrlParameters(
-                  result.flowType ||
-                    (isEdFlow
-                      ? "ed"
-                      : flowParams["hair-flow"]
-                      ? "hair"
-                      : flowParams["wl-flow"]
-                      ? "wl"
-                      : flowParams["mh-flow"]
-                      ? "mh"
-                      : "general")
-                );
-              } else if (result.status === "error") {
-                toast.error(
-                  result.message || "Failed to add products to cart."
-                );
-              }
-            })
-            .finally(() => {
-              setIsProcessingUrlParams(false);
-            });
+          if (urlResult.status === "success") {
+            // Refresh cart after adding products
+            const updatedCart = await fetchCartItems();
+            setCartItems(updatedCart);
+            finalCartData = updatedCart; // Use the updated cart data
+            toast.success("Products added to your cart!");
+
+            // Clean up URL parameters - use the detected flow type from result
+            cleanupCartUrlParameters(
+              urlResult.flowType ||
+                (isEdFlow
+                  ? "ed"
+                  : flowParams["hair-flow"]
+                  ? "hair"
+                  : flowParams["wl-flow"]
+                  ? "wl"
+                  : flowParams["mh-flow"]
+                  ? "mh"
+                  : "general")
+            );
+          } else if (urlResult.status === "error") {
+            toast.error(urlResult.message || "Failed to add products to cart.");
+          }
+
+          setIsProcessingUrlParams(false);
         } else {
           // If no URL parameters to process, just set the cart items
           const cartData = await cartPromise;
           setCartItems(cartData);
+          finalCartData = cartData;
         }
 
         // Start other data loading operations in parallel
@@ -572,9 +573,21 @@ const CheckoutPageContent = () => {
         // Create Payment Intent after ALL loading operations are complete
         // This ensures cart is fully loaded and URL parameters are processed
         console.log("All loading operations complete, initializing payment...");
-        setTimeout(() => {
-          createPaymentIntent();
-        }, 500); // Small delay to ensure all state is properly set
+        console.log(
+          "Final cart items count:",
+          finalCartData?.items?.length || 0
+        );
+        console.log("Final cart totals:", finalCartData?.totals);
+
+        // Only create payment intent if we have items in cart
+        if (finalCartData?.items && finalCartData.items.length > 0) {
+          console.log("Cart has items, initializing payment...");
+          setTimeout(() => {
+            createPaymentIntent();
+          }, 500); // Small delay to ensure all state is properly set
+        } else {
+          console.log("No items in cart, skipping payment initialization");
+        }
       } catch (error) {
         console.error("Error loading checkout data:", error);
         toast.error(
@@ -592,6 +605,24 @@ const CheckoutPageContent = () => {
       createPaymentIntent();
     }
   }, [formData.billing_address?.email]);
+
+  // Initialize payment when cart items are added after initial load
+  useEffect(() => {
+    if (
+      isInitialLoadingComplete &&
+      cartItems?.items &&
+      cartItems.items.length > 0 &&
+      !clientSecret &&
+      !selectedCard
+    ) {
+      console.log(
+        "Cart items detected after initial load, initializing payment..."
+      );
+      setTimeout(() => {
+        createPaymentIntent();
+      }, 300);
+    }
+  }, [cartItems?.items, isInitialLoadingComplete, clientSecret, selectedCard]);
 
   const handleSubmit = async () => {
     try {
