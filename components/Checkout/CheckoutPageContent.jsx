@@ -62,6 +62,8 @@ const CheckoutPageContent = () => {
   const [isLoadingSavedCards, setIsLoadingSavedCards] = useState(false);
   const [clientSecret, setClientSecret] = useState(null);
   const [stripeElements, setStripeElements] = useState(null);
+  const [isInitialLoadingComplete, setIsInitialLoadingComplete] =
+    useState(false);
   const [formData, setFormData] = useState({
     additional_fields: [],
     shipping_address: {},
@@ -186,7 +188,13 @@ const CheckoutPageContent = () => {
 
   // Function to create Payment Intent for new cards
   const createPaymentIntent = async () => {
-    if (!cartItems?.totals || selectedCard) return;
+    if (!cartItems?.totals || selectedCard) {
+      console.log("Skipping Payment Intent creation:", {
+        hasCartTotals: !!cartItems?.totals,
+        hasSelectedCard: !!selectedCard,
+      });
+      return;
+    }
 
     try {
       const totalAmount = cartItems.totals.total_price
@@ -195,7 +203,10 @@ const CheckoutPageContent = () => {
         ? parseFloat(cartItems.totals.total.replace(/[^0-9.]/g, ""))
         : 0;
 
-      if (totalAmount <= 0) return; // Skip for free orders
+      if (totalAmount <= 0) {
+        console.log("Skipping Payment Intent creation for free order");
+        return; // Skip for free orders
+      }
 
       // Create a basic billing address if not available
       const billingAddress = formData.billing_address?.email
@@ -217,6 +228,7 @@ const CheckoutPageContent = () => {
       console.log("Creating Payment Intent with:", {
         amount: totalAmount,
         hasBillingAddress: !!formData.billing_address?.email,
+        cartItemsCount: cartItems?.items?.length || 0,
         billingAddress: billingAddress,
       });
 
@@ -239,16 +251,16 @@ const CheckoutPageContent = () => {
       if (result.success) {
         setClientSecret(result.data.paymentIntent.client_secret);
         console.log(
-          "Payment Intent created successfully:",
+          "✅ Payment Intent created successfully:",
           result.data.paymentIntent.id
         );
       } else {
-        console.error("Failed to create Payment Intent:", result.error);
+        console.error("❌ Failed to create Payment Intent:", result.error);
         // Set a fallback message
         setClientSecret("error");
       }
     } catch (error) {
-      console.error("Error creating Payment Intent:", error);
+      console.error("❌ Error creating Payment Intent:", error);
       setClientSecret("error");
     }
   };
@@ -514,14 +526,13 @@ const CheckoutPageContent = () => {
           setCartItems(cartData);
 
           // Then process the URL parameters in parallel with other data loading
-          urlParamsPromise
-            .then((result) => {
+          await urlParamsPromise
+            .then(async (result) => {
               if (result.status === "success") {
                 // Refresh cart after adding products
-                fetchCartItems().then((updatedCart) => {
-                  setCartItems(updatedCart);
-                  toast.success("Products added to your cart!");
-                });
+                const updatedCart = await fetchCartItems();
+                setCartItems(updatedCart);
+                toast.success("Products added to your cart!");
 
                 // Clean up URL parameters - use the detected flow type from result
                 cleanupCartUrlParameters(
@@ -553,12 +564,17 @@ const CheckoutPageContent = () => {
 
         // Start other data loading operations in parallel
         // These don't depend on the cart or URL processing
-        Promise.all([fetchSavedCards(), fetchUserProfile()]);
+        await Promise.all([fetchSavedCards(), fetchUserProfile()]);
 
-        // Create Payment Intent after cart is loaded
+        // Mark initial loading as complete
+        setIsInitialLoadingComplete(true);
+
+        // Create Payment Intent after ALL loading operations are complete
+        // This ensures cart is fully loaded and URL parameters are processed
+        console.log("All loading operations complete, initializing payment...");
         setTimeout(() => {
           createPaymentIntent();
-        }, 1000); // Small delay to ensure cart state is set
+        }, 500); // Small delay to ensure all state is properly set
       } catch (error) {
         console.error("Error loading checkout data:", error);
         toast.error(
@@ -1439,9 +1455,59 @@ const CheckoutPageContent = () => {
     }
   };
 
-  // Show loading indicator if cart is not yet loaded or URL parameters are being processed
-  if (!cartItems || isProcessingUrlParams) {
+  // Show loading indicator if cart is not yet loaded, URL parameters are being processed, or initial loading is not complete
+  if (!cartItems || isProcessingUrlParams || !isInitialLoadingComplete) {
     return <CheckoutSkeleton />;
+  }
+
+  // Check if cart is empty
+  if (!cartItems.items || cartItems.items.length === 0) {
+    return (
+      <>
+        <QuestionnaireNavbar />
+        <div className="min-h-[calc(100vh-100px)] flex items-center justify-center">
+          <div className="text-center max-w-md mx-auto px-4">
+            <div className="mb-6">
+              <svg
+                className="mx-auto h-16 w-16 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1}
+                  d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01"
+                />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+              Your cart is empty
+            </h2>
+            <p className="text-gray-600 mb-6">
+              You don't have any products in your cart yet. Browse our products
+              and add some items to get started.
+            </p>
+            <div className="space-y-3">
+              <button
+                onClick={() => router.push("/")}
+                className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              >
+                Browse Products
+              </button>
+              <button
+                onClick={() => router.push("/ed")}
+                className="w-full bg-gray-100 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+              >
+                ED Treatment
+              </button>
+            </div>
+          </div>
+        </div>
+      </>
+    );
   }
 
   return (
