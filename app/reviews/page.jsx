@@ -79,8 +79,8 @@ const HeroSection = () => {
           healthcare.
         </p>
         <Link
-          href="#find-treatment"
-          className="bg-black text-white px-6 py-3 rounded-full flex items-center space-x-2 hover:bg-gray-800 transition"
+          href="/assistance-center"
+          className="bg-black text-white px-6 py-3 rounded-full flex items-center space-x-2 hover:bg-gray-800 transition w-fit"
         >
           <span>Find your treatment</span>
         </Link>
