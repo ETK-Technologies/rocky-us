@@ -186,8 +186,26 @@ export async function POST(req) {
           value: "true",
         },
       ];
+    } else {
+      // For regular payments, check if we have an existing PaymentIntent
+      const existingPaymentIntent = payment_data?.find(
+        (item) => item.key === "wc-stripe-payment-intent"
+      );
+
+      if (existingPaymentIntent) {
+        console.log(
+          "Using existing PaymentIntent:",
+          existingPaymentIntent.value
+        );
+        // WooCommerce Stripe plugin will use the existing PaymentIntent
+        // No need to modify payment_data - it's already correctly formatted
+      } else {
+        console.log(
+          "No existing PaymentIntent found, WooCommerce will create one"
+        );
+        // WooCommerce Stripe plugin will create a new PaymentIntent
+      }
     }
-    // For regular payments, payment_data is already set from the frontend (Stripe data)
 
     // Call the WooCommerce Store API checkout endpoint
     const response = await axios.post(

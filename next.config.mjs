@@ -24,6 +24,11 @@ const nextConfig = {
       },
       {
         protocol: "https",
+        hostname: "myrocky.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
         hostname: "mycdn.myrocky.ca",
         pathname: "/**",
       },
