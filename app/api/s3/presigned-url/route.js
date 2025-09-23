@@ -23,7 +23,7 @@ async function ensureS3CorsConfig() {
           AllowedMethods: ["PUT", "GET", "POST", "HEAD"],
           AllowedOrigins: [
             "http://localhost:3000", // For local development
-            "https://www.myrocky.ca", // Production
+            "https://www.myrocky.co", // Production
             "https://myrocky.ca", // Production without www
             process.env.NEXT_PUBLIC_SITE_URL || "*", // Dynamic URL from environment
           ],

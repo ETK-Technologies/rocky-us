@@ -988,7 +988,7 @@ export default function ZonnicConsultationQuiz({
   const moveToNextSlideWithoutValidation = async (previousUpdates = {}) => {
     setIsMovingForward(true);
 
-    const shouldShowLoader = currentPage === 0 && !formData.token;
+    const shouldShowLoader = false;
     if (shouldShowLoader) {
       showLoader();
     }
@@ -1304,14 +1304,7 @@ export default function ZonnicConsultationQuiz({
   };
   return (
     <div className="flex flex-col min-h-screen bg-white">
-      {!dataLoaded ? (
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#AE7E56] mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading questionnaire...</p>
-          </div>
-        </div>
-      ) : (
+      {dataLoaded && (
         <>
           <QuestionnaireNavbar
             onBackClick={handleBackClick}
