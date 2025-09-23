@@ -708,37 +708,8 @@ const CheckoutPageContent = () => {
         // Payment Method
         paymentMethod: "stripe_cc", // Use Stripe credit card payment method
 
-        // Stripe payment data array
-        payment_data: [
-          {
-            key: "stripe_source",
-            value: "src_xxxxxxxxxxxxx", // Replace with actual Stripe payment source
-          },
-          {
-            key: "billing_email",
-            value: formData.billing_address.email,
-          },
-          {
-            key: "billing_first_name",
-            value: formData.billing_address.first_name,
-          },
-          {
-            key: "billing_last_name",
-            value: formData.billing_address.last_name,
-          },
-          {
-            key: "paymentMethod",
-            value: "stripe",
-          },
-          {
-            key: "paymentRequestType",
-            value: "cc",
-          },
-          {
-            key: "wc-stripe-new-payment-method",
-            value: true,
-          },
-        ],
+        // Stripe payment data array - will be populated with actual client_secret
+        payment_data: [],
       };
 
       // Enhanced client-side logging
@@ -1140,35 +1111,19 @@ const CheckoutPageContent = () => {
             // Update payment_data with confirmed payment intent for manual capture
             payment_data: [
               {
-                key: "stripe_source",
+                key: "wc-stripe-payment-intent",
                 value: paymentIntent.id, // Use the confirmed payment intent ID
               },
               {
-                key: "billing_email",
-                value: formData.billing_address.email,
-              },
-              {
-                key: "billing_first_name",
-                value: formData.billing_address.first_name,
-              },
-              {
-                key: "billing_last_name",
-                value: formData.billing_address.last_name,
-              },
-              {
-                key: "paymentMethod",
-                value: "stripe_cc",
-              },
-              {
-                key: "paymentRequestType",
-                value: "cc",
+                key: "wc-stripe-client-secret",
+                value: clientSecret, // Pass the client secret
               },
               {
                 key: "wc-stripe-new-payment-method",
-                value: true,
+                value: "true",
               },
               {
-                key: "capture_method",
+                key: "wc-stripe-capture-method",
                 value: "manual",
               },
             ],
@@ -1415,9 +1370,24 @@ const CheckoutPageContent = () => {
         }
       } else {
         // Fallback to regular WooCommerce checkout for non-card payments
+        // Update payment_data to use proper WooCommerce Stripe plugin format
+        const fallbackData = {
+          ...dataToSend,
+          payment_data: [
+            {
+              key: "wc-stripe-new-payment-method",
+              value: "true",
+            },
+            {
+              key: "wc-stripe-capture-method",
+              value: "manual",
+            },
+          ],
+        };
+
         const res = await fetch("/api/checkout", {
           method: "POST",
-          body: JSON.stringify(dataToSend),
+          body: JSON.stringify(fallbackData),
         });
 
         const data = await res.json();
