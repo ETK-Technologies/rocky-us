@@ -1,6 +1,7 @@
 "use client";
 import CustomImage from "@/components/utils/CustomImage";
 import Link from "next/link";
+import { useState } from "react";
 
 function getText(html) {
   var divContainer = document.createElement("div");
@@ -9,6 +10,10 @@ function getText(html) {
 }
 
 const Blog = ({ blog }) => {
+  const [imageError, setImageError] = useState(false);
+  const defaultImage =
+    "https://www.shutterstock.com/image-vector/default-ui-image-placeholder-wireframes-600nw-1037719192.jpg";
+
   // Extract reading time from Twitter meta data if available
   const getReadingTime = () => {
     if (blog.yoast_head_json?.twitter_misc?.["Est. reading time"]) {
@@ -19,6 +24,10 @@ const Blog = ({ blog }) => {
 
   // Get featured image URL
   const getFeaturedImageUrl = () => {
+    if (imageError) {
+      return defaultImage;
+    }
+
     if (
       blog._embedded &&
       blog._embedded["wp:featuredmedia"] &&
@@ -36,7 +45,11 @@ const Blog = ({ blog }) => {
       return blog.yoast_head_json.og_image[0].url;
     }
 
-    return "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/Pre%20Sell/fast.png"; // Default fallback
+    return defaultImage; // Default fallback
+  };
+
+  const handleImageError = () => {
+    setImageError(true);
   };
 
   // Get the category name
@@ -60,6 +73,7 @@ const Blog = ({ blog }) => {
           fill
           sizes="(max-width: 768px) 100vw, 400px"
           priority={false}
+          onError={handleImageError}
         />
         <span className="absolute top-2 left-2 bg-white text-black text-xs px-3 py-1 rounded-full shadow z-10">
           {getCategory()}
@@ -76,7 +90,7 @@ const Blog = ({ blog }) => {
         </p>
         <Link href={`/blog/` + blog.slug}>
           <h2 className="text-lg font-semibold leading-snug mb-2">
-            {blog.title.rendered}
+            {getText(blog.title.rendered)}
           </h2>
         </Link>
         <p className="text-gray-600 text-sm">

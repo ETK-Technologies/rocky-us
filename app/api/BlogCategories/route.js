@@ -11,7 +11,7 @@ export async function GET(request) {
           per_page: "100",
         },
         headers: {
-          Authorization : process.env.ADMIN_TOKEN
+          Authorization: process.env.ADMIN_TOKEN
         }
       });
 

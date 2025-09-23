@@ -663,7 +663,7 @@ const faqs = [
   {
     question: "Are ED drugs available OTC?",
     answer:
-      "In Canada, erectile dysfunction medications are not available over-the-counter and can only be obtained with a prescription. ED medications that are sold without a prescription is illegal and could potentially result in harm from counterfeit drugs. Rocky provides access to a licensed health care team so you can be certain that you are getting safe and effective care. Through our online platform, you will be guided through a series of medical questions which is then received by a Canadian licensed doctor. They will review this information, and once approved, treatment is delivered straight to your home.",
+      "In United States, erectile dysfunction medications are not available over-the-counter and can only be obtained with a prescription. ED medications that are sold without a prescription is illegal and could potentially result in harm from counterfeit drugs. Rocky provides access to a licensed health care team so you can be certain that you are getting safe and effective care. Through our online platform, you will be guided through a series of medical questions which is then received by a Canadian licensed doctor. They will review this information, and once approved, treatment is delivered straight to your home.",
   },
   {
     question: "How can I improve my ED?",
