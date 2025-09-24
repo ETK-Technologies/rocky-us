@@ -2,7 +2,7 @@ import { logger } from "@/utils/devLogger";
 
 function getBaseUrl() {
   if (typeof window === "undefined") {
-    return "https://www.myrocky.ca";
+    return "https://rocky-us.vercel.app/";
   }
   // Client-side: use relative URLs to proxy through Next.js API routes
   return "";

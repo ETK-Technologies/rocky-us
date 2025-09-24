@@ -14,11 +14,13 @@ import HtmlContent from "@/components/Article/HtmlContent";
 import Content from "@/components/Article/Content";
 import RelatedArticles from "@/components/Article/RelatedArticles";
 import Loader from "@/components/Loader";
+import NotFound from "./not-found";
 
 export default function BlogSlugPage({ params }) {
   const slug = use(params);
   const [Blog, setBlog] = useState(null);
   const [BlogLoading, setBlogLoading] = useState(true);
+  const [showNotFound, setShowNotFound] = useState(false);
   const [RelatedBlogs, setRelatedBlogs] = useState([]);
   const [RelatedBlogsLoading, setRelatedBlogsLoading] = useState(true);
   const [FeaturedImage, setFeaturedImage] = useState(
@@ -48,6 +50,13 @@ export default function BlogSlugPage({ params }) {
       logger.log("Response status:", res.status);
       logger.log("Response ok:", res.ok);
 
+      // If the blog is not found (404), show 404 page
+      if (res.status === 404) {
+        logger.log("Blog not found, showing 404 page");
+        setShowNotFound(true);
+        return;
+      }
+
       if (!res.ok) {
         throw new Error(`API call failed with status ${res.status}`);
       }
@@ -55,8 +64,13 @@ export default function BlogSlugPage({ params }) {
       const data = await res.json();
       logger.log("Response data:", data);
 
-      // Check if the response contains an error
+      // Check if the response contains an error indicating blog not found
       if (data.error) {
+        if (data.error === "Blog post not found" || res.status === 404) {
+          logger.log("Blog not found via error response, showing 404 page");
+          setShowNotFound(true);
+          return;
+        }
         throw new Error(data.error);
       }
 
@@ -65,13 +79,17 @@ export default function BlogSlugPage({ params }) {
       logger.log("Blog object:", blog);
 
       if (!blog) {
-        throw new Error("Blog not found");
+        logger.log("No blog data received, showing 404 page");
+        setShowNotFound(true);
+        return;
       }
 
       // Check if blog has required properties
       if (!blog.title || !blog.content) {
         logger.error("Blog missing required properties:", blog);
-        throw new Error("Blog data is incomplete");
+        logger.log("Blog data incomplete, showing 404 page");
+        setShowNotFound(true);
+        return;
       }
 
       setBlog(blog);
@@ -242,6 +260,11 @@ export default function BlogSlugPage({ params }) {
   // Show system loader while blog is loading
   if (BlogLoading) {
     return <Loader />;
+  }
+
+  // Show 404 page if blog not found
+  if (showNotFound) {
+    return <NotFound />;
   }
 
   return (
