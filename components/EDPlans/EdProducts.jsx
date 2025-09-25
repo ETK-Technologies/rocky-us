@@ -14,7 +14,7 @@ const EdProducts = ({ showonly }) => {
       cialis: cialisProduct,
       viagra: viagraProduct,
       // chewalis: chewalisProduct,
-      // variety: varietyPackProduct,
+      variety: varietyPackProduct,
     };
 
     if (!showonly) {
@@ -23,7 +23,7 @@ const EdProducts = ({ showonly }) => {
         cialisProduct,
         viagraProduct,
         // chewalisProduct,
-        // varietyPackProduct,
+        varietyPackProduct,
       ];
     }
 
@@ -36,7 +36,10 @@ const EdProducts = ({ showonly }) => {
     }
 
     // If no match is found, return all products as fallback
-    return [cialisProduct, viagraProduct, /* chewalisProduct, varietyPackProduct */];
+    return [
+      cialisProduct,
+      viagraProduct /* chewalisProduct, varietyPackProduct */,
+    ];
   };
 
   const filteredProducts = getFilteredProducts();
@@ -79,7 +82,7 @@ const EdProducts = ({ showonly }) => {
       <div className="flex flex-wrap justify-between items-start mt-[32px] md:mt-[24px]">
         <div className="w-full md:w-[584px] ">
           <p className=" hidden lg:block text-[12px]  font-[400] text-[#212121]">
-            In Canada, erectile dysfunction medications are available
+            In United States, erectile dysfunction medications are available
             over-the-counter (OTC) and may be obtained after a prescription.
             This medication will ensure proper dosage for legal and medical
             guidelines within the country. An important note: this document must

@@ -1,16 +1,29 @@
-const CategoryBtn = ({ category, isSelected , onClick, loading=false}) => {
-  
-  // [selected class => ] bg-black text-white
+import Link from "next/link";
+
+const CategoryBtn = ({ category, isSelected, onClick, loading = false }) => {
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center space-x-2">
+        <div className="w-16 h-4 bg-gray-200 rounded animate-pulse"></div>
+        <div className="w-2 h-4 bg-gray-200 rounded animate-pulse"></div>
+        <div className="w-20 h-4 bg-gray-200 rounded animate-pulse"></div>
+      </div>
+    );
+  }
+
   return (
-    <>
-      {loading ? (<div className="w-20 h-10 bg-gray-100 rounded animate-pulse"></div>) : (<button
-      key={typeof category === "string" ? 0 :   category.id}
-      onClick={() => onClick(typeof category === "string" ? category : category.id)}
-      className={`px-4 py-2 grid-col rounded-full ${isSelected ? "bg-black text-white" : "bg-gray-200 text-black" } `}>
-      { typeof category === "string" ? category : category.name}
-    </button>)}
-    </>
-    
+    <div className="flex items-center justify-center text-gray-700 text-sm font-normal">
+      <Link 
+        href="/blog" 
+        className="hover:text-gray-900 transition-colors duration-200"
+      >
+        HOME
+      </Link>
+      <span className="mx-2 text-gray-700">/</span>
+      <span className="text-gray-700">
+        {typeof category === "string" ? category.toUpperCase() : category.name?.toUpperCase()}
+      </span>
+    </div>
   );
 };
 
