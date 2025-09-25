@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { FaLongArrowAltRight } from "react-icons/fa";
+import BrimaryButton from "./ui/buttons/BrimaryButton";
 
 const homeBlog = [
   {
@@ -8,8 +9,8 @@ const homeBlog = [
     title: "All Things Men Blog",
     subtitle: "A men’s lifestyle blog connecting you with issues that matter.",
     buttonText: "Read Our Blog",
-    buttonLink: "/blog/"
-  }
+    buttonLink: "/blog/",
+  },
 ];
 
 const RockyBlog = ({ blog }) => {
@@ -38,13 +39,20 @@ const RockyBlog = ({ blog }) => {
               {blog.title}
             </h1>
             <p className="text-[20px] leading-[28px] mt-4 ">{blog.subtitle}</p>
-            <Link
+            {/* <Link
               href={blog.buttonLink}
               className="mt-[32px] bg-transparent flex items-center justify-center w-[189px] h-[44px] border border-[#FFFFFF] text-[#FFFFFF] py-3 rounded-[64px] text-[14px] leading-[19.6px] duration-100 hover:text-black hover:bg-gray-200"
             >
               <span>{blog.buttonText}</span>
               <FaLongArrowAltRight className="ml-2" />
-            </Link>
+            </Link> */}
+            <BrimaryButton
+              href={blog.buttonLink}
+              arrowIcon={true}
+              className="mt-[32px] bg-transparent flex items-center justify-center gap-2 w-[189px] h-[44px] border border-[#FFFFFF] text-[#FFFFFF] py-3 rounded-[64px] text-[14px] leading-[19.6px] duration-100 hover:text-black hover:bg-gray-200"
+            >
+              {blog.buttonText}
+            </BrimaryButton>
           </div>
 
           <div className="hidden md:block absolute inset-0 bg-black opacity-50"></div>

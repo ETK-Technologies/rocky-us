@@ -1,7 +1,7 @@
 const TitleSection = () => {
   return (
     <div>
-      <h1 className="text-6xl headers-font tracking-[-4%] mb-4">
+      <h1 className="text-6xl headers-font tracking-[-4%] mb-8">
         All Things Men Blog
       </h1>
       <p className="lg:w-1/3 sm:w-100 text-[#6B6967]">

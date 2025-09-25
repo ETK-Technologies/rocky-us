@@ -75,7 +75,7 @@ const RockyInTheNews2 = () => {
       <div className=" w-[335px] md:!w-[calc(100%_-_50px)] md:max-w-[1184px] lg:w-full mx-auto  bg-white border border-solid border-[#E2E2E1] rounded-lg py-[32px] md:py-[40px] shadow-[0px_1px_1px_0px_#E2E2E1] absolute -translate-x-2/4 left-2/4 -top-[10rem]">
         <div className="overflow-hidden mx-auto lg:max-w-5xl">
           <h2 className="text-[22px] md:text-[30px] leading-[25.3px] md:leading-[33px] font-[450] text-center mx-auto md:tracking-[-0.02em] max-w-[271px] md:max-w-full headers-font">
-            Canada&apos;s highest rated online pharmacy
+            The United States highest rated online pharmacy
           </h2>
 
           {/* Trustpilot Widget */}

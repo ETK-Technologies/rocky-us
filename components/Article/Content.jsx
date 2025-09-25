@@ -1,11 +1,21 @@
 import AdContainer from "./AdContainer";
 import Author from "./Author";
 import HtmlContent from "./HtmlContent";
+import BlogSideNavigation from "@/components/Blogs/BlogSideNavigation";
+import Loader from "@/components/Loader";
 
 const Content = ({ html, loding = false, AuthorContent = null }) => {
+  if (loding) {
+    return <Loader />;
+
+  }
+
   return (
     <>
-      <div className="grid grid-cols-12 gap-4">
+      <div className="grid grid-cols-12 gap-2">
+        <div className="lg:col-span-3 col-span-12">
+          <BlogSideNavigation html={html} loading={loding} />
+        </div>
         <div className="lg:col-span-9 col-span-12 overflow-hidden">
           <HtmlContent className="mb-8 mt-4" html={html}></HtmlContent>
 
@@ -15,13 +25,13 @@ const Content = ({ html, loding = false, AuthorContent = null }) => {
               avatarUrl={AuthorContent?.avatar_url}
               full_show={true}
               desc={AuthorContent?.description}
-              avatarSize="lg:h-[140px] lg:w-[140px] h-[100px] w-[100px]"
+              avatarSize="h-[100px] w-[100px]"
             ></Author>
           </div>
         </div>
-        <div className="lg:col-span-3 col-span-12 sm:mt-4">
-          <AdContainer></AdContainer>
-        </div>
+        {/* <div className="lg:col-span-3 col-span-12">
+          <AdContainer />
+        </div> */}
       </div>
     </>
   );

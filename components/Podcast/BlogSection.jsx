@@ -2,6 +2,7 @@ import { BlogCard } from "./BlogCard";
 import SectionContainer from "./SectionContainer";
 import SectionHeader from "./SectionHeader";
 import { getPosts } from "@/lib/api/getPosts";
+import { logger } from "@/utils/devLogger";
 
 const ErrorDisplay = ({ message }) => (
   <div
@@ -16,9 +17,11 @@ const ErrorDisplay = ({ message }) => (
 const BlogSection = async () => {
   let posts = [];
   let error = null;
+  logger.log(posts, "Posts");
 
   try {
     posts = await getPosts();
+    logger.log(posts, "Posts");
   } catch (err) {
     error = err.message || "Failed to load blog posts";
   }
