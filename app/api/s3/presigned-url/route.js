@@ -21,12 +21,13 @@ async function ensureS3CorsConfig() {
         {
           AllowedHeaders: ["*"],
           AllowedMethods: ["PUT", "GET", "POST", "HEAD"],
-          AllowedOrigins: [
-            "http://localhost:3000", // For local development
-            "https://www.myrocky.ca", // Production
-            "https://myrocky.ca", // Production without www
-            process.env.NEXT_PUBLIC_SITE_URL || "*", // Dynamic URL from environment
-          ],
+          "AllowedOrigins": [
+            "http://localhost:3000",
+            "https://crm.myrocky.com",
+            "https://rocky-us.vercel.app",
+            "https://rocky-headless-no3xgy7qq-rocky-health.vercel.app",
+            "https://rocky-headless-git-development-rocky-health.vercel.app"
+        ],
           ExposeHeaders: ["ETag", "Location"],
           MaxAgeSeconds: 3600,
         },
