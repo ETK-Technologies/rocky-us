@@ -56,7 +56,7 @@ export default function edPrelander2() {
         desktopBgImage="/ed-prelander-5/prelanderBg.jpg"
         mobileBgImage="/ed-prelander-5/ed.png"
         title="Reclaim your sex life. Hers, too."
-        subTitle="Digital Healthcare for men without the wait time or stigma. Trusted by 350K+ Canadians."
+        subTitle="Digital Healthcare for men without the wait time or stigma. Trusted by 350K+ Users."
         btnText="Get Started →"
         quizHref="/ed-pre-consultation-quiz"
       ></EdHeroSection>

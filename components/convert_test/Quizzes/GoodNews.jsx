@@ -32,7 +32,7 @@ const GoodNews = () => {
             <div className="w-full md:w-1/2">
               <div className="space-y-4">
                 <BenefitItem bg="bg-[#03A670]" textClassName="font-[POPPINS] font-[550] text-[16px] lg:text-[18px] leadeing-[140%]" text="Free online assessment by a licensed provider" />
-                <BenefitItem bg="bg-[#03A670]" textClassName="font-[POPPINS] font-[550] text-[16px] lg:text-[18px] leadeing-[140%]" text="Health Canada Approved medications" />
+                <BenefitItem bg="bg-[#03A670]" textClassName="font-[POPPINS] font-[550] text-[16px] lg:text-[18px] leadeing-[140%]" text=" FDA Approved medications" />
                 <BenefitItem bg="bg-[#03A670]" textClassName="font-[POPPINS] font-[550] text-[16px] lg:text-[18px] leadeing-[140%]" text="Free, discreet shipping if treatment is approved" />
               </div>
 

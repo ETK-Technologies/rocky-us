@@ -76,7 +76,7 @@ export default function WlPrelander2() {
       <WlHeroSection
         h1="Break Free"
         h2="from the scale"
-        p="With doctor-led personalized weight loss programs, trusted by 350K+ Canadians."
+        p="With doctor-led personalized weight loss programs, Trusted by 350K+ Users."
         onClick={null}
         btnText="Get Started →"
       ></WlHeroSection>
