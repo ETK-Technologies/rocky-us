@@ -75,7 +75,7 @@ const HeroSection = () => {
           Don’t just take our word for it
         </h1>
         <p className="text-lg mb-5">
-          Join 350,000+ people in Canada who trust Rocky for exceptional
+          Join 350,000+ people in USA who trust Rocky for exceptional
           healthcare.
         </p>
         <Link

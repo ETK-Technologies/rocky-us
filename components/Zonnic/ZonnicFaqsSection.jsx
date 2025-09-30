@@ -58,7 +58,7 @@ const faqs = [
       "How do ZONNIC pouches compare to other Nicotine Replacement Therapy (NRT) options like lozenges, gums, or sprays?",
     answer: `
       <div class="pb-4 text-gray-700">
-        <p>Among the various Nicotine Replacement Therapy (NRT) products available in U.S., ZONNIC is unique as the only pouch format approved by Health Canada. Similar to lozenges and gums, ZONNIC provides nicotine via oral absorption, offering temporary relief from cravings and withdrawal symptoms.</p>
+        <p>Among the various Nicotine Replacement Therapy (NRT) products available in U.S., ZONNIC is unique as the only pouch format approved by  FDA. Similar to lozenges and gums, ZONNIC provides nicotine via oral absorption, offering temporary relief from cravings and withdrawal symptoms.</p>
       </div>
     `,
   },
@@ -76,7 +76,7 @@ const faqs = [
     question: "Is ZONNIC similar to smokeless tobacco?",
     answer: `
       <div class="pb-4 text-gray-700">
-        <p>No, ZONNIC does not contain tobacco. Unlike smokeless tobacco products available in U.S., ZONNIC is approved by Health Canada as a recognized Nicotine Replacement Therapy.</p>
+        <p>No, ZONNIC does not contain tobacco. Unlike smokeless tobacco products available in U.S., ZONNIC is approved by  FDA as a recognized Nicotine Replacement Therapy.</p>
       </div>
     `,
   },
