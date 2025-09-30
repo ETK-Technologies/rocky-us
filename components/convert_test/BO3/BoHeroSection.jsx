@@ -19,7 +19,7 @@ const BoHeroSection = ({ items }) => {
                 <Rating></Rating>
               </span>{" "}
               <p className="font-[POPPINS] flex font-medium text-[14px] leading-[140%]">
-                TRUSTED BY 350K+ CANADIANS
+                Trusted by 350K+ Users
               </p>
             </div>
             <h1 className="font-semibold  text-[32px] lg:text-[57px] tracking-[-2%] leading-[114.99999999999999%]">

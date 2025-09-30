@@ -11,7 +11,7 @@ const ratings = [
   {
     image:
       "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/New%20ED%20Page/ch-2.png",
-    text: "Health Canada approved meds",
+    text: " FDA Approved meds",
   },
   {
     image:

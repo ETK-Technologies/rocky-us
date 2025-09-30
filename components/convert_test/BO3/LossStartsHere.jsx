@@ -59,7 +59,7 @@ const LossStartsHere = () => {
                 ></LossItem>
                 <LossItem
                   img="/bo3/stethoscope2.png"
-                  title="Health Canada Approved Treatments, if eligible"
+                  title=" FDA Approved Treatments, if eligible"
                   iconClassName="w-[35px] h-[24px]"
                 ></LossItem>
 
