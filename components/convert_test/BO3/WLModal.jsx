@@ -88,7 +88,7 @@ const WLModal = (modalOpen = false) => {
                   <hr className="mb-[16px] lg:mb-[24px]" />
                   <p className="mb-[12px] text-center font-[POPPINS] font-medium text-black opacity-85 text-[12px] md:text-[14px] tracking-[0%] leading-[114.99999999999999%]">
                     Rocky is trusted by{" "}
-                    <span className="font-semibold">350,000+</span> Canadians
+                    <span className="font-semibold">350,000+</span> Users
                   </p>
                   <Link
                     href="/wl-pre-consultation"

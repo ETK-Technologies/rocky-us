@@ -32,7 +32,7 @@ const LossStartsHere = () => {
           <div className="md:w-1/2">
             <div className="bg-[#AE7E56] text-center rounded-t-2xl p-1">
               <p className="text-white text-[14px] font-medium">
-                Canada’s Leading Weight Loss Program
+                USA’s Leading Weight Loss Program
               </p>
             </div>
             <div className="bg-[#AE7E56] rounded-b-2xl pt-1">

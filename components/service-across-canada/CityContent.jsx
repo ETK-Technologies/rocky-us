@@ -9,7 +9,7 @@ const CityContent = ({ cityInfo, displayCity }) => {
       </p>
 
       <h2 className="mb-4 text-2xl md:text-[40px] font-[550] headers-font">
-        Order ED Medication in {displayCity}, Canada
+        Order ED Medication in {displayCity}, USA
       </h2>
 
       {["orderInfo", "processInfo", "deliveryInfo", "educationInfo"].map(
@@ -32,48 +32,48 @@ const CityContent = ({ cityInfo, displayCity }) => {
       </p>
 
       <h2 className="mb-4 text-2xl md:text-[32px] font-[550] headers-font">
-        ED Medication Locally in Canada From Coast to Coast
+        ED Medication Locally in USA From Coast to Coast
       </h2>
 
       <p className="text-[#000000] text-lg leading-[150%]">
-        Rocky's ED products are available across Canada in{" "}
+        Rocky's ED products are available across USA in{" "}
         <Link
-          href="/service-across-canada/toronto"
+          href="/service-across-USA/toronto"
           className="text-[#8B4513] underline"
         >
           Toronto
         </Link>
         ,{" "}
         <Link
-          href="/service-across-canada/calgary"
+          href="/service-across-USA/calgary"
           className="text-[#8B4513] underline"
         >
           Calgary
         </Link>
         ,{" "}
         <Link
-          href="/service-across-canada/edmonton"
+          href="/service-across-USA/edmonton"
           className="text-[#8B4513] underline"
         >
           Edmonton
         </Link>
         ,{" "}
         <Link
-          href="/service-across-canada/ottawa"
+          href="/service-across-USA/ottawa"
           className="text-[#8B4513] underline"
         >
           Ottawa
         </Link>
         ,{" "}
         <Link
-          href="/service-across-canada/halifax"
+          href="/service-across-USA/halifax"
           className="text-[#8B4513] underline"
         >
           Halifax
         </Link>
         ,{" "}
         <Link
-          href="/service-across-canada/vancouver"
+          href="/service-across-USA/vancouver"
           className="text-[#8B4513] underline"
         >
           Vancouver

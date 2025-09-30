@@ -643,7 +643,7 @@ const faqs = [
   {
     question: "What is the safest drug for ED?",
     answer:
-      "All medications go through extensive clinical trials and quality checks before getting approved by Health Canada. The safety and effectiveness for ED medications is well established, making it an excellent treatment for most men. Our online questionnaire will take into account your personal medical history and determine if these pills are right for you!",
+      "All medications go through extensive clinical trials and quality checks before getting approved by  FDA. The safety and effectiveness for ED medications is well established, making it an excellent treatment for most men. Our online questionnaire will take into account your personal medical history and determine if these pills are right for you!",
   },
   {
     question: "What is the most effective pill for ED?",
