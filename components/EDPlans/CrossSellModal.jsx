@@ -364,7 +364,7 @@ const CrossSellModal = ({
               </div>
               <div>
                 <p className="font-semibold text-[14px] text-gray-800 text-left max-w-[150px] md:max-w-full">
-                  {selectedProduct.name || ""} - ({selectedProduct.dosage || ""}
+                  { selectedProduct.preference == "generic" ? selectedProduct.activeIngredient || "" :  selectedProduct.name || ""} - ({selectedProduct.dosage || ""}
                   )
                 </p>
 

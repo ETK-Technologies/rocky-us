@@ -51,6 +51,7 @@ const CheckoutPageContent = () => {
         params.push(`${key}=${value}`);
       }
     });
+    console.log("FLOW BUILDED -> ->", params);
     return params.length > 0 ? `&${params.join("&")}` : "";
   };
 

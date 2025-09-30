@@ -168,6 +168,8 @@ const OrderReceivedContent = ({ userId }) => {
   const [countdown, setCountdown] = useState(null);
   const [isQuestionnaireCompleted, setIsQuestionnaireCompleted] =
     useState(false);
+  const [questionnaireCheckComplete, setQuestionnaireCheckComplete] =
+    useState(false);
   const key = searchParams.get("key");
   const params = useParams();
   const orderId = params.id;
@@ -198,19 +200,25 @@ const OrderReceivedContent = ({ userId }) => {
   };
   // Determine the redirect destination
   const getRedirectPath = () => {
-    // Build the base path based on flow type (internal routes)
-    let basePath = "/";
-    if (mhFlow === "1") basePath += "mh-quiz";
-    if (edFlow === "1") basePath += "ed-consultation-quiz";
-    if (wlFlow === "1") basePath += "wl-consultation";
-    if (hairFlow === "1") basePath += "hair-main-questionnaire";
-    if (smokingFlow === "1") basePath += "smoking-consultation";
+    // Build the base path based on flow type
+    let basePath = "";
+    if (mhFlow === "1") basePath = "/mh-quiz";
+    if (edFlow === "1") basePath = "/ed-consultation-quiz";
+    if (wlFlow === "1") basePath = "/wl-consultation";
+    if (hairFlow === "1") basePath = "/hair-main-questionnaire";
+    if (smokingFlow === "1") basePath = "/smoking-consultation/?checked-out=1";
 
-    // Add checked-out param for smoking flow
+    console.log("[Debug] Base path:", basePath);
+    console.log("[Debug] Flow parameters:", {
+      mhFlow,
+      edFlow,
+      wlFlow,
+      hairFlow,
+      smokingFlow,
+    });
+
+    // Build the query parameters
     const queryParams = new URLSearchParams();
-    if (smokingFlow === "1") {
-      queryParams.append("checked-out", "1");
-    }
 
     // Add order_id if available
     if (order && order.id) {
@@ -236,23 +244,40 @@ const OrderReceivedContent = ({ userId }) => {
     return finalUrl;
   };
 
-  // Start countdown after order loads
+  // Start countdown after order loads and questionnaire check is complete
   useEffect(() => {
+    console.log("order", order);
+    console.log("shouldRedirect", shouldRedirect);
+    console.log("countdown", countdown);
+    console.log("isQuestionnaireCompleted", isQuestionnaireCompleted);
+    console.log("questionnaireCheckComplete", questionnaireCheckComplete);
     // Only start countdown if:
     // 1. Order has loaded successfully
     // 2. We have a flow parameter
     // 3. Countdown hasn't been initialized yet
     // 4. Questionnaire is not completed
-    if (
+    // 5. For ED/Hair flows: questionnaire check is complete
+    // 6. For other flows: no questionnaire check needed
+    const shouldStartCountdown =
       order &&
       shouldRedirect &&
       countdown === null &&
-      !isQuestionnaireCompleted
-    ) {
+      !isQuestionnaireCompleted &&
+      (edFlow === "1" || hairFlow === "1" ? questionnaireCheckComplete : true);
+
+    if (shouldStartCountdown) {
       console.log("Starting countdown for redirect to", getRedirectPath());
       setCountdown(10);
     }
-  }, [order, shouldRedirect, countdown, isQuestionnaireCompleted]);
+  }, [
+    order,
+    shouldRedirect,
+    countdown,
+    isQuestionnaireCompleted,
+    questionnaireCheckComplete,
+    edFlow,
+    hairFlow,
+  ]);
 
   // Handle the countdown timer
   useEffect(() => {
@@ -270,13 +295,11 @@ const OrderReceivedContent = ({ userId }) => {
     else if (countdown === 0 && !isQuestionnaireCompleted) {
       console.log("Countdown complete, redirecting now");
 
-      // Use window.location for navigation instead of router.push
-      // This will force a full page reload which ensures the loader state is reset
       const redirectPath = getRedirectPath();
-      const redirectUrl = redirectPath;
-      console.log("[Debug] lst Redirect URL:", redirectUrl);
+      console.log("[Debug] Final Redirect URL:", redirectPath);
 
-      window.location.href = redirectUrl;
+      // Use Next.js router for internal navigation
+      router.push(redirectPath);
     }
   }, [countdown, isQuestionnaireCompleted]);
 
@@ -338,25 +361,32 @@ const OrderReceivedContent = ({ userId }) => {
                   `Questionnaire ID ${questionnaireId} already completed, not redirecting`
                 );
                 setIsQuestionnaireCompleted(true); // Set the state to prevent redirect
+                setQuestionnaireCheckComplete(true); // Mark check as complete
                 return; // Add return statement to prevent further execution
               } else {
                 console.log(
-                  `Questionnaire ID ${questionnaireId} not completed, starting redirect countdown`
+                  `Questionnaire ID ${questionnaireId} not completed, will start redirect countdown`
                 );
                 setIsQuestionnaireCompleted(false); // Ensure state is false
-                // Start the countdown for redirect
-                setCountdown(10);
+                setQuestionnaireCheckComplete(true); // Mark check as complete
+                // Countdown will start automatically via useEffect when questionnaireCheckComplete becomes true
               }
             }
           } else {
             // For other flows (mental health, weight loss), start redirect countdown without checking
             console.log("Starting redirect countdown for non-ED/Hair flow");
             setIsQuestionnaireCompleted(false); // Ensure state is false
-            setCountdown(10);
+            // Don't set questionnaireCheckComplete to true here - let the useEffect handle the countdown
+            // The countdown will start automatically via useEffect when all conditions are met
           }
+        } else {
+          // No redirect needed, mark check as complete
+          setQuestionnaireCheckComplete(true);
         }
       } catch (error) {
         console.error("Error fetching order:", error);
+        // Mark questionnaire check as complete even on error to prevent infinite loading
+        setQuestionnaireCheckComplete(true);
       } finally {
         setLoading(false);
       }
@@ -394,8 +424,8 @@ const OrderReceivedContent = ({ userId }) => {
       <div className="flex justify-center">
         <div className="border rounded-xl w-full max-w-[480px] p-6">
           <ThankYouMessage userEmail={order.billing.email} />
-          {countdown !== null && countdown > 0 && (
-            <div className="mt-2 mb-2 py-4 px-6 bg-[#03A670] rounded-lg text-center rounded-lg">
+          {countdown !== null && countdown > 0 && !isQuestionnaireCompleted && (
+            <div className="mt-2 mb-2 py-4 px-6 bg-[#03A670] rounded-lg text-center">
               <p className="text-[16px] font-[600] text-white">
                 You will be redirected to your consultation in {countdown}{" "}
                 seconds....
@@ -405,13 +435,19 @@ const OrderReceivedContent = ({ userId }) => {
           <BasicOrderInfo order={order} />
           <OrderItems order={order} />
           <Totals order={order} />
-          {(!shouldRedirect || (shouldRedirect && countdown <= 5)) && (
+          {(!shouldRedirect ||
+            (shouldRedirect && countdown <= 5 && !isQuestionnaireCompleted) ||
+            (shouldRedirect && isQuestionnaireCompleted)) && (
             <Link
-              href={shouldRedirect ? getRedirectPath() : "/"}
-              className="mt-3 flex items-center justify-center gap-3 bg-black text-white px-5 py-3 rounded-[64px] hover:bg-gray-800 transition inline-block"
+              href={
+                shouldRedirect && !isQuestionnaireCompleted
+                  ? getRedirectPath()
+                  : "/"
+              }
+              className="mt-3 flex items-center justify-center gap-3 bg-black text-white px-5 py-3 rounded-[64px] hover:bg-gray-800 transition"
             >
               <span className="text-[14px] font-[500] text-[#FFFFFF] poppins-font">
-                {shouldRedirect
+                {shouldRedirect && !isQuestionnaireCompleted
                   ? "Continue to Consultation"
                   : "Continue to Home Page"}
               </span>
