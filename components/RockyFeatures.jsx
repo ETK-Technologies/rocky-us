@@ -2,7 +2,7 @@ import CustomImage from "@/components/utils/CustomImage";
 
 const rockyFeaturesCards = [
   {
-    title: "CA-Certified Pharmacy",
+    title: "US-Certified Pharmacy",
     image:
       "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/Pre%20Sell/hospital%201.png",
   },
@@ -12,7 +12,7 @@ const rockyFeaturesCards = [
       "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/Pre%20Sell/personalized.png",
   },
   {
-    title: "Trusted by 350K+ Canadians",
+    title: "Trusted by 350K+ Users",
     image:
       "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/Pre%20Sell/trusted.png",
   },

@@ -34,7 +34,7 @@ export default function edPrelander2() {
       <EdHeroSection
         bgImage="/ed-prelander-5/prelanderBg.jpg"
         title="Make her fall in love again"
-        subTitle="Digital Healthcare for men without the wait time or stigma. Trusted by 350K+ Canadians."
+        subTitle="Digital Healthcare for men without the wait time or stigma. Trusted by 350K+ Users."
         btnText="Get Started →"
       ></EdHeroSection>
       <EdPrelander2Script />

@@ -64,7 +64,7 @@ export default function WlPrelander3() {
       <WlHeroSection
         h1="End your weight"
         h2=" war forever"
-        p="With doctor-led personalized weight loss programs, trusted by 350K+ Canadians."
+        p="With doctor-led personalized weight loss programs, Trusted by 350K+ Users."
         href="/body-optimization"
         btnText="Get Started →"
       ></WlHeroSection>

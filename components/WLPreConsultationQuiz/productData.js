@@ -26,7 +26,7 @@ const PRODUCT_DATA = {
     description: "(tirzepatide) injection",
     price: "395.00",
     details:
-      "Mounjaro® is the brand name for Tirzepatide which is a Health Canada approved drug. It helps reduce appetite and keeps you feeling fuller for longer.",
+      "Mounjaro® is the brand name for Tirzepatide which is a  FDA Approved drug. It helps reduce appetite and keeps you feeling fuller for longer.",
     url: "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/mounjaro/mounjaro_2x.webp",
     supplyAvailable: true,
   },

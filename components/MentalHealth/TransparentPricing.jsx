@@ -15,7 +15,7 @@ const items = [
     "Review of Lab Work and initial prescription if eligible"
   ];
   const imobileItems2 = [
-    "Health Canada approved Medications",
+    " FDA Approved Medications",
     "Fast & Free Delivery",
     "Interactive counselling by Licensed Pharmacist"
   ];
