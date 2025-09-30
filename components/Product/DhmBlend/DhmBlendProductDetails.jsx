@@ -299,7 +299,7 @@ const DhmBlendProductDetails = ({ product, variations, isLoading }) => {
               dangerouslySetInnerHTML={{
                 __html:
                   product?.description ||
-                  "Science-backed formula with DHM, L-Cysteine, Milk Thistle, Prickly Pear, and Vitamin B Complex. DHM Blend is authorized for sale by Health Canada.",
+                  "Science-backed formula with DHM, L-Cysteine, Milk Thistle, Prickly Pear, and Vitamin B Complex. DHM Blend is authorized for sale by  FDA.",
               }}
             />
           </div>
