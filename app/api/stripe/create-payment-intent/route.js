@@ -19,6 +19,12 @@ export async function POST(req) {
       customerId,
       saveCard = false,
       description,
+      orderId, // Order ID for metadata tracking
+      orderKey, // Order key for reference
+      userId, // WordPress user ID
+      products, // Array of products: [{id, name, quantity}]
+      ipAddress, // Customer IP address
+      userAgent, // User agent string
     } = await req.json();
 
     console.log("Creating Stripe PaymentIntent:", {
@@ -26,19 +32,45 @@ export async function POST(req) {
       currency: currency.toLowerCase(),
       saveCard,
       customerId: customerId ? `${customerId.substring(0, 10)}...` : "none",
+      orderId: orderId || "pending",
+      userId: userId || "guest",
     });
+
+    // Build metadata object with required fields
+    const metadata = {
+      gateway_id: "stripe_cc",
+      order_id: orderId ? orderId.toString() : "pending",
+      partner: "PaymentPlugins",
+      user_id: userId ? userId.toString() : "0",
+      ip_address: ipAddress || "",
+      user_agent: userAgent || "",
+    };
+
+    // Add product information to metadata
+    // Format: product_{product_id}: "{product_name} x {quantity}"
+    if (products && Array.isArray(products)) {
+      products.forEach((product) => {
+        if (product.id && product.name) {
+          const quantity = product.quantity || 1;
+          metadata[`product_${product.id}`] = `${product.name} x ${quantity}`;
+        }
+      });
+    }
 
     // Create payment intent with manual capture and off_session setup
     const paymentIntentData = {
       amount: Math.round(amount * 100), // Stripe expects amount in cents
       currency: currency.toLowerCase(),
-      description: description || "Order payment",
+      description: orderId
+        ? `headless Order ${orderId} from myrocky.com`
+        : "headless Order from myrocky.com",
       capture_method: "manual", // Manual capture for pre-authorization
       setup_future_usage: "off_session", // Always save cards for future use (subscriptions)
       automatic_payment_methods: {
         enabled: true,
         allow_redirects: "never", // Disable redirect-based payment methods
       },
+      metadata: metadata,
     };
 
     // Add customer if provided (for saving cards)

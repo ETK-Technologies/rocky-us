@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server";
 import axios from "axios";
 import { cookies } from "next/headers";
+import Stripe from "stripe";
 
 const BASE_URL = process.env.BASE_URL || process.env.WORDPRESS_BASE_URL;
 const CONSUMER_KEY = process.env.CONSUMER_KEY;
 const CONSUMER_SECRET = process.env.CONSUMER_SECRET;
+
+// Initialize Stripe
+const stripe = new Stripe(
+  process.env.STRIPE_SECRET_KEY || "sk_test_placeholder"
+);
 
 export async function POST(req, { params }) {
   try {
@@ -33,12 +39,45 @@ export async function POST(req, { params }) {
     ).toString("base64")}`;
     console.log("Using REST API v3 authentication for order update");
 
+    // Step 0: Retrieve PaymentIntent details from Stripe to get payment method
+    let paymentIntent;
+    let paymentMethodId = null;
+    let stripeCustomerId = null;
+    let captureMethod = "manual";
+
+    try {
+      console.log(`Retrieving PaymentIntent ${payment_intent_id} from Stripe`);
+      paymentIntent = await stripe.paymentIntents.retrieve(payment_intent_id);
+
+      paymentMethodId = paymentIntent.payment_method;
+      stripeCustomerId = paymentIntent.customer;
+      captureMethod = paymentIntent.capture_method;
+
+      console.log("✅ PaymentIntent retrieved:", {
+        id: paymentIntent.id,
+        status: paymentIntent.status,
+        payment_method: paymentMethodId,
+        customer: stripeCustomerId,
+        capture_method: captureMethod,
+        amount: paymentIntent.amount,
+      });
+    } catch (stripeError) {
+      console.error(
+        "❌ Failed to retrieve PaymentIntent:",
+        stripeError.message
+      );
+      // Continue even if Stripe retrieval fails - we can still update the order
+    }
+
     // Step 1: Add order note with payment details
     const orderNoteData = {
-      note: `✅ Stripe payment confirmed successfully!
+      note: `✅ Stripe payment authorized successfully!
 Payment Intent ID: ${payment_intent_id}
-Payment Method: Stripe Credit Card
-Status: Payment Completed
+Payment Method ID: ${paymentMethodId || "N/A"}
+Customer ID: ${stripeCustomerId || "N/A"}
+Payment Status: ${paymentIntent?.status || "authorized"}
+Capture Method: ${captureMethod}
+⚠️ Payment requires manual capture from WordPress admin
 Confirmed At: ${new Date().toISOString()}`,
       customer_note: false, // Admin note
     };
@@ -63,26 +102,60 @@ Confirmed At: ${new Date().toISOString()}`,
     }
 
     // Step 2: Update order status using the same authentication as Store API
+    const metaDataArray = [
+      {
+        key: "_stripe_payment_intent_id",
+        value: payment_intent_id,
+      },
+      {
+        key: "_payment_method_title",
+        value: "Stripe Credit Card",
+      },
+      {
+        key: "_stripe_payment_confirmed",
+        value: "true",
+      },
+      {
+        key: "_stripe_payment_confirmed_at",
+        value: new Date().toISOString(),
+      },
+      {
+        key: "_payment_requires_capture",
+        value: captureMethod === "manual" ? "yes" : "no",
+      },
+      {
+        key: "_stripe_capture_method",
+        value: captureMethod,
+      },
+    ];
+
+    // Add payment method ID for subscription renewals (if available)
+    if (paymentMethodId) {
+      metaDataArray.push({
+        key: "_stripe_payment_method_id",
+        value: paymentMethodId,
+      });
+    }
+
+    // Add Stripe customer ID for subscription management (if available)
+    if (stripeCustomerId) {
+      metaDataArray.push({
+        key: "_stripe_customer_id",
+        value: stripeCustomerId,
+      });
+    }
+
+    // Add payment intent status
+    if (paymentIntent?.status) {
+      metaDataArray.push({
+        key: "_stripe_payment_status",
+        value: paymentIntent.status,
+      });
+    }
+
     const orderUpdateData = {
-      status: "on-hold",
-      meta_data: [
-        {
-          key: "_stripe_payment_intent_id",
-          value: payment_intent_id,
-        },
-        {
-          key: "_payment_method_title",
-          value: "Stripe Credit Card",
-        },
-        {
-          key: "_stripe_payment_confirmed",
-          value: "true",
-        },
-        {
-          key: "_stripe_payment_confirmed_at",
-          value: new Date().toISOString(),
-        },
-      ],
+      status: "on-hold", // Awaiting manual capture
+      meta_data: metaDataArray,
     };
 
     console.log(`Updating order ${order_id} status to on-hold`);
@@ -107,6 +180,11 @@ Confirmed At: ${new Date().toISOString()}`,
         order_id: order_id,
         status: response.data.status,
         payment_intent_id: payment_intent_id,
+        payment_method_id: paymentMethodId,
+        customer_id: stripeCustomerId,
+        capture_method: captureMethod,
+        requires_capture: captureMethod === "manual",
+        payment_status: paymentIntent?.status || "authorized",
         updated_at: new Date().toISOString(),
         note_added: true,
       },

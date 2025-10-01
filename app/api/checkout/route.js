@@ -100,6 +100,7 @@ export async function POST(req) {
       isFreeOrder, // Flag for zero-amount orders
       paymentMethod, // Custom payment method for free orders
       payment_data, // Stripe payment data array
+      payment_intent_id, // Stripe PaymentIntent ID
     } = requestData;
 
     const cookieStore = await cookies();
@@ -151,6 +152,8 @@ export async function POST(req) {
       payment_method: paymentMethod || "stripe_cc", // Use Stripe credit card payment method
       payment_data: payment_data || [],
       customer_note: customerNotes || "",
+      origin: "headless", // Indicate this is a headless checkout
+      ...(payment_intent_id && { payment_intent_id }), // Add PaymentIntent ID if provided
       meta_data: [
         {
           key: "_meta_discreet",
@@ -206,6 +209,13 @@ export async function POST(req) {
         // WooCommerce Stripe plugin will create a new PaymentIntent
       }
     }
+
+    // Log headless checkout info
+    console.log("WooCommerce Store API checkout:", {
+      origin: checkoutData.origin,
+      payment_intent_id: payment_intent_id || "not provided",
+      payment_method: checkoutData.payment_method,
+    });
 
     // Call the WooCommerce Store API checkout endpoint
     const response = await axios.post(
