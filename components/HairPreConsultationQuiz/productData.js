@@ -13,14 +13,13 @@ export const cialisProduct = {
     },
     pillOptions: {
       "monthly-supply": [
-        { count: 4, genericPrice: 68, brandPrice: 90 },
-        { count: 8, genericPrice: 126, brandPrice: 170 },
-        { count: 12, genericPrice: 184, brandPrice: 250 },
+        { count: 8, genericPrice: 138, brandPrice: 195 },
+        { count: 12, genericPrice: 204, brandPrice: 285 },
       ],
       "quarterly-supply": [
-        { count: 12, genericPrice: 184, brandPrice: 250 },
-        { count: 24, genericPrice: 358, brandPrice: 490 },
-        { count: 36, genericPrice: 532, brandPrice: 730 },
+        { count: 12, genericPrice: 204, brandPrice: 285 },
+        { count: 24, genericPrice: 399, brandPrice: 555 },
+        { count: 36, genericPrice: 595, brandPrice: 829 },
       ],
     },
   };
@@ -39,14 +38,13 @@ export const cialisProduct = {
     },
     pillOptions: {
       "monthly-supply": [
-        { count: 4, genericPrice: 54, brandPrice: 70 },
-        { count: 8, genericPrice: 98, brandPrice: 130 },
-        { count: 12, genericPrice: 142, brandPrice: 190 },
+        { count: 8, genericPrice: 108, brandPrice: 136 },
+        { count: 12, genericPrice: 159, brandPrice: 199 },
       ],
       "quarterly-supply": [
-        { count: 12, genericPrice: 142, brandPrice: 190 },
-        { count: 24, genericPrice: 274, brandPrice: 370 },
-        { count: 36, genericPrice: 406, brandPrice: 550 },
+        { count: 12, genericPrice: 159, brandPrice: 199 },
+        { count: 24, genericPrice: 305, brandPrice: 388 },
+        { count: 36, genericPrice: 449, brandPrice: 577 },
       ],
     },
   };
@@ -65,7 +63,6 @@ export const cialisProduct = {
     },
     pillOptions: {
       "monthly-supply": [
-        { count: 4, genericPrice: 74, brandPrice: 74 },
         { count: 8, genericPrice: 138, brandPrice: 138 },
         { count: 12, genericPrice: 202, brandPrice: 202 },
       ],
@@ -91,13 +88,12 @@ export const cialisProduct = {
     },
     pillOptions: {
       "monthly-supply": [
-        { count: "2/2", genericPrice: 61, brandPrice: 85 },
-        { count: "4/4", genericPrice: 112, brandPrice: 160 },
-        { count: "6/6", genericPrice: 163, brandPrice: 235 },
+        { count: "4/4", genericPrice: 134, brandPrice: 174 },
+        { count: "6/6", genericPrice: 183, brandPrice: 235 },
       ],
       "quarterly-supply": [
-        { count: "6/6", genericPrice: 163, brandPrice: 235 },
-        { count: "12/12", genericPrice: 316, brandPrice: 440 },
+        { count: "6/6", genericPrice: 183, brandPrice: 235 },
+        { count: "12/12", genericPrice: 363, brandPrice: 484 },
         { count: "18/18", genericPrice: 469, brandPrice: 685 },
       ],
     },

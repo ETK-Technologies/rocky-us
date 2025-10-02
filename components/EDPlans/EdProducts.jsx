@@ -115,24 +115,17 @@ const cialisProduct = {
   },
   pillOptions: {
     "monthly-supply": [
-      // {
-      //   count: 4,
-      //   genericPrice: 68,
-      //   brandPrice: 90,
-      //   variationId: "258",
-      //   brandVariationId: "1421",
-      // },
       {
         count: 8,
-        genericPrice: 84,
-        brandPrice: 170,
+        genericPrice: 138,
+        brandPrice: 195,
         variationId: "259",
         brandVariationId: "1422",
       },
       {
         count: 12,
-        genericPrice: 126,
-        brandPrice: 250,
+        genericPrice: 204,
+        brandPrice: 285,
         variationId: "1960",
         brandVariationId: "1962",
       },
@@ -140,22 +133,22 @@ const cialisProduct = {
     "quarterly-supply": [
       {
         count: 12,
-        genericPrice: 126,
-        brandPrice: 250,
+        genericPrice: 204,
+        brandPrice: 285,
         variationId: "260",
         brandVariationId: "1423",
       },
       {
         count: 24,
-        genericPrice: 252,
-        brandPrice: 490,
+        genericPrice: 399,
+        brandPrice: 555,
         variationId: "261",
         brandVariationId: "1424",
       },
       {
         count: 36,
-        genericPrice: 378,
-        brandPrice: 730,
+        genericPrice: 595,
+        brandPrice: 829,
         variationId: "1961",
         brandVariationId: "1420",
       },
@@ -177,24 +170,17 @@ const viagraProduct = {
   },
   pillOptions: {
     "monthly-supply": [
-      // {
-      //   count: 4,
-      //   genericPrice: 54,
-      //   brandPrice: 70,
-      //   variationId: "232",
-      //   brandVariationId: "1427",
-      // },
       {
         count: 8,
-        genericPrice: 64,
-        brandPrice: 130,
+        genericPrice: 108,
+        brandPrice: 136,
         variationId: "233",
         brandVariationId: "1428",
       },
       {
         count: 12,
-        genericPrice: 96,
-        brandPrice: 190,
+        genericPrice: 159,
+        brandPrice: 199,
         variationId: "234",
         brandVariationId: "1429",
       },
@@ -202,22 +188,22 @@ const viagraProduct = {
     "quarterly-supply": [
       {
         count: 12,
-        genericPrice: 96,
-        brandPrice: 190,
+        genericPrice: 159,
+        brandPrice: 199,
         variationId: "235",
         brandVariationId: "1430",
       },
       {
         count: 24,
-        genericPrice: 192,
-        brandPrice: 370,
+        genericPrice: 305,
+        brandPrice: 388,
         variationId: "236",
         brandVariationId: "1431",
       },
       {
         count: 36,
-        genericPrice: 288,
-        brandPrice: 550,
+        genericPrice: 449,
+        brandPrice: 577,
         variationId: "237",
         brandVariationId: "1432",
       },
@@ -239,7 +225,6 @@ const chewalisProduct = {
   },
   pillOptions: {
     "monthly-supply": [
-      // { count: 4, genericPrice: 74, brandPrice: 74, variationId: "219473" },
       { count: 8, genericPrice: 138, brandPrice: 138, variationId: "219484" },
       { count: 12, genericPrice: 202, brandPrice: 202, variationId: "278229" },
     ],
@@ -265,23 +250,16 @@ const varietyPackProduct = {
   },
   pillOptions: {
     "monthly-supply": [
-      // {
-      //   count: "2/2",
-      //   genericPrice: 61,
-      //   brandPrice: 85,
-      //   variationId: "3276,3275",
-      //   brandVariationId: "3472,3468",
-      // },
       {
         count: "4/4",
-        genericPrice: 112,
-        brandPrice: 160,
+        genericPrice: 134,
+        brandPrice: 174,
         variationId: "37669,37668",
         brandVariationId: "1421,1427",
       },
       {
         count: "6/6",
-        genericPrice: 163,
+        genericPrice: 183,
         brandPrice: 235,
         variationId: "3440,3287",
         brandVariationId: "3471,3467",
@@ -290,15 +268,15 @@ const varietyPackProduct = {
     "quarterly-supply": [
       {
         count: "6/6",
-        genericPrice: 163,
+        genericPrice: 183,
         brandPrice: 235,
         variationId: "3439,3438",
         brandVariationId: "3470,3466",
       },
       {
         count: "12/12",
-        genericPrice: 316,
-        brandPrice: 440,
+        genericPrice: 363,
+        brandPrice: 484,
         variationId: "37673,37674",
         brandVariationId: "1423,1430",
       },
