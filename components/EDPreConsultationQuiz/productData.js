@@ -14,14 +14,14 @@ export const cialisProduct = {
     "monthly-supply": [
       {
         count: 8,
-        genericPrice: 138,
+        genericPrice: 84,
         brandPrice: 195,
         genericVariationId: "259",
         brandVariationId: "1422",
       },
       {
         count: 12,
-        genericPrice: 204,
+        genericPrice: 126,
         brandPrice: 285,
         genericVariationId: "1960",
         brandVariationId: "1962",
@@ -30,21 +30,21 @@ export const cialisProduct = {
     "quarterly-supply": [
       {
         count: 12,
-        genericPrice: 204,
+        genericPrice: 126,
         brandPrice: 285,
         genericVariationId: "260",
         brandVariationId: "1423",
       },
       {
         count: 24,
-        genericPrice: 399,
+        genericPrice: 252,
         brandPrice: 555,
         genericVariationId: "261",
         brandVariationId: "1424",
       },
       {
         count: 36,
-        genericPrice: 595,
+        genericPrice: 378,
         brandPrice: 829,
         genericVariationId: "1961",
         brandVariationId: "1420",
@@ -69,14 +69,14 @@ export const viagraProduct = {
     "monthly-supply": [
       {
         count: 8,
-        genericPrice: 108,
+        genericPrice: 64,
         brandPrice: 136,
         genericVariationId: "233",
         brandVariationId: "1428",
       },
       {
         count: 12,
-        genericPrice: 159,
+        genericPrice: 96,
         brandPrice: 199,
         genericVariationId: "234",
         brandVariationId: "1429",
@@ -85,21 +85,21 @@ export const viagraProduct = {
     "quarterly-supply": [
       {
         count: 12,
-        genericPrice: 159,
+        genericPrice: 96,
         brandPrice: 199,
         genericVariationId: "235",
         brandVariationId: "1430",
       },
       {
         count: 24,
-        genericPrice: 305,
+        genericPrice: 192,
         brandPrice: 388,
         genericVariationId: "236",
         brandVariationId: "1431",
       },
       {
         count: 36,
-        genericPrice: 449,
+        genericPrice: 288,
         brandPrice: 577,
         genericVariationId: "237",
         brandVariationId: "1432",
