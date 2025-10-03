@@ -92,10 +92,10 @@ export const cialisProduct = {
       "monthly-supply": [
         { count: "2/2", genericPrice: 61, brandPrice: 85 },
         { count: "4/4", genericPrice: 112, brandPrice: 160 },
-        { count: "6/6", genericPrice: 163, brandPrice: 235 },
+        { count: "6/6", genericPrice: 183, brandPrice: 235 },
       ],
       "quarterly-supply": [
-        { count: "6/6", genericPrice: 163, brandPrice: 235 },
+        { count: "6/6", genericPrice: 183, brandPrice: 235 },
         { count: "12/12", genericPrice: 316, brandPrice: 440 },
         { count: "18/18", genericPrice: 469, brandPrice: 685 },
       ],
