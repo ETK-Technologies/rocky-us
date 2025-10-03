@@ -1108,6 +1108,9 @@ const CheckoutPageContent = () => {
             cardExpMonth: "",
             cardExpYear: "",
             cardCVD: "",
+            "origin": "headless",
+            // Add payment_intent_id for headless checkout tracking
+            payment_intent_id: paymentIntent.id,
             // Update payment_data with confirmed payment intent for manual capture
             payment_data: [
               {
@@ -1138,7 +1141,8 @@ const CheckoutPageContent = () => {
                 ...item,
                 value: item.key === "stripe_source" ? "***" : item.value,
               })),
-              paymentIntentId: paymentIntent.id,
+              payment_intent_id: paymentIntent.id,
+              origin: "headless",
             }
           );
 
