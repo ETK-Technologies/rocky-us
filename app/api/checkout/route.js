@@ -100,6 +100,7 @@ export async function POST(req) {
       isFreeOrder, // Flag for zero-amount orders
       paymentMethod, // Custom payment method for free orders
       payment_data, // Stripe payment data array
+      payment_intent_id, // Stripe PaymentIntent ID (optional)
     } = requestData;
 
     const cookieStore = await cookies();
@@ -148,9 +149,11 @@ export async function POST(req) {
             postcode: formatPostcode(postcode, country),
             country: country,
           },
-      payment_method: paymentMethod || "stripe_cc", // Use Stripe credit card payment method
+      payment_method: isFreeOrder ? "coupon_100_percent" : "stripe_cc", // Use Stripe credit card payment method
       payment_data: payment_data || [],
       customer_note: customerNotes || "",
+      origin: "headless", // Indicate this is a headless checkout
+      ...(payment_intent_id && { payment_intent_id }), // Add PaymentIntent ID if provided (only for new card payments)
       meta_data: [
         {
           key: "_meta_discreet",
@@ -186,9 +189,9 @@ export async function POST(req) {
           value: "true",
         },
       ];
-    } else {
-      // For regular payments, check if we have an existing PaymentIntent
-      const existingPaymentIntent = payment_data?.find(
+    } else if (payment_data && payment_data.length > 0) {
+      // For regular payments with payment_data, check if we have an existing PaymentIntent
+      const existingPaymentIntent = payment_data.find(
         (item) => item.key === "wc-stripe-payment-intent"
       );
 
@@ -205,7 +208,27 @@ export async function POST(req) {
         );
         // WooCommerce Stripe plugin will create a new PaymentIntent
       }
+    } else {
+      // Empty payment_data array - create order WITHOUT payment processing
+      console.log(
+        "Creating order WITHOUT payment processing (empty payment_data)"
+      );
+      console.log(
+        "PaymentIntent will be created via WooCommerce AJAX API after order creation"
+      );
+      checkoutData.payment_data = [];
     }
+
+    // Log headless checkout info
+    console.log("WooCommerce Store API checkout:", {
+      origin: checkoutData.origin,
+      payment_intent_id:
+        payment_intent_id || "not provided (free order or saved card)",
+      payment_method: checkoutData.payment_method,
+      payment_data_length: checkoutData.payment_data?.length || 0,
+      is_payment_processing: checkoutData.payment_data?.length > 0,
+      is_free_order: isFreeOrder,
+    });
 
     // Call the WooCommerce Store API checkout endpoint
     const response = await axios.post(

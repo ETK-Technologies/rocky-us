@@ -748,6 +748,8 @@ const CheckoutPageContent = () => {
               // Flag to indicate this is a free order
               isFreeOrder: true,
               paymentMethod: "coupon_100_percent",
+              // Add origin for headless checkout (free orders don't have payment_intent_id)
+              origin: "headless",
             }),
           });
 
@@ -835,7 +837,11 @@ const CheckoutPageContent = () => {
               headers: {
                 "Content-Type": "application/json",
               },
-              body: JSON.stringify(dataToSend),
+              body: JSON.stringify({
+                ...dataToSend,
+                // Add origin for headless checkout (saved card flow doesn't have payment_intent_id yet)
+                origin: "headless",
+              }),
             });
 
             const checkoutResult = await checkoutResponse.json();
@@ -1020,36 +1026,141 @@ const CheckoutPageContent = () => {
         }
       }
 
-      // For new cards, use Payment Element with manual capture
-      if (!selectedCard && clientSecret) {
+      // For new cards, use WooCommerce AJAX API approach (MD file method)
+      if (!selectedCard) {
         try {
           console.log(
-            "Processing new card payment with Payment Element and manual capture"
+            "Processing new card payment using WooCommerce AJAX API approach"
           );
 
-          // Step 1: Confirm the payment with Stripe Payment Element
+          // Step 1: Create order WITHOUT payment processing
+          const orderPayload = {
+            ...dataToSend,
+            // Clear sensitive card details
+            cardNumber: "",
+            cardExpMonth: "",
+            cardExpYear: "",
+            cardCVD: "",
+            origin: "headless",
+            // NO payment_intent_id - we'll create it after order
+            payment_data: [], // Empty array - no payment processing
+            useSavedCard: false,
+          };
+
+          console.log("Creating order WITHOUT payment processing:", {
+            origin: "headless",
+            payment_data: "[] (empty)",
+            note: "Will create PaymentIntent via WooCommerce AJAX API after order creation",
+          });
+
+          const orderResponse = await fetch("/api/checkout", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(orderPayload),
+          });
+
+          const orderData = await orderResponse.json();
+
+          if (orderData.error) {
+            console.error("Order creation failed:", orderData.error);
+            toast.error(orderData.error || "Order creation failed");
+            return;
+          }
+
+          if (!orderData.success) {
+            console.error("Order creation failed:", orderData);
+            toast.error("Failed to create order");
+            return;
+          }
+
+          const order_id = orderData.data.id || orderData.data.order_id;
+          const order_key = orderData.data.order_key || "";
+
+          console.log("✅ Order created successfully:", {
+            order_id,
+            order_key,
+            note: "No PaymentIntent created yet - will create via AJAX API",
+          });
+
+          // Step 2: Process payment via WooCommerce AJAX API
+          console.log("Processing payment via WooCommerce AJAX API...");
+
+          const processPaymentResponse = await fetch(
+            "/api/woocommerce/stripe/process-payment",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                payment_request_type: "apple_pay", // Can be apple_pay, google_pay, payment_request_api
+                shipping_address: formData.shipping_address,
+                billing_address: formData.billing_address,
+              }),
+            }
+          );
+
+          const processPaymentData = await processPaymentResponse.json();
+
+          if (!processPaymentData.success) {
+            console.error(
+              "Payment processing failed:",
+              processPaymentData.error
+            );
+
+            // Provide specific error messages
+            let errorMessage = "Failed to process payment. Please try again.";
+            if (processPaymentData.error) {
+              if (processPaymentData.error.includes("nonce")) {
+                errorMessage =
+                  "Security verification failed. Please refresh the page and try again.";
+              } else if (processPaymentData.error.includes("cart")) {
+                errorMessage =
+                  "Cart is empty or invalid. Please add items and try again.";
+              } else if (processPaymentData.error.includes("payment")) {
+                errorMessage =
+                  "Payment method not available. Please try a different payment method.";
+              }
+            }
+
+            toast.error(errorMessage);
+            return;
+          }
+
+          console.log(
+            "✅ Payment processed via WooCommerce AJAX API:",
+            processPaymentData.data
+          );
+
+          // Extract order details from the response
+          const stripeOrderId = processPaymentData.data.order_id;
+          const stripeOrderKey = processPaymentData.data.order_key;
+          const clientSecret = processPaymentData.data.client_secret;
+          const paymentIntentId = processPaymentData.data.payment_intent_id;
+
+          console.log("✅ Stripe order details:", {
+            stripe_order_id: stripeOrderId,
+            stripe_order_key: stripeOrderKey,
+            payment_intent_id: paymentIntentId,
+            client_secret: clientSecret ? "***" : "none",
+          });
+
+          // Step 3: Confirm payment with Stripe Elements
           const stripe = await stripePromise;
           if (!stripe) {
             toast.error("Stripe is not initialized. Please refresh the page.");
             return;
           }
 
-          // For Payment Element, we need to confirm the payment first
-          console.log("Confirming Payment Element payment...");
-
-          // Use the Elements instance from the Payment component
           if (!stripeElements) {
             toast.error("Payment form not ready. Please try again.");
             return;
           }
 
-          console.log("Using Elements instance for confirmation:", {
-            elementsType: typeof stripeElements,
-            elementsConstructor: stripeElements?.constructor?.name,
-            hasElements: !!stripeElements,
-          });
+          console.log("Confirming payment with Stripe Elements...");
 
-          // Confirm the payment using the Payment Element
           const { error, paymentIntent } = await stripe.confirmPayment({
             elements: stripeElements,
             confirmParams: {
@@ -1088,285 +1199,116 @@ const CheckoutPageContent = () => {
             return;
           }
 
-          console.log("Payment authorized successfully:", {
-            status: paymentIntent.status,
-            id: paymentIntent.id,
-            amount: paymentIntent.amount,
-          });
-
-          console.log("Payment confirmed successfully:", {
-            paymentIntentId: paymentIntent.id,
-            status: paymentIntent.status,
-            amount: paymentIntent.amount,
-          });
-
-          // Step 2: Assemble the Store API checkout payload with confirmed payment intent
-          const payload = {
-            ...dataToSend,
-            // Clear sensitive card details - we now have the confirmed payment
-            cardNumber: "",
-            cardExpMonth: "",
-            cardExpYear: "",
-            cardCVD: "",
-            "origin": "headless",
-            // Add payment_intent_id for headless checkout tracking
+          console.log("✅ Payment confirmed successfully:", {
             payment_intent_id: paymentIntent.id,
-            // Update payment_data with confirmed payment intent for manual capture
-            payment_data: [
-              {
-                key: "wc-stripe-payment-intent",
-                value: paymentIntent.id, // Use the confirmed payment intent ID
-              },
-              {
-                key: "wc-stripe-client-secret",
-                value: clientSecret, // Pass the client secret
-              },
-              {
-                key: "wc-stripe-new-payment-method",
-                value: "true",
-              },
-              {
-                key: "wc-stripe-capture-method",
-                value: "manual",
-              },
-            ],
-            useSavedCard: false,
-          };
+            status: paymentIntent.status,
+            amount: paymentIntent.amount,
+          });
 
-          console.log(
-            "Checkout payload with confirmed Stripe payment intent:",
+          // Step 4: Update order status via WooCommerce AJAX API
+          console.log("Updating order status via WooCommerce AJAX API...");
+
+          const updateResponse = await fetch(
+            "/api/woocommerce/stripe/update-order-status",
             {
-              ...payload,
-              payment_data: payload.payment_data.map((item) => ({
-                ...item,
-                value: item.key === "stripe_source" ? "***" : item.value,
-              })),
-              payment_intent_id: paymentIntent.id,
-              origin: "headless",
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                order_id: stripeOrderId || order_id,
+                payment_intent_id: paymentIntent.id,
+                payment_status: paymentIntent.status,
+                payment_method_id: paymentIntent.payment_method,
+                customer_id: paymentIntent.customer,
+              }),
             }
           );
 
-          // Step 3: POST to /wc/store/v1/checkout (via our API)
-          const checkoutResponse = await fetch("/api/checkout", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
-          });
+          const updateData = await updateResponse.json();
 
-          const checkoutData = await checkoutResponse.json();
+          if (!updateData.success) {
+            console.error("Order status update failed:", updateData.error);
 
-          // Step 4: Handle the response
-          if (checkoutData.error) {
-            console.error(
-              "Checkout with payment handle failed:",
-              checkoutData.error
-            );
-            toast.error(checkoutData.error || "Checkout failed");
-            return;
-          }
+            // Provide more specific error messages for order status update
+            let errorMessage =
+              "Payment succeeded but failed to update order. Please contact support.";
+            if (updateData.error) {
+              if (updateData.error.includes("nonce")) {
+                errorMessage =
+                  "Payment succeeded but security verification failed. Please contact support.";
+              } else if (updateData.error.includes("order")) {
+                errorMessage =
+                  "Payment succeeded but order update failed. Please contact support.";
+              } else if (updateData.error.includes("payment_intent")) {
+                errorMessage =
+                  "Payment succeeded but payment verification failed. Please contact support.";
+              }
+            }
 
-          if (checkoutData.success) {
-            const order_id = checkoutData.data.id || checkoutData.data.order_id;
-            const order_key = checkoutData.data.order_key || "";
+            toast.error(errorMessage);
 
-            logOrder("🎉 ORDER CREATED SUCCESS!", {
+            // Log the successful payment even if order update failed
+            logOrder("⚠️ PAYMENT SUCCESS BUT ORDER UPDATE FAILED:", {
               order_id,
-              order_key,
-              payment_result: checkoutData.data.payment_result,
-              data_sent: checkoutData.data.data_sent,
-              all_data: checkoutData.data.order_data,
+              payment_intent_id: paymentIntent.id,
+              payment_status: paymentIntent.status,
+              update_error: updateData.error,
             });
 
-            // Check if we need to confirm the Stripe payment
-            const paymentResult = checkoutData.data.payment_result;
-            let paymentConfirmed = false;
-            if (
-              paymentResult?.redirect_url &&
-              paymentResult.redirect_url.includes("#response=")
-            ) {
-              try {
-                // Extract and decode the Stripe response data
-                const encodedData =
-                  paymentResult.redirect_url.split("#response=")[1];
-
-                console.log("Raw encoded data:", encodedData);
-
-                // Clean up the encoded data - remove any URL encoding
-                const cleanEncodedData = decodeURIComponent(encodedData);
-                console.log("Cleaned encoded data:", cleanEncodedData);
-
-                let decodedData;
-                try {
-                  decodedData = JSON.parse(atob(cleanEncodedData));
-                } catch (base64Error) {
-                  console.error("Failed to decode base64 data:", base64Error);
-                  console.log("Problematic data:", cleanEncodedData);
-                  throw new Error("Invalid response data format");
-                }
-
-                console.log("Stripe payment confirmation data:", decodedData);
-
-                // Get the original PaymentIntent ID from the payment_data we sent
-                const originalPaymentIntentId =
-                  checkoutData.data.data_sent?.payment_data?.find(
-                    (item) => item.key === "stripe_payment_intent_id"
-                  )?.value;
-
-                console.log(
-                  "Original PaymentIntent ID:",
-                  originalPaymentIntentId
-                );
-                console.log(
-                  "WooCommerce PaymentIntent ID:",
-                  decodedData.client_secret?.split("_secret_")[0]
-                );
-
-                if (
-                  decodedData.client_secret &&
-                  decodedData.status === "requires_payment_method"
-                ) {
-                  logPayment("Payment requires confirmation with Stripe");
-
-                  // For Payment Element, the payment should already be confirmed
-                  // We just need to check the status
-                  console.log(
-                    "Payment Element flow - payment already confirmed, checking status"
-                  );
-
-                  // Since we already confirmed the payment above, we need to update the order status
-                  console.log(
-                    "Updating order status after payment confirmation..."
-                  );
-
-                  // Use the confirmed payment intent ID from the payment confirmation above
-                  const confirmedPaymentIntentId = paymentIntent.id;
-                  console.log(
-                    "Using confirmed Payment Intent ID:",
-                    confirmedPaymentIntentId
-                  );
-
-                  try {
-                    const confirmResponse = await fetch(
-                      `/api/orders/${order_id}/confirm-payment`,
-                      {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          payment_intent_id: confirmedPaymentIntentId,
-                          order_key: order_key,
-                        }),
-                      }
-                    );
-
-                    if (!confirmResponse.ok) {
-                      throw new Error(
-                        `Order update failed: ${confirmResponse.status}`
-                      );
-                    }
-
-                    const confirmResult = await confirmResponse.json();
-
-                    if (!confirmResult.success) {
-                      throw new Error(
-                        `Order update failed: ${confirmResult.message}`
-                      );
-                    }
-
-                    console.log(
-                      "✅ Order status updated to on-hold successfully"
-                    );
-                    logOrder("✅ Payment note added to order");
-                    logPayment(
-                      "✅ Payment Intent ID:",
-                      confirmedPaymentIntentId
-                    );
-
-                    paymentConfirmed = true;
-                  } catch (confirmError) {
-                    console.error("❌ Order update failed:", confirmError);
-                    toast.error(
-                      "Order update failed. Payment succeeded but order status could not be updated. Please contact support."
-                    );
-
-                    // IMPORTANT: Don't redirect if order update fails
-                    // Payment succeeded but order wasn't updated properly
-                    return;
-                  }
-                } else {
-                  // No payment confirmation needed (shouldn't happen with Stripe)
-                  toast.success(
-                    "Order created and payment processed successfully!"
-                  );
-                  paymentConfirmed = true;
-                }
-              } catch (error) {
-                console.error(
-                  "Error processing Stripe payment confirmation:",
-                  error
-                );
-                toast.error("Payment confirmation failed. Please try again.");
-                return; // Don't continue with redirect
-              }
-            } else {
-              // No redirect_url means payment was processed differently
-              toast.success(
-                "Order created and payment processed successfully!"
-              );
-              paymentConfirmed = true;
-            }
-
-            // Only proceed with cart emptying and redirect if payment was confirmed
-            if (!paymentConfirmed) {
-              logPayment("Payment not confirmed, staying on checkout page");
-              return;
-            }
-
-            // Empty the cart after successful payment
-            try {
-              const emptyCartResponse = await fetch("/api/cart/empty", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-              });
-
-              if (emptyCartResponse.ok) {
-                console.log(
-                  "Cart emptied successfully after payment handle checkout"
-                );
-                // Update local cart state to reflect empty cart
-                setCartItems({
-                  items: [],
-                  total_items: 0,
-                  total_price: "0.00",
-                  needs_shipping: false,
-                  coupons: [],
-                  shipping_rates: [],
-                });
-              } else {
-                console.error(
-                  "Failed to empty cart after payment handle checkout"
-                );
-              }
-            } catch (cartError) {
-              console.error(
-                "Error emptying cart after payment handle checkout:",
-                cartError
-              );
-              // Don't fail the redirect if cart emptying fails
-            }
-
-            // Final success message
-            toast.success("Payment successful! Your order has been placed.");
-
-            // Redirect to order received page
-            router.push(
-              `/checkout/order-received/${order_id}?key=${order_key}${buildFlowQueryString()}`
-            );
             return;
           }
+
+          console.log("✅ Order status updated successfully:", {
+            order_id,
+            payment_intent_id: paymentIntent.id,
+            payment_status: paymentIntent.status,
+            order_status: updateData.data?.status,
+          });
+
+          logOrder("🎉 PAYMENT SUCCESS WITH AJAX API!", {
+            order_id,
+            payment_intent_id: paymentIntent.id,
+            payment_status: paymentIntent.status,
+            method: "WooCommerce AJAX API",
+          });
+
+          // Step 5: Empty the cart after successful payment
+          try {
+            const emptyCartResponse = await fetch("/api/cart/empty", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            });
+
+            if (emptyCartResponse.ok) {
+              console.log("Cart emptied successfully after payment");
+              setCartItems({
+                items: [],
+                total_items: 0,
+                total_price: "0.00",
+                needs_shipping: false,
+                coupons: [],
+                shipping_rates: [],
+              });
+            } else {
+              console.error("Failed to empty cart after payment");
+            }
+          } catch (cartError) {
+            console.error("Error emptying cart after payment:", cartError);
+          }
+
+          // Final success message
+          toast.success("Payment successful! Your order has been placed.");
+
+          // Redirect to order received page
+          router.push(
+            `/checkout/order-received/${stripeOrderId || order_id}?key=${
+              stripeOrderKey || order_key
+            }${buildFlowQueryString()}`
+          );
+          return;
         } catch (error) {
           console.error("Error processing payment handle checkout:", error);
           toast.error("Payment processing failed. Please try again.");
@@ -1377,6 +1319,8 @@ const CheckoutPageContent = () => {
         // Update payment_data to use proper WooCommerce Stripe plugin format
         const fallbackData = {
           ...dataToSend,
+          // Add origin for headless checkout (fallback flow doesn't have payment_intent_id)
+          origin: "headless",
           payment_data: [
             {
               key: "wc-stripe-new-payment-method",
