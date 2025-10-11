@@ -35,8 +35,25 @@ import AgeRestrictionPopup from "@/components/Popups/AgeRestrictionPopup";
 import { getAwinFromUrlOrStorage } from "@/utils/awin";
 import Payment from "./Payment";
 import Trustpilot from "@/components/Navbar/Trustpilot";
+import { Elements, useStripe } from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
+
+// Load Stripe outside component to avoid recreating on every render
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+);
+
+// Wrapper component to provide Stripe context
+const CheckoutPageWrapper = () => {
+  return (
+    <Elements stripe={stripePromise}>
+      <CheckoutPageContent />
+    </Elements>
+  );
+};
 
 const CheckoutPageContent = () => {
+  const stripe = useStripe(); // Get the Stripe instance from context
   const router = useRouter();
   const searchParams = useSearchParams();
   const isEdFlow = searchParams.get("ed-flow") === "1";
@@ -70,6 +87,9 @@ const CheckoutPageContent = () => {
   const [savedCards, setSavedCards] = useState([]);
   const [selectedCard, setSelectedCard] = useState(null);
   const [isLoadingSavedCards, setIsLoadingSavedCards] = useState(false);
+
+  // Stripe Elements state (for embedded payment form)
+  const [stripeElements, setStripeElements] = useState(null);
 
   // Initialize checkout validation hook
   const {
@@ -131,6 +151,15 @@ const CheckoutPageContent = () => {
 
   // Validate payment method whenever payment state changes
   useEffect(() => {
+    // For NEW CARD payments with Stripe Elements, always consider valid
+    // (Stripe Elements handles validation internally on submit)
+    if (!selectedCard) {
+      setIsPaymentValid(true);
+      setPaymentValidationMessage("");
+      return;
+    }
+
+    // For SAVED CARD payments, validate normally
     const paymentState = {
       selectedCard,
       cardNumber,
@@ -789,13 +818,15 @@ const CheckoutPageContent = () => {
       setSubmitting(true);
 
       // Validate form data before processing
+      // For NEW CARD payments with Stripe Elements, skip card validation
+      // (Stripe Elements handles card validation internally)
       const validationResult = validateForm({
         billing_address: formData.billing_address,
         shipping_address: formData.shipping_address,
-        cardNumber: cardNumber,
-        cardExpMonth: expiry?.split("/")[0],
-        cardExpYear: expiry?.split("/")[1],
-        cardCVD: cvc,
+        cardNumber: selectedCard ? cardNumber : "dummy", // Skip validation for Stripe Elements
+        cardExpMonth: selectedCard ? expiry?.split("/")[0] : "12", // Skip validation for Stripe Elements
+        cardExpYear: selectedCard ? expiry?.split("/")[1] : "30", // Skip validation for Stripe Elements
+        cardCVD: selectedCard ? cvc : "123", // Skip validation for Stripe Elements
         useSavedCard: !!selectedCard,
       });
 
@@ -1650,6 +1681,7 @@ const CheckoutPageContent = () => {
                   ageValidationFailed={ageValidationFailed}
                   isPaymentValid={isPaymentValid}
                   paymentValidationMessage={paymentValidationMessage}
+                  onStripeReady={setStripeElements}
                 />
               }
             />
@@ -1681,6 +1713,7 @@ const CheckoutPageContent = () => {
             ageValidationFailed={ageValidationFailed}
             isPaymentValid={isPaymentValid}
             paymentValidationMessage={paymentValidationMessage}
+            onStripeReady={setStripeElements}
           />
         </div>
       </div>
@@ -1705,4 +1738,4 @@ const CheckoutPageContent = () => {
   );
 };
 
-export default CheckoutPageContent;
+export default CheckoutPageWrapper;

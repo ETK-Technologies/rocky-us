@@ -6,6 +6,8 @@ import {
   editSavedPaymentMethod,
 } from "@/lib/api/savedCardPayment";
 import { toast } from "react-toastify";
+import { useElements, CardElement } from "@stripe/react-stripe-js";
+import StripeCardInput from "./StripeCardInput";
 
 const Payment = ({
   setFormData,
@@ -22,12 +24,21 @@ const Payment = ({
   selectedCard,
   setSelectedCard,
   isLoadingSavedCards = false,
+  onStripeReady, // NEW: Callback for Stripe Elements
 }) => {
+  const elements = useElements(); // NEW: Get Stripe Elements instance
   const [paymentMethod, setPaymentMethod] = useState(
     selectedCard ? "saved" : "new"
   );
   const [saveCard, setSaveCard] = useState(true); // always save card
   const [showDropdown, setShowDropdown] = useState(null);
+
+  // NEW: Call onStripeReady when elements is ready
+  useEffect(() => {
+    if (elements && onStripeReady) {
+      onStripeReady(elements);
+    }
+  }, [elements, onStripeReady]);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingCard, setEditingCard] = useState(null);
   const [editExpiry, setEditExpiry] = useState("");
@@ -396,51 +407,29 @@ const Payment = ({
 
         {!selectedCard && (
           <>
+            {/* Stripe Elements Card Input */}
             <div className="mt-2">
-              <input
-                type="tel"
-                value={cardNumber ?? ""}
-                onChange={(e) =>
-                  setCardNumber(formatCardNumber(e.target.value))
-                }
-                placeholder="1234 1234 1234 1234"
-                className="p-3 border w-full rounded-t-lg text-[#ADADAD] focus:outline-none"
-                autoComplete="cc-number"
-                maxLength={19}
-                name="wc-bambora-credit-card-account-number"
-              />
+              <label className="block text-sm font-medium text-[#251F20] mb-2">
+                Card Details
+              </label>
+              <StripeCardInput />
+              <p className="mt-2 text-xs text-gray-600 flex items-center gap-1">
+                <svg
+                  className="w-4 h-4 text-green-600"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                Secure payment powered by Stripe
+              </p>
             </div>
 
-            <div className="flex">
-              <input
-                type="tel"
-                value={expiry ?? ""}
-                onChange={(e) => setExpiry(formatExpiryDate(e.target.value))}
-                placeholder="MM/YY"
-                className="p-3 border w-full rounded-bl-lg text-[#ADADAD] focus:outline-none"
-                autoComplete="cc-exp"
-                maxLength={5}
-              />
-              <input
-                type="tel"
-                value={cvc ?? ""}
-                onChange={(e) =>
-                  setCvc(e.target.value.replace(/\D/g, "").slice(0, 4))
-                }
-                placeholder="CVC"
-                className="p-3 border w-full rounded-br-lg text-[#ADADAD] focus:outline-none"
-                autoComplete="cc-csc"
-                maxLength={4}
-              />
-            </div>
-
-            <p className="mt-2 text-xs text-gray-600">
-              {cardNumber.length > 0
-                ? `Detected: ${getCardType(cardNumber.replace(/\s/g, ""))}`
-                : ""}
-            </p>
-
-            <div className="flex items-center mt-2 hidden">
+            <div className="flex items-center mt-4 hidden">
               <input
                 id="save-card"
                 type="checkbox"

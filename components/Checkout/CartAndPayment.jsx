@@ -28,6 +28,7 @@ const CartAndPayment = ({
   ageValidationFailed,
   isPaymentValid,
   paymentValidationMessage,
+  onStripeReady, // NEW: Callback for Stripe Elements
 }) => {
   return (
     <div className="bg-[#f7f7f7] h-full justify-self-start w-full px-4 mt-8 lg:mt-0 lg:pl-[80px] lg:pt-[50px] pb-10 overflow-x-hidden">
@@ -61,6 +62,7 @@ const CartAndPayment = ({
         selectedCard={selectedCard}
         setSelectedCard={setSelectedCard}
         isLoadingSavedCards={isLoadingSavedCards}
+        onStripeReady={onStripeReady}
       />
       <button
         onClick={handleSubmit}

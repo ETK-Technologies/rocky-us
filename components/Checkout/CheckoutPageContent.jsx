@@ -34,8 +34,25 @@ import QuebecRestrictionPopup from "../Popups/QuebecRestrictionPopup";
 import AgeRestrictionPopup from "../Popups/AgeRestrictionPopup";
 import { getAwinFromUrlOrStorage } from "@/utils/awin";
 import StripeElementsPayment from "./StripeElementsPayment";
+import { Elements, useStripe } from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
+
+// Load Stripe outside component to avoid recreating on every render
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+);
+
+// Wrapper component to provide Stripe context
+const CheckoutPageWrapper = () => {
+  return (
+    <Elements stripe={stripePromise}>
+      <CheckoutPageContent />
+    </Elements>
+  );
+};
 
 const CheckoutPageContent = () => {
+  const stripe = useStripe(); // Get the Stripe instance from context
   const router = useRouter();
   const searchParams = useSearchParams();
   const isEdFlow = searchParams.get("ed-flow") === "1";
@@ -70,9 +87,9 @@ const CheckoutPageContent = () => {
   const [selectedCard, setSelectedCard] = useState(null);
   const [isLoadingSavedCards, setIsLoadingSavedCards] = useState(false);
 
-  // Stripe Elements payment modal state
-  const [showStripePayment, setShowStripePayment] = useState(false);
-  const [pendingOrderData, setPendingOrderData] = useState(null);
+  // Stripe Elements state (for embedded payment form)
+  const [stripeElements, setStripeElements] = useState(null);
+  const [stripeReady, setStripeReady] = useState(false);
 
   // Initialize checkout validation hook
   const {
@@ -134,6 +151,15 @@ const CheckoutPageContent = () => {
 
   // Validate payment method whenever payment state changes
   useEffect(() => {
+    // For NEW CARD payments with Stripe Elements, always consider valid
+    // (Stripe Elements handles validation internally on submit)
+    if (!selectedCard) {
+      setIsPaymentValid(true);
+      setPaymentValidationMessage("");
+      return;
+    }
+
+    // For SAVED CARD payments, validate normally
     const paymentState = {
       selectedCard,
       cardNumber,
@@ -792,13 +818,15 @@ const CheckoutPageContent = () => {
       setSubmitting(true);
 
       // Validate form data before processing
+      // For NEW CARD payments with Stripe Elements, skip card validation
+      // (Stripe Elements handles card validation internally)
       const validationResult = validateForm({
         billing_address: formData.billing_address,
         shipping_address: formData.shipping_address,
-        cardNumber: cardNumber,
-        cardExpMonth: expiry?.split("/")[0],
-        cardExpYear: expiry?.split("/")[1],
-        cardCVD: cvc,
+        cardNumber: selectedCard ? cardNumber : "dummy", // Skip validation for Stripe Elements
+        cardExpMonth: selectedCard ? expiry?.split("/")[0] : "12", // Skip validation for Stripe Elements
+        cardExpYear: selectedCard ? expiry?.split("/")[1] : "30", // Skip validation for Stripe Elements
+        cardCVD: selectedCard ? cvc : "123", // Skip validation for Stripe Elements
         useSavedCard: !!selectedCard,
       });
 
@@ -1349,12 +1377,53 @@ const CheckoutPageContent = () => {
         }
       }
 
-      // For NEW CARD payments with Stripe Elements
+      // For NEW CARD payments with Stripe Elements (embedded in form)
       if (!selectedCard && dataToSend.useStripe) {
         try {
-          logger.log("Creating pending order for Stripe Elements payment...");
+          logger.log("Processing Stripe Elements payment...");
 
-          // Create pending order first
+          // Validate Stripe Elements is ready
+          if (!stripeElements) {
+            throw new Error("Stripe payment form not ready. Please try again.");
+          }
+
+          // Validate Stripe instance is available
+          if (!stripe) {
+            throw new Error(
+              "Stripe is not loaded. Please refresh and try again."
+            );
+          }
+
+          // Step 1: Create PaymentMethod from Stripe Elements
+          logger.log("Creating PaymentMethod from Stripe Elements...");
+
+          const { error: pmError, paymentMethod } =
+            await stripe.createPaymentMethod({
+              type: "card",
+              card: stripeElements.getElement("card"),
+              billing_details: {
+                name: `${dataToSend.firstName} ${dataToSend.lastName}`,
+                email: dataToSend.email,
+                phone: dataToSend.phone,
+                address: {
+                  line1: dataToSend.addressOne,
+                  line2: dataToSend.addressTwo || "",
+                  city: dataToSend.city,
+                  state: dataToSend.state,
+                  postal_code: dataToSend.postcode,
+                  country: dataToSend.country,
+                },
+              },
+            });
+
+          if (pmError) {
+            throw new Error(pmError.message);
+          }
+
+          logger.log("✅ PaymentMethod created:", paymentMethod.id);
+
+          // Step 2: Create pending order
+          logger.log("Creating pending order...");
           const orderResponse = await fetch("/api/create-pending-order", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -1367,43 +1436,87 @@ const CheckoutPageContent = () => {
             throw new Error(orderResult.error || "Failed to create order");
           }
 
-          logger.log("✅ Pending order created:", orderResult.data.id);
-          logger.log("Order total:", orderResult.data.total);
+          const orderId = orderResult.data.id;
+          const orderKey = orderResult.data.order_key;
+          logger.log("✅ Pending order created:", orderId);
 
-          // Parse the total amount
+          // Parse amount
           let amountInCents = 0;
           const orderTotal = orderResult.data.total;
 
           if (typeof orderTotal === "string") {
-            // Remove currency symbols and convert to number
             const numericTotal = parseFloat(orderTotal.replace(/[^0-9.]/g, ""));
             amountInCents = Math.round(numericTotal * 100);
           } else if (typeof orderTotal === "number") {
             amountInCents = Math.round(orderTotal * 100);
           }
 
-          logger.log("Amount in cents:", amountInCents);
-
-          // Validate amount
-          if (!amountInCents || amountInCents <= 0 || isNaN(amountInCents)) {
-            logger.error("Invalid amount:", amountInCents);
-            toast.error("Failed to calculate order total. Please try again.");
-            setSubmitting(false);
-            return;
+          if (!amountInCents || amountInCents <= 0) {
+            throw new Error("Invalid order amount");
           }
 
-          // Show Stripe Elements payment form
-          setPendingOrderData({
-            orderId: orderResult.data.id,
-            orderKey: orderResult.data.order_key,
-            amount: amountInCents,
+          // Step 3: Process payment
+          logger.log("Processing payment...");
+          const paymentResponse = await fetch("/api/process-stripe-payment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              orderId,
+              paymentMethodId: paymentMethod.id,
+              amount: amountInCents,
+            }),
           });
-          setShowStripePayment(true);
-          setSubmitting(false);
+
+          const paymentResult = await paymentResponse.json();
+
+          if (!paymentResult.success) {
+            throw new Error(paymentResult.error || "Payment failed");
+          }
+
+          logger.log("✅ Payment authorized:", paymentResult.paymentIntentId);
+
+          // Step 4: Update order status
+          logger.log("Updating order status...");
+          const updateResponse = await fetch("/api/update-order-status", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              orderId,
+              status: "on-hold",
+              paymentIntentId: paymentResult.paymentIntentId,
+              chargeId: paymentResult.chargeId,
+              paymentMethod: "stripe_cc",
+              cardBrand: paymentMethod.card?.brand,
+              cardLast4: paymentMethod.card?.last4,
+            }),
+          });
+
+          const updateResult = await updateResponse.json();
+
+          if (!updateResult.success) {
+            throw new Error("Failed to update order status");
+          }
+
+          logger.log("✅ Order updated successfully");
+          toast.success("Payment successful!");
+
+          // Empty cart
+          try {
+            const { emptyCart } = await import("@/lib/cart/cartService");
+            await emptyCart();
+            logger.log("Cart emptied successfully");
+          } catch (error) {
+            logger.error("Error emptying cart:", error);
+          }
+
+          // Redirect to success page
+          router.push(
+            `/checkout/order-received/${orderId}?key=${orderKey}${buildFlowQueryString()}`
+          );
           return;
         } catch (error) {
-          logger.error("Failed to create pending order:", error);
-          toast.error(error.message || "Failed to create order");
+          logger.error("❌ Stripe payment error:", error);
+          toast.error(error.message || "Payment failed. Please try again.");
           setSubmitting(false);
           return;
         }
@@ -1501,38 +1614,6 @@ const CheckoutPageContent = () => {
     }
   };
 
-  // Stripe payment success handler
-  const handleStripePaymentSuccess = (order) => {
-    logger.log("✅ Stripe payment successful, redirecting...");
-
-    // Empty cart
-    (async () => {
-      try {
-        const { emptyCart } = await import("@/lib/cart/cartService");
-        await emptyCart();
-        logger.log("Cart emptied successfully");
-      } catch (error) {
-        logger.error("Error emptying cart:", error);
-      }
-    })();
-
-    // Redirect to success page
-    router.push(
-      `/checkout/order-received/${order.id}?key=${
-        order.order_key
-      }${buildFlowQueryString()}`
-    );
-  };
-
-  // Stripe payment error handler
-  const handleStripePaymentError = (error) => {
-    logger.error("❌ Stripe payment error:", error);
-    toast.error(error.message || "Payment failed. Please try again.");
-    setShowStripePayment(false);
-    setPendingOrderData(null);
-    setSubmitting(false);
-  };
-
   // Show loading indicator if cart is not yet loaded or URL parameters are being processed
   if (!cartItems || isProcessingUrlParams) {
     return <CheckoutSkeleton />;
@@ -1580,6 +1661,7 @@ const CheckoutPageContent = () => {
           ageValidationFailed={ageValidationFailed}
           isPaymentValid={isPaymentValid}
           paymentValidationMessage={paymentValidationMessage}
+          onStripeReady={setStripeElements}
         />
       </div>
 
@@ -1599,89 +1681,8 @@ const CheckoutPageContent = () => {
         }}
         message="Sorry, you must be at least 19 years old to purchase this product."
       />
-
-      {/* Stripe Elements Payment Modal */}
-      {showStripePayment && pendingOrderData && (
-        <div className="stripe-payment-modal">
-          <div
-            className="modal-overlay"
-            onClick={() => {
-              if (window.confirm("Are you sure you want to cancel payment?")) {
-                setShowStripePayment(false);
-                setPendingOrderData(null);
-                setSubmitting(false);
-              }
-            }}
-          />
-          <div className="modal-content">
-            <h2>Complete Your Payment</h2>
-            <p className="order-info">
-              Order #{pendingOrderData.orderId} - $
-              {(pendingOrderData.amount / 100).toFixed(2)}
-            </p>
-            <StripeElementsPayment
-              orderId={pendingOrderData.orderId}
-              amount={pendingOrderData.amount}
-              onSuccess={handleStripePaymentSuccess}
-              onError={handleStripePaymentError}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Stripe Payment Modal Styles */}
-      <style jsx>{`
-        .stripe-payment-modal {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          z-index: 9999;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .modal-overlay {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0, 0, 0, 0.7);
-          backdrop-filter: blur(4px);
-          cursor: pointer;
-        }
-
-        .modal-content {
-          position: relative;
-          background: white;
-          padding: 40px;
-          border-radius: 12px;
-          max-width: 600px;
-          width: 90%;
-          max-height: 90vh;
-          overflow-y: auto;
-          z-index: 10000;
-          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-        }
-
-        .modal-content h2 {
-          margin: 0 0 10px;
-          font-size: 24px;
-          font-weight: 600;
-          color: #333;
-        }
-
-        .modal-content .order-info {
-          margin: 0 0 30px;
-          color: #666;
-          font-size: 16px;
-        }
-      `}</style>
     </>
   );
 };
 
-export default CheckoutPageContent;
+export default CheckoutPageWrapper;
