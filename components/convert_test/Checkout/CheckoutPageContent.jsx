@@ -248,7 +248,7 @@ const CheckoutPageContent = () => {
           city: "",
           state: newProvince,
           postcode: "",
-          country: "CA",
+          country: "US",
         };
       } else {
         // Keep existing address data when province changes due to address selection
@@ -267,7 +267,7 @@ const CheckoutPageContent = () => {
           city: formData.shipping_address.city || "",
           state: newProvince,
           postcode: formData.shipping_address.postcode || "",
-          country: "CA",
+          country: "US",
         };
       }
 
@@ -281,7 +281,7 @@ const CheckoutPageContent = () => {
                 address_2: "",
                 city: "",
                 postcode: "",
-                country: "CA",
+                country: "US",
               }
             : {}),
           state:
@@ -304,7 +304,7 @@ const CheckoutPageContent = () => {
                   address_2: "",
                   city: "",
                   postcode: "",
-                  country: "CA",
+                  country: "US",
                 }
               : {}),
             state:
@@ -896,7 +896,7 @@ const CheckoutPageContent = () => {
             city: formData.billing_address.city || "",
             state: formData.billing_address.state || "",
             postcode: formData.billing_address.postcode || "",
-            country: formData.billing_address.country || "CA",
+            country: formData.billing_address.country || "US",
             email: formData.billing_address.email || "",
             phone: formData.billing_address.phone || "",
           },
@@ -910,7 +910,7 @@ const CheckoutPageContent = () => {
                 city: formData.shipping_address.city || "",
                 state: formData.shipping_address.state || "",
                 postcode: formData.shipping_address.postcode || "",
-                country: formData.shipping_address.country || "CA",
+                country: formData.shipping_address.country || "US",
                 phone: formData.shipping_address.phone || "",
               }
             : {
@@ -922,7 +922,7 @@ const CheckoutPageContent = () => {
                 city: formData.billing_address.city || "",
                 state: formData.billing_address.state || "",
                 postcode: formData.billing_address.postcode || "",
-                country: formData.billing_address.country || "CA",
+                country: formData.billing_address.country || "US",
                 phone: formData.billing_address.phone || "",
               },
         };
@@ -1097,6 +1097,9 @@ const CheckoutPageContent = () => {
         savedCardId: selectedCard ? selectedCard.id : null,
         useSavedCard: !!selectedCard,
 
+        // NEW: Use Stripe for new card payments
+        useStripe: !selectedCard, // Use Stripe only when NOT using a saved card
+
         // Add total amount for saved card payments
         totalAmount:
           cartItems.totals && cartItems.totals.total_price
@@ -1112,6 +1115,12 @@ const CheckoutPageContent = () => {
         awin_awc: awinAwc || "",
         awin_channel: awinChannel || "other",
       };
+
+      // ========================================
+      // NOTE: Stripe tokenization happens on BACKEND
+      // Frontend Stripe.js doesn't allow raw card data even with API setting enabled
+      // Backend Stripe SDK respects the "Raw card data APIs" setting
+      // ========================================
 
       // Enhanced client-side logging
       logger.log("Client-side checkout data:", {
@@ -1216,7 +1225,7 @@ const CheckoutPageContent = () => {
                   city: formData.billing_address.city,
                   state: formData.billing_address.state,
                   postcode: formData.billing_address.postcode,
-                  country: formData.billing_address.country || "CA",
+                  country: formData.billing_address.country || "US",
                   email: formData.billing_address.email,
                   phone: formData.billing_address.phone,
                 },
@@ -1330,7 +1339,159 @@ const CheckoutPageContent = () => {
         }
       }
 
-      // Continue with regular checkout for new cards
+      // ========================================
+      // NEW: 3-Step payment flow for new cards with Stripe
+      // ========================================
+      if (!selectedCard && dataToSend.useStripe && cardNumber) {
+        logger.log("=== STARTING 3-STEP STRIPE PAYMENT FLOW ===");
+
+        try {
+          // STEP 1: Create pending order
+          logger.log("STEP 1: Creating pending order...");
+          const orderResponse = await fetch("/api/create-pending-order", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(dataToSend),
+          });
+
+          const orderResult = await orderResponse.json();
+          logger.log("Order creation result:", orderResult);
+
+          if (!orderResult.success || !orderResult.data?.id) {
+            throw new Error(orderResult.error || "Failed to create order");
+          }
+
+          const orderId = orderResult.data.id;
+          const orderKey = orderResult.data.order_key || "";
+          logger.log(`✓ Order created successfully: ${orderId}`);
+
+          // STEP 2: Process Stripe payment (backend creates Source from card data)
+          logger.log("STEP 2: Processing Stripe payment...");
+          const paymentResponse = await fetch("/api/process-stripe-payment", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              orderId: orderId,
+              // Send card data to backend (will create Source server-side)
+              cardNumber: cardNumber.replace(/\s/g, ""),
+              cardExpMonth: expiry.slice(0, 2),
+              cardExpYear: "20" + expiry.slice(3),
+              cardCvc: cvc,
+              amount: Math.round(parseFloat(dataToSend.totalAmount) * 100), // Convert to cents
+              currency: "usd",
+              description: `Order #${orderId}`,
+              customerEmail: dataToSend.email,
+              customerName: `${dataToSend.firstName} ${dataToSend.lastName}`,
+              billingDetails: {
+                name: `${dataToSend.firstName} ${dataToSend.lastName}`,
+                email: dataToSend.email,
+                phone: dataToSend.phone,
+                address: {
+                  line1: dataToSend.addressOne,
+                  line2: dataToSend.addressTwo || "",
+                  city: dataToSend.city,
+                  state: dataToSend.state,
+                  postal_code: dataToSend.postcode,
+                  country: dataToSend.country,
+                },
+              },
+              metadata: {
+                order_key: orderKey,
+                customer_id: formData?.customer_id || "guest",
+              },
+            }),
+          });
+
+          const paymentResult = await paymentResponse.json();
+          logger.log("Payment processing result:", paymentResult);
+
+          if (!paymentResult.success) {
+            // Payment failed - update order to failed status
+            logger.error("Payment failed, updating order status...");
+
+            await fetch("/api/update-order-status", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                orderId: orderId,
+                status: "failed",
+                errorMessage:
+                  paymentResult.error || "Payment authorization failed",
+              }),
+            });
+
+            throw new Error(paymentResult.error || "Payment failed");
+          }
+
+          logger.log(`✓ Payment authorized: ${paymentResult.chargeId}`);
+
+          // STEP 3: Update order status to on-hold (awaiting manual capture)
+          logger.log("STEP 3: Updating order status...");
+          const statusResponse = await fetch("/api/update-order-status", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              orderId: orderId,
+              status: "on-hold", // Authorization only, awaiting manual capture
+              paymentIntentId: paymentResult.chargeId, // Use charge ID
+              chargeId: paymentResult.chargeId,
+              transactionId: paymentResult.chargeId,
+              paymentMethod: "stripe",
+              cardBrand: paymentResult.cardBrand || dataToSend.stripeCardBrand,
+              cardLast4: paymentResult.cardLast4 || dataToSend.stripeCardLast4,
+            }),
+          });
+
+          const statusResult = await statusResponse.json();
+          logger.log("Order status update result:", statusResult);
+
+          if (!statusResult.success) {
+            logger.warn("Failed to update order status, but payment succeeded");
+            // Don't throw error - payment succeeded, just log the warning
+          }
+
+          logger.log("✓ Order status updated successfully");
+          logger.log("=== 3-STEP PAYMENT FLOW COMPLETED ===");
+
+          // Empty the cart after successful checkout
+          try {
+            logger.log("Emptying cart after successful checkout...");
+            const { emptyCart } = await import("@/lib/cart/cartService");
+            await emptyCart();
+            logger.log("Cart emptied successfully after checkout");
+          } catch (emptyError) {
+            logger.error("Error emptying cart after checkout:", emptyError);
+            // Don't block the redirect if cart emptying fails
+          }
+
+          // Success! Redirect to order received page
+          toast.success("Order placed successfully!");
+          router.push(
+            `/checkout/order-received/${orderId}?key=${orderKey}${
+              buildFlowQueryString() ? buildFlowQueryString() : ""
+            }`
+          );
+          return;
+        } catch (error) {
+          logger.error("3-step payment flow error:", error);
+          toast.error(error.message || "Payment failed. Please try again.");
+          setSubmitting(false);
+          return;
+        }
+      }
+
+      // ========================================
+      // FALLBACK: Old single-step checkout for Bambora or other payment methods
+      // ========================================
+      logger.log("Using single-step checkout (Bambora/other)...");
       const res = await fetch("/api/checkout", {
         method: "POST",
         body: JSON.stringify(dataToSend),
@@ -1521,8 +1682,6 @@ const CheckoutPageContent = () => {
             isPaymentValid={isPaymentValid}
             paymentValidationMessage={paymentValidationMessage}
           />
-
-          
         </div>
       </div>
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { logger } from "@/utils/devLogger";
+import { PHASE_1_STATES, isStateSupported } from "@/lib/constants/usStates";
 
 const POSTCANADA_API_KEY = process.env.POSTCANADA_API_KEY;
 const POSTCANADA_API_URL =
@@ -99,17 +100,42 @@ export async function POST(request) {
     };
 
     // Transform the address data with proper capitalization
-    // Post Canada AddressComplete API field mapping
+    // AddressComplete API field mapping (works for both Canada and USA)
+    const stateCode = addressData.ProvinceCode || addressData.Province || "";
     const address = {
       street: toTitleCase(addressData.Line1 || ""),
       unit: toTitleCase(addressData.Line2 || ""),
       city: toTitleCase(addressData.City || ""),
-      province: addressData.ProvinceName || addressData.Province || "",
+      // For USA: uses ProvinceName/Province for state
+      // For Canada: uses ProvinceName/Province for province
+      province: stateCode,
+      // For USA: PostalCode contains ZIP code
+      // For Canada: PostalCode contains postal code
       postalCode: addressData.PostalCode || "",
-      country: addressData.Country || "CAN",
+      country: addressData.CountryIso2 || addressData.Country || "",
     };
 
     logger.log("Transformed address:", address);
+    logger.log("State code:", stateCode);
+
+    // Validate that the address is in a supported state (for USA addresses)
+    if (
+      (address.country === "US" || address.country === "USA") &&
+      !isStateSupported(stateCode)
+    ) {
+      logger.warn(
+        `Address in unsupported state: ${stateCode}. Supported states:`,
+        PHASE_1_STATES
+      );
+      return NextResponse.json(
+        {
+          error: "Address not available",
+          details: `Sorry, we currently don't support deliveries to ${stateCode}.`,
+          serviceCoverageUrl: "/service-coverage/",
+        },
+        { status: 400 }
+      );
+    }
 
     return NextResponse.json({ address });
   } catch (error) {

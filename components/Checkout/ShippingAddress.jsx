@@ -57,11 +57,11 @@ const ShippingAddress = ({
             <FormInput
               title="Country / Region"
               name="country"
-              placeholder="Canada"
+              placeholder="United States"
               required
               readOnly
               disabled
-              value="CA"
+              value="US"
               hidden
               onChange={null}
             />
@@ -70,7 +70,7 @@ const ShippingAddress = ({
               readOnly
               disabled
               className="w-full bg-white rounded-[8px] border border-solid border-[#E2E2E1] px-[16px] py-[12px] h-[44px] focus:outline-none focus:border-gray-500"
-              value={"Canada"}
+              value={"United States"}
               onChange={null}
             />
           </div>
@@ -84,6 +84,7 @@ const ShippingAddress = ({
               disabled={isUpdatingShipping}
               onChange={handleShippingAddressChange}
               onAddressSelected={handleAddressSelected}
+              country="US"
             />
           </div>
           <div className="mb-4">
@@ -191,10 +192,10 @@ const ShippingAddress = ({
               </div>
             </div>
             <FormInput
-              title="Postal Code"
+              title="ZIP Code"
               name="postcode"
               value={formData.shipping_address.postcode}
-              placeholder="Enter your postal code"
+              placeholder="Enter your ZIP code"
               required
               disabled={isUpdatingShipping}
               onChange={handleShippingAddressChange}

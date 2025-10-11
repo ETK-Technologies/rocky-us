@@ -246,7 +246,7 @@ const CheckoutPageContent = () => {
           city: "",
           state: newProvince,
           postcode: "",
-          country: "CA",
+          country: "US",
         };
       } else {
         // Keep existing address data when province changes due to address selection
@@ -265,7 +265,7 @@ const CheckoutPageContent = () => {
           city: formData.shipping_address.city || "",
           state: newProvince,
           postcode: formData.shipping_address.postcode || "",
-          country: "CA",
+          country: "US",
         };
       }
 
@@ -279,7 +279,7 @@ const CheckoutPageContent = () => {
                 address_2: "",
                 city: "",
                 postcode: "",
-                country: "CA",
+                country: "US",
               }
             : {}),
           state:
@@ -302,7 +302,7 @@ const CheckoutPageContent = () => {
                   address_2: "",
                   city: "",
                   postcode: "",
-                  country: "CA",
+                  country: "US",
                 }
               : {}),
             state:
@@ -613,7 +613,7 @@ const CheckoutPageContent = () => {
             country:
               prev.billing_address.country ||
               profileData.billing_country ||
-              "CA",
+              "US",
             // Add the date of birth field to billing address
             date_of_birth:
               profileData.date_of_birth ||
@@ -668,7 +668,7 @@ const CheckoutPageContent = () => {
             country:
               prev.shipping_address.country ||
               profileData.shipping_country ||
-              "CA",
+              "US",
             // Add the date of birth field to shipping address
             date_of_birth:
               profileData.date_of_birth ||
@@ -894,7 +894,7 @@ const CheckoutPageContent = () => {
             city: formData.billing_address.city || "",
             state: formData.billing_address.state || "",
             postcode: formData.billing_address.postcode || "",
-            country: formData.billing_address.country || "CA",
+            country: formData.billing_address.country || "US",
             email: formData.billing_address.email || "",
             phone: formData.billing_address.phone || "",
           },
@@ -908,7 +908,7 @@ const CheckoutPageContent = () => {
                 city: formData.shipping_address.city || "",
                 state: formData.shipping_address.state || "",
                 postcode: formData.shipping_address.postcode || "",
-                country: formData.shipping_address.country || "CA",
+                country: formData.shipping_address.country || "US",
                 phone: formData.shipping_address.phone || "",
               }
             : {
@@ -920,7 +920,7 @@ const CheckoutPageContent = () => {
                 city: formData.billing_address.city || "",
                 state: formData.billing_address.state || "",
                 postcode: formData.billing_address.postcode || "",
-                country: formData.billing_address.country || "CA",
+                country: formData.billing_address.country || "US",
                 phone: formData.billing_address.phone || "",
               },
         };
@@ -1095,6 +1095,9 @@ const CheckoutPageContent = () => {
         savedCardId: selectedCard ? selectedCard.id : null,
         useSavedCard: !!selectedCard,
 
+        // NEW: Use Stripe for new card payments
+        useStripe: !selectedCard, // Use Stripe only when NOT using a saved card
+
         // Add total amount for saved card payments
         totalAmount:
           cartItems.totals && cartItems.totals.total_price
@@ -1111,7 +1114,20 @@ const CheckoutPageContent = () => {
         awin_channel: awinChannel || "other",
       };
 
+      // ========================================
+      // NOTE: Stripe tokenization happens on BACKEND
+      // Frontend Stripe.js doesn't allow raw card data even with API setting enabled
+      // Backend Stripe SDK respects the "Raw card data APIs" setting
+      // ========================================
+
       // Enhanced client-side logging
+      logger.log("=== PAYMENT METHOD DEBUG ===");
+      logger.log("selectedCard:", selectedCard);
+      logger.log("useStripe:", !selectedCard);
+      logger.log("useSavedCard:", !!selectedCard);
+      logger.log("willTokenizeOnBackend:", !selectedCard && !!cardNumber);
+      logger.log("===========================");
+
       logger.log("Client-side checkout data:", {
         ...dataToSend,
         cardNumber: dataToSend.cardNumber ? "[REDACTED]" : "",
@@ -1214,7 +1230,7 @@ const CheckoutPageContent = () => {
                   city: formData.billing_address.city,
                   state: formData.billing_address.state,
                   postcode: formData.billing_address.postcode,
-                  country: formData.billing_address.country || "CA",
+                  country: formData.billing_address.country || "US",
                   email: formData.billing_address.email,
                   phone: formData.billing_address.phone,
                 },
@@ -1328,7 +1344,7 @@ const CheckoutPageContent = () => {
         }
       }
 
-      // Continue with regular checkout for new cards
+      // Continue with WooCommerce Store API checkout
       const res = await fetch("/api/checkout", {
         method: "POST",
         body: JSON.stringify(dataToSend),
