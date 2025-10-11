@@ -44,7 +44,7 @@ const PRODUCT_DATA = {
     id: "369618",
     name: "Rybelsus",
     description: "(semaglutide) tablets",
-    price: "300.00",
+    price: "299.00",
     details:
       "Rybelsus® is the tablets brand name version of semaglutide. It works in the exactly the same way as our compounded semaglutide.",
     url: "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/rybelsus/rybelsus_2x.webp",
