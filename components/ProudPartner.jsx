@@ -1,7 +1,7 @@
 import CustomImage from "./utils/CustomImage";
 import CustomContainImage from "./utils/CustomContainImage";
 
-const ProudPartner = ({ section = false , bg="bg-white" }) => {
+const ProudPartner = ({ section = false, bg = "bg-white" }) => {
   return (
     <div
       className={`flex items-center justify-center ${bg} ${
@@ -47,15 +47,6 @@ const ProudPartner = ({ section = false , bg="bg-white" }) => {
           <CustomContainImage
             src="/proud-logo/TBJ.png"
             alt="Toronto Blue Jays"
-            fill
-          />
-        </div>
-        <div
-          className={`relative overflow-hidden w-[50px] h-[60px] md:w-[60px] md:h-[70px]`}
-        >
-          <CustomContainImage
-            src="https://myrocky.b-cdn.net/partner-2.png"
-            alt="boat"
             fill
           />
         </div>

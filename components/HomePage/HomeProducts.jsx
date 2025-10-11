@@ -23,12 +23,12 @@ const edProductCard = [
         link: "/ed-flow/?onboarding=1&showonly=viagra",
         image: "/popular-treatments/viagra.webp",
       },
-      {
-        title: "Chewalis",
-        description: "Last up to 24-36 hours",
-        link: "/ed-flow/?onboarding=1&showonly=chewalis",
-        image: "/popular-treatments/chewalis.webp",
-      },
+      // {
+      //   title: "Chewalis",
+      //   description: "Last up to 24-36 hours",
+      //   link: "/ed-flow/?onboarding=1&showonly=chewalis",
+      //   image: "/popular-treatments/chewalis.webp",
+      // },
       {
         title: "Cialis + Viagra",
         description: "Last up to 8-36 hours",
@@ -60,14 +60,20 @@ const wlProductCard = [
         title: "Mounjaro®",
         description: "(tirzepatide)",
         link: "/wl-pre-consultation",
-        image:
-          "/products/monjaro.png",
+        image: "/products/monjaro.png",
       },
       {
         title: "Wegovy®",
         description: "(semaglutide) injection",
         link: "/wl-pre-consultation",
         image: "https://myrocky.b-cdn.net/WP%20Images/Homepage/wegovy.webp",
+      },
+      ,
+      {
+        title: "Rybelsus®",
+        description: "(semaglutide) injection",
+        link: "/wl-pre-consultation",
+        image: "/products/rybelsus.png",
       },
     ],
   },
@@ -90,66 +96,66 @@ const hairProductCard = [
         image:
           "https://myrocky.b-cdn.net/WP%20Images/Homepage/minoxidil-spray.webp",
       },
-      {
-        title: "Finasteride & Minoxidil",
-        description: "Prevents hair loss & stimulates hair regrowth",
-        link: "/hair-flow/?onboarding=1&showonly=finasteride-minoxidil",
-        image: "/popular-treatments/combination-2.webp",
-      },
-      {
-        title: "Minoxidil (Rogaine)",
-        description: "Stimulates hair regrowth",
-        link: "/hair-flow/?onboarding=1&showonly=minoxidil",
-        image: "/popular-treatments/minoxidil-1.webp",
-      },
-      {
-        title: "Finasteride (Propecia)",
-        description: "Prevents hair loss",
-        link: "/hair-flow/?onboarding=1&showonly=finasteride-propecia",
-        image: "/popular-treatments/finasteride1.webp",
-      },
+      // {
+      //   title: "Finasteride & Minoxidil",
+      //   description: "Prevents hair loss & stimulates hair regrowth",
+      //   link: "/hair-flow/?onboarding=1&showonly=finasteride-minoxidil",
+      //   image: "/popular-treatments/combination-2.webp",
+      // },
+      // {
+      //   title: "Minoxidil (Rogaine)",
+      //   description: "Stimulates hair regrowth",
+      //   link: "/hair-flow/?onboarding=1&showonly=minoxidil",
+      //   image: "/popular-treatments/minoxidil-1.webp",
+      // },
+      // {
+      //   title: "Finasteride (Propecia)",
+      //   description: "Prevents hair loss",
+      //   link: "/hair-flow/?onboarding=1&showonly=finasteride-propecia",
+      //   image: "/popular-treatments/finasteride1.webp",
+      // },
     ],
   },
 ];
 
-const smokingProductCard = [
-  {
-    LeadingProductCard: {
-      title: "Smoking Cessation",
-      subtitle: "A New Way to Quit",
-      link: "/zonnic",
-      image: "bg-[url('/zonic/zonnic-cover.png')]",
-    },
-    ProductCard: [
-      {
-        title: "Zonnic",
-        description: "Nicotine pouches",
-        link: "/zonnic",
-        image: "/zonic/zonnic-main.png",
-      },
-    ],
-  },
-];
+// const smokingProductCard = [
+//   {
+//     LeadingProductCard: {
+//       title: "Smoking Cessation",
+//       subtitle: "A New Way to Quit",
+//       link: "/zonnic",
+//       image: "bg-[url('/zonic/zonnic-cover.png')]",
+//     },
+//     ProductCard: [
+//       {
+//         title: "Zonnic",
+//         description: "Nicotine pouches",
+//         link: "/zonnic",
+//         image: "/zonic/zonnic-main.png",
+//       },
+//     ],
+//   },
+// ];
 
-const recoveryProductCard = [
-  {
-    LeadingProductCard: {
-      title: "Recovery",
-      subtitle: "A Smarter Way to Recover",
-      link: "/product/dhm-blend",
-      image:
-        "bg-[url('https://mycdn.myrocky.ca/wp-content/uploads/20250306132419/DHM.jpg')] ",
-    },
-    ProductCard: [
-      {
-        title: "DHM Blend",
-        description: "Herbal Supplement",
-        link: "/product/dhm-blend",
-        image: "https://myrocky.b-cdn.net/WP%20Images/dhm/dhm-prod.webp",
-      },
-    ],
-  },
-];
+// const recoveryProductCard = [
+//   {
+//     LeadingProductCard: {
+//       title: "Recovery",
+//       subtitle: "A Smarter Way to Recover",
+//       link: "/product/dhm-blend",
+//       image:
+//         "bg-[url('https://mycdn.myrocky.ca/wp-content/uploads/20250306132419/DHM.jpg')] ",
+//     },
+//     ProductCard: [
+//       {
+//         title: "DHM Blend",
+//         description: "Herbal Supplement",
+//         link: "/product/dhm-blend",
+//         image: "https://myrocky.b-cdn.net/WP%20Images/dhm/dhm-prod.webp",
+//       },
+//     ],
+//   },
+// ];
 
 const HomeProducts = () => {
   return (
@@ -183,7 +189,7 @@ const HomeProducts = () => {
           ))}
         </div>
       </ProductSection>
-      <ProductSection>
+      {/* <ProductSection>
         <div className="flex flex-nowrap gap-4">
           {smokingProductCard.map((card, index) => (
             <ProductCards key={index} cards={card} />
@@ -196,7 +202,7 @@ const HomeProducts = () => {
             <ProductCards key={index} cards={card} />
           ))}
         </div>
-      </ProductSection>
+      </ProductSection> */}
     </>
   );
 };
