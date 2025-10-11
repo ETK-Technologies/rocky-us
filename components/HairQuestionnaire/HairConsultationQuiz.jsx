@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { logger } from "@/utils/devLogger";
 import { useRouter } from "next/navigation";
 import { QuestionLayout } from "../EdQuestionnaire/QuestionLayout";
 import { QuestionOption } from "../EdQuestionnaire/QuestionOption";
@@ -11,9 +12,9 @@ import { ProgressBar } from "../EdQuestionnaire/ProgressBar";
 import { WarningPopup } from "../EdQuestionnaire/WarningPopup";
 import hairQuestionList from "./hairQuestion";
 import Logo from "../Navbar/Logo";
-import DOBInput from "@/components/DOBInput";
+import DOBInput from "../shared/DOBInput";
 import Link from "next/link";
-import AppointmentBooking from "../MentalHealthQuestionnaire/components/AppointmentBooking";
+
 const { uploadFileToS3WithProgress } = await import(
   "@/utils/s3/frontend-upload"
 );
@@ -34,7 +35,6 @@ export default function HairConsultationQuiz({
   //   date Picker
   const [datePickerValue, setDatePickerValue] = useState("");
   const [intentionalReload, setIntentionalReload] = useState(false);
-  const [activeCalendarType, setActiveCalendarType] = useState(null);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [pendingSubmissions, setPendingSubmissions] = useState([]);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -109,12 +109,13 @@ export default function HairConsultationQuiz({
 
   const [file_data_2, setFileData2] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [showNoCallAcknowledgement, setShowNoCallAcknowledgement] =
-    useState(false);
-  const [noCallAcknowledged, setNoCallAcknowledged] = useState(false);
+
   const [photoIdFile, setPhotoIdFile] = useState(null);
   const [photoIdAcknowledged, setPhotoIdAcknowledged] = useState(false);
   const [showPhotoIdPopup, setShowPhotoIdPopup] = useState(false);
+  const [showNoCallAcknowledgement, setShowNoCallAcknowledgement] =
+    useState(false);
+  const [noCallAcknowledged, setNoCallAcknowledged] = useState(false);
   const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
@@ -171,6 +172,7 @@ export default function HairConsultationQuiz({
     33: "", // Front hairline photo URL
     34: "", // Top of head photo URL
     203: "",
+    "35_choice": "", // Store Yes/No choice for display
     35: "",
     37: "",
     "182_1": "",
@@ -183,52 +185,6 @@ export default function HairConsultationQuiz({
 
   const [showThankYou, setShowThankYou] = useState(false);
   const [isCheckingCompletion, setIsCheckingCompletion] = useState(true);
-
-  useEffect(() => {
-    const handleCalendlyEvent = (e) => {
-      if (e.data.event && e.data.event.indexOf("calendly") === 0) {
-        console.log("Calendly event:", e.data.event, e.data);
-
-        if (e.data.event === "calendly.event_scheduled") {
-          const payload = e.data.payload || {};
-          const eventType =
-            payload.event_type?.name || activeCalendarType || "Appointment";
-          const eventDate =
-            payload.event?.start_time || new Date().toISOString();
-
-          const updates = {
-            calendly_booking_completed: true,
-            calendly_booking_type: activeCalendarType || formData["37"] || "",
-            calendly_booking_date: eventDate,
-            calendly_booking_event_type: eventType,
-          };
-
-          setFormData((prev) => ({
-            ...prev,
-            ...updates,
-          }));
-
-          updateFormDataAndStorage(updates);
-
-          setTimeout(() => {
-            const continueButton = formRef.current?.querySelector(
-              ".quiz-continue-button"
-            );
-            if (continueButton) {
-              continueButton.style.visibility = "visible";
-              continueButton.style.display = "block";
-            }
-          }, 100);
-        }
-      }
-    };
-
-    window.addEventListener("message", handleCalendlyEvent);
-
-    return () => {
-      window.removeEventListener("message", handleCalendlyEvent);
-    };
-  }, [activeCalendarType, formData]);
 
   const slideVariants = {
     hiddenRight: { x: "100%", opacity: 0 },
@@ -270,20 +226,14 @@ export default function HairConsultationQuiz({
 
   const shouldSkipDOBPage = () => {
     const dobValue = formData["158"];
-    console.log("shouldSkipDOBPage - dobValue from formData:", dobValue);
-    console.log("shouldSkipDOBPage - dob prop:", dob);
-    console.log("shouldSkipDOBPage - dataLoaded:", dataLoaded);
-    console.log("shouldSkipDOBPage - full formData:", formData);
 
     if (!dobValue) {
-      console.log("shouldSkipDOBPage - no DOB value, not skipping");
+      logger.log("shouldSkipDOBPage - no DOB value, not skipping");
       return false;
     }
 
     const age = calculateAge(dobValue);
-    console.log("shouldSkipDOBPage - calculated age:", age);
     const shouldSkip = age !== null && age >= 18;
-    console.log("shouldSkipDOBPage - should skip:", shouldSkip);
 
     return shouldSkip;
   };
@@ -344,9 +294,6 @@ export default function HairConsultationQuiz({
             }
 
             if (age >= 18) {
-              console.log(
-                "Adjusting saved page from 3 to 4 due to DOB skip logic"
-              );
               savedPage = 4;
             }
           }
@@ -391,17 +338,38 @@ export default function HairConsultationQuiz({
       if (parsedData["34"]) setFileData2(parsedData["34"]);
       if (parsedData.completion_state === "Full") {
         setProgress(100);
+        const hasFrontHairlineImage =
+          parsedData["33"] && parsedData["33"].trim() !== "";
+        const hasTopHeadImage =
+          parsedData["34"] && parsedData["34"].trim() !== "";
+        const hasPhotoId = parsedData["38"] && parsedData["38"].trim() !== "";
+
+        if (hasFrontHairlineImage && hasTopHeadImage && hasPhotoId) {
+          setCurrentPage(22);
+          setProgress(100);
+          setFormData((prev) => ({
+            ...prev,
+            page_step: 22,
+          }));
+        } else {
+          setCurrentPage(16);
+          const newProgress = Math.ceil((16 / 22) * 100);
+          setProgress(newProgress);
+          setFormData((prev) => ({
+            ...prev,
+            page_step: 16,
+          }));
+        }
       }
       setDataLoaded(true);
     } catch (error) {
-      console.error("Error parsing stored quiz data:", error);
+      logger.error("Error parsing stored quiz data:", error);
     }
   }, [dataLoaded]);
 
   useEffect(() => {
     if (!dataLoaded) return;
     if (currentPage === 3 && shouldSkipDOBPage()) {
-      console.log("Auto-skipping DOB page - moving to page 4");
       setCurrentPage(4);
       const newProgress = Math.ceil((4 / 22) * 100);
       const progressValue = newProgress < 10 ? 10 : newProgress;
@@ -424,10 +392,71 @@ export default function HairConsultationQuiz({
           });
         }
       } catch (error) {
-        console.error("Error setting initial date picker value:", error);
+        logger.error("Error setting initial date picker value:", error);
       }
     }
   }, [dataLoaded, dob, formData, currentPage]);
+
+  const getPageMainField = (page) => {
+    const pageFieldMap = {
+      1: "137", // Hair loss treatments
+      2: "138", // Finasteride usage
+      3: "158", // Date of birth
+      4: "1", // Gender
+      5: "25", // Age
+      6: "39", // Hair loss pattern
+      7: "22", // Hair loss duration
+      8: "40", // Is condition active
+      9: "26_1", // Sexual health issues
+      10: "27_1", // Mental health conditions
+      11: "28", // Medications
+      12: "30", // Other medical conditions
+      13: "31", // Allergies
+      14: "137", // Hair loss treatments
+      15: "138", // Finasteride usage
+      16: "33", // Photos (front hairline)
+      17: "203", // Medication acknowledgment
+      18: "35", // Provider message
+      19: "37", // Book call
+      20: "182_1", // No call acknowledgment
+      21: "204_1", // Photo ID acknowledgment
+    };
+    return pageFieldMap[page] || "";
+  };
+
+  useEffect(() => {
+    if (!dataLoaded) return;
+
+    if (currentPage === 22) {
+      const hasFrontHairlineImage =
+        formData["33"] && formData["33"].trim() !== "";
+      const hasTopHeadImage = formData["34"] && formData["34"].trim() !== "";
+      const hasPhotoId = formData["38"] && formData["38"].trim() !== "";
+      const isCompletionStateFull = formData.completion_state === "Full";
+
+      if (
+        !hasFrontHairlineImage ||
+        !hasTopHeadImage ||
+        !hasPhotoId ||
+        !isCompletionStateFull
+      ) {
+        let lastCompletedPage = 16;
+        for (let i = 1; i <= 21; i++) {
+          const mainField = getPageMainField(i);
+          if (formData[mainField] && formData[mainField].trim() !== "") {
+            lastCompletedPage = i;
+          }
+        }
+        setCurrentPage(lastCompletedPage);
+        const newProgress = Math.ceil((lastCompletedPage / 22) * 100);
+        setProgress(newProgress < 10 ? 10 : newProgress);
+        setFormData((prev) => ({
+          ...prev,
+          page_step: lastCompletedPage,
+        }));
+      }
+    }
+  }, [dataLoaded, currentPage, formData]);
 
   useEffect(() => {
     const handleBeforeUnload = (e) => {
@@ -569,7 +598,7 @@ export default function HairConsultationQuiz({
 
         setPendingSubmissions((prev) => prev.slice(1));
       } catch (error) {
-        console.error("Background sync error:", error);
+        logger.error("Background sync error:", error);
         setSyncError(error.message || "Failed to sync data");
         setPendingSubmissions((prev) => prev.slice(1));
       } finally {
@@ -608,7 +637,6 @@ export default function HairConsultationQuiz({
         );
 
         if (isDuplicate) {
-          console.log("Skipping duplicate submission");
           return prev;
         }
         return [...prev, { data: dataToSubmit, timestamp: Date.now() }];
@@ -669,7 +697,7 @@ export default function HairConsultationQuiz({
       localStorage.setItem("quiz-form-data-hair", JSON.stringify(dataToStore));
       localStorage.setItem("quiz-form-data-hair-expiry", ttl.toString());
     } catch (error) {
-      console.error("Error updating local storage:", error);
+      logger.error("Error updating local storage:", error);
     }
   };
 
@@ -686,7 +714,7 @@ export default function HairConsultationQuiz({
         localStorage.setItem("quiz-form-data-hair", JSON.stringify(newData));
         localStorage.setItem("quiz-form-data-hair-expiry", ttl.toString());
       } catch (error) {
-        console.error("Error updating local storage:", error);
+        logger.error("Error updating local storage:", error);
       }
     }
 
@@ -719,7 +747,7 @@ export default function HairConsultationQuiz({
         setShowNameDifferencePopup(true);
       }
     } catch (error) {
-      console.error("Error comparing stored names:", error);
+      logger.error("Error comparing stored names:", error);
     }
   };
 
@@ -814,21 +842,38 @@ export default function HairConsultationQuiz({
     clearError();
 
     const fileType = file.type;
-    if (fileType !== "image/jpeg" && fileType !== "image/png") {
+    const fileName = file.name.toLowerCase();
+    const fileExtension = fileName.split(".").pop();
+
+    const supportedMimeTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/heif",
+      "image/heic",
+    ];
+
+    const supportedExtensions = ["jpg", "jpeg", "png", "heif", "heic"];
+
+    const isSupportedMimeType = supportedMimeTypes.includes(fileType);
+    const isSupportedExtension = supportedExtensions.includes(fileExtension);
+
+    if (!isSupportedMimeType && !isSupportedExtension) {
       const errorBox = formRef.current?.querySelector(".error-box");
       if (errorBox) {
         errorBox.classList.remove("hidden");
-        errorBox.textContent = "Only JPEG and PNG images are supported";
+        errorBox.textContent =
+          "Only JPG, JPEG, PNG, HEIF, and HEIC images are supported";
       }
       e.target.value = "";
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) {
+    if (file.size > 20 * 1024 * 1024) {
       const errorBox = formRef.current?.querySelector(".error-box");
       if (errorBox) {
         errorBox.classList.remove("hidden");
-        errorBox.textContent = "Maximum file size is 10MB";
+        errorBox.textContent = "Maximum file size is 20MB";
       }
       e.target.value = "";
       const continueButton = formRef.current?.querySelector(
@@ -842,14 +887,25 @@ export default function HairConsultationQuiz({
     }
     setPhotoIdFile(file);
 
-    const reader = new FileReader();
-    reader.onload = function (e) {
+    const isHeifFile = fileExtension === "heif" || fileExtension === "heic";
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+    if (isHeifFile && !isSafari) {
       const preview = document.getElementById("photo-id-preview");
       if (preview) {
-        preview.src = e.target?.result;
+        preview.src =
+          "https://myrocky.ca/wp-content/themes/salient-child/img/photo_upload_icon.png";
       }
-    };
-    reader.readAsDataURL(file);
+    } else {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const preview = document.getElementById("photo-id-preview");
+        if (preview) {
+          preview.src = e.target?.result;
+        }
+      };
+      reader.readAsDataURL(file);
+    }
 
     setTimeout(() => {
       const continueButton = formRef.current?.querySelector(
@@ -868,12 +924,30 @@ export default function HairConsultationQuiz({
     }
 
     const fileType = file.type;
-    if (fileType !== "image/jpeg" && fileType !== "image/png") {
-      throw new Error("Only JPEG and PNG images are supported");
+    const fileName = file.name.toLowerCase();
+    const fileExtension = fileName.split(".").pop();
+
+    const supportedMimeTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/heif",
+      "image/heic",
+    ];
+
+    const supportedExtensions = ["jpg", "jpeg", "png", "heif", "heic"];
+
+    const isSupportedMimeType = supportedMimeTypes.includes(fileType);
+    const isSupportedExtension = supportedExtensions.includes(fileExtension);
+
+    if (!isSupportedMimeType && !isSupportedExtension) {
+      throw new Error(
+        "Only JPG, JPEG, PNG, HEIF, and HEIC images are supported"
+      );
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      throw new Error("Maximum file size is 10MB");
+    if (file.size > 20 * 1024 * 1024) {
+      throw new Error("Maximum file size is 20MB");
     }
 
     return true;
@@ -891,10 +965,10 @@ export default function HairConsultationQuiz({
       const s3Url = await uploadFileToS3WithProgress(
         photoIdFile,
         "questionnaire/hair-photo-ids",
-        "hair",
-        (progress) => {
-          console.log(`Upload progress: ${progress}%`);
-        }
+        "hair"
+        // (progress) => {
+        //   logger.log(`Upload progress: ${progress}%`);
+        // }
       );
 
       const submissionData = {
@@ -935,7 +1009,7 @@ export default function HairConsultationQuiz({
       updateLocalStorage();
       return s3Url;
     } catch (error) {
-      console.error("Error uploading photo:", error);
+      logger.error("Error uploading photo:", error);
       throw error;
     } finally {
       setIsUploading(false);
@@ -951,21 +1025,18 @@ export default function HairConsultationQuiz({
     try {
       setIsUploading(true);
       showLoader();
-      console.log("Starting verification process...");
 
       let photoIdUrl = formData["38"];
-      console.log("Initial photoIdUrl:", photoIdUrl);
 
       if (photoIdFile && !photoIdUrl) {
         try {
-          console.log("Uploading photo ID...");
           photoIdUrl = await handlePhotoIdUpload();
 
           if (!photoIdUrl) {
             throw new Error("Photo upload returned no URL");
           }
         } catch (uploadError) {
-          console.error("Photo upload error:", uploadError);
+          logger.error("Photo upload error:", uploadError);
           hideLoader();
           setIsUploading(false);
           alert("An error occurred during photo upload. Please try again.");
@@ -981,7 +1052,6 @@ export default function HairConsultationQuiz({
       }
 
       try {
-        console.log("Submitting form with photo ID URL:", photoIdUrl);
         const updatedFormData = {
           ...formData,
           38: photoIdUrl,
@@ -999,19 +1069,23 @@ export default function HairConsultationQuiz({
 
         setCurrentPage(22);
         setProgress(100);
+        setFormData((prev) => ({
+          ...prev,
+          page_step: 22,
+        }));
         setIsUploading(false);
 
         setTimeout(() => {
           hideLoader();
         }, 100);
       } catch (error) {
-        console.error("Form submission error:", error);
+        logger.error("Form submission error:", error);
         hideLoader();
         setIsUploading(false);
         alert("An error occurred during verification. Please try again.");
       }
     } catch (error) {
-      console.error("Customer verification error:", error);
+      logger.error("Customer verification error:", error);
       hideLoader();
       setIsUploading(false);
       alert("An error occurred during verification. Please try again.");
@@ -1021,85 +1095,28 @@ export default function HairConsultationQuiz({
   const handleBookCallSelect = (option) => {
     clearError();
 
-    const isSwitchingFromNo =
-      (option === "Clinician" || option === "Pharmacist") &&
-      formData["37"] === "No";
-
-    const isSwitchingToNo =
-      option === "No" &&
-      (formData["37"] === "Clinician" || formData["37"] === "Pharmacist");
-
-    const isChangingCalendarType =
-      (option === "Clinician" || option === "Pharmacist") &&
-      formData["37"] &&
-      formData["37"] !== option &&
-      (formData["37"] === "Clinician" || formData["37"] === "Pharmacist");
-
-    let updates = { 37: option };
-
-    if (isSwitchingFromNo) {
-      updates = {
-        ...updates,
-        "182_1": "",
-        "182_2": "",
-        "182_3": "",
-      };
-
+    const backendOption = option === "Clinician" ? "Doctor" : option;
+    const updates = { 37: backendOption };
+    if (option === "Pharmacist" || option === "Clinician") {
+      updates["182_1"] = "";
+      updates["182_2"] = "";
+      updates["182_3"] = "";
       setShowNoCallAcknowledgement(false);
       setNoCallAcknowledged(false);
-    }
-
-    if (isSwitchingToNo) {
-      updates = {
-        ...updates,
-        calendly_booking_completed: false,
-        calendly_booking_date: "",
-        calendly_booking_event_type: "",
-      };
-    }
-
-    setFormData((prev) => ({
-      ...prev,
-      ...updates,
-    }));
-
-    updateLocalStorage();
-    queueFormSubmission(updates);
-
-    if (isChangingCalendarType) {
-      setIntentionalReload(true);
-      submitFormData({
-        ...updates,
-        page_step: currentPage,
-      }).then(() => {
-        setTimeout(() => {
-          window.location.reload();
-        }, 500);
-      });
-
-      return;
-    }
-
-    const continueButton = formRef.current?.querySelector(
-      ".quiz-continue-button"
-    );
-
-    if (option === "Clinician" || option === "Pharmacist") {
-      if (continueButton) {
-        continueButton.style.visibility = "hidden";
-      }
     } else if (option === "No") {
       setShowNoCallAcknowledgement(true);
       setNoCallAcknowledged(false);
-      if (continueButton) {
-        continueButton.style.visibility = "hidden";
-      }
+      updateFormDataAndStorage(updates);
+      return;
     }
+
+    updateFormDataAndStorage(updates);
   };
 
   const handleNoCallAcknowledgement = (e) => {
     const isChecked = e.target.checked;
     setNoCallAcknowledged(isChecked);
+
     const updates = {
       "182_1": isChecked ? "1" : "",
       "182_2": isChecked
@@ -1107,6 +1124,7 @@ export default function HairConsultationQuiz({
         : "",
       "182_3": isChecked ? "33" : "",
     };
+
     updateFormDataAndStorage(updates);
   };
 
@@ -1114,14 +1132,15 @@ export default function HairConsultationQuiz({
     if (!proceed) {
       setShowNoCallAcknowledgement(false);
       setNoCallAcknowledged(false);
-      setFormData((prev) => ({
-        ...prev,
-        178: "",
-      }));
-      updateLocalStorage({
-        ...formData,
-        178: "",
-      });
+
+      const updates = {
+        37: "",
+        "182_1": "",
+        "182_2": "",
+        "182_3": "",
+      };
+
+      updateFormDataAndStorage(updates);
       return;
     }
 
@@ -1133,22 +1152,59 @@ export default function HairConsultationQuiz({
       "182_2": "I hereby understand and consent to the above waiver",
       "182_3": "33",
     };
+
     updateFormDataAndStorage(updates);
 
-    moveToNextSlideWithoutValidation();
+    setTimeout(() => {
+      moveToNextSlideWithoutValidation();
+    }, 100);
   };
 
-  const handleRequestCallInstead = async () => {
+  const handleRequestCallInstead = () => {
     setShowNoCallAcknowledgement(false);
 
     const updates = {
-      178: "Clinician",
+      37: "Doctor",
       "182_1": "",
       "182_2": "",
       "182_3": "",
     };
+
     updateFormDataAndStorage(updates);
-    setNoCallAcknowledged(false);
+
+    setTimeout(() => {
+      moveToNextSlideWithoutValidation();
+    }, 10);
+  };
+
+  const handleHealthcareQuestionsSelect = (option) => {
+    clearError();
+    
+    let updates = { "35_choice": option };
+    
+    if (option === "No") {
+      updates["35"] = "none";
+    } else if (option === "Yes") {
+      if (formData["35"] === "none") {
+        updates["35"] = "";
+      }
+    }
+    
+    setFormData((prevData) => {
+      const updatedData = {
+        ...prevData,
+        ...updates,
+      };
+      updateLocalStorage(updatedData);
+      queueFormSubmission(updatedData);
+      return updatedData;
+    });
+    
+    if (option === "No") {
+      setTimeout(() => {
+        moveToNextSlideWithoutValidation();
+      }, 10);
+    }
   };
 
   const handleProviderMessageChange = (e) => {
@@ -1185,12 +1241,12 @@ export default function HairConsultationQuiz({
 
     queueFormSubmission({ ...formData, 203: option });
 
-    if (option === "I have questions and will book a phone call") {
-      setFormData((prevData) => ({
-        ...prevData,
-        37: "Clinician",
-      }));
-    }
+    // if (option === "I have questions and will book a phone call") {
+    //   setFormData((prevData) => ({
+    //     ...prevData,
+    //     37: "Clinician",
+    //   }));
+    // }
 
     setTimeout(() => {
       moveToNextSlideWithoutValidation();
@@ -1203,21 +1259,38 @@ export default function HairConsultationQuiz({
     clearError();
 
     const fileType = file.type;
-    if (fileType !== "image/jpeg" && fileType !== "image/png") {
+    const fileName = file.name.toLowerCase();
+    const fileExtension = fileName.split(".").pop();
+
+    const supportedMimeTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/heif",
+      "image/heic",
+    ];
+
+    const supportedExtensions = ["jpg", "jpeg", "png", "heif", "heic"];
+
+    const isSupportedMimeType = supportedMimeTypes.includes(fileType);
+    const isSupportedExtension = supportedExtensions.includes(fileExtension);
+
+    if (!isSupportedMimeType && !isSupportedExtension) {
       const errorBox = formRef.current?.querySelector(".error-box");
       if (errorBox) {
         errorBox.classList.remove("hidden");
-        errorBox.textContent = "Only JPEG and PNG images are supported";
+        errorBox.textContent =
+          "Only JPG, JPEG, PNG, HEIF, and HEIC images are supported";
       }
       e.target.value = "";
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) {
+    if (file.size > 20 * 1024 * 1024) {
       const errorBox = formRef.current?.querySelector(".error-box");
       if (errorBox) {
         errorBox.classList.remove("hidden");
-        errorBox.textContent = "Maximum file size is 10MB";
+        errorBox.textContent = "Maximum file size is 20MB";
       }
       e.target.value = "";
       document.getElementById("output1").src =
@@ -1229,36 +1302,50 @@ export default function HairConsultationQuiz({
 
     setFileData1(file);
 
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      const preview = document.getElementById("output1");
-      if (preview) {
-        preview.src = e.target?.result;
-      }
-    };
-    reader.readAsDataURL(file);
+    const isHeifFile = fileExtension === "heif" || fileExtension === "heic";
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
-    document.querySelector("label[for=photo_upload_1]").innerHTML = `
-    <div class="flex w-full flex-col">
-      <div class="flex items-center mb-2">
-        <img
-          class="w-16 h-16 object-contain mr-4 flex-shrink-0"
-          src="${
-            e.target?.result ||
-            "https://myrocky.ca/wp-content/themes/salient-child/img/photo_upload_icon.png"
-          }"
-          id="output1"
-          alt="Upload icon"
-        />
-        <div class="flex-1 min-w-0">
-          <div class="break-words text-[#C19A6B]">
-            ${file.name}
-            <span class="text-xs block font-light text-gray-400 mt-1">Tap again to change</span>
+    const updateUI = (previewSrc) => {
+      document.querySelector("label[for=photo_upload_1]").innerHTML = `
+        <div class="flex w-full flex-col">
+          <div class="flex items-center mb-2">
+            <img
+              class="w-16 h-16 object-contain mr-4 flex-shrink-0"
+              src="${previewSrc}"
+              id="output1"
+              alt="Upload icon"
+            />
+            <div class="flex-1 min-w-0">
+              <div class="break-words text-[#C19A6B]">
+                ${file.name}
+                <span class="text-xs block font-light text-gray-400 mt-1">Tap again to change</span>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
-  `;
+      `;
+    };
+
+    if (isHeifFile && !isSafari) {
+      const placeholderSrc =
+        "https://myrocky.ca/wp-content/themes/salient-child/img/photo_upload_icon.png";
+      updateUI(placeholderSrc);
+      const preview = document.getElementById("output1");
+      if (preview) {
+        preview.src = placeholderSrc;
+      }
+    } else {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const previewSrc = e.target?.result;
+        updateUI(previewSrc);
+        const preview = document.getElementById("output1");
+        if (preview) {
+          preview.src = previewSrc;
+        }
+      };
+      reader.readAsDataURL(file);
+    }
 
     const file2 = document.getElementById("photo_upload_2").files?.[0];
     if (file && file2) {
@@ -1280,21 +1367,38 @@ export default function HairConsultationQuiz({
     clearError();
 
     const fileType = file.type;
-    if (fileType !== "image/jpeg" && fileType !== "image/png") {
+    const fileName = file.name.toLowerCase();
+    const fileExtension = fileName.split(".").pop();
+
+    const supportedMimeTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/heif",
+      "image/heic",
+    ];
+
+    const supportedExtensions = ["jpg", "jpeg", "png", "heif", "heic"];
+
+    const isSupportedMimeType = supportedMimeTypes.includes(fileType);
+    const isSupportedExtension = supportedExtensions.includes(fileExtension);
+
+    if (!isSupportedMimeType && !isSupportedExtension) {
       const errorBox = formRef.current?.querySelector(".error-box");
       if (errorBox) {
         errorBox.classList.remove("hidden");
-        errorBox.textContent = "Only JPEG and PNG images are supported";
+        errorBox.textContent =
+          "Only JPG, JPEG, PNG, HEIF, and HEIC images are supported";
       }
       e.target.value = "";
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) {
+    if (file.size > 20 * 1024 * 1024) {
       const errorBox = formRef.current?.querySelector(".error-box");
       if (errorBox) {
         errorBox.classList.remove("hidden");
-        errorBox.textContent = "Maximum file size is 10MB";
+        errorBox.textContent = "Maximum file size is 20MB";
       }
       e.target.value = "";
       document.getElementById("output2").src =
@@ -1306,36 +1410,50 @@ export default function HairConsultationQuiz({
 
     setFileData2(file);
 
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      const preview = document.getElementById("output2");
-      if (preview) {
-        preview.src = e.target?.result;
-      }
-    };
-    reader.readAsDataURL(file);
+    const isHeifFile = fileExtension === "heif" || fileExtension === "heic";
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
-    document.querySelector("label[for=photo_upload_2]").innerHTML = `
-    <div class="flex w-full flex-col">
-      <div class="flex items-center mb-2">
-        <img
-          class="w-16 h-16 object-contain mr-4 flex-shrink-0"
-          src="${
-            e.target?.result ||
-            "https://myrocky.ca/wp-content/themes/salient-child/img/photo_upload_icon.png"
-          }"
-          id="output2"
-          alt="Upload icon"
-        />
-        <div class="flex-1 min-w-0">
-          <div class="break-words text-[#C19A6B]">
-            ${file.name}
-            <span class="text-xs block font-light text-gray-400 mt-1">Tap again to change</span>
+    const updateUI = (previewSrc) => {
+      document.querySelector("label[for=photo_upload_2]").innerHTML = `
+        <div class="flex w-full flex-col">
+          <div class="flex items-center mb-2">
+            <img
+              class="w-16 h-16 object-contain mr-4 flex-shrink-0"
+              src="${previewSrc}"
+              id="output2"
+              alt="Upload icon"
+            />
+            <div class="flex-1 min-w-0">
+              <div class="break-words text-[#C19A6B]">
+                ${file.name}
+                <span class="text-xs block font-light text-gray-400 mt-1">Tap again to change</span>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
-  `;
+      `;
+    };
+
+    if (isHeifFile && !isSafari) {
+      const placeholderSrc =
+        "https://myrocky.ca/wp-content/themes/salient-child/img/photo_upload_icon.png";
+      updateUI(placeholderSrc);
+      const preview = document.getElementById("output2");
+      if (preview) {
+        preview.src = placeholderSrc;
+      }
+    } else {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const previewSrc = e.target?.result;
+        updateUI(previewSrc);
+        const preview = document.getElementById("output2");
+        if (preview) {
+          preview.src = previewSrc;
+        }
+      };
+      reader.readAsDataURL(file);
+    }
 
     const file1 = document.getElementById("photo_upload_1").files?.[0];
     if (file && file1) {
@@ -1373,19 +1491,19 @@ export default function HairConsultationQuiz({
       const frontHairlineUrl = await uploadFileToS3WithProgress(
         file_data_1,
         "questionnaire/hair-photos/front-hairline",
-        "hair",
-        (progress) => {
-          console.log(`Front hairline upload progress: ${progress}%`);
-        }
+        "hair"
+        // (progress) => {
+        //   logger.log(`Front hairline upload progress: ${progress}%`);
+        // }
       );
 
       const topHeadUrl = await uploadFileToS3WithProgress(
         file_data_2,
         "questionnaire/hair-photos/top-head",
-        "hair",
-        (progress) => {
-          console.log(`Top head upload progress: ${progress}%`);
-        }
+        "hair"
+        // (progress) => {
+        //   logger.log(`Top head upload progress: ${progress}%`);
+        // }
       );
 
       const submissionData = {
@@ -1430,7 +1548,7 @@ export default function HairConsultationQuiz({
       document.querySelector(".upload-button").classList.add("hidden");
       moveToNextSlideWithoutValidation();
     } catch (error) {
-      console.error("Error uploading photos:", error);
+      logger.error("Error uploading photos:", error);
       alert(error.message || "Error uploading photos");
 
       document.querySelector("label[for=photo_upload_1]").style.borderColor =
@@ -1574,7 +1692,7 @@ export default function HairConsultationQuiz({
           );
           localStorage.setItem("quiz-form-data-hair-expiry", ttl.toString());
         } catch (error) {
-          console.error("Error updating local storage:", error);
+          logger.error("Error updating local storage:", error);
         }
       }
 
@@ -1597,7 +1715,7 @@ export default function HairConsultationQuiz({
         localStorage.setItem("quiz-form-data-hair", JSON.stringify(data));
         localStorage.setItem("quiz-form-data-hair-expiry", ttl.toString());
       } catch (error) {
-        console.error("Error updating local storage:", error);
+        logger.error("Error updating local storage:", error);
       }
     }
   };
@@ -1720,28 +1838,24 @@ export default function HairConsultationQuiz({
     }
   };
 
-  const handleBirthDateChange = (newValue) => {
-    setDatePickerValue(newValue);
-    // Convert YYYY-MM-DD to MM/DD/YYYY if needed
-    let birthDate = newValue;
-    if (typeof newValue === "string" && newValue.includes("-")) {
-      const parts = newValue.split("-");
-      if (parts.length === 3) {
-        const [year, month, day] = parts;
-        birthDate = `${month.padStart(2, "0")}/${day.padStart(2, "0")}/${year}`;
-      }
-    }
+  const handleBirthDateChange = (e) => {
+    setDatePickerValue(e);
+    const date = new Date(e.startDate);
+    const birthDate = `${(date.getMonth() + 1)
+      .toString()
+      .padStart(2, "0")}/${date
+      .getDate()
+      .toString()
+      .padStart(2, "0")}/${date.getFullYear()}`;
     const updates = { 158: birthDate };
     updateFormDataAndStorage(updates);
 
-    // Calculate age for validation
     const today = new Date();
-    const birthDateObj = new Date(birthDate);
-    let age = today.getFullYear() - birthDateObj.getFullYear();
-    const monthDiff = today.getMonth() - birthDateObj.getMonth();
+    let age = today.getFullYear() - date.getFullYear();
+    const monthDiff = today.getMonth() - date.getMonth();
     if (
       monthDiff < 0 ||
-      (monthDiff === 0 && today.getDate() < birthDateObj.getDate())
+      (monthDiff === 0 && today.getDate() < date.getDate())
     ) {
       age--;
     }
@@ -2037,7 +2151,7 @@ export default function HairConsultationQuiz({
       };
 
       submitFormData(updatedData).catch((error) => {
-        console.error(
+        logger.error(
           "Error submitting mental health warning acknowledgment:",
           error
         );
@@ -2078,7 +2192,7 @@ export default function HairConsultationQuiz({
           : { "27_4": "" };
 
       submitFormData(resetData).catch((error) => {
-        console.error("Error resetting mental health selection:", error);
+        logger.error("Error resetting mental health selection:", error);
       });
     }
   };
@@ -2094,7 +2208,7 @@ export default function HairConsultationQuiz({
       };
 
       submitFormData(acknowledgmentData).catch((error) => {
-        console.error(
+        logger.error(
           "Error submitting mental health warning acknowledgment:",
           error
         );
@@ -2175,7 +2289,7 @@ export default function HairConsultationQuiz({
     };
 
     submitFormData(currentSelections).catch((error) => {
-      console.error("Error submitting scalp symptoms:", error);
+      logger.error("Error submitting scalp symptoms:", error);
     });
     setFormData((prev) => ({
       ...prev,
@@ -2221,7 +2335,7 @@ export default function HairConsultationQuiz({
       "24_4": formData["24_4"] || "",
       "24_5": formData["24_5"] || "",
     }).catch((error) => {
-      console.error("Error submitting condition active status:", error);
+      logger.error("Error submitting condition active status:", error);
     });
 
     if (option === "No, my scalp is clear") {
@@ -2263,7 +2377,7 @@ export default function HairConsultationQuiz({
       "24_4": formData["24_4"] || "",
       "24_5": formData["24_5"] || "",
     }).catch((error) => {
-      console.error("Error submitting medical condition data:", error);
+      logger.error("Error submitting medical condition data:", error);
     });
 
     setFormData((prev) => ({
@@ -2344,13 +2458,14 @@ export default function HairConsultationQuiz({
       const data = await response.json();
 
       if (data.error) {
-        console.error("Form submission error:", data.msg || data.error_message);
+        logger.error("Form submission error:", data.msg || data.error_message);
 
         if (data.data_not_found) {
           alert(
             "An error has been encountered while processing your data. If your session has expired, you will be asked to login again."
           );
-          window.location.href = `https://myrocky.ca/hair-consultation-quiz/?stage=${data.redirect_to_stage}`;
+          const redirectStage = data.redirect_to_stage || "consultation-after-checkout";
+          window.location.href = `/hair-consultation-quiz/?stage=${redirectStage}`;
           return null;
         }
 
@@ -2374,11 +2489,15 @@ export default function HairConsultationQuiz({
       if (formData.completion_state === "Full") {
         setCurrentPage(22);
         setProgress(100);
+        setFormData((prev) => ({
+          ...prev,
+          page_step: 22,
+        }));
       }
 
       return data;
     } catch (error) {
-      console.error("Error submitting form:", error);
+      logger.error("Error submitting form:", error);
       return null;
     }
   };
@@ -2459,7 +2578,7 @@ export default function HairConsultationQuiz({
       15: { 138: formData["138"] }, // Finasteride usage
       16: { 33: formData["33"], 34: formData["34"] }, // Photos
       17: { 203: formData["203"] }, // Medication acknowledgment
-      18: { 35: formData["35"] }, // Provider message
+      18: { 35: formData["35"] }, // Healthcare questions (text or "none")
       19: { 37: formData["37"] }, // Book call
       20: {
         "182_1": formData["182_1"],
@@ -2500,7 +2619,7 @@ export default function HairConsultationQuiz({
           );
           localStorage.setItem("quiz-form-data-hair-expiry", ttl.toString());
         } catch (error) {
-          console.error("Error updating local storage:", error);
+          logger.error("Error updating local storage:", error);
         }
       }
 
@@ -2850,7 +2969,7 @@ export default function HairConsultationQuiz({
           };
 
           submitFormData(mentalHealthData).catch((error) => {
-            console.error("Error submitting mental health data:", error);
+            logger.error("Error submitting mental health data:", error);
           });
         }
 
@@ -2934,28 +3053,23 @@ export default function HairConsultationQuiz({
         }
         return true;
 
-      case 18: // Provider message
+      case 18: // Healthcare questions
+        if (!formData["35_choice"]) {
+          return showError("Please make a selection");
+        }
+        if (formData["35_choice"] === "Yes" && !formData["35"]) {
+          return showError("Please enter your questions");
+        }
         return true;
 
       case 19: // Book call
         if (!formData["37"]) {
           return showError("Please make a selection");
         }
-
-        if (
-          (formData["37"] === "Clinician" || formData["37"] === "Pharmacist") &&
-          !formData.calendly_booking_completed
-        ) {
-          return showError(
-            "Please complete scheduling your call before continuing"
-          );
-        }
-
         if (formData["37"] === "No" && !formData["182_1"]) {
           setShowNoCallAcknowledgement(true);
           return false;
         }
-
         return true;
 
       case 20: // Photo ID acknowledgment
@@ -3186,13 +3300,16 @@ export default function HairConsultationQuiz({
                                                         required
                                                     /> */}
                           <DOBInput
-                            value={datePickerValue}
-                            onChange={(newValue) =>
-                              handleBirthDateChange(newValue)
-                            }
-                            required
-                            name="158"
+                            value={formData["158"]}
+                            onChange={(value) => {
+                              const updatedData = { ...formData, 158: value };
+                              setFormData(updatedData);
+                              updateLocalStorage(updatedData);
+                            }}
                             className="w-full p-4 border-2 border-gray-300 rounded-lg focus:border-[#A7885A] focus:outline-none"
+                            placeholder="MM/DD/YYYY"
+                            minAge={18}
+                            required
                           />
                           <WarningPopup
                             isOpen={showUnder18Popup}
@@ -3682,8 +3799,11 @@ export default function HairConsultationQuiz({
                           </div>
                           {/* File format information */}{" "}
                           <div className="text-center text-xs text-gray-400 mt-6">
-                            <p>Only JPEG and PNG images are supported.</p>
-                            <p>Max allowed file size per image is 10MB</p>
+                            <p>
+                              Only JPG, JPEG, PNG, HEIF, and HEIC images are
+                              supported.
+                            </p>
+                            <p>Max allowed file size per image is 20MB</p>
                           </div>
                           {/* Upload button */}
                           <div className="text-center mt-6">
@@ -3788,11 +3908,10 @@ export default function HairConsultationQuiz({
 
                           <h3 className="quiz-subheading text-[11px] text-left font-normal pt-2 text-gray-600">
                             *This is less likely to occur with the 2-1 foam
-                            topical solution vs oral finasteride. Please be
-                            aware the above list does not include all possible
-                            side effects. If you want to know more, please book
-                            an appointment with our healthcare team at the end
-                            of this questionnaire.
+                            topical solution vs oral finasteride. This isn’t a
+                            full list of potential side effects. To learn more,
+                            please book an appointment or send a message to your
+                            clinician
                           </h3>
 
                           <span className="block border-b border-gray-300 mt-2"></span>
@@ -3837,28 +3956,51 @@ export default function HairConsultationQuiz({
                         currentPage={currentPage}
                         pageNo={18}
                         questionId={hairQuestionList[17].questionId}
-                        inputType="textarea"
                       >
-                        <div className="w-full">
-                          <p className="text-sm text-center mb-4">
-                            {hairQuestionList[17].subtitle}
-                          </p>
-
-                          <textarea
-                            id={hairQuestionList[17].questionId}
-                            name={hairQuestionList[17].questionId}
-                            value={
-                              formData[hairQuestionList[17].questionId] || ""
-                            }
-                            onChange={handleProviderMessageChange}
-                            placeholder={hairQuestionList[17].placeholder}
-                            className="w-full p-4 border-2 border-gray-300 rounded-lg focus:border-[#A7885A] focus:outline-none min-h-[150px]"
-                          />
-
-                          {/* <p className="text-xs text-gray-400 text-center mt-4">
-                            We respect your privacy. All of your information is
-                            securely stored on our PIPEDA Compliant server.
-                          </p> */}
+                        <div className="w-full space-y-4">
+                          {hairQuestionList[17].answers.map((answer, index) => (
+                            <div
+                              key={index}
+                              className={`quiz-option text-left block w-full mb-4 cursor-pointer`}
+                              onClick={() => handleHealthcareQuestionsSelect(answer.body)}
+                            >
+                              <div
+                                className={`quiz-option-label cursor-pointer text-left p-4 border-2 
+                                          ${formData["35_choice"] === answer.body ? "border-[#A7885A]" : "border-gray-300"} 
+                                          rounded-[12px] block w-full shadow-md flex items-center`}
+                              >
+                                <span className="flex-grow">{answer.body}</span>
+                                {formData["35_choice"] === answer.body && (
+                                  <svg
+                                    className="w-6 h-6 text-[#A7885A]"
+                                    fill="currentColor"
+                                    viewBox="0 0 20 20"
+                                  >
+                                    <path
+                                      fillRule="evenodd"
+                                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                      clipRule="evenodd"
+                                    />
+                                  </svg>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                          {formData["35_choice"] === "Yes" && (
+                            <div className="mt-4 w-full">
+                              <p className="text-sm text-center mb-4">
+                                Ask any questions you may have about your condition or treatment options
+                              </p>
+                              <textarea
+                                id="35"
+                                name="35"
+                                value={formData["35"] || ""}
+                                onChange={handleProviderMessageChange}
+                                placeholder="Type in your questions here..."
+                                className="w-full p-4 border-2 border-gray-300 rounded-lg focus:border-[#A7885A] focus:outline-none min-h-[150px]"
+                              />
+                            </div>
+                          )}
                         </div>
                       </QuestionLayout>
                     )}
@@ -3883,155 +4025,15 @@ export default function HairConsultationQuiz({
                             value={answer.body}
                             checked={
                               formData[hairQuestionList[18].questionId] ===
-                              answer.body
+                                answer.body ||
+                              (answer.body === "Clinician" &&
+                                formData[hairQuestionList[18].questionId] ===
+                                  "Doctor")
                             }
                             onChange={() => handleBookCallSelect(answer.body)}
                             type="radio"
                           />
-                        ))}{" "}
-                        {/* Clinician Calendar - Using AppointmentBooking component */}
-                        {formData["37"] === "Clinician" && (
-                          <div
-                            id="appointment-field-doctor"
-                            className="w-full text-center border-2 rounded border-gray-300 mt-4 p-2"
-                          >
-                            <AppointmentBooking
-                              formData={formData}
-                              onSelect={(value, fieldName) => {
-                                const updates = { [fieldName]: value };
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  ...updates,
-                                }));
-                                updateFormDataAndStorage(updates);
-
-                                if (
-                                  fieldName === "calendly_booking_completed" &&
-                                  value === true
-                                ) {
-                                  const continueButton =
-                                    formRef.current?.querySelector(
-                                      ".quiz-continue-button"
-                                    );
-                                  if (continueButton) {
-                                    continueButton.style.visibility = "visible";
-                                    continueButton.style.display = "block";
-                                  }
-                                } else if (
-                                  fieldName === "calendly_booking_completed" &&
-                                  value === false
-                                ) {
-                                  const continueButton =
-                                    formRef.current?.querySelector(
-                                      ".quiz-continue-button"
-                                    );
-                                  if (continueButton) {
-                                    continueButton.style.visibility = "hidden";
-                                  }
-                                }
-                              }}
-                              userName={userName}
-                              userEmail={userEmail}
-                              phoneNumber={pn}
-                              province={province}
-                            />
-                          </div>
-                        )}
-                        {/* Pharmacist Calendar */}
-                        {formData["37"] === "Pharmacist" && (
-                          <div
-                            id="appointment-field-pharmacist"
-                            className="w-full text-center border-2 rounded border-gray-300 mt-4 p-2 h-[700px]"
-                          >
-                            {formData.calendly_booking_completed &&
-                            formData["37"] === "Pharmacist" ? (
-                              <div className="h-full flex flex-col items-center justify-center p-4">
-                                <div className="bg-green-100 border border-green-400 text-green-700 rounded p-4 w-full max-w-md">
-                                  <svg
-                                    className="w-16 h-16 mx-auto text-green-500 mb-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth="2"
-                                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                                    ></path>
-                                  </svg>
-                                  <h3 className="text-xl font-bold mb-2">
-                                    Appointment Booked!
-                                  </h3>
-                                  {formData.calendly_booking_date && (
-                                    <p className="mb-2">
-                                      Your appointment is scheduled for{" "}
-                                      <span className="font-semibold">
-                                        {new Date(
-                                          formData.calendly_booking_date
-                                        ).toLocaleDateString()}{" "}
-                                        at{" "}
-                                        {new Date(
-                                          formData.calendly_booking_date
-                                        ).toLocaleTimeString([], {
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                        })}
-                                      </span>
-                                    </p>
-                                  )}
-                                  <p className="text-sm mt-2">
-                                    You can now continue to the next step.
-                                  </p>
-                                  <button
-                                    onClick={() => {
-                                      const updates = {
-                                        calendly_booking_completed: false,
-                                        calendly_booking_date: "",
-                                        calendly_booking_event_type: "",
-                                      };
-                                      setFormData((prev) => ({
-                                        ...prev,
-                                        ...updates,
-                                      }));
-                                      updateFormDataAndStorage(updates);
-                                      const continueButton =
-                                        formRef.current?.querySelector(
-                                          ".quiz-continue-button"
-                                        );
-                                      if (continueButton) {
-                                        continueButton.style.visibility =
-                                          "hidden";
-                                      }
-                                      handleBookCallSelect("Pharmacist");
-                                    }}
-                                    className="mt-4 text-sm underline text-green-800 hover:text-green-900"
-                                  >
-                                    Change appointment
-                                  </button>
-                                </div>
-                              </div>
-                            ) : (
-                              <>
-                                <div
-                                  className="calendly-inline-widget"
-                                  data-url={`https://calendly.com/mrizk90/follow-up-call-with-pharmacist?hide_event_type_details=1&primary_color=814b00&name=${
-                                    userName || ""
-                                  }&email=${userEmail || ""}&location=+1${
-                                    pn || ""
-                                  }`}
-                                  style={{ minWidth: "320px", height: "700px" }}
-                                ></div>
-                                <script
-                                  type="text/javascript"
-                                  src="https://assets.calendly.com/assets/external/widget.js"
-                                  async
-                                ></script>
-                              </>
-                            )}
-                          </div>
-                        )}
+                        ))}
                       </QuestionLayout>
                     )}
 
@@ -4107,7 +4109,7 @@ export default function HairConsultationQuiz({
                               type="file"
                               ref={fileInputRef}
                               id="photo-id-file"
-                              accept="image/jpeg,image/png"
+                              accept="image/jpeg,image/jpg,image/png,image/heif,image/heic"
                               className="hidden"
                               onChange={handlePhotoIdFileSelect}
                             />
@@ -4153,9 +4155,10 @@ export default function HairConsultationQuiz({
                                   your ID
                                 </p>{" "}
                                 <p className="text-center text-sm text-gray-500 mb-8">
-                                  Only JPEG and PNG images are supported.
+                                  Only JPG, JPEG, PNG, HEIF, and HEIC images are
+                                  supported.
                                   <br />
-                                  Maximum file size per image is 10MB
+                                  Maximum file size per image is 20MB
                                 </p>
                               </div>
                             )}
@@ -4265,13 +4268,12 @@ export default function HairConsultationQuiz({
                     <WarningPopup
                       isOpen={showNoCallAcknowledgement}
                       onClose={handleNoCallContinue}
-                      title="Acknowledgement"
+                      title="No Call Acknowledgement"
                       message="I hereby acknowledge that by foregoing an appointment with a licensed physician or pharmacist, it is my sole responsibility to ensure I am aware of how to appropriately use the medication requested, furthermore I hereby confirm that I am aware of any potential side effects that may occur through the use of the aforementioned medication and hereby confirm that I do not have any medical questions to ask. I will ensure I have read the relevant product page and FAQ prior to use of the prescribed medication. Should I have any questions to ask, I am aware of how to contact the clinical team at Rocky or get a hold of my primary care provider."
                       isAcknowledged={noCallAcknowledged}
                       onAcknowledge={handleNoCallAcknowledgement}
+                      buttonText="I Acknowledge"
                       backgroundColor="bg-white"
-                      additionalContent={null}
-                      buttonText="OK"
                       currentPage={currentPage}
                       afterButtonContent={
                         <p className="mt-4 text-center font-medium text-md text-[#000000]">
@@ -4571,7 +4573,7 @@ export default function HairConsultationQuiz({
                     </svg>
                   </a>
                   <a
-                    href="https://www.instagram.com/myrocky.ca/"
+                    href="https://www.instagram.com/myrocky/"
                     className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-200 flex items-center justify-center"
                   >
                     <svg
@@ -4607,7 +4609,7 @@ export default function HairConsultationQuiz({
             <div className="w-full px-6 z-10 pb-6 md:pb-8 mb-4">
               <div className="max-w-md md:max-w-lg mx-auto">
                 <button
-                  onClick={() => router.push("/")}
+                  onClick={() => (window.location.href = "/")}
                   className="w-full bg-white text-black py-4 md:py-5 px-6 rounded-full text-base md:text-xl font-medium shadow-md hover:bg-gray-100 transition-colors"
                 >
                   Go back home

@@ -1,5 +1,6 @@
 import AWS from "aws-sdk";
 import { randomBytes } from "crypto";
+import { logger } from "@/utils/devLogger";
 
 // Initialize the S3 client once
 const s3 = new AWS.S3({
@@ -43,7 +44,7 @@ export async function uploadToS3(
     const result = await s3.upload(params).promise();
     return result.Location;
   } catch (error) {
-    console.error("S3 upload error:", error);
+    logger.error("S3 upload error:", error);
     throw new Error(`Failed to upload to S3: ${error.message}`);
   }
 }

@@ -3,12 +3,12 @@ const items = [
   {
     icon: "https://myrocky.b-cdn.net/WP%20Images/Hair%20Loss/ibm--lpa 1.png",
     alt: "See-results",
-    text: "See results in 3-4 months.",
+    text: "See results in 3-4 months",
   },
   {
     icon: "https://myrocky.b-cdn.net/WP%20Images/Hair%20Loss/hospital 1.png",
     alt: "Health",
-    text: " FDA-Authorized Treatments.",
+    text: "Health Canada-Authorized Treatments",
   },
   {
     icon: "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/Pre%20Sell/delivery--parcel%201.png",
@@ -32,7 +32,7 @@ const HairCoverData = {
     },
     {
       text: "I know what I want",
-      href: "/hair-flow/",
+      href: "/hair-products",
       primary: false,
       ariaLabel: "Opt2",
       width: "w-full md:w-[208px]",

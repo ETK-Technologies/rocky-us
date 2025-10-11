@@ -11,12 +11,11 @@ import TeamSection from "@/components/TeamSection";
 import RockyBlog from "@/components/RockyBlog";
 import ReviewsSection from "@/components/ReviewsSection";
 import ProudPartner from "@/components/ProudPartner";
-import Trackers from "@/components/Trackers";
+
 
 export default async function Home() {
   return (
     <main>
-      {/* <Trackers /> */}
       <CoverSection>
         <HomeCover />
         <RockyFeatures />

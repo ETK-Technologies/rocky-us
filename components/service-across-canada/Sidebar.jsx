@@ -1,6 +1,6 @@
 import React from "react";
 import Image from "next/image";
-import Link from "next/link";
+import BrimaryButton from "../ui/buttons/BrimaryButton";
 
 const Sidebar = () => {
   return (
@@ -18,16 +18,13 @@ const Sidebar = () => {
         Get Stronger Erections
       </h3>
 
-      <p className="mb-6 text-[#000000B8] text-sm font-normal">
-        Lorem ipsum dolor sit amet consectetur adipisicing elit.
+      <p className="mb-6 text-[#000000B8] text-xs font-normal">
+        Get fast, discreet access to ED medication like Viagra or Cialis, delivered to your door anywhere.
       </p>
 
-      <Link
-        href="/faqs"
-        className="block py-3 w-full font-medium text-center text-white bg-black rounded-lg transition-colors hover:bg-gray-800"
-      >
-        Get Started →
-      </Link>
+      <BrimaryButton href="/faqs" arrowIcon={true} className="block py-3 w-full font-medium text-center text-white bg-black rounded-lg transition-colors hover:bg-gray-800">
+        Get Started
+      </BrimaryButton>
     </div>
   );
 };

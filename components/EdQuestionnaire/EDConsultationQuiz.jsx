@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { logger } from "@/utils/devLogger";
 import { useRouter } from "next/navigation";
 import { WarningPopup } from "./WarningPopup";
 import { QuestionLayout } from "./QuestionLayout";
@@ -16,7 +17,9 @@ import {
   FaCheckCircle,
 } from "react-icons/fa";
 import Loader from "../Loader";
-const { uploadFileToS3WithProgress } = await import("@/utils/s3/frontend-upload");
+const { uploadFileToS3WithProgress } = await import(
+  "@/utils/s3/frontend-upload"
+);
 
 const QuestionWrapper = ({ children }) => (
   <div className="w-[335px] md:w-[520px] mx-auto">{children}</div>
@@ -42,12 +45,46 @@ export default function EDConsultationQuiz({
           }
         }
       } catch (e) {
-        console.error("Error loading form data from localStorage:", e);
+        logger.error("Error loading form data from localStorage:", e);
       }
     }
     const nameParts = userName.split(" ");
     const fname = nameParts[0];
     const lname = nameParts[1];
+    // Check for lidocaine addon selection
+    let lidocaineAnswer = "";
+    if (typeof window !== "undefined") {
+      try {
+        const prematureEjaculationData = localStorage.getItem(
+          "premature_ejaculation_answer"
+        );
+        if (prematureEjaculationData) {
+          const parsedData = JSON.parse(prematureEjaculationData);
+          if (
+            parsedData &&
+            typeof parsedData === "object" &&
+            parsedData.source === "lidocaine_addon_selection"
+          ) {
+            lidocaineAnswer = parsedData["98"] || "";
+            logger.log(
+              "Loaded lidocaine answer from localStorage:",
+              lidocaineAnswer
+            );
+          } else {
+            logger.warn(
+              "Invalid lidocaine data structure, clearing localStorage"
+            );
+            localStorage.removeItem("premature_ejaculation_answer");
+          }
+        }
+      } catch (e) {
+        logger.error("Error loading lidocaine addon data:", e);
+        try {
+          localStorage.removeItem("premature_ejaculation_answer");
+        } catch (_) {}
+      }
+    }
+
     return {
       form_id: 2,
       action: "ed_questionnaire_data_upload",
@@ -70,7 +107,9 @@ export default function EDConsultationQuiz({
       28: "",
       148: "",
       181: "",
+      182: "",
       196: "",
+      ...(lidocaineAnswer ? { 98: lidocaineAnswer } : {}),
       ...Array.from({ length: 6 }, (_, i) => ({ [`23_${i + 1}`]: "" })).reduce(
         (acc, curr) => ({ ...acc, ...curr }),
         {}
@@ -90,7 +129,7 @@ export default function EDConsultationQuiz({
   const formRef = useRef(null);
   const isValidating = useRef(false);
   const isIntentionalNavigation = useRef(false);
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCustomerVerificationPopup, setShowCustomerVerificationPopup] =
     useState(false);
@@ -106,6 +145,8 @@ export default function EDConsultationQuiz({
   const [showMedicationWarning, setShowMedicationWarning] = useState(false);
   const [currentMedicationWarning, setCurrentMedicationWarning] = useState("");
   const [showSexualIssuesPopup, setShowSexualIssuesPopup] = useState(false);
+  const [showLowLibidoWarning, setShowLowLibidoWarning] = useState(false);
+  const [lowLibidoAcknowledged, setLowLibidoAcknowledged] = useState(false);
   const [showHighBpWarning, setShowHighBpWarning] = useState(false);
   const [showVeryHighBpWarning, setShowVeryHighBpWarning] = useState(false);
   const [bpWarningAcknowledged, setBpWarningAcknowledged] = useState(false);
@@ -131,7 +172,7 @@ export default function EDConsultationQuiz({
       const status = localStorage.getItem("ed-photo-upload-status");
       return status ? JSON.parse(status) : { uploaded: false, url: null };
     } catch (error) {
-      console.error("Error reading photo upload status:", error);
+      logger.error("Error reading photo upload status:", error);
       return { uploaded: false, url: null };
     }
   };
@@ -143,7 +184,7 @@ export default function EDConsultationQuiz({
       const status = { uploaded, url, timestamp: Date.now() };
       localStorage.setItem("ed-photo-upload-status", JSON.stringify(status));
     } catch (error) {
-      console.error("Error setting photo upload status:", error);
+      logger.error("Error setting photo upload status:", error);
     }
   };
 
@@ -153,7 +194,7 @@ export default function EDConsultationQuiz({
     try {
       localStorage.removeItem("ed-photo-upload-status");
     } catch (error) {
-      console.error("Error clearing photo upload status:", error);
+      logger.error("Error clearing photo upload status:", error);
     }
   };
 
@@ -194,7 +235,7 @@ export default function EDConsultationQuiz({
     const processQueue = async () => {
       if (pendingSubmissions.length === 0 || isSyncing) return;
       if (formData.completion_state === "Full") {
-        console.log(
+        logger.log(
           "Skipping queue processing - questionnaire already completed"
         );
         setPendingSubmissions([]); // Clear pending submissions
@@ -218,7 +259,7 @@ export default function EDConsultationQuiz({
         ) {
           dataToSubmit.id = formData.id;
           dataToSubmit.token = formData.token;
-          console.log("Added existing ID/token to submission data");
+          logger.log("Added existing ID/token to submission data");
         }
 
         const nonEmptyData = Object.fromEntries(
@@ -253,7 +294,7 @@ export default function EDConsultationQuiz({
 
         setPendingSubmissions((prev) => prev.slice(1));
       } catch (error) {
-        console.error("Background sync error:", error);
+        logger.error("Background sync error:", error);
         setPendingSubmissions((prev) => prev.slice(1));
       } finally {
         setIsSyncing(false);
@@ -262,6 +303,7 @@ export default function EDConsultationQuiz({
 
     processQueue();
   }, [pendingSubmissions, isSyncing]);
+
   useEffect(() => {
     if (
       typeof window !== "undefined" &&
@@ -278,6 +320,13 @@ export default function EDConsultationQuiz({
 
     try {
       const quizFormData = JSON.parse(storedData);
+      if (!quizFormData || typeof quizFormData !== 'object') {
+        logger.warn("Invalid quiz form data structure, clearing localStorage");
+        localStorage.removeItem("quiz-form-data");
+        localStorage.removeItem("quiz-form-data-expiry");
+        return;
+      }
+      
       if (quizFormData["1"] === "Female") {
         setCurrentPage(1);
         setProgress(0);
@@ -294,7 +343,7 @@ export default function EDConsultationQuiz({
 
       const photoStatus = getPhotoUploadStatus();
       if (photoStatus.uploaded && quizFormData["196"] && !photoIdFile) {
-        console.log(
+        logger.log(
           "Detected photo was uploaded but file object lost after refresh. Photo URL:",
           photoStatus.url
         );
@@ -313,6 +362,12 @@ export default function EDConsultationQuiz({
       if (!quizFormData.page_step) return;
 
       const storedPage = parseInt(quizFormData.page_step);
+      if (isNaN(storedPage) || storedPage < 1 || storedPage > 22) {
+        logger.warn(`Invalid page number ${storedPage}, resetting to page 1`);
+        setCurrentPage(1);
+        setProgress(0);
+        return;
+      }
 
       const pageConditions = [
         {
@@ -360,8 +415,13 @@ export default function EDConsultationQuiz({
         },
         {
           page: 6,
-          nextPage: () => (quizFormData["25"] === "No" ? 8 : 7),
-          condition: () => quizFormData["25"],
+          nextPage: 8,
+          condition: () => quizFormData["25"] === "No",
+        },
+        {
+          page: 6,
+          nextPage: 7,
+          condition: () => quizFormData["25"] === "Yes",
         },
         {
           page: 7,
@@ -508,46 +568,19 @@ export default function EDConsultationQuiz({
             setIsSubmitting(false);
             isIntentionalNavigation.current = false;
 
-            const loaders = document.querySelectorAll(
-              ".fixed.top-0.left-0.right-0.bottom-0.bg-black\\/80"
-            );
-            loaders.forEach((loader) => {
-              if (loader && loader.parentNode) {
-                loader.parentNode.removeChild(loader);
-              }
-            });
           }, 300);
         }
       }
 
       setIsSubmitting(false);
 
-      setTimeout(() => {
-        const loaderSelectors = [
-          ".fixed.inset-0",
-          ".fixed.top-0.left-0.right-0.bottom-0",
-          ".fixed.top-0.left-0.right-0.bottom-0.bg-black",
-          ".fixed.top-0.left-0.right-0.bottom-0.bg-black\\/80",
-        ];
-
-        loaderSelectors.forEach((selector) => {
-          document.querySelectorAll(selector).forEach((loader) => {
-            if (loader) {
-              loader.style.display = "none";
-              loader.style.opacity = "0";
-              loader.style.visibility = "hidden";
-              loader.style.pointerEvents = "none";
-            }
-          });
-        });
-      }, 500);
 
       setCurrentPage(storedPage);
 
       const calculatedProgress = Math.floor(((storedPage - 1) / 21) * 100);
       setProgress(calculatedProgress);
     } catch (error) {
-      console.error("Error parsing stored quiz data:", error);
+      logger.error("Error parsing stored quiz data:", error);
     }
   }, []);
   useEffect(() => {
@@ -638,7 +671,7 @@ export default function EDConsultationQuiz({
     if (!continueButton) return;
 
     const isMultiSelectPage = [4, 5, 7, 8, 15].includes(currentPage);
-    const mightNeedTextInput = [2, 5, 7, 16, 18].includes(currentPage);
+    const mightNeedTextInput = [2, 5, 7, 16, 18, 19].includes(currentPage);
     const isSpecialCasePage = [20, 21].includes(currentPage);
     const isSingleSelectionPage = [
       1, 2, 3, 6, 9, 10, 11, 12, 13, 14, 17, 19,
@@ -724,6 +757,15 @@ export default function EDConsultationQuiz({
               typeof formData["181"] === "string" &&
               formData["181"].trim().length > 0);
           break;
+        case 19: // Healthcare team questions
+          shouldEnableButton =
+            formData["178"] === "No" ||
+            formData["178"] === "Pharmacist" ||
+            formData["178"] === "Doctor" ||
+            (formData["178"] === "Clinician" &&
+              typeof formData["182"] === "string" &&
+              formData["182"].trim().length > 0);
+          break;
         case 20: // Photo ID acknowledgement
           shouldEnableButton = !!photoIdAcknowledged;
           break;
@@ -799,7 +841,7 @@ export default function EDConsultationQuiz({
 
     if (currentPage === 22) {
       const handlePopState = () => {
-        window.location.href = "https://myrocky.ca/";
+        window.location.href = "/";
       };
       window.addEventListener("popstate", handlePopState);
       return () => {
@@ -810,9 +852,7 @@ export default function EDConsultationQuiz({
 
   const queueFormSubmission = (data, forceSubmit = false) => {
     if (formData.completion_state === "Full" && !forceSubmit) {
-      console.log(
-        "Skipping queue submission - questionnaire already completed"
-      );
+      logger.log("Skipping queue submission - questionnaire already completed");
       return;
     }
 
@@ -821,7 +861,7 @@ export default function EDConsultationQuiz({
       const hasPhotoInData = formData["196"] || data["196"];
 
       if (!photoStatus.uploaded && !hasPhotoInData) {
-        console.log(
+        logger.log(
           "Preventing Full completion - photo required but not uploaded"
         );
         data.completion_state = "Partial";
@@ -899,18 +939,64 @@ export default function EDConsultationQuiz({
   };
   const handleContinueClick = async () => {
     if (currentPage === 22) {
-      router.push("/");
+      window.location.href = "/";
       return;
     }
     if (currentPage === 1 && formData["1"] === "Female") {
       setShowPopup(true);
       return;
     }
+
+    if (currentPage === 6) {
+      if (!formData["25"]) {
+        const errorBox = formRef.current?.querySelector(".error-box");
+        if (errorBox) {
+          errorBox.classList.remove("hidden");
+          errorBox.textContent = "Please make a selection";
+        }
+        return;
+      }
+
+      const updates = {
+        25: formData["25"],
+        "27_1": "",
+        "27_2": "",
+        "27_3": "",
+        "27_4": "",
+        "27_5": "",
+        "27_6": "",
+        "27_7": "",
+        28: "",
+        page_step: formData["25"] === "No" ? 8 : 7,
+      };
+
+      const updatedFormData = { ...formData, ...updates };
+      setFormData(updatedFormData);
+      updateLocalStorage(updatedFormData);
+      queueFormSubmission(updatedFormData);
+
+      if (formData["25"] === "No") {
+        setCurrentPage(8);
+        setProgress(Math.floor((7 / 21) * 100));
+        return;
+      }
+    }
+
     setValidationAttempted(true);
-    setIsSubmitting(true);
+    if (currentPage !== 1) {
+      if (currentPage !== 1) {
+        setIsSubmitting(true);
+      }
+    }
 
     if (currentPage === 8 && formData["33_5"] === "Ejaculating too early") {
       setShowSexualIssuesPopup(true);
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (currentPage === 8 && formData["33_3"] === "Low sexual desire") {
+      setShowLowLibidoWarning(true);
       setIsSubmitting(false);
       return;
     }
@@ -1043,12 +1129,17 @@ export default function EDConsultationQuiz({
             page_step: 8,
           };
 
-          setFormData((prev) => ({ ...prev, ...updates }));
-          updateLocalStorage({ ...formData, ...updates });
-          queueFormSubmission(updates);
-          setCurrentPage(8);
-          setProgress(Math.floor(((8 - 1) / 21) * 100));
-          setIsSubmitting(false);
+          const updatedFormData = { ...formData, ...updates };
+          setFormData(updatedFormData);
+          updateLocalStorage(updatedFormData);
+          queueFormSubmission(updatedFormData);
+
+          setTimeout(() => {
+            setCurrentPage(8);
+            setProgress(Math.floor(((8 - 1) / 21) * 100));
+            setIsSubmitting(false);
+          }, 10);
+
           return;
         }
       }
@@ -1145,7 +1236,7 @@ export default function EDConsultationQuiz({
         ...currentPageData,
       };
 
-      console.log("API submission payload:", payload);
+      logger.log("API submission payload:", payload);
 
       const response = await fetch("/api/ed", {
         method: "POST",
@@ -1159,13 +1250,19 @@ export default function EDConsultationQuiz({
       const data = await response.json();
 
       if (data.error) {
-        console.error("Form submission error:", data.msg || data.error_message);
+        logger.error("Form submission error:", data.msg || data.error_message);
+        if (data.msg?.includes("authentication") || data.msg?.includes("unauthorized") || response.status === 401) {
+          alert("Your session has expired. Please log in again.");
+          window.location.href = "/login-register";
+          return null;
+        }
 
         if (data.data_not_found) {
           alert(
             "An error has been encountered while processing your data. If your session has expired, you will be asked to login again."
           );
-          window.location.href = `https://myrocky.ca/ed-consultation-quiz/?stage=${data.redirect_to_stage}`;
+          const redirectStage = data.redirect_to_stage || "consultation-after-checkout";
+          window.location.href = `/ed-consultation-quiz/?stage=${redirectStage}`;
           return null;
         }
 
@@ -1207,7 +1304,7 @@ export default function EDConsultationQuiz({
 
       return data;
     } catch (error) {
-      console.error("Error submitting form:", error);
+      logger.error("Error submitting form:", error);
       return null;
     }
   };
@@ -1219,10 +1316,24 @@ export default function EDConsultationQuiz({
   ) => {
     clearError();
 
-    const updates = {
+    let updates = {
       [fieldName]: value,
       ...additionalUpdates,
     };
+
+    if (fieldName === "25" && value === "No") {
+      updates = {
+        ...updates,
+        "27_1": "",
+        "27_2": "",
+        "27_3": "",
+        "27_4": "",
+        "27_5": "",
+        "27_6": "",
+        "27_7": "",
+        28: "",
+      };
+    }
 
     const completeFormData = {
       ...formData,
@@ -1296,7 +1407,7 @@ export default function EDConsultationQuiz({
       if (typeof window !== "undefined") {
         localStorage.removeItem("quiz-form-data");
         localStorage.removeItem("quiz-form-data-expiry");
-        console.log("Quiz form data cleared from localStorage");
+        logger.log("Quiz form data cleared from localStorage");
       }
 
       setIsUploading(false);
@@ -1309,7 +1420,7 @@ export default function EDConsultationQuiz({
         hideLoader();
       }, 100);
     } catch (error) {
-      console.error("Customer verification error:", error);
+      logger.error("Customer verification error:", error);
       hideLoader();
       setIsUploading(false);
       alert("An error occurred during verification. Please try again.");
@@ -1343,10 +1454,10 @@ export default function EDConsultationQuiz({
       if (typeof window !== "undefined") {
         localStorage.removeItem("quiz-form-data");
         localStorage.removeItem("quiz-form-data-expiry");
-        console.log("Quiz form data cleared from localStorage");
+        logger.log("Quiz form data cleared from localStorage");
       }
     } catch (error) {
-      console.error("Name update error:", error);
+      logger.error("Name update error:", error);
       alert("An error occurred while updating your name.");
     }
   };
@@ -1371,10 +1482,10 @@ export default function EDConsultationQuiz({
       if (typeof window !== "undefined") {
         localStorage.removeItem("quiz-form-data");
         localStorage.removeItem("quiz-form-data-expiry");
-        console.log("Quiz form data cleared from localStorage");
+        logger.log("Quiz form data cleared from localStorage");
       }
     } catch (error) {
-      console.error("Ordering for someone else error:", error);
+      logger.error("Ordering for someone else error:", error);
       alert("An error occurred. Please try again.");
     }
   };
@@ -1420,7 +1531,7 @@ export default function EDConsultationQuiz({
         localStorage.setItem("quiz-form-data-expiry", ttl.toString());
         return true;
       } catch (error) {
-        console.error("Error storing data in local storage:", error);
+        logger.error("Error storing data in local storage:", error);
         return false;
       }
     }
@@ -1492,6 +1603,9 @@ export default function EDConsultationQuiz({
         "33_2": formData["33_2"],
         "33_3": formData["33_3"],
         "33_5": formData["33_5"],
+        "97_1": formData["97_1"],
+        "97_2": formData["97_2"],
+        "97_3": formData["97_3"],
       },
       9: { 42: formData["42"] },
       10: {
@@ -1534,6 +1648,7 @@ export default function EDConsultationQuiz({
       },
       19: {
         178: formData["178"],
+        182: formData["182"],
         "182_1": formData["182_1"],
         "182_2": formData["182_2"],
         "182_3": formData["182_3"],
@@ -1560,7 +1675,7 @@ export default function EDConsultationQuiz({
       )
     );
 
-    console.log("Collected page data:", result);
+    logger.log("Collected page data:", result);
 
     return result;
   };
@@ -1571,21 +1686,37 @@ export default function EDConsultationQuiz({
     clearError();
 
     const fileType = file.type;
-    if (fileType !== "image/jpeg" && fileType !== "image/png") {
+    const fileName = file.name.toLowerCase();
+    const fileExtension = fileName.split(".").pop();
+
+    const supportedMimeTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/heif",
+      "image/heic",
+    ];
+
+    const supportedExtensions = ["jpg", "jpeg", "png", "heif", "heic"];
+
+    const isSupportedMimeType = supportedMimeTypes.includes(fileType);
+    const isSupportedExtension = supportedExtensions.includes(fileExtension);
+
+    if (!isSupportedMimeType && !isSupportedExtension) {
       const errorBox = formRef.current?.querySelector(".error-box");
       if (errorBox) {
         errorBox.classList.remove("hidden");
-        errorBox.textContent = "Only JPEG and PNG images are supported";
+        errorBox.textContent =
+          "Only JPG, JPEG, PNG, HEIF, and HEIC images are supported";
       }
       e.target.value = "";
       return;
     }
-    if (file.size > 10 * 1024 * 1024) {
-      // alert("File size too large! Please select an image smaller than 10MB.");
+    if (file.size > 20 * 1024 * 1024) {
       const errorBox = formRef.current?.querySelector(".error-box");
       if (errorBox) {
         errorBox.classList.remove("hidden");
-        errorBox.textContent = "Maximum file size is 10MB";
+        errorBox.textContent = "Maximum file size is 20MB";
       }
       e.target.value = "";
       const continueButton = formRef.current?.querySelector(
@@ -1600,14 +1731,25 @@ export default function EDConsultationQuiz({
 
     setPhotoIdFile(file);
 
-    const reader = new FileReader();
-    reader.onload = function (e) {
+    const isHeifFile = fileExtension === "heif" || fileExtension === "heic";
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+    if (isHeifFile && !isSafari) {
       const preview = document.getElementById("photo-id-preview");
       if (preview) {
-        preview.src = e.target?.result;
+        preview.src =
+          "https://myrocky.ca/wp-content/themes/salient-child/img/photo_upload_icon.png";
       }
-    };
-    reader.readAsDataURL(file);
+    } else {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const preview = document.getElementById("photo-id-preview");
+        if (preview) {
+          preview.src = e.target?.result;
+        }
+      };
+      reader.readAsDataURL(file);
+    }
 
     setTimeout(() => {
       const continueButton = formRef.current?.querySelector(
@@ -1625,7 +1767,7 @@ export default function EDConsultationQuiz({
       throw new Error("No photo file selected");
     }
 
-    try {      
+    try {
       const s3Url = await uploadFileToS3WithProgress(
         photoIdFile,
         "questionnaire/ed-photo-ids",
@@ -1676,7 +1818,7 @@ export default function EDConsultationQuiz({
 
       return true;
     } catch (error) {
-      console.error("Error uploading photo:", error);
+      logger.error("Error uploading photo:", error);
       throw error;
     }
   };
@@ -1813,7 +1955,7 @@ export default function EDConsultationQuiz({
     setShowNoCallAcknowledgement(false);
 
     const updates = {
-      178: "Clinician",
+      178: "Doctor",
       "182_1": "",
       "182_2": "",
       "182_3": "",
@@ -1886,7 +2028,9 @@ export default function EDConsultationQuiz({
 
     if (isValidated()) {
       setValidationAttempted(false);
-      setIsSubmitting(true);
+      if (currentPage !== 1) {
+        setIsSubmitting(true);
+      }
       isIntentionalNavigation.current = true;
       moveToNextSlide(null, true);
     }
@@ -1898,6 +2042,35 @@ export default function EDConsultationQuiz({
     const updates = {
       179: option,
       181: option === "No" ? "" : formData["181"],
+    };
+
+    setFormData((prev) => ({
+      ...prev,
+      ...updates,
+    }));
+    updateFormDataAndStorage(updates);
+    queueFormSubmission({ ...formData, ...updates });
+
+    if (option === "No") {
+      setTimeout(() => {
+        moveToNextSlide(null, true);
+      }, 10);
+    } else {
+      const continueButton = formRef.current?.querySelector(
+        ".quiz-continue-button"
+      );
+      if (continueButton) {
+        continueButton.style.display = "block";
+      }
+    }
+  };
+
+  const handleHealthcareQuestionsPage19Select = (option) => {
+    clearError();
+
+    const updates = {
+      178: option,
+      182: option === "No" ? "" : formData["182"],
     };
 
     setFormData((prev) => ({
@@ -1945,8 +2118,63 @@ export default function EDConsultationQuiz({
     }
   };
 
+  const handlePage19QuestionsChange = (e) => {
+    const value = e.target.value;
+
+    setFormData((prev) => ({
+      ...prev,
+      182: value,
+    }));
+
+    updateFormDataAndStorage({
+      182: value,
+    });
+
+    debouncedQueueSubmission({ ...formData, 182: value });
+
+    if (value.trim() !== "") {
+      const continueButton = formRef.current?.querySelector(
+        ".quiz-continue-button"
+      );
+      if (continueButton) {
+        continueButton.style.visibility = "";
+      }
+    }
+  };
+
   const handleMedicationAcknowledgmentSelect = (option) => {
     handleSingleChoiceSelection("203", option);
+  };
+
+  const handleMedicationSelect = (option) => {
+    clearError();
+
+    if (option === "No") {
+      const updates = {
+        25: "No",
+        "27_1": "",
+        "27_2": "",
+        "27_3": "",
+        "27_4": "",
+        "27_5": "",
+        "27_6": "",
+        "27_7": "",
+        28: "",
+        page_step: 8,
+      };
+
+      const updatedFormData = { ...formData, ...updates };
+      setFormData(updatedFormData);
+      updateLocalStorage(updatedFormData);
+      queueFormSubmission(updatedFormData);
+
+      setTimeout(() => {
+        setCurrentPage(8);
+        setProgress(Math.floor(((8 - 1) / 21) * 100));
+      }, 10);
+    } else {
+      handleSingleChoiceSelection("25", option);
+    }
   };
 
   const handleEdMedsExperienceSelect = (option) => {
@@ -2217,7 +2445,9 @@ export default function EDConsultationQuiz({
 
     if (isValidated()) {
       setValidationAttempted(false);
-      setIsSubmitting(true);
+      if (currentPage !== 1) {
+        setIsSubmitting(true);
+      }
       isIntentionalNavigation.current = true;
       moveToNextSlide(null, true);
     }
@@ -2337,14 +2567,16 @@ export default function EDConsultationQuiz({
 
     if (isValidated()) {
       setValidationAttempted(false);
-      setIsSubmitting(true);
+      if (currentPage !== 1) {
+        setIsSubmitting(true);
+      }
       isIntentionalNavigation.current = true;
       moveToNextSlide(null, true);
     }
   };
 
   const handleVeryHighBpWarningClose = (proceed = true) => {
-    console.log("Closing very high BP warning, selection was:", formData["45"]);
+    logger.log("Closing very high BP warning, selection was:", formData["45"]);
     setShowVeryHighBpWarning(false);
     setIsSubmitting(false);
 
@@ -2361,7 +2593,7 @@ export default function EDConsultationQuiz({
       queueFormSubmission(updates);
     } else {
       const currentSelection = formData["45"];
-      console.log("User proceeding with selection:", currentSelection);
+      logger.log("User proceeding with selection:", currentSelection);
       queueFormSubmission({ 45: currentSelection });
     }
   };
@@ -2431,7 +2663,9 @@ export default function EDConsultationQuiz({
 
     if (isValidated()) {
       setValidationAttempted(false);
-      setIsSubmitting(true);
+      if (currentPage !== 1) {
+        setIsSubmitting(true);
+      }
       isIntentionalNavigation.current = true;
       moveToNextSlide(null, true);
     }
@@ -2445,7 +2679,7 @@ export default function EDConsultationQuiz({
     clearError();
 
     const newValue = formData[fieldName] === value ? "" : value;
-    console.log(`Setting ${fieldName} to ${newValue}`);
+    logger.log(`Setting ${fieldName} to ${newValue}`);
 
     const currentValue = formData[fieldName];
 
@@ -2484,57 +2718,122 @@ export default function EDConsultationQuiz({
 
     if (isValidated()) {
       setValidationAttempted(false);
-      setIsSubmitting(true);
+      if (currentPage !== 1) {
+        setIsSubmitting(true);
+      }
       moveToNextSlide();
     } else {
       setIsSubmitting(false);
     }
   };
 
+  const handleLowLibidoAcknowledgement = (e) => {
+    const isChecked = e.target.checked;
+    setLowLibidoAcknowledged(isChecked);
+
+    const updates = {
+      "97_1": isChecked ? "1" : "",
+      "97_2": isChecked
+        ? "I hereby understand and acknowledge the above warning"
+        : "",
+      "97_3": isChecked ? "33" : "",
+    };
+
+    const updatedData = {
+      ...formData,
+      ...updates,
+    };
+
+    setFormData(updatedData);
+    updateLocalStorage(updatedData);
+    queueFormSubmission(updates);
+  };
+
+  const handleLowLibidoWarningContinue = (proceed = true) => {
+    if (!proceed) {
+      setShowLowLibidoWarning(false);
+      setLowLibidoAcknowledged(false);
+
+      const updates = {
+        "33_3": "",
+        "97_1": "",
+        "97_2": "",
+        "97_3": "",
+      };
+
+      setFormData((prev) => ({
+        ...prev,
+        ...updates,
+      }));
+
+      updateLocalStorage({
+        ...formData,
+        ...updates,
+      });
+
+      queueFormSubmission(updates);
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!lowLibidoAcknowledged) return;
+    setShowLowLibidoWarning(false);
+
+    const updates = {
+      "97_1": "1",
+      "97_2": "I hereby understand and acknowledge the above warning",
+      "97_3": "33",
+    };
+
+    setFormData((prev) => ({
+      ...prev,
+      ...updates,
+    }));
+
+    updateLocalStorage({
+      ...formData,
+      ...updates,
+    });
+
+    queueFormSubmission(updates);
+
+    if (isValidated()) {
+      setValidationAttempted(false);
+      if (currentPage !== 1) {
+        setIsSubmitting(true);
+      }
+      isIntentionalNavigation.current = true;
+      moveToNextSlide(null, true);
+    }
+  };
+
   const handlePrescriptionOptionSelect = (option) => {
     clearError();
-    let updates = {};
-    let targetPage = 0;
 
-    if (option === "No") {
-      updates = {
-        25: option,
-        "27_1": "",
-        "27_2": "",
-        "27_3": "",
-        "27_4": "",
-        "27_5": "",
-        "27_6": "",
-        "27_7": "",
-        28: "",
-        page_step: 8,
-      };
-      targetPage = 8;
-    } else {
-      updates = {
-        25: option,
-        page_step: 7,
-      };
-      targetPage = 7;
-    }
+    const updates = {
+      25: option,
+      "27_1": "",
+      "27_2": "",
+      "27_3": "",
+      "27_4": "",
+      "27_5": "",
+      "27_6": "",
+      "27_7": "",
+      28: "",
+      page_step: option === "No" ? 8 : 7,
+    };
 
     const updatedFormData = { ...formData, ...updates };
     setFormData(updatedFormData);
+    updateLocalStorage(updatedFormData);
+    queueFormSubmission(updatedFormData);
 
-    localStorage.setItem("quiz-form-data", JSON.stringify(updatedFormData));
-    localStorage.setItem(
-      "quiz-form-data-expiry",
-      (new Date().getTime() + 1000 * 60 * 60).toString()
-    );
     if (option === "No") {
-      queueFormSubmission(updates);
+      setCurrentPage(8);
+      setProgress(Math.floor((7 / 21) * 100));
     } else {
-      queueFormSubmission({ 25: option });
+      moveToNextSlide(null, true);
     }
-
-    setCurrentPage(targetPage);
-    const newProgress = Math.floor(((targetPage - 1) / 21) * 100);
-    setProgress(newProgress);
   };
 
   const handleSpecificMedicationSelect = (fieldName, value) => {
@@ -2816,7 +3115,7 @@ export default function EDConsultationQuiz({
         }
       }
     } catch (error) {
-      console.error("Error auto-saving:", error);
+      logger.error("Error auto-saving:", error);
     }
   };
 
@@ -3046,7 +3345,7 @@ export default function EDConsultationQuiz({
     }
 
     if (currentPage >= 22) {
-      window.location.href = "https://myrocky.ca/";
+      window.location.href = "/";
       return;
     }
 
@@ -3069,7 +3368,7 @@ export default function EDConsultationQuiz({
         localStorage.removeItem("quiz-form-data");
         localStorage.removeItem("quiz-form-data-expiry");
         clearPhotoUploadStatus();
-        console.log("Quiz form data cleared from localStorage");
+        logger.log("Quiz form data cleared from localStorage");
         localStorage.setItem("on-thank-you-page", "true");
       }
     }
@@ -3087,7 +3386,7 @@ export default function EDConsultationQuiz({
       if (typeof window !== "undefined") {
         localStorage.removeItem("on-thank-you-page");
       }
-      window.location.href = "https://myrocky.ca/";
+      window.location.href = "/";
       return;
     }
 
@@ -3301,6 +3600,12 @@ export default function EDConsultationQuiz({
           if (!hasSelection) {
             return showError("Please select at least one option");
           }
+
+          if (formData["33_3"] === "Low sexual desire" && !formData["97_1"]) {
+            setShowLowLibidoWarning(true);
+            return false;
+          }
+
           return true;
         },
       },
@@ -3445,6 +3750,9 @@ export default function EDConsultationQuiz({
           if (!formData["178"]) {
             return showError("Please make a selection");
           }
+          if (formData["178"] === "Clinician" && !formData["182"]) {
+            return showError("Please specify your questions");
+          }
           if (formData["178"] === "No" && !formData["182_1"]) {
             setShowNoCallAcknowledgement(true);
             return false;
@@ -3530,7 +3838,7 @@ export default function EDConsultationQuiz({
     };
 
     const handlePopState = (event) => {
-      console.log("PopState triggered, current page:", currentPage);
+      logger.log("PopState triggered, current page:", currentPage);
 
       if (isHandlingPopState.current) return;
       isHandlingPopState.current = true;
@@ -3561,6 +3869,7 @@ export default function EDConsultationQuiz({
           !isUploading &&
           !showMedicationWarning &&
           !showEdStartWarning &&
+          !showLowLibidoWarning &&
           !showHighBpWarning &&
           !showVeryHighBpWarning &&
           !showBpMedicationWarning &&
@@ -3989,9 +4298,7 @@ export default function EDConsultationQuiz({
                               name="25"
                               value={option}
                               checked={formData["25"] === option}
-                              onChange={() =>
-                                handlePrescriptionOptionSelect(option)
-                              }
+                              onChange={() => handleMedicationSelect(option)}
                               type="radio"
                             />
                           ))}
@@ -4416,30 +4723,33 @@ export default function EDConsultationQuiz({
                               { id: "2_0", value: "Yes" },
                               { id: "2_1", value: "No" },
                             ].map((option) => (
-                              <QuestionOption
-                                key={option.id}
-                                id={option.id}
-                                name="2"
-                                value={option.value}
-                                checked={formData["2"] === option.value}
-                                onChange={() =>
-                                  handleEdMedsExperienceSelect(option.value)
-                                }
-                                type="radio"
-                              />
+                              <div className="w-full" key={option.id}>
+                                <QuestionOption
+                                  id={option.id}
+                                  name="2"
+                                  value={option.value}
+                                  checked={formData["2"] === option.value}
+                                  onChange={() =>
+                                    handleEdMedsExperienceSelect(option.value)
+                                  }
+                                  type="radio"
+                                />
+                                {option.value === "Yes" &&
+                                  formData["2"] === "Yes" && (
+                                    <div className="mt-2 w-full">
+                                      <QuestionAdditionalInput
+                                        id="148"
+                                        name="148"
+                                        placeholder="Please state the medication and dosage"
+                                        value={formData["148"] || ""}
+                                        onChange={handleMedicationDetailsChange}
+                                        type="textarea"
+                                        disabled={formData["2"] !== "Yes"}
+                                      />
+                                    </div>
+                                  )}
+                              </div>
                             ))}
-
-                            {formData["2"] === "Yes" && (
-                              <QuestionAdditionalInput
-                                id="148"
-                                name="148"
-                                placeholder="Please state the medication and dosage"
-                                value={formData["148"] || ""}
-                                onChange={handleMedicationDetailsChange}
-                                type="text"
-                                disabled={formData["2"] !== "Yes"}
-                              />
-                            )}
                           </QuestionLayout>
                         </div>
                       </QuestionWrapper>
@@ -4476,9 +4786,9 @@ export default function EDConsultationQuiz({
                               <span className="block border-b border-gray-300 mt-2"></span>
 
                               <h3 className="quiz-subheading text-[12px] text-left font-normal pt-2 text-gray-600 mb-4">
-                                *If you are experiencing other sexual health
-                                issues, we encourage you to book an appointment
-                                to discuss with our healthcare team.
+                                *This isn’t a full list of potential side
+                                effects. To learn more, please book an
+                                appointment or send a message to your clinician
                               </h3>
                               <h3 className="quiz-subheading md:text-[18px] text-left font-semibold pt-4 mt-2">
                                 Possible Side Effects:
@@ -4505,9 +4815,9 @@ export default function EDConsultationQuiz({
                               <span className="block border-b border-gray-300 mt-2"></span>
 
                               <h3 className="quiz-subheading md:text-[12px] text-left font-normal pt-2 text-gray-600">
-                                *If you are experiencing other sexual health
-                                issues, we encourage you to book an appointment
-                                to discuss with our healthcare team.
+                                *This isn’t a full list of potential side
+                                effects. To learn more, please book an
+                                appointment or send a message to your clinician
                               </h3>
 
                               <span className="block border-b border-gray-300 mt-2"></span>
@@ -4583,9 +4893,9 @@ export default function EDConsultationQuiz({
                       <QuestionWrapper>
                         <div className="w-full max-w-[335px] md:max-w-[520px] mx-auto">
                           <QuestionLayout
-                            title="You're Almost Done"
-                            subtitle="Connect with our Medical Team"
-                            subtitle2="Do you have any questions for our healthcare team?"
+                            title="Do you have any questions for our healthcare team?"
+                            // subtitle="Connect with our Medical Team"
+                            // subtitle2=""
                             currentPage={currentPage}
                             pageNo={18}
                             questionId="179"
@@ -4594,30 +4904,37 @@ export default function EDConsultationQuiz({
                               { id: "179_0", value: "Yes" },
                               { id: "179_1", value: "No" },
                             ].map((option) => (
-                              <QuestionOption
-                                key={option.id}
-                                id={option.id}
-                                name="179"
-                                value={option.value}
-                                checked={formData["179"] === option.value}
-                                onChange={() =>
-                                  handleHealthcareQuestionsSelect(option.value)
-                                }
-                                type="radio"
-                                className="w-full"
-                              />
+                              <div className="w-full" key={option.id}>
+                                <QuestionOption
+                                  id={option.id}
+                                  name="179"
+                                  value={option.value}
+                                  checked={formData["179"] === option.value}
+                                  onChange={() =>
+                                    handleHealthcareQuestionsSelect(
+                                      option.value
+                                    )
+                                  }
+                                  type="radio"
+                                  className="w-full"
+                                />
+                                {option.value === "Yes" &&
+                                  formData["179"] === "Yes" && (
+                                    <div className="mt-2 w-full">
+                                      <QuestionAdditionalInput
+                                        id="181"
+                                        name="181"
+                                        placeholder="Specify your questions"
+                                        value={formData["181"] || ""}
+                                        onChange={
+                                          handleSpecifiedQuestionsChange
+                                        }
+                                        disabled={formData["179"] !== "Yes"}
+                                      />
+                                    </div>
+                                  )}
+                              </div>
                             ))}
-
-                            {formData["179"] === "Yes" && (
-                              <QuestionAdditionalInput
-                                id="181"
-                                name="181"
-                                placeholder="Specify your questions"
-                                value={formData["181"] || ""}
-                                onChange={handleSpecifiedQuestionsChange}
-                                disabled={formData["179"] !== "Yes"}
-                              />
-                            )}
                           </QuestionLayout>
                         </div>
                       </QuestionWrapper>
@@ -4625,28 +4942,44 @@ export default function EDConsultationQuiz({
                     {currentPage === 19 && (
                       <QuestionWrapper>
                         <QuestionLayout
-                          title="Would you like to book a call with one of our clinician or pharmacists?"
+                          title=" Would you like to book an appointment with our health care team?"
                           currentPage={currentPage}
                           pageNo={19}
                           questionId="178"
                         >
                           {[
-                            { id: "178_2", value: "Clinician" },
-                            { id: "178_3", value: "Pharmacist" },
-                            { id: "178_1", value: "No", label: "No, Thanks" },
+                            { id: "178_0", value: "Clinician" },
+                            { id: "178_1", value: "Pharmacist" },
+                            { id: "178_2", value: "No" },
                           ].map((option) => (
-                            <QuestionOption
-                              key={option.id}
-                              id={option.id}
-                              name="178"
-                              value={option.value}
-                              label={option.label || option.value}
-                              checked={formData["178"] === option.value}
-                              onChange={() =>
-                                handleBookCallSelect(option.value)
-                              }
-                              type="radio"
-                            />
+                            <div className="w-full" key={option.id}>
+                              <QuestionOption
+                                id={option.id}
+                                name="178"
+                                value={option.value}
+                                checked={formData["178"] === option.value}
+                                onChange={() =>
+                                  handleBookCallSelect(
+                                    option.value
+                                  )
+                                }
+                                type="radio"
+                                className="w-full"
+                              />
+                              {option.value === "Clinician" &&
+                                formData["178"] === "Clinician" && (
+                                  <div className="mt-2 w-full">
+                                    <QuestionAdditionalInput
+                                      id="182"
+                                      name="182"
+                                      placeholder="Specify your questions"
+                                      value={formData["182"] || ""}
+                                      onChange={handlePage19QuestionsChange}
+                                      disabled={formData["178"] !== "Clinician"}
+                                    />
+                                  </div>
+                                )}
+                            </div>
                           ))}
                         </QuestionLayout>
                       </QuestionWrapper>
@@ -4730,7 +5063,7 @@ export default function EDConsultationQuiz({
                                 type="file"
                                 ref={fileInputRef}
                                 id="photo-id-file"
-                                accept="image/jpeg,image/png"
+                                accept="image/jpeg,image/jpg,image/png,image/heif,image/heic"
                                 className="hidden"
                                 onChange={handlePhotoIdFileSelect}
                               />
@@ -4774,9 +5107,10 @@ export default function EDConsultationQuiz({
                                       holding your ID
                                     </p>{" "}
                                     <p className="text-center text-sm text-gray-500 mb-8">
-                                      Only JPEG and PNG images are supported.
+                                      Only JPG, JPEG, PNG, HEIF, and HEIC images
+                                      are supported.
                                       <br />
-                                      Max allowed file size per image is 10MB
+                                      Max allowed file size per image is 20MB
                                     </p>
                                   </>
                                 )}
@@ -4842,7 +5176,7 @@ export default function EDConsultationQuiz({
                                 </a>
 
                                 <a
-                                  href="https://www.instagram.com/myrocky.ca/"
+                                  href="https://www.instagram.com/myrocky/"
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="text-[#814B00]"
@@ -4884,6 +5218,37 @@ export default function EDConsultationQuiz({
                       message="Premature ejaculation lacks a strict definition but is generally considered penetrative sex lasting under three minutes, leading to dissatisfaction. If this sounds like your experience, ED treatments won't help—please visit our premature ejaculation page instead."
                       showCheckbox={false}
                       buttonText="Ok"
+                      currentPage={currentPage}
+                    />
+                    {/* Low Libido Warning Popup */}
+                    <WarningPopup
+                      isOpen={showLowLibidoWarning}
+                      onClose={handleLowLibidoWarningContinue}
+                      title="Low Sex Drive Notice"
+                      message={
+                        <>
+                          You've indicated you have low sex drive. While
+                          erectile dysfunction and low libido can sometimes
+                          occur together, they are often caused by different
+                          underlying issues.
+                          <br />
+                          <br />
+                          💡 Please note: Treatments for erectile dysfunction
+                          are unlikely to improve sex drive.
+                          <br />
+                          <br />
+                          Low libido may require further evaluation, as it can
+                          be linked to hormonal, psychological, or medical
+                          factors.
+                          <br />
+                          <br />
+                          👉 We strongly recommend that you consult your
+                          physician or a healthcare professional for a full
+                          assessment.
+                        </>
+                      }
+                      isAcknowledged={lowLibidoAcknowledged}
+                      onAcknowledge={handleLowLibidoAcknowledgement}
                       currentPage={currentPage}
                     />
                     {/* ED Start Warning Popup */}
@@ -5084,8 +5449,8 @@ export default function EDConsultationQuiz({
               left: 0,
               background: "rgba(255,255,255,0.9)",
             }}
-          >           
-           <p
+          >
+            <p
               className="text-center p-5 pb-[100px]"
               style={{ position: "relative", top: "25%" }}
             >

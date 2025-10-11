@@ -6,26 +6,30 @@ import ScrollArrows from "../ScrollArrows";
 
 const hairLossCards = [
   {
-    image: "https://myrocky.b-cdn.net/WP%20Images/Hair%20Loss/hair-loss-1.png",
+    image: "https://myrocky.ca/wp-content/themes/salient-child/img/nowhere.svg",
     title: "revention",
+    letter: "P",
     description:
       "Even if you have a full head of hair, you might want to get ahead of the game, especially if male pattern baldness runs in the family. After all, 2/3 of men will suffer from hair loss.",
   },
   {
-    image: "https://myrocky.b-cdn.net/WP%20Images/Hair%20Loss/hair-loss-2.png",
+    image: "https://myrocky.ca/wp-content/themes/salient-child/img/overall.svg",
     title: "ll over thinning",
+    letter: "A",
     description:
       "If you're seeing more of your scalp, it's still not too late. It's normal for hair follicles to close as men age. The treatment options we offer can help reactivate them.",
   },
   {
-    image: "https://myrocky.b-cdn.net/WP%20Images/Hair%20Loss/hair-loss-3.png",
+    image: "https://myrocky.ca/wp-content/themes/salient-child/img/receding.svg",
     title: "eceding Hairline",
+    letter: "R",
     description:
       "Often a combo of family history and aging, seeing more forehead is common for guys. With our help, we can prevent turning that forehead into a fivehead.",
   },
   {
-    image: "https://myrocky.b-cdn.net/WP%20Images/Hair%20Loss/hair-loss-1.png",
+    image: "https://myrocky.ca/wp-content/themes/salient-child/img/crown.svg",
     title: "hinning at the crown",
+    letter: "T",
     description:
       "For some men, androgenic alopecia results in the bald spot that everyone, except you, can see. This is due to the growth phase of hair follicles.",
   },

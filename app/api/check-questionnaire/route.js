@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { logger } from "@/utils/devLogger";
 import https from "https";
 import axios from "axios";
 
@@ -9,7 +10,7 @@ const BASE_URL = process.env.BASE_URL;
 // Helper function to get user ID and auth token from cookies
 async function getUserAuthData() {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const userId = cookieStore.get("userId");
     const authToken = cookieStore.get("authToken");
 
@@ -18,7 +19,7 @@ async function getUserAuthData() {
       authToken: authToken?.value || null,
     };
   } catch (error) {
-    console.warn("Error getting user auth data from cookies:", error);
+    logger.warn("Error getting user auth data from cookies:", error);
     return {
       userId: null,
       authToken: null,
@@ -94,7 +95,7 @@ export async function POST(req) {
         message: "No data returned from backend",
       });
     } catch (apiError) {
-      console.error("Backend API error:", apiError);
+      logger.error("Backend API error:", apiError);
 
       // If the API error indicates the questionnaire doesn't exist or user not found,
       // we'll return a completed=false response rather than an error
@@ -107,7 +108,7 @@ export async function POST(req) {
       });
     }
   } catch (error) {
-    console.error("API route error:", error);
+    logger.error("API route error:", error);
     return NextResponse.json(
       {
         error: true,

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
+import { logger } from "@/utils/devLogger";
 import { FaCheckCircle, FaArrowLeft, FaArrowRight } from "react-icons/fa";
 import CustomImage from "@/components/utils/CustomImage";
 import CollapsibleDiv from "@/components/Supplements/CollapsibleDiv";
@@ -8,7 +9,6 @@ import { useAddItemToCart } from "@/lib/cart/cartHooks";
 import CartPopup from "@/components/Cart/CartPopup";
 
 const SupplementsProductDetails = ({ product, variations, isLoading }) => {
-  const sliderRef = useRef(null);
   const addItemToCart = useAddItemToCart();
 
   // State management
@@ -20,6 +20,8 @@ const SupplementsProductDetails = ({ product, variations, isLoading }) => {
   const [selectedDeliveryOption, setSelectedDeliveryOption] =
     useState("each-30-days");
   const [availableVariations, setAvailableVariations] = useState([]);
+  const [current, setCurrent] = useState(0);
+  const [openCollapsibleIndex, setOpenCollapsibleIndex] = useState(0); // Track which collapsible is open
 
   // Dynamic product data
   const productName = product?.name || "Essential Night Boost";
@@ -72,23 +74,12 @@ const SupplementsProductDetails = ({ product, variations, isLoading }) => {
     }
   }, [product]);
 
-  // Slider navigation
-  const scrollLeft = () => {
-    if (sliderRef.current) {
-      sliderRef.current.scrollBy({
-        left: -sliderRef.current.offsetWidth,
-        behavior: "smooth",
-      });
-    }
+  const prevSlide = () => {
+    setCurrent((prev) => (prev === 0 ? sliderImages.length - 1 : prev - 1));
   };
 
-  const scrollRight = () => {
-    if (sliderRef.current) {
-      sliderRef.current.scrollBy({
-        left: sliderRef.current.offsetWidth,
-        behavior: "smooth",
-      });
-    }
+  const nextSlide = () => {
+    setCurrent((prev) => (prev === sliderImages.length - 1 ? 0 : prev + 1));
   };
 
   // Handle frequency selection based on actual variations
@@ -188,7 +179,7 @@ const SupplementsProductDetails = ({ product, variations, isLoading }) => {
 
       setShowCartPopup(true);
     } catch (error) {
-      console.error("Error adding to cart:", error);
+      logger.error("Error adding to cart:", error);
     } finally {
       setIsAddingToCart(false);
     }
@@ -366,12 +357,12 @@ const SupplementsProductDetails = ({ product, variations, isLoading }) => {
 
   return (
     <>
-      <div className="max-w-[1184px] mx-auto lg:pb-[48px] border-b-[3px] border-b-[#EFEFEF]">
+      <div className="max-w-[1200px] mx-auto lg:pb-[48px] border-b-[3px] border-b-[#EFEFEF]">
         {/* Desktop Version */}
-        <div className="hidden lg:flex flex-col mt-[40px] lg:flex-row items-start justify-between gap-12">
+        <div className="hidden lg:flex flex-col mt-[40px] lg:flex-row items-start justify-between gap-12  mx-auto">
           {/* Left Side: Slider */}
-          <div className="w-full lg:w-[70%]">
-            <div className="bg-[#F5F4F3] w-auto rounded-lg relative p-6">
+          <div className="w-full lg:w-[70%] ">
+            <div className="bg-[#F5F4F3] rounded-lg relative w-[768px] h-[700px]">
               {/* BestSeller Label */}
               <div className="absolute top-[20px] left-[20px] w-[82px] h-[26px] bg-[#FAEDA7] border-[2px] border-[#F5F4F3] rounded-md text-center items-center flex justify-center">
                 <p className="font-[POPPINS] font-medium text-[12px] leading-[100%] tracking-[0px]">
@@ -383,51 +374,38 @@ const SupplementsProductDetails = ({ product, variations, isLoading }) => {
                 We need to check here if this product is not Essential Night Boost or Essential Gut Relief
               */}
 
-              {productName == "Essential Mood Balance" &&
-                
-                 (
-                  <>
-                    <div className="absolute top-[50px] left-[20px] w-[175px] h-[26px] bg-[#E8E8E8]  rounded-md text-center items-center flex justify-center">
-                      <p className="font-[POPPINS] font-medium text-[12px] leading-[100%] tracking-[0px]">
-                        Reduces Stress & Anxiety
-                      </p>
-                    </div>
-                  </>
-                )}
+              {productName == "Essential Mood Balance" && (
+                <div className="absolute top-[50px] left-[20px] w-[175px] h-[26px] bg-[#E8E8E8]  rounded-md text-center items-center flex justify-center">
+                  <p className="font-[POPPINS] font-medium text-[12px] leading-[100%] tracking-[0px]">
+                    Reduces Stress & Anxiety
+                  </p>
+                </div>
+              )}
 
+              {productName == "Essential Gut Relief" && (
+                <div className="absolute top-[50px] left-[20px] w-[151px] h-[26px] bg-[#E8E8E8]  rounded-md text-center items-center flex justify-center">
+                  <p className="font-[POPPINS] font-medium text-[12px] leading-[100%] tracking-[0px]">
+                    Relieves Bloating Fast
+                  </p>
+                </div>
+              )}
 
-                {productName == "Essential Gut Relief" &&
-                
-                 (
-                  <>
-                    <div className="absolute top-[50px] left-[20px] w-[151px] h-[26px] bg-[#E8E8E8]  rounded-md text-center items-center flex justify-center">
-                      <p className="font-[POPPINS] font-medium text-[12px] leading-[100%] tracking-[0px]">
-                        Relieves Bloating Fast
-                      </p>
-                    </div>
-                  </>
-                )}
-
-              {/* Slider Image */}
-              <div
-                ref={sliderRef}
-                className="flex overflow-x-auto snap-x snap-mandatory touch-pan-x scroll-smooth whitespace-nowrap scrollbar-hide"
-              >
-                {sliderImages.map((image, index) => (
-                  <div key={index} className="flex-shrink-0 w-full snap-start">
-                    <CustomImage
-                      src={image}
-                      height="1000"
-                      width="1000"
-                      alt={`${productName} - Image ${index + 1}`}
-                    />
-                  </div>
-                ))}
+              {/* Main Image */}
+              <div className="flex justify-center items-center overflow-x-auto snap-x snap-mandatory touch-pan-x scroll-smooth whitespace-nowrap scrollbar-hide  ">
+                <CustomImage
+                  className="my-[48px]"
+                  src={sliderImages[current]}
+                  height="476"
+                  width="476"
+                  alt={`${productName} - Image ${current + 1}`}
+                />
               </div>
+              {/* Navigation */}
+
               <div className="flex justify-center items-center gap-4">
                 <div>
                   <div
-                    onClick={scrollLeft}
+                    onClick={prevSlide}
                     className="bg-white rounded-full p-2 cursor-pointer"
                   >
                     <FaArrowLeft />
@@ -438,14 +416,7 @@ const SupplementsProductDetails = ({ product, variations, isLoading }) => {
                   <div
                     key={index}
                     className="w-[80px] h-[80px] bg-white rounded-lg flex items-center justify-center cursor-pointer border-2 border-transparent hover:border-blue-500 transition"
-                    onClick={() => {
-                      if (sliderRef.current) {
-                        sliderRef.current.scrollTo({
-                          left: (index - 1) * sliderRef.current.offsetWidth,
-                          behavior: "smooth",
-                        });
-                      }
-                    }}
+                    onClick={() => setCurrent(index)}
                   >
                     <CustomImage
                       src={thumbnail}
@@ -458,7 +429,7 @@ const SupplementsProductDetails = ({ product, variations, isLoading }) => {
 
                 <div>
                   <div
-                    onClick={scrollRight}
+                    onClick={nextSlide}
                     className="bg-white rounded-full p-2 cursor-pointer"
                   >
                     <FaArrowRight />
@@ -467,7 +438,7 @@ const SupplementsProductDetails = ({ product, variations, isLoading }) => {
               </div>
             </div>
 
-            <div className="flex justify-left items-center gap-[8px] mt-[8px]">
+            {/* <div className="flex justify-left items-center gap-[8px] mt-[8px]">
               <div className="bg-[#F5F4F3] rounded-[10px]">
                 <p className="font-[Poppins] font-medium leading-[100%] text-[14px] tracking-[0px] px-[10] py-[2.5px]">
                   Made in Canada
@@ -483,15 +454,15 @@ const SupplementsProductDetails = ({ product, variations, isLoading }) => {
                   Third-party tested for purity and potency
                 </p>
               </div>
-            </div>
+            </div> */}
           </div>
 
           {/* Right Side: Details */}
           <div className="w-full lg:w-[40%] p-2">
-            <h1 className="text-[32px] lg:text-[40px] font-[550] leading-[115%] letter-spacing-[-2%] mb-[6px] headers-font">
+            <h1 className="text-[32px] lg:text-[40px] font-[550] leading-[115%] tracking-[-2%] mb-[6px] headers-font">
               {productName}
             </h1>
-            <h2 className="text-[13px] lg:text-[16px] font-medium leading-[115%] letter-spacing-[-2%] mb-[16px]">
+            <h2 className="text-[13px] lg:text-[16px] font-medium leading-[115%] tracking-[-2%] mb-[16px]">
               {(
                 currentVariation?.attributes?.attribute_capsules ||
                 currentVariation?.attributes?.["attribute_pa_tabs-frequency"]
@@ -503,7 +474,7 @@ const SupplementsProductDetails = ({ product, variations, isLoading }) => {
             <ul className="mb-[24px]">
               {keyBenefits.map((benefit, index) => (
                 <li key={index} className="flex items-center gap-2 mb-[8px]">
-                  <FaCheckCircle className="text-[#AE7E56] text-[20px]" />
+                  <FaCheckCircle className="text-[#AE7E56] w-[18px] h-[18px]" />
                   <span className="font-[POPPINS] leading-[130%] text-[14px] font-normal">
                     {benefit}
                   </span>
@@ -517,18 +488,31 @@ const SupplementsProductDetails = ({ product, variations, isLoading }) => {
             <div className="">
               {/* Monthly Supply Subscription Option */}
               {monthlyVariation && monthlyPrice && (
-                <div className={` p-[16px] border-[1px] rounded-t-2xl border-[#D9D9D5] ${ selectedFrequency === "subscribe" ? 'bg-[#F5F4EF]' : ''}`}>
+                <div
+                  className={` p-[16px] border-[1px]  border-b-0 rounded-t-2xl border-[#D9D9D5] ${
+                    selectedFrequency === "subscribe" ? "bg-[#F5F4EF]" : ""
+                  }`}
+                >
                   <div className="flex justify-between items-start mb-[8px]">
                     <div className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        id="subscribe"
-                        name="subscribe"
-                        value="subscribe"
-                        checked={selectedFrequency === "subscribe"}
-                        onChange={() => handleFrequencyChange("subscribe")}
-                        className="accent-[#AE7E56] w-[20px] h-[20px]"
-                      />
+                      <div className="relative">
+                        <input
+                          type="radio"
+                          id="subscribe"
+                          name="subscribe"
+                          value="subscribe"
+                          checked={selectedFrequency === "subscribe"}
+                          onChange={() => handleFrequencyChange("subscribe")}
+                          className="sr-only"
+                        />
+                        <label htmlFor="subscribe" className="cursor-pointer">
+                          {selectedFrequency === "subscribe" ? (
+                            <FaCheckCircle className="w-[20px] h-[20px] text-[#AE7E56]" />
+                          ) : (
+                            <div className="w-[20px] h-[20px] rounded-full border-2 border-gray-300 bg-white hover:border-[#AE7E56] transition-all duration-200"></div>
+                          )}
+                        </label>
+                      </div>
                       <label
                         htmlFor="subscribe"
                         className="text-[16px] subheaders-font font-[550] leading-[100%] tracking-[0px] cursor-pointer"
@@ -594,41 +578,60 @@ const SupplementsProductDetails = ({ product, variations, isLoading }) => {
                   </div>
 
                   {/* Select Options - Monthly and Quarterly */}
-                  <select
-                    className="h-[32px] mb-[4px] w-full bg-white border-[1px] border-[#D9D9D5] rounded-xl px-4 text-[12px] font-[POPPINS] font-normal leading-[100%] tracking-[0px]"
-                    value={selectedDeliveryOption}
-                    onChange={(e) => handleDeliveryOptionChange(e.target.value)}
-                  >
-                    <option value="each-30-days">
-                      Delivery every 30 days (Most popular)
-                    </option>
-                    {quarterlyVariation && quarterlyPrice && (
-                      <option value="each-90-days">
-                        Delivery every 90 days (3 months)
-                      </option>
-                    )}
-                  </select>
+                  {selectedFrequency === "subscribe" && (
+                    <>
+                      <select
+                        className="h-[32px] mb-[4px] w-full bg-white border-[1px] border-[#D9D9D5] rounded-2xl px-4 py-1 text-[12px] font-[POPPINS] font-normal leading-[100%] tracking-[0px]"
+                        value={selectedDeliveryOption}
+                        onChange={(e) =>
+                          handleDeliveryOptionChange(e.target.value)
+                        }
+                      >
+                        <option value="each-30-days" className="text-[12px]">
+                          Delivery every 30 days (Most popular)
+                        </option>
+                        {quarterlyVariation && quarterlyPrice && (
+                          <option value="each-90-days" className="text-[12px]">
+                            Delivery every 90 days (3 months)
+                          </option>
+                        )}
+                      </select>
 
-                  <p className="text-[10px] pl-[16px] pt-[4px] font-[POPPINS] font-normal leading-[100%] tracking-[0px]">
-                    Pause, skip, or cancel at any time
-                  </p>
+                      <p className="text-[10px] pl-[16px] pt-[4px] font-[POPPINS] font-normal leading-[100%] tracking-[0px]">
+                        Pause, skip, or cancel at any time
+                      </p>
+                    </>
+                  )}
                 </div>
               )}
 
               {/* One-Time Purchase Option */}
               {monthlyPrice && oneTimePrice && (
-                <div className={`p-[16px] border-[1px] rounded-b-2xl border-[#D9D9D5] ${ selectedFrequency === "oneTime" ? 'bg-[#F5F4EF]' : ''}`}>
+                <div
+                  className={`p-[16px] border-[1px] rounded-b-2xl border-[#D9D9D5] ${
+                    selectedFrequency === "oneTime" ? "bg-[#F5F4EF]" : ""
+                  }`}
+                >
                   <div className="flex justify-between items-start mb-[8px]">
                     <div className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        id="oneTime"
-                        name="subscribe"
-                        value="oneTime"
-                        checked={selectedFrequency === "oneTime"}
-                        onChange={() => handleFrequencyChange("oneTime")}
-                        className="accent-[#AE7E56] w-[20px] h-[20px]"
-                      />
+                      <div className="relative">
+                        <input
+                          type="radio"
+                          id="oneTime"
+                          name="subscribe"
+                          value="oneTime"
+                          checked={selectedFrequency === "oneTime"}
+                          onChange={() => handleFrequencyChange("oneTime")}
+                          className="sr-only"
+                        />
+                        <label htmlFor="oneTime" className="cursor-pointer">
+                          {selectedFrequency === "oneTime" ? (
+                            <FaCheckCircle className="w-[20px] h-[20px] text-[#AE7E56]" />
+                          ) : (
+                            <div className="w-[20px] h-[20px] rounded-full border-2 border-gray-300 bg-white hover:border-[#AE7E56] transition-all duration-200"></div>
+                          )}
+                        </label>
+                      </div>
                       <label
                         htmlFor="oneTime"
                         className="text-[16px] headers-font font-[550] leading-[100%] tracking-[0px] cursor-pointer"
@@ -658,7 +661,7 @@ const SupplementsProductDetails = ({ product, variations, isLoading }) => {
             <button
               onClick={handleAddToCart}
               disabled={isAddingToCart}
-              className="bg-black mb-[24px] rounded-full px-6 mt-[24px] h-[48px] text-white font-[POPPINS] flex justify-between items-center w-full hover:bg-gray-800 transition-colors disabled:opacity-50"
+              className="bg-black mb-[40px] rounded-full px-6 mt-[24px] h-[48px] text-white font-[POPPINS] flex justify-between items-center w-full hover:bg-gray-800 transition-colors disabled:opacity-50"
             >
               <span className="text-[16px] leading-[130%] font-semibold">
                 {isAddingToCart ? "Adding..." : "Add to Cart"}
@@ -695,9 +698,12 @@ const SupplementsProductDetails = ({ product, variations, isLoading }) => {
               {commonQuestions.map((question, index) => (
                 <CollapsibleDiv
                   key={index}
-                  show={index === 0}
+                  show={index === openCollapsibleIndex}
                   title={question.title}
                   description={question.description}
+                  onToggle={(show) =>
+                    setOpenCollapsibleIndex(show ? index : null)
+                  }
                 />
               ))}
             </div>
@@ -718,10 +724,10 @@ const SupplementsProductDetails = ({ product, variations, isLoading }) => {
           {/* Left Side: Slider */}
           <div className="w-full lg:w-[63%]">
             <div className="px-[20px]">
-              <h1 className="text-[32px] headers-font lg:text-[40px] font-[550] leading-[115%] letter-spacing-[-2%] mb-[6px]">
+              <h1 className="text-[32px] headers-font lg:text-[40px] font-[550] leading-[115%] tracking-[-2%] mb-[6px]">
                 {productName}
               </h1>
-              <h2 className="text-[13px] lg:text-[16px] font-medium leading-[115%] letter-spacing-[-2%] mb-[16px]">
+              <h2 className="text-[14px] lg:text-[16px] font-normal leading-[100%] tracking-[0px] font-P mb-[16px]">
                 {(
                   currentVariation?.attributes?.attribute_capsules ||
                   currentVariation?.attributes?.["attribute_pa_tabs-frequency"]
@@ -731,28 +737,21 @@ const SupplementsProductDetails = ({ product, variations, isLoading }) => {
                 {productDescription.replace(/<[^>]*>/g, "")}
               </p>
             </div>
-            <div className="bg-[#F5F4F3] w-auto rounded-lg relative p-6">
+            <div className="bg-[#F5F4F3] w-[100%] h-[300px] rounded-lg relative p-6">
               {/* BestSeller Label */}
-              <div className="absolute top-[20px] left-[20px] w-[82px] h-[26px] bg-[#FAEDA7] border-[2px] border-[#F5F4F3] rounded-md text-center items-center flex justify-center">
+              <div className="absolute top-[20px] left-[20px] w-[82px] h-[26px] bg-[#FAEDA7] border-[2px] border-[#F5F4F3] rounded-md text-center items-center flex justify-center z-10">
                 <p className="font-[POPPINS] font-medium text-[12px] leading-[100%] tracking-[0px]">
                   Best Seller
                 </p>
               </div>
-              {/* Slider Image */}
-              <div
-                ref={sliderRef}
-                className="flex overflow-x-auto snap-x snap-mandatory touch-pan-x scroll-smooth whitespace-nowrap scrollbar-hide"
-              >
-                {sliderImages.map((image, index) => (
-                  <div key={index} className="flex-shrink-0 w-full snap-start">
-                    <CustomImage
-                      src={image}
-                      height="1000"
-                      width="1000"
-                      alt={`${productName} - Image ${index + 1}`}
-                    />
-                  </div>
-                ))}
+              {/* Mobile Main Image */}
+              <div className="flex overflow-x-auto snap-x snap-mandatory touch-pan-x scroll-smooth whitespace-nowrap scrollbar-hide  justify-center items-center">
+                <CustomImage
+                  src={sliderImages[current]}
+                  height="260"
+                  width="260"
+                  alt={`${productName} - Image ${current + 1}`}
+                />
               </div>
             </div>
 
@@ -761,14 +760,7 @@ const SupplementsProductDetails = ({ product, variations, isLoading }) => {
                 <div
                   key={index}
                   className="w-[80px] h-[80px] bg-white rounded-lg flex items-center justify-center cursor-pointer border-2 border-transparent hover:border-blue-500 transition"
-                  onClick={() => {
-                    if (sliderRef.current) {
-                      sliderRef.current.scrollTo({
-                        left: (index - 1) * sliderRef.current.offsetWidth,
-                        behavior: "smooth",
-                      });
-                    }
-                  }}
+                  onClick={() => setCurrent(index)}
                 >
                   <CustomImage
                     src={thumbnail}
@@ -804,7 +796,7 @@ const SupplementsProductDetails = ({ product, variations, isLoading }) => {
             <ul className="mb-[24px]">
               {keyBenefits.map((benefit, index) => (
                 <li key={index} className="flex items-center gap-2 mb-[8px]">
-                  <FaCheckCircle className="text-[#AE7E56] text-[20px]" />
+                  <FaCheckCircle className="text-[#AE7E56] text-[18px] w-[18px] h-[18px]" />
                   <span className="font-[POPPINS] leading-[130%] text-[14px] font-normal">
                     {benefit}
                   </span>
@@ -818,18 +810,30 @@ const SupplementsProductDetails = ({ product, variations, isLoading }) => {
             <div className="">
               {/* Mobile Subscribe & Save */}
               {monthlyVariation && monthlyPrice && (
-                <div className="bg-[#F5F4EF] p-[16px] border-[1px] rounded-t-2xl border-[#D9D9D5]">
+                <div className="bg-[#F5F4EF] p-[16px] border-[1px] border-b-0 rounded-t-2xl border-[#D9D9D5]">
                   <div className="flex justify-between items-start mb-[8px]">
                     <div className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        id="subscribe-mobile"
-                        name="subscribe-mobile"
-                        value="subscribe"
-                        checked={selectedFrequency === "subscribe"}
-                        onChange={() => handleFrequencyChange("subscribe")}
-                        className="accent-[#AE7E56] w-[20px] h-[20px]"
-                      />
+                      <div className="relative">
+                        <input
+                          type="radio"
+                          id="subscribe-mobile"
+                          name="subscribe-mobile"
+                          value="subscribe"
+                          checked={selectedFrequency === "subscribe"}
+                          onChange={() => handleFrequencyChange("subscribe")}
+                          className="sr-only"
+                        />
+                        <label
+                          htmlFor="subscribe-mobile"
+                          className="cursor-pointer"
+                        >
+                          {selectedFrequency === "subscribe" ? (
+                            <FaCheckCircle className="w-[20px] h-[20px] text-[#AE7E56]" />
+                          ) : (
+                            <div className="w-[20px] h-[20px] rounded-full border-2 border-gray-300 bg-white hover:border-[#AE7E56] transition-all duration-200"></div>
+                          )}
+                        </label>
+                      </div>
                       <label
                         htmlFor="subscribe-mobile"
                         className="text-[16px] subheaders-font font-[550] leading-[100%] tracking-[0px] cursor-pointer"
@@ -896,24 +900,30 @@ const SupplementsProductDetails = ({ product, variations, isLoading }) => {
                   </div>
 
                   {/* Mobile Select Options */}
-                  <select
-                    className="h-[32px] mb-[4px] w-full bg-white border-[1px] border-[#D9D9D5] rounded-xl px-4 text-[12px] font-[POPPINS] font-normal leading-[100%] tracking-[0px]"
-                    value={selectedDeliveryOption}
-                    onChange={(e) => handleDeliveryOptionChange(e.target.value)}
-                  >
-                    <option value="each-30-days">
-                      Delivery every 30 days (Most popular)
-                    </option>
-                    {quarterlyVariation && quarterlyPrice && (
-                      <option value="each-90-days">
-                        Delivery every 90 days (3 months)
-                      </option>
-                    )}
-                  </select>
+                  {selectedFrequency === "subscribe" && (
+                    <>
+                      <select
+                        className="h-[32px] mb-[4px] w-full bg-white border-[1px] border-[#D9D9D5] rounded-full px-4 text-[12px] font-[POPPINS] font-normal leading-[100%] tracking-[0px]"
+                        value={selectedDeliveryOption}
+                        onChange={(e) =>
+                          handleDeliveryOptionChange(e.target.value)
+                        }
+                      >
+                        <option value="each-30-days">
+                          Delivery every 30 days (Most popular)
+                        </option>
+                        {quarterlyVariation && quarterlyPrice && (
+                          <option value="each-90-days">
+                            Delivery every 90 days (3 months)
+                          </option>
+                        )}
+                      </select>
 
-                  <p className="text-[10px] pl-[16px] pt-[4px] px-2 font-[POPPINS] font-normal leading-[100%] tracking-[0px]">
-                    Pause, skip, or cancel at any time
-                  </p>
+                      <p className="text-[10px] pl-[16px] pt-[4px] px-2 font-[POPPINS] font-normal leading-[100%] tracking-[0px]">
+                        Pause, skip, or cancel at any time
+                      </p>
+                    </>
+                  )}
                 </div>
               )}
 
@@ -922,15 +932,27 @@ const SupplementsProductDetails = ({ product, variations, isLoading }) => {
                 <div className="p-[16px] border-[1px] rounded-b-2xl border-[#D9D9D5]">
                   <div className="flex justify-between items-start mb-[8px]">
                     <div className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        id="oneTime-mobile"
-                        name="subscribe-mobile"
-                        value="oneTime"
-                        checked={selectedFrequency === "oneTime"}
-                        onChange={() => handleFrequencyChange("oneTime")}
-                        className="accent-[#AE7E56] w-[20px] h-[20px]"
-                      />
+                      <div className="relative">
+                        <input
+                          type="radio"
+                          id="oneTime-mobile"
+                          name="subscribe-mobile"
+                          value="oneTime"
+                          checked={selectedFrequency === "oneTime"}
+                          onChange={() => handleFrequencyChange("oneTime")}
+                          className="sr-only"
+                        />
+                        <label
+                          htmlFor="oneTime-mobile"
+                          className="cursor-pointer"
+                        >
+                          {selectedFrequency === "oneTime" ? (
+                            <FaCheckCircle className="w-[20px] h-[20px] text-[#AE7E56]" />
+                          ) : (
+                            <div className="w-[20px] h-[20px] rounded-full border-2 border-gray-300 bg-white hover:border-[#AE7E56] transition-all duration-200"></div>
+                          )}
+                        </label>
+                      </div>
                       <label
                         htmlFor="oneTime-mobile"
                         className="text-[16px] subheaders-font font-[550] leading-[100%] tracking-[0px] cursor-pointer"
@@ -960,7 +982,7 @@ const SupplementsProductDetails = ({ product, variations, isLoading }) => {
             <button
               onClick={handleAddToCart}
               disabled={isAddingToCart}
-              className="bg-black mb-[24px] rounded-full px-6 mt-[24px] h-[48px] text-white font-[POPPINS] flex justify-between items-center w-full"
+              className="bg-black rounded-full px-6 mt-[24px] mb-[40px] h-[48px] text-white font-[POPPINS] flex justify-between items-center w-full"
             >
               <span className="text-[16px] leading-[130%] font-semibold">
                 {isAddingToCart ? "Adding..." : "Add to Cart"}
@@ -997,9 +1019,12 @@ const SupplementsProductDetails = ({ product, variations, isLoading }) => {
               {commonQuestions.map((question, index) => (
                 <CollapsibleDiv
                   key={index}
-                  show={index === 0}
+                  show={index === openCollapsibleIndex}
                   title={question.title}
                   description={question.description}
+                  onToggle={(show) =>
+                    setOpenCollapsibleIndex(show ? index : null)
+                  }
                 />
               ))}
             </div>

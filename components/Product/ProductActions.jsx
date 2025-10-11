@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { logger } from "@/utils/devLogger";
 import Link from "next/link";
 import CartPopup from "../Cart/CartPopup";
 import { addItemToCart } from "@/lib/cart/cartService";
-// import { addRequiredConsultation } from "@/utils/requiredConsultation";
+import { addRequiredConsultation } from "@/utils/requiredConsultation";
+import { analyticsService } from "@/utils/analytics/analyticsService";
+import { formatPrice } from "@/utils/priceFormatter";
 
 const ProductActions = ({
   price = 90,
@@ -32,20 +35,13 @@ const ProductActions = ({
     ? Number(selectedVariation.sale_price)
     : displayPrice;
 
-  // Format price to always show 2 decimal places
-  const formatPrice = (value) => {
-    if (typeof value !== "number") {
-      value = parseFloat(value) || 0;
-    }
-    return value.toFixed(2);
-  };
 
   const handleAddToCart = async () => {
     try {
       setIsLoading(true);
 
       if (!product || !product.id) {
-        console.error("No product ID available for adding to cart");
+        logger.error("No product ID available for adding to cart");
         return;
       }
 
@@ -55,19 +51,19 @@ const ProductActions = ({
       )?.value;
       if (url && typeof window !== "undefined") {
         //const url = product.add_to_cart_url;
-        console.log("add to cart url", url);
+        logger.log("add to cart url", url);
         const flowMatch = url.match(
-          /(ed-flow|hair-flow|wl-flow|smoking-flow)=1/
+          /(ed-flow|hair-flow|wl-flow|smoking-flow|skincare-flow)=1/
         );
         if (flowMatch) {
-          console.log("flow match", flowMatch);
+          logger.log("flow match", flowMatch);
           const flowType = flowMatch[1];
           // Use selected variation ID if present, otherwise product ID
           const selectedId = selectedVariation?.variation_id || product.id;
-          // addRequiredConsultation(selectedId, flowType);
+          addRequiredConsultation(selectedId, flowType);
         }
       } else {
-        console.log("no add to cart url");
+        logger.log("no add to cart url");
       }
       // --- END FLOW DETECTION AND LOCALSTORAGE LOGIC ---
 
@@ -77,7 +73,7 @@ const ProductActions = ({
           ? product.images[0].src
           : product.image || "";
 
-      console.log("Adding product to cart with details:", {
+      logger.log("Adding product to cart with details:", {
         id: product.id,
         name: product.name,
         price: finalPrice,
@@ -98,7 +94,7 @@ const ProductActions = ({
 
       // Add variation information if selected
       if (selectedVariation) {
-        console.log("selectedVariation", selectedVariation);
+        logger.log("selectedVariation", selectedVariation);
         cartData.variationId =
           selectedVariation.variation_id || selectedVariation.id;
 
@@ -121,7 +117,7 @@ const ProductActions = ({
         // use the variation ID as the product ID
         if (isVariableProduct && !cartData.convertToSub) {
           const varId = selectedVariation.variation_id || selectedVariation.id;
-          console.log(
+          logger.log(
             `Variable product detected, using variation ID ${varId} as productId for ${
               product.name || product.id
             }`
@@ -137,13 +133,13 @@ const ProductActions = ({
           product.type === "variable-subscription")
       ) {
         cartData.id = selectedVariation.variation_id || selectedVariation.id;
-        console.log(
+        logger.log(
           "variation id",
           selectedVariation.variation_id || selectedVariation.id
         );
       } else {
         cartData.id = product.id;
-        console.log("product id", product.id);
+        logger.log("product id", product.id);
       }
 
       // Use the cart service instead of direct API call
@@ -152,10 +148,47 @@ const ProductActions = ({
       // Refresh the cart in the navbar
       document.getElementById("cart-refresher")?.click();
 
+      // Track add_to_cart
+      try {
+        const productForTracking = {
+          id: product.id,
+          sku: product.sku,
+          name: product.name,
+          price: finalPrice,
+          // Variant context for analytics
+          variant_id:
+            (selectedVariation &&
+              (selectedVariation.variation_id || selectedVariation.id)) ||
+            undefined,
+          item_variant: selectedVariation?.attributes
+            ? Object.entries(selectedVariation.attributes)
+                .map(
+                  ([key, val]) =>
+                    `${key
+                      .replace(/^attribute_/, "")
+                      .replace(/^pa_/, "")}: ${val}`
+                )
+                .join(", ")
+            : "",
+          // Pass through minimal attributes if variation selected
+          attributes: selectedVariation?.attributes
+            ? Object.entries(selectedVariation.attributes).map(
+                ([key, val]) => ({
+                  name: key.replace(/^attribute_/, "").replace(/^pa_/, ""),
+                  options: [val],
+                })
+              )
+            : [],
+        };
+        analyticsService.trackAddToCart(productForTracking, 1);
+      } catch (e) {
+        logger.warn("[Analytics] add_to_cart tracking skipped:", e);
+      }
+
       // Show the cart popup on success
       setShowCartPopup(true);
     } catch (error) {
-      console.error("Error adding to cart:", error);
+      logger.error("Error adding to cart:", error);
       alert("Error adding to cart: " + error.message);
     } finally {
       setIsLoading(false);

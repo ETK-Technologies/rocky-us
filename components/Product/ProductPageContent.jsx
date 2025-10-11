@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { ProductImage, ProductClient } from "@/components/Product";
+import { sildenafilFaqs, tadalafilFaqs } from "./constants/edFaqs";
 import BasicProductInfo from "./BasicProductInfo";
 import Section from "@/components/utils/Section";
 import MoreQuestions from "@/components/MoreQuestions";
@@ -59,6 +60,16 @@ const ProductPageContent = ({ clientProps, faqs }) => {
   // Use memoization for FAQs processing to improve performance
   const formattedFaqs = useMemo(() => {
     try {
+      const productSlug = product?.slug || "";
+      
+      if (productSlug === "sildenafil-viagra") {
+        return sildenafilFaqs;
+      }
+      
+      if (productSlug === "tadalafil-cialis") {
+        return tadalafilFaqs;
+      }
+      
       // If in loading state or no faqs available, return minimal set
       if (isLoading || !faqs) {
         return [

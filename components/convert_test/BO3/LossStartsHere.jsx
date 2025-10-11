@@ -32,7 +32,7 @@ const LossStartsHere = () => {
           <div className="md:w-1/2">
             <div className="bg-[#AE7E56] text-center rounded-t-2xl p-1">
               <p className="text-white text-[14px] font-medium">
-                USA’s Leading Weight Loss Program
+                Canada’s Leading Weight Loss Program
               </p>
             </div>
             <div className="bg-[#AE7E56] rounded-b-2xl pt-1">
@@ -59,7 +59,7 @@ const LossStartsHere = () => {
                 ></LossItem>
                 <LossItem
                   img="/bo3/stethoscope2.png"
-                  title=" FDA Approved Treatments, if eligible"
+                  title="Health Canada Approved Treatments, if eligible"
                   iconClassName="w-[35px] h-[24px]"
                 ></LossItem>
 

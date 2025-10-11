@@ -1,17 +1,33 @@
-export async function uploadFileToS3(file, directory = "", questionnaire = "ed", onProgress = null) {
+import { logger } from "@/utils/devLogger";
+
+export async function uploadFileToS3(
+  file,
+  directory = "",
+  questionnaire = "ed",
+  onProgress = null
+) {
   try {
     if (!file) {
       throw new Error("No file provided");
     }
 
-    const allowedTypes = ["image/jpeg", "image/png"];
-    if (!allowedTypes.includes(file.type)) {
-      throw new Error("Only JPEG and PNG files are allowed");
+    const fileType = file.type;
+    const fileName = file.name.toLowerCase();
+    const fileExtension = fileName.split(".").pop();
+
+    const allowedMimeTypes = ["image/jpeg", "image/jpg", "image/png"];
+    const allowedExtensions = ["jpg", "jpeg", "png"];
+
+    const isSupportedMimeType = allowedMimeTypes.includes(fileType);
+    const isSupportedExtension = allowedExtensions.includes(fileExtension);
+
+    if (!isSupportedMimeType && !isSupportedExtension) {
+      throw new Error("Only JPG, JPEG, and PNG files are allowed");
     }
 
-    const maxSize = 10 * 1024 * 1024;
+    const maxSize = 20 * 1024 * 1024;
     if (file.size > maxSize) {
-      throw new Error("File size exceeds 10MB limit");
+      throw new Error("File size exceeds 20MB limit");
     }
 
     const s3Response = await fetch("/api/s3/presigned-url", {
@@ -39,8 +55,8 @@ export async function uploadFileToS3(file, directory = "", questionnaire = "ed",
     Object.entries(policy.fields).forEach(([key, value]) => {
       formData.append(key, value);
     });
-    
-    formData.append('file', file);
+
+    formData.append("file", file);
 
     const uploadResponse = await fetch(policy.url, {
       method: "POST",
@@ -53,28 +69,42 @@ export async function uploadFileToS3(file, directory = "", questionnaire = "ed",
 
     return fileUrl;
   } catch (error) {
-    console.error("S3 upload error:", error);
+    logger.error("S3 upload error:", error);
     throw error;
   }
 }
 
-export async function uploadFileToS3WithProgress(file, directory = "", questionnaire = "ed", onProgress = null) {
+export async function uploadFileToS3WithProgress(
+  file,
+  directory = "",
+  questionnaire = "ed",
+  onProgress = null
+) {
   try {
     if (!file) {
       throw new Error("No file provided");
     }
 
-    const allowedTypes = ["image/jpeg", "image/png"];
-    if (!allowedTypes.includes(file.type)) {
-      throw new Error("Only JPEG and PNG files are allowed");
+    const fileType = file.type;
+    const fileName = file.name.toLowerCase();
+    const fileExtension = fileName.split(".").pop();
+
+    const allowedMimeTypes = ["image/jpeg", "image/jpg", "image/png"];
+    const allowedExtensions = ["jpg", "jpeg", "png"];
+
+    const isSupportedMimeType = allowedMimeTypes.includes(fileType);
+    const isSupportedExtension = allowedExtensions.includes(fileExtension);
+
+    if (!isSupportedMimeType && !isSupportedExtension) {
+      throw new Error("Only JPG, JPEG, and PNG files are allowed");
     }
 
-    const maxSize = 10 * 1024 * 1024;
+    const maxSize = 20 * 1024 * 1024;
     if (file.size > maxSize) {
-      throw new Error("File size exceeds 10MB limit");
+      throw new Error("File size exceeds 20MB limit");
     }
 
-    console.log("Requesting S3 upload policy...");
+    logger.log("Requesting S3 upload policy...");
     const s3Response = await fetch("/api/s3/presigned-url", {
       method: "POST",
       headers: {
@@ -94,7 +124,7 @@ export async function uploadFileToS3WithProgress(file, directory = "", questionn
     }
 
     const { policy, fileUrl } = await s3Response.json();
-    console.log("Received S3 upload policy, proceeding with upload...");
+    logger.log("Received S3 upload policy, proceeding with upload...");
 
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
@@ -110,19 +140,25 @@ export async function uploadFileToS3WithProgress(file, directory = "", questionn
 
       xhr.addEventListener("load", () => {
         if (xhr.status >= 200 && xhr.status < 300) {
-          console.log("File uploaded successfully to S3");
+          logger.log("File uploaded successfully to S3");
           resolve(fileUrl);
         } else {
-          console.error(`S3 upload failed with status: ${xhr.status}, response: ${xhr.responseText}`);
+          logger.error(
+            `S3 upload failed with status: ${xhr.status}, response: ${xhr.responseText}`
+          );
           reject(new Error(`S3 upload failed with status: ${xhr.status}`));
         }
       });
 
       xhr.addEventListener("error", (e) => {
-        console.error("XHR error during S3 upload:", e);
-        
+        logger.error("XHR error during S3 upload:", e);
+
         if (xhr.status === 0) {
-          reject(new Error("S3 upload failed due to CORS or network error. Please check S3 bucket CORS configuration."));
+          reject(
+            new Error(
+              "S3 upload failed due to CORS or network error. Please check S3 bucket CORS configuration."
+            )
+          );
         } else {
           reject(new Error("S3 upload failed"));
         }
@@ -133,18 +169,20 @@ export async function uploadFileToS3WithProgress(file, directory = "", questionn
       });
 
       const formData = new FormData();
-      
+
       Object.entries(policy.fields).forEach(([key, value]) => {
         formData.append(key, value);
       });
-      
-      formData.append('file', file);
+
+      formData.append("file", file);
       xhr.open("POST", policy.url);
-      console.log(`Starting S3 upload to ${directory} with content type ${file.type}`);
+      logger.log(
+        `Starting S3 upload to ${directory} with content type ${file.type}`
+      );
       xhr.send(formData);
     });
   } catch (error) {
-    console.error("S3 upload error:", error);
+    logger.error("S3 upload error:", error);
     throw error;
   }
 }

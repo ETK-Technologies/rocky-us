@@ -317,13 +317,27 @@ export const QUESTION_CONFIGS = {
     noneOfTheAboveIndex: 5,
   },
 
+  // Health Care Team Questions (538)
+  healthCareTeamQuestions: {
+    title: "Do you have any questions for our health care team?",
+    currentPage: 34,
+    pageNo: 34,
+    questionId: "538",
+    options: [
+      "No",
+      "Yes"
+    ],
+    showAdditionalInputFor: "Yes",
+    additionalInputPlaceholder: "Please describe your questions for our health care team..."
+  },
+
   // Photo ID instructions
   photoIdInstructions: {
     title: "Photo ID Verification",
     subtitle:
       "For your security and to comply with healthcare regulations, we need to verify your identity.",
-    currentPage: 34,
-    pageNo: 34,
+    currentPage: 35,
+    pageNo: 35,
     questionId: "534",
   },
 
@@ -331,26 +345,16 @@ export const QUESTION_CONFIGS = {
   photoIdUpload: {
     title: "Upload Your Photo ID",
     subtitle: "Please upload a valid government-issued photo ID",
-    currentPage: 35,
-    pageNo: 35,
+    currentPage: 37,
+    pageNo: 37,
     questionId: "535",
   },
-  // Appointment Booking
-  appointmentBooking: {
-    title: "Book your appointment",
-    subtitle:
-      "Schedule a consultation with one of our healthcare professionals",
-    currentPage: 36,
-    pageNo: 36,
-    questionId: "536",
-  },
-
   questionnaireComplete: {
     title: "Thank you for completing the questionnaire!",
     subtitle: "We've received your information and will be in touch soon.",
     currentPage: 37,
     pageNo: 37,
-    questionId: "537",
+    questionId: "536",
     message: [
       "We've received your information. Our healthcare professionals will review your answers and contact you soon.",
     ],

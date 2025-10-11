@@ -55,7 +55,7 @@ const MenuContainer = ({
     (med) => med.type === "most-popular"
   );
   // Supplements: gather all, flatten
-  // const allSupplements = menuItems.flatMap((t) => t.supplements || []);
+  const allSupplements = menuItems.flatMap((t) => t.supplements || []);
   // Footer links
   const meetRockyLinks = [
     { text: "About Us", link: "/about-us" },
@@ -74,16 +74,30 @@ const MenuContainer = ({
         >
           {menuItems.map((item, index) => (
             <li key={index}>
-              <button
-                onClick={() => setSelectedTreatment(item)}
-                className="w-full text-left px-[16px] md:px-[32px] py-4 md:py-[24px] rounded hover:bg-[#F5F4EF] hover:rounded-[16px] 
-                flex items-center justify-between"
-              >
-                <span className="font-medium text-base md:text-xl tracking-normal align-middle">
-                  {item.category}
-                </span>
-                <FaArrowRight />
-              </button>
+              {item.link ? (
+                <Link
+                  href={item.link}
+                  onClick={onClose}
+                  className="w-full text-left px-[16px] md:px-[32px] py-4 md:py-[24px] rounded hover:bg-[#F5F4EF] hover:rounded-[16px] 
+                  flex items-center justify-between"
+                >
+                  <span className="font-medium text-base md:text-xl tracking-normal align-middle">
+                    {item.category}
+                  </span>
+                  <FaArrowRight />
+                </Link>
+              ) : (
+                <button
+                  onClick={() => setSelectedTreatment(item)}
+                  className="w-full text-left px-[16px] md:px-[32px] py-4 md:py-[24px] rounded hover:bg-[#F5F4EF] hover:rounded-[16px] 
+                  flex items-center justify-between"
+                >
+                  <span className="font-medium text-base md:text-xl tracking-normal align-middle">
+                    {item.category}
+                  </span>
+                  <FaArrowRight />
+                </button>
+              )}
             </li>
           ))}
         </ul>
@@ -133,33 +147,33 @@ const MenuContainer = ({
         </div>
       );
     }
-    // if (selectedTab === "Supplements") {
-    //   return (
-    //     <ul
-    //       className={`px-2 bg-white py-4 mb-3 transition-opacity duration-300 ease-in-out ${
-    //         tabVisible ? "opacity-100" : "opacity-0"
-    //       }`}
-    //     >
-    //       {menuItems.map((item, idx) =>
-    //         item.supplements && item.supplements.length > 0 ? (
-    //           <div key={idx}>
-    //             {item.supplements.map((sup, i) => (
-    //               <li key={i}>
-    //                 <Link
-    //                   href={sup.link}
-    //                   onClick={onClose}
-    //                   className="px-[16px] md:px-[32px] flex items-center gap-2 py-4 rounded-[16px] hover:bg-[#F5F4EF] text-sm font-medium"
-    //                 >
-    //                   {sup.text}
-    //                 </Link>
-    //               </li>
-    //             ))}
-    //           </div>
-    //         ) : null
-    //       )}
-    //     </ul>
-    //   );
-    // }
+    if (selectedTab === "Supplements") {
+      return (
+        <ul
+          className={`px-2 bg-white py-4 mb-3 transition-opacity duration-300 ease-in-out ${
+            tabVisible ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          {menuItems.map((item, idx) =>
+            item.supplements && item.supplements.length > 0 ? (
+              <div key={idx}>
+                {item.supplements.map((sup, i) => (
+                  <li key={i}>
+                    <Link
+                      href={sup.link}
+                      onClick={onClose}
+                      className="px-[16px] md:px-[32px] flex items-center gap-2 py-4 rounded-[16px] hover:bg-[#F5F4EF] text-sm font-medium"
+                    >
+                      {sup.text}
+                    </Link>
+                  </li>
+                ))}
+              </div>
+            ) : null
+          )}
+        </ul>
+      );
+    }
   };
 
   const renderMainContent = () => (
@@ -167,7 +181,7 @@ const MenuContainer = ({
       {/* Most Popular Treatments */}
       <div className="py-4 mb-2  bg-white px-2">
         <div className=" bg-white pb-6 px-[16px] md:px-[32px]">
-          <SearchIcon onClose={onClose} />
+          {/* <SearchIcon onClose={onClose} /> */}
         </div>
         <h3 className="px-[16px] md:px-[32px] text-[#00000099] mb-4 uppercase font-medium text-xs md:text-sm tracking-normal align-middle">
           Most Popular Treatments
@@ -198,7 +212,7 @@ const MenuContainer = ({
       {/* Tabs */}
       <div className="flex gap-[24px] pt-4 px-[24px] md:px-10 bg-white relative">
         <div className="absolute bottom-0 left-[24px] md:left-10 w-[calc(100%-48px)] md:w-[420px] h-[1px] bg-[#E2E2E1]"></div>
-        {["Treatments", "Medications"].map((tab) => (
+        {["Treatments", "Medications", "Supplements"].map((tab) => (
           <button
             key={tab}
             className={`py-4 transition-colors duration-150 font-medium text-xs md:text-sm tracking-normal align-middle z-10 uppercase ${
@@ -251,11 +265,14 @@ const MenuContainer = ({
 
   return (
     <div className="flex flex-col h-full relative">
-      <div ref={menuScrollRef} className="flex-1 relative overflow-y-auto">
+      <div
+        ref={menuScrollRef}
+        className="flex-1 relative overflow-y-auto overflow-x-hidden touch-pan-y"
+      >
         {/* Main Menu Content with Slide Animation */}
         <div
           className={`
-            absolute top-0 left-0 w-full h-full transition-transform duration-500 ease-in-out transform
+            absolute top-0 left-0 w-full h-full transition-transform duration-500 ease-in-out transform overflow-x-hidden
             ${selectedTreatment ? "translate-x-[-100%]" : "translate-x-0"}
           `}
         >
@@ -266,7 +283,7 @@ const MenuContainer = ({
         {selectedTreatment && (
           <div
             className={`
-              absolute top-0 left-0 w-full h-full transition-transform duration-500 ease-in-out transform
+              absolute top-0 left-0 w-full h-full transition-transform duration-500 ease-in-out transform overflow-x-hidden
               ${treatmentVisible ? "translate-x-0" : "translate-x-full"}
             `}
           >

@@ -1,4 +1,5 @@
 import { fetchProductBySlug } from "@/lib/woocommerce";
+import { logger } from "@/utils/devLogger";
 import {
   ProductFactory,
   CategoryHandlerFactory,
@@ -34,7 +35,7 @@ export async function GET(request, { params }) {
 
     return Response.json(pageProps);
   } catch (error) {
-    console.error("Error fetching product:", error);
+    logger.error("Error fetching product:", error);
     return Response.json({ error: "Failed to fetch product" }, { status: 500 });
   }
 }

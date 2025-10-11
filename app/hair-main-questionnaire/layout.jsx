@@ -47,36 +47,6 @@ export default function HairQuestionnaireLayout({ children }) {
           padding-bottom: 0 !important;
           margin-bottom: 0 !important;
         }
-        
-        /* Block all spinning loaders on questionnaire pages */
-        .animate-spin,
-        [class*="animate-spin"],
-        div[class*="animate-spin"],
-        .animate-spin.rounded-full,
-        .animate-spin.rounded-full.h-16,
-        .animate-spin.rounded-full.h-12,
-        .animate-spin.rounded-full.h-8,
-        .animate-spin.rounded-full.h-6,
-        .animate-spin.rounded-full.h-4,
-        .animate-spin.rounded-full.h-5,
-        .animate-spin.rounded-full.w-16,
-        .animate-spin.rounded-full.w-12,
-        .animate-spin.rounded-full.w-8,
-        .animate-spin.rounded-full.w-6,
-        .animate-spin.rounded-full.w-4,
-        .animate-spin.rounded-full.w-5,
-        .animate-spin.rounded-full.border-t-2,
-        .animate-spin.rounded-full.border-b-2,
-        .animate-spin.rounded-full.border-2,
-        .animate-spin.rounded-full.border-white,
-        .animate-spin.rounded-full.border-gray,
-        .animate-spin.rounded-full.border-black,
-        .animate-spin.rounded-full.border-\[#AE7E56\] {
-          display: none !important;
-          visibility: hidden !important;
-          opacity: 0 !important;
-          pointer-events: none !important;
-        }
       `}</style>
       {children}
     </div>

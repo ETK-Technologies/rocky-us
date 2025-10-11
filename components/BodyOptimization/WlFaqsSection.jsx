@@ -2,9 +2,9 @@ import FaqsSection from "@/components/FaqsSection";
 import MoreQuestions from "@/components/MoreQuestions";
 const faqs = [
   {
-    question: "How much does the Body Optimization Program cost?",
+    question: "How much does the Weight Loss Program cost?",
     answer:
-      "The initial consultation fee is $99. The cost of medication along with a $40 program fee is charged monthly. The program fee includes access to clinicians, new prescriptions and pharmacy counselling.",
+      "The initial consultation fee is $99. The cost of medication along with a $60 program fee is charged monthly. The program fee includes access to clinicians, new prescriptions and pharmacy counselling.",
   },
   {
     question: "Do you accept insurance?",
@@ -29,7 +29,7 @@ const faqs = [
   {
     question: "How do I schedule a call with my provider?",
     answer:
-      "After submitting your questionnaire, you will be able to schedule a call with a licensed U.S. prescriber. To request this, simply send a message to your prescriber through your account by clicking on messages. They will send you a link to schedule a call at your convenience.",
+      "After submitting your questionnaire, you will be able to schedule a call with a licensed Canadian prescriber. To request this, simply send a message to your prescriber through your account by clicking on messages. They will send you a link to schedule a call at your convenience.",
   },
   {
     question: "Can I cancel at any time?",
@@ -39,12 +39,12 @@ const faqs = [
   {
     question: "How do GLP-1s work?",
     answer:
-      "Body Optimization injections available through Rocky belong to the GLP-1 class of medications, mimicking the natural hormone GLP-1. They work by reducing appetite and promoting a feeling of fullness, leading to reduced food intake and body optimization.",
+      "Weight Loss injections available through Rocky belong to the GLP-1 class of medications, mimicking the natural hormone GLP-1. They work by reducing appetite and promoting a feeling of fullness, leading to reduced food intake and weight loss.",
   },
   {
     question: "How can I get a GLP-1 prescription at Rocky?",
     answer:
-      'Simply click <a href="/wl-pre-consultation" class="underlined-link">here</a> and get started today!',
+      'Simply click <a href="/wl-pre-consultation" style="text-decoration: underline;">here</a> and get started today!',
   },
   {
     question: "Which GLP-1s does Rocky offer?",

@@ -14,7 +14,7 @@ const ProductFAQPage = () => {
   const [firstSearch, setFirstSearch] = useState(true);
   const sexRef = useRef(null);
   const hairLossRef = useRef(null);
-  // const hairCareRef = useRef(null);
+  const hairCareRef = useRef(null);
 
   useEffect(() => {
     if (searchTerm.length < 3) {
@@ -102,7 +102,7 @@ const ProductFAQPage = () => {
               scrollToSection={scrollToSection}
               sexRef={sexRef}
               hairLossRef={hairLossRef}
-              // hairCareRef={hairCareRef}
+              hairCareRef={hairCareRef}
             />
 
             {/* FAQ Sections  */}
@@ -117,11 +117,11 @@ const ProductFAQPage = () => {
                 products={faqData.hairLoss}
                 reference={hairLossRef}
               />
-              {/* <ProductSection
+              <ProductSection
                 title="Hair Care"
                 products={faqData.hairCare}
                 reference={hairCareRef}
-              /> */}
+              />
             </div>
           </div>
         )}

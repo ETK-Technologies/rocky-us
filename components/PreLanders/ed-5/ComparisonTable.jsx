@@ -1,6 +1,6 @@
 import { memo } from "react";
-import CheckmarkIcon from "./CheckmarkIcon";
 import Link from "next/link";
+import { FaCheckCircle } from "react-icons/fa";
 
 const ComparisonTable = memo(() => {
   return (
@@ -29,91 +29,97 @@ const ComparisonTable = memo(() => {
       </div>
 
       {/* Right side with comparison table */}
-      <div className="w-full md:w-1/2 overflow-x-auto md:overflow-visible">
-        <div className="w-full md:min-w-[500px]">
-          <div className="grid grid-cols-3 gap-0 rounded-lg overflow-hidden text-sm md:text-base">
-            {/* Header row */}
-            <div className="p-2 md:p-4 border-b border-gray-200"></div>
-            <div className="p-2 md:p-4 border-b border-gray-200 text-center font-medium bg-gradient-to-b from-[#f5efe6] to-[#e6d0b3]">
-              Daily
-            </div>
-            <div className="p-2 md:p-4 border-b border-gray-200 text-center font-medium">
-              Before Sex
+      <div className="w-full md:w-[42%] mb-8 md:mb-0 md:text-start text-center">
+        <div className="flex">
+          <div className="w-[40%]">
+            <div className="w-full h-[52px] md:h-[80] border-b-[1px] border-b-[#0000001F]">
+              {/* Empty Cell */}
             </div>
 
-            {/* Taken row */}
-            <div className="p-2 md:p-4 border-b border-gray-200 font-medium">
-              Taken
-            </div>
-            <div className="p-2 md:p-4 border-b border-gray-200 text-center bg-gradient-to-b from-[#f5efe6] to-[#e6d0b3]">
-              Once a day
-            </div>
-            <div className="p-2 md:p-4 border-b border-gray-200 text-center">
-              15 min - 1 hour
-              <br />
-              before sex
+            {[
+              "Token",
+              "Sex ready anytime",
+              "24/7 medical support",
+              "100% online, no waiting or doctor visit needed",
+              "Lowest price guarantee",
+            ].map((item, index) => (
+              <div
+                key={index}
+                className="min-w-[112px] flex justify-start items-center h-[52px] md:h-[80] border-b-[1px] border-b-[#0000001F]"
+              >
+                <span className="w-full text-[12px] text-left lg:text-[14px] font-[500] leading-[140%] font-[POPPINS]">
+                  {item}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className="w-[30%] bg-gradient-to-b from-[#EFE2D7] via-[#F7EBE4] to-[#AE7E56] rounded-[16px]">
+            <div className="w-full flex justify-center items-center h-[52px] md:h-[80] border-b-[1px] border-b-[#0000001F]">
+              <span className="text-[14px] lg:text-[18px]  font-[600] leading-[140%] font-[POPPINS]">
+                Daily
+              </span>
             </div>
 
-            {/* Sex ready anytime row */}
-            <div className="p-2 md:p-4 border-b border-gray-200 font-medium">
-              Sex ready anytime
-            </div>
-            <div className="p-2 md:p-4 border-b border-gray-200 flex justify-center items-center bg-gradient-to-b from-[#f5efe6] to-[#e6d0b3]">
-              <div className="h-5 w-5 md:h-6 md:w-6 rounded-full bg-black flex items-center justify-center">
-                <CheckmarkIcon />
-              </div>
-            </div>
-            <div className="p-2 md:p-4 border-b border-gray-200 flex justify-center items-center">
-              <div className="h-5 w-5 md:h-6 md:w-6 rounded-full bg-black flex items-center justify-center">
-                <CheckmarkIcon />
-              </div>
+            <div className="w-full flex justify-center items-center h-[52px] md:h-[80] border-b-[1px] border-b-[#0000001F]">
+              <span className="text-[12px] lg:text-[14px] font-[500] leading-[140%] font-[POPPINS]">
+                Once a day
+              </span>
             </div>
 
-            {/* 24/7 medical support row */}
-            <div className="p-2 md:p-4 border-b border-gray-200 font-medium">
-              24/7 medical support
+            <div className="w-full flex justify-center items-center h-[52px] md:h-[80] border-b-[1px] border-b-[#0000001F]">
+              <span className="text-[14px] font-[500] leading-[140%] font-[POPPINS]">
+                <FaCheckCircle className="text-[19px] lg:text-[23px]"></FaCheckCircle>
+              </span>
             </div>
-            <div className="p-2 md:p-4 border-b border-gray-200 flex justify-center items-center bg-gradient-to-b from-[#f5efe6] to-[#e6d0b3]">
-              <div className="h-5 w-5 md:h-6 md:w-6 rounded-full bg-black flex items-center justify-center">
-                <CheckmarkIcon />
-              </div>
+            <div className="w-full flex justify-center items-center h-[52px] md:h-[80] border-b-[1px] border-b-[#0000001F]">
+              <span className="text-[14px] font-[500] leading-[140%] font-[POPPINS]">
+                <FaCheckCircle className="text-[19px] lg:text-[23px]"></FaCheckCircle>
+              </span>
             </div>
-            <div className="p-2 md:p-4 border-b border-gray-200 flex justify-center items-center">
-              <div className="h-5 w-5 md:h-6 md:w-6 rounded-full bg-black flex items-center justify-center">
-                <CheckmarkIcon />
-              </div>
+            <div className="w-full flex justify-center items-center h-[52px] md:h-[80] border-b-[1px] border-b-[#0000001F]">
+              <span className="text-[14px] font-[500] leading-[140%] font-[POPPINS]">
+                <FaCheckCircle className="text-[19px] lg:text-[23px]"></FaCheckCircle>
+              </span>
+            </div>
+            <div className="w-full flex justify-center items-center h-[52px] md:h-[80] border-b-[1px] border-b-[#0000001F]">
+              <span className="text-[14px] font-[500] leading-[140%] font-[POPPINS]">
+                <FaCheckCircle className="text-[19px] lg:text-[23px]"></FaCheckCircle>
+              </span>
+            </div>
+          </div>
+
+          <div className="w-[30%]">
+            <div className="w-full flex justify-center items-center h-[52px] md:h-[80] border-b-[1px] border-b-[#0000001F]">
+              <span className="text-[14px] lg:text-[18px] font-[600] leading-[140%] font-[POPPINS]">
+                Before Sex
+              </span>
             </div>
 
-            {/* 100% online row */}
-            <div className="p-2 md:p-4 border-b border-gray-200 font-medium">
-              100% online, no waiting or
-              <br />
-              doctor visit needed
-            </div>
-            <div className="p-2 md:p-4 border-b border-gray-200 flex justify-center items-center bg-gradient-to-b from-[#f5efe6] to-[#e6d0b3]">
-              <div className="h-5 w-5 md:h-6 md:w-6 rounded-full bg-black flex items-center justify-center">
-                <CheckmarkIcon />
-              </div>
-            </div>
-            <div className="p-2 md:p-4 border-b border-gray-200 flex justify-center items-center">
-              <div className="h-5 w-5 md:h-6 md:w-6 rounded-full bg-black flex items-center justify-center">
-                <CheckmarkIcon />
-              </div>
+            <div className="w-full flex  justify-center items-center h-[52px] md:h-[80] border-b-[1px] border-b-[#0000001F]">
+              <span className="text-[12px] lg:text-[14px] text-center font-[500] leading-[140%] font-[POPPINS]">
+                15 min - 1 hour <span className="block">before sex</span>
+              </span>
             </div>
 
-            {/* Lowest price guarantee row */}
-            <div className="p-2 md:p-4 border-b border-gray-200 font-medium">
-              Lowest price guarantee
+            <div className="w-full flex justify-center items-center h-[52px] md:h-[80] border-b-[1px] border-b-[#0000001F]">
+              <span className="text-[14px] font-[500] leading-[140%] font-[POPPINS]">
+                <FaCheckCircle className="text-[19px] lg:text-[23px]"></FaCheckCircle>
+              </span>
             </div>
-            <div className="p-2 md:p-4 border-b border-gray-200 flex justify-center items-center bg-gradient-to-b from-[#f5efe6] to-[#e6d0b3]">
-              <div className="h-5 w-5 md:h-6 md:w-6 rounded-full bg-black flex items-center justify-center">
-                <CheckmarkIcon />
-              </div>
+            <div className="w-full flex justify-center items-center h-[52px] md:h-[80] border-b-[1px] border-b-[#0000001F]">
+              <span className="text-[14px] font-[500] leading-[140%] font-[POPPINS]">
+                <FaCheckCircle className="text-[19px] lg:text-[23px]"></FaCheckCircle>
+              </span>
             </div>
-            <div className="p-2 md:p-4 border-b border-gray-200 flex justify-center items-center">
-              <div className="h-5 w-5 md:h-6 md:w-6 rounded-full bg-black flex items-center justify-center">
-                <CheckmarkIcon />
-              </div>
+            <div className="w-full flex justify-center items-center h-[52px] md:h-[80] border-b-[1px] border-b-[#0000001F]">
+              <span className="text-[14px] font-[500] leading-[140%] font-[POPPINS]">
+                <FaCheckCircle className="text-[19px] lg:text-[23px]"></FaCheckCircle>
+              </span>
+            </div>
+            <div className="w-full flex justify-center items-center h-[52px] md:h-[80] border-b-[1px] border-b-[#0000001F]">
+              <span className="text-[14px] font-[500] leading-[140%] font-[POPPINS]">
+                <FaCheckCircle className="text-[19px] lg:text-[23px]"></FaCheckCircle>
+              </span>
             </div>
           </div>
         </div>

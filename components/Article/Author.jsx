@@ -33,7 +33,7 @@ const Author = ({
       : undefined;
 
   return (
-    <div className="flex items-center justify-center lg:justify-start w-full lg:w-[770px] mt-4 mb-[40px] gap-4">
+    <div className="flex items-center justify-center lg:justify-start w-full lg:w-[770px] mt-4 mb-[40px] gap-4 border border-gray-200 rounded-2xl p-4 lg:p-6">
       <div className={`flex-shrink-0 ${avatarSize}`}>
         <img
           src={avatarSrc}

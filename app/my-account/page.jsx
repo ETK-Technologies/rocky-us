@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { logger } from "@/utils/devLogger";
 import { useRouter } from "next/navigation";
 import Typewriter from "@/components/ui/Typewriter";
 
@@ -28,16 +29,16 @@ export default function MyAccountPage() {
   useEffect(() => {
     const fetchPortalUrl = async () => {
       try {
-        console.log("Fetching portal URL...");
+        logger.log("Fetching portal URL...");
         // Fetch the auto-login URL from our API
         const response = await fetch("/api/my-account-url");
         const data = await response.json();
 
         // Log result for debugging with full details
-        console.log("API response:", data);
+        logger.log("API response:", data);
 
         if (response.ok && data.success && data.url) {
-          console.log(
+          logger.log(
             "Successfully received portal URL, redirecting to:",
             data.url
           );
@@ -48,9 +49,9 @@ export default function MyAccountPage() {
           }, 3000);
         } else {
           // Display more detailed error information
-          console.error("Error getting portal URL:", data);
+          logger.error("Error getting portal URL:", data);
           if (data.details) {
-            console.error("Error details:", data.details);
+            logger.error("Error details:", data.details);
           }
 
           setError(
@@ -64,7 +65,7 @@ export default function MyAccountPage() {
           }, 5000); // Increased to 5 seconds to give more time to see the error
         }
       } catch (err) {
-        console.error("Exception during portal URL fetch:", err);
+        logger.error("Exception during portal URL fetch:", err);
         setError("Connection error. Please try again later.");
 
         // Redirect to home after showing error

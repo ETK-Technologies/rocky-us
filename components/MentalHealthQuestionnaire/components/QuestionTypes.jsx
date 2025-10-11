@@ -13,7 +13,6 @@ import {
   GAD7_QUESTIONS,
 } from "./QuestionConfigs";
 
-import AppointmentBooking from "./AppointmentBooking";
 
 // Radio button questions
 export const CurrentSituationQuestion = createRadioQuestion(QUESTION_CONFIGS.currentSituation);
@@ -33,6 +32,75 @@ export const MedicalHistoryQuestion = createRadioQuestion(
   QUESTION_CONFIGS.medicalHistory
 );
 export const AlcoholQuestion = createRadioQuestion(QUESTION_CONFIGS.alcohol);
+
+// Health Care Team Questions
+export const HealthCareTeamQuestions = ({ formData, onSelect }) => {
+  const config = QUESTION_CONFIGS.healthCareTeamQuestions;
+  
+  return (
+    <div className="w-full md:max-w-[520px] mx-auto">
+      <div className="my-6">
+        <h1 className="text-3xl mb-6">
+          {config.title}
+        </h1>
+      </div>
+      
+      <div className="space-y-4">
+        {config.options.map((option, index) => {
+          const fieldName = `${config.questionId}_${index + 1}`;
+          const isChecked = formData[config.questionId] === option;
+          const needsAdditionalInput = option === config.showAdditionalInputFor;
+          
+          return (
+            <div key={fieldName} className="mb-4 relative w-full">
+              <div className={`quiz-option text-left block w-full ${
+                isChecked && needsAdditionalInput ? "selected-with-inputs" : ""
+              }`}>
+                <input
+                  id={fieldName}
+                  className="hidden"
+                  type="radio"
+                  name={config.questionId}
+                  checked={isChecked}
+                  onChange={() => onSelect(option, undefined)}
+                />
+                <label
+                  htmlFor={fieldName}
+                  className={`quiz-option-label cursor-pointer text-left p-5 border-2 w-full
+                    ${isChecked ? "border-[#A7885A]" : "border-gray-300"}
+                    rounded-[12px] block
+                    ${
+                      isChecked && needsAdditionalInput
+                        ? "flex flex-col items-start transition-all duration-200"
+                        : "flex justify-between items-center h-[60px] md:h-[70px]"
+                    }
+                    text-[14px] md:text-[16px] shadow-none`}
+                >
+                  <div className="flex justify-between items-center w-full">
+                    <span>{option}</span>
+                    <div className="flex-grow"></div>
+                  </div>
+
+                  {isChecked && needsAdditionalInput && (
+                    <div className="mt-4 w-full">
+                      <textarea
+                        value={formData["539"] || ""}
+                        onChange={(e) => onSelect(e.target.value, e.target.value)}
+                        placeholder={config.additionalInputPlaceholder}
+                        className="w-full border border-[#B0A28C] rounded-md px-3 py-4 h-24 resize-none"
+                        rows="4"
+                      />
+                    </div>
+                  )}
+                </label>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 // Checkbox questions
 export const RecentEventsQuestion = createCheckboxQuestion(QUESTION_CONFIGS.recentEvents);
@@ -144,19 +212,18 @@ export const PhotoIdUpload = ({
             ) : (
               <img
                 id="photo-id-preview"
-                src=""
+                src={URL.createObjectURL(photoIdFile)}
                 alt="ID Preview"
                 className="max-w-full max-h-36 object-contain"
               />
             )}
           </div>
 
-          {/* Move the file input here so it's available when this component renders */}
           <input
             type="file"
             ref={fileInputRef}
             id="photo-id-file"
-            accept="image/jpeg,image/png"
+            accept="image/jpeg,image/jpg,image/png"
             className="hidden"
             onChange={handlePhotoIdFileSelect}
           />
@@ -175,9 +242,9 @@ export const PhotoIdUpload = ({
                 Please capture a selfie of yourself holding your ID
               </p>{" "}
               <p className="text-center text-sm text-gray-500 mb-8">
-                Only JPEG and PNG images are supported.
+                Only JPG, JPEG, and PNG images are supported.
                 <br />
-                Maximum file size per image is 10MB
+                Maximum file size per image is 20MB
               </p>
             </div>
           )}
@@ -194,28 +261,11 @@ export const PhotoIdUpload = ({
   );
 };
 
-export const AppointmentBookingPage = ({
-  formData,
-  onSelect,
-  userName = "",
-  userEmail = "",
-  phoneNumber = "",
-}) => {
-  return (
-    <AppointmentBooking
-      formData={formData}
-      onSelect={onSelect}
-      userName={userName}
-      userEmail={userEmail}
-      phoneNumber={phoneNumber}
-    />
-  );
-};
 
 // Completion message
-export const QuestionnaireComplete = ({ currentPage }) => {
+export const QuestionnaireComplete = ({ currentPage, formData, onSelect }) => {
   const CompletionMessage = createCompletionMessage(
     QUESTION_CONFIGS.questionnaireComplete
   );
-  return <CompletionMessage />;
+  return <CompletionMessage formData={formData} onSelect={onSelect} currentPage={currentPage} />;
 };

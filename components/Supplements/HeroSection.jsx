@@ -14,7 +14,7 @@ const HeroSection = ({
     "/supplements/product.png",
   ],
 
-  product= "Essential Night Boost"
+  product = "Essential Night Boost",
 }) => {
   const sliderRef = useRef(null);
 
@@ -127,10 +127,10 @@ const HeroSection = ({
 
           {/* Right Side: Details */}
           <div className="w-full lg:w-[40%] p-2">
-            <h1 className="text-[32px] lg:text-[40px] font-[550]  leading-[115%] letter-spacing-[-2%] mb-[6px]">
+            <h1 className="text-[32px] lg:text-[40px] font-[550]  leading-[115%] tracking-[-2%] mb-[6px]">
               {product}
             </h1>
-            <h2 className="text-[13px] lg:text-[16px] font-medium  leading-[115%] letter-spacing-[-2%] mb-[16px]">
+            <h2 className="text-[13px] lg:text-[16px] font-medium  leading-[115%] tracking-[-2%] mb-[16px]">
               60 capsules
             </h2>
             <p className="text-[14px] leading-[100%] font-[POPPINS] font-normal text-[#212121] mb-[24px]">
@@ -312,10 +312,10 @@ const HeroSection = ({
           {/* Left Side: Slider */}
           <div className="w-full lg:w-[63%]">
             <div className="pl-[20px]">
-              <h1 className="text-[32px] lg:text-[40px] font-[550]  leading-[115%] letter-spacing-[-2%] mb-[6px]">
+              <h1 className="text-[32px] lg:text-[40px] font-[550]  leading-[115%] tracking-[-2%] mb-[6px]">
                 {product}
               </h1>
-              <h2 className="text-[13px] lg:text-[16px] font-medium  leading-[115%] letter-spacing-[-2%] mb-[16px]">
+              <h2 className="text-[13px] lg:text-[16px] font-medium  leading-[115%] tracking-[-2%] mb-[16px]">
                 60 capsules
               </h2>
               <p className="text-[14px] leading-[100%] font-[POPPINS] font-normal text-[#212121] mb-[24px]">
@@ -347,31 +347,27 @@ const HeroSection = ({
             </div>
 
             <div className="flex justify-center items-center gap-4">
-               
-
-                {SliderImages.map((thumbnail, index) => (
-                  <div
-                    key={index}
-                    className="w-[80px] h-[80px] bg-white rounded-lg flex items-center justify-center cursor-pointer border-2 border-transparent hover:border-blue-500 transition"
-                    onClick={() => {
-                      if (sliderRef.current) {
-                        sliderRef.current.scrollTo({
-                          left: (index - 1) * sliderRef.current.offsetWidth,
-                          behavior: "smooth",
-                        });
-                      }
-                    }}
-                  >
-                    <CustomImage
-                      src={thumbnail}
-                      height="1000"
-                      width="1000"
-                    ></CustomImage>
-                  </div>
-                ))}
-
-                
-              </div>
+              {SliderImages.map((thumbnail, index) => (
+                <div
+                  key={index}
+                  className="w-[80px] h-[80px] bg-white rounded-lg flex items-center justify-center cursor-pointer border-2 border-transparent hover:border-blue-500 transition"
+                  onClick={() => {
+                    if (sliderRef.current) {
+                      sliderRef.current.scrollTo({
+                        left: (index - 1) * sliderRef.current.offsetWidth,
+                        behavior: "smooth",
+                      });
+                    }
+                  }}
+                >
+                  <CustomImage
+                    src={thumbnail}
+                    height="1000"
+                    width="1000"
+                  ></CustomImage>
+                </div>
+              ))}
+            </div>
 
             <div className="flex overflow-x-auto scrollbar-hide whitespace-nowrap gap-4 mt-[8px]">
               <div className="bg-[#F5F4F3] rounded-[10px]">

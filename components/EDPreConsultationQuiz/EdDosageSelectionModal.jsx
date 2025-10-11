@@ -13,6 +13,7 @@ const EdDosageSelection = ({
   onContinue,
   handleBackClick,
   currentPage,
+  isLoading = false,
 }) => {
   useEffect(() => {
     if (isOpen) {
@@ -242,10 +243,17 @@ const EdDosageSelection = ({
           <div className="fixed bottom-0 left-0 right-0 md:left-auto md:right-auto px-5 md:px-0 md:w-[520px]  pb-4 flex items-center justify-center z-50">
             <button
               onClick={onContinue}
-              disabled={!selectedDose}
-              className="w-full py-3 bg-black text-white rounded-full font-medium disabled:bg-gray-400"
+              disabled={!selectedDose || isLoading}
+              className="w-full py-3 bg-black text-white rounded-full font-medium disabled:bg-gray-400 flex items-center justify-center gap-2"
             >
-              Continue
+              {isLoading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  <span>Adding to cart...</span>
+                </>
+              ) : (
+                "Continue"
+              )}
             </button>
           </div>
         </div>

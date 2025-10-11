@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import axios from "axios";
+import { logger } from "@/utils/devLogger";
 
 export async function POST(request) {
   try {
@@ -39,7 +40,7 @@ export async function POST(request) {
         { status: 200 }
       );
     } catch (apiError) {
-      console.error("API error:", apiError.response?.data);
+      logger.error("API error:", apiError.response?.data);
       return NextResponse.json(
         {
           success: false,
@@ -52,7 +53,7 @@ export async function POST(request) {
       );
     }
   } catch (error) {
-    console.error("Forgot password error:", error);
+    logger.error("Forgot password error:", error);
     return NextResponse.json(
       {
         success: false,

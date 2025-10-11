@@ -1,10 +1,14 @@
 "use client";
 import { useState, useEffect } from "react";
+import { logger } from "@/utils/devLogger";
 import Link from "next/link";
 import { IoClose } from "react-icons/io5";
 import { toast } from "react-toastify";
+import { analyticsService } from "@/utils/analytics/analyticsService";
+import { isUserAuthenticated } from "@/utils/crossSellCheckout";
+import { formatPrice } from "@/utils/priceFormatter";
 
-const CartPopup = ({ isOpen, onClose, productType }) => {
+const CartPopup = ({ isOpen, onClose, productType, onContinueShopping }) => {
   const [cartItems, setCartItems] = useState([]);
   const [isRemoving, setIsRemoving] = useState(null); // item key being removed
   const [isLoading, setIsLoading] = useState(false);
@@ -125,13 +129,59 @@ const CartPopup = ({ isOpen, onClose, productType }) => {
 
             <div className="flex flex-col space-y-3">
               <Link href={checkoutUrl} className="w-full">
-                <button className="w-full bg-black text-white py-2.5 px-4 rounded-full hover:bg-gray-900 transition-colors">
+                <button
+                  className="w-full bg-black text-white py-2.5 px-4 rounded-full hover:bg-gray-900 transition-colors"
+                  onClick={(e) => {
+                    // If user is not authenticated and this is merch, redirect to login-register with redirect_to
+                    if (productType === "merch") {
+                      try {
+                        const authenticated = isUserAuthenticated();
+                        if (!authenticated) {
+                          e.preventDefault();
+                          const origin = typeof window !== "undefined" ? window.location.origin : "";
+                          const redirectTo = encodeURIComponent(`${origin}${checkoutUrl}`);
+                          window.location.href = `${origin}/login-register?redirect_to=${redirectTo}&viewshow=register`;
+                          return;
+                        }
+                      } catch (_) {}
+                    }
+
+                    try {
+                      if (Array.isArray(cartItems) && cartItems.length > 0) {
+                        const itemsForAnalytics = cartItems.map((it) => ({
+                          product: {
+                            id: it.product_id || it.id,
+                            sku: it.sku,
+                            name: it.name,
+                            price:
+                              (it.prices?.sale_price ||
+                                it.prices?.regular_price ||
+                                0) / 100,
+                            attributes: it.variation?.length
+                              ? it.variation.map((v) => ({
+                                  name: v.attribute || v.name,
+                                  options: [v.value],
+                                }))
+                              : [],
+                          },
+                          quantity: it.quantity || 1,
+                        }));
+                        analyticsService.trackBeginCheckout(itemsForAnalytics);
+                      }
+                    } catch (e) {
+                      logger.warn(
+                        "[Analytics] begin_checkout (popup) skipped:",
+                        e
+                      );
+                    }
+                  }}
+                >
                   Proceed to Checkout
                 </button>
               </Link>
 
               <button
-                onClick={onClose}
+                onClick={productType === "merch" ? (onContinueShopping || onClose) : onClose}
                 className="w-full bg-white text-black py-2.5 px-4 rounded-full border border-gray-300 hover:bg-gray-50 transition-colors"
               >
                 Continue Shopping
@@ -197,11 +247,75 @@ const CartPopup = ({ isOpen, onClose, productType }) => {
                         dangerouslySetInnerHTML={{ __html: item.name }}
                       ></span>
                     </div>
+                    {/* Display quantity and variations only for merch products */}
+                    {productType === "merch" && (
+                      <div className="mt-1 space-y-1">
+                        {/* Display quantity */}
+                        <div className="text-[#666666] text-xs">
+                          Quantity:{" "}
+                          <span className="text-[#212121] font-medium">
+                            {item.quantity || 1}
+                          </span>
+                        </div>
+                        {/* Display product variations */}
+                        {item.variation && item.variation.length > 0 && (
+                          <div className="text-[#666666] text-xs">
+                            {item.variation
+                              .map((variation, index) => {
+                                // Debug: Log the variation data structure
+                                console.log("Variation data:", variation);
+
+                                // Handle different variation data structures
+                                const variationName =
+                                  variation.name ||
+                                  variation.attribute ||
+                                  variation.label ||
+                                  "";
+                                const variationValue =
+                                  variation.value ||
+                                  variation.options?.[0] ||
+                                  "";
+
+                                // Skip if we don't have proper data
+                                if (!variationName || !variationValue)
+                                  return null;
+
+                                return (
+                                  <span key={index}>
+                                    {variationName}:{" "}
+                                    <span className="text-[#212121] font-medium">
+                                      {variationValue}
+                                    </span>
+                                    {index < item.variation.length - 1
+                                      ? " • "
+                                      : ""}
+                                  </span>
+                                );
+                              })
+                              .filter(Boolean)}
+                          </div>
+                        )}
+                      </div>
+                    )}
                     <div className="text-[#212121] text-sm">
-                      $
+                      {item.quantity || 1} × $
                       {item.prices?.sale_price
-                        ? item.prices.sale_price / 100
-                        : item.prices?.regular_price / 100 || item.price}
+                        ? formatPrice(item.prices.sale_price / 100)
+                        : formatPrice(
+                            item.prices?.regular_price / 100 || item.price
+                          )}
+                    </div>
+                    <div className="text-[#212121] text-sm font-semibold">
+                      Total: $
+                      {item.prices?.sale_price
+                        ? formatPrice(
+                            (item.prices.sale_price / 100) *
+                            (item.quantity || 1)
+                          )
+                        : formatPrice(
+                            (item.prices?.regular_price / 100 || item.price) *
+                            (item.quantity || 1)
+                          )}
                     </div>
                   </div>
                   <button
@@ -230,12 +344,56 @@ const CartPopup = ({ isOpen, onClose, productType }) => {
               <button
                 className="w-full py-3 rounded-full bg-black text-white text-center font-medium text-base disabled:opacity-60"
                 disabled={!!isRemoving}
+                onClick={(e) => {
+                  // If user is not authenticated and this is merch, redirect to login-register with redirect_to
+                  if (productType === "merch") {
+                    try {
+                      const authenticated = isUserAuthenticated();
+                      if (!authenticated) {
+                        e.preventDefault();
+                        const origin = typeof window !== "undefined" ? window.location.origin : "";
+                        const redirectTo = encodeURIComponent(`${origin}${checkoutUrl}`);
+                        window.location.href = `${origin}/login-register?redirect_to=${redirectTo}&viewshow=register`;
+                        return;
+                      }
+                    } catch (_) {}
+                  }
+
+                  try {
+                    if (Array.isArray(cartItems) && cartItems.length > 0) {
+                      const itemsForAnalytics = cartItems.map((it) => ({
+                        product: {
+                          id: it.product_id || it.id,
+                          sku: it.sku,
+                          name: it.name,
+                          price:
+                            (it.prices?.sale_price ||
+                              it.prices?.regular_price ||
+                              0) / 100,
+                          attributes: it.variation?.length
+                            ? it.variation.map((v) => ({
+                                name: v.attribute || v.name,
+                                options: [v.value],
+                              }))
+                            : [],
+                        },
+                        quantity: it.quantity || 1,
+                      }));
+                      analyticsService.trackBeginCheckout(itemsForAnalytics);
+                    }
+                  } catch (e) {
+                    logger.warn(
+                      "[Analytics] begin_checkout (popup mobile) skipped:",
+                      e
+                    );
+                  }
+                }}
               >
                 Proceed to Checkout
               </button>
             </Link>
             <button
-              onClick={onClose}
+              onClick={productType === "merch" ? (onContinueShopping || onClose) : onClose}
               className="w-full py-3 rounded-full border border-black text-black text-center font-medium text-base"
             >
               Continue Shopping

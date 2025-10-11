@@ -17,11 +17,11 @@ const ErrorDisplay = ({ message }) => (
 const BlogSection = async () => {
   let posts = [];
   let error = null;
-  logger.log(posts, "Posts");
+  logger.log(posts, 'Posts');
 
   try {
     posts = await getPosts();
-    logger.log(posts, "Posts");
+    logger.log(posts, 'Posts');
   } catch (err) {
     error = err.message || "Failed to load blog posts";
   }

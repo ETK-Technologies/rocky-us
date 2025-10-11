@@ -13,7 +13,7 @@ const Question = memo(({ question, answers, onOptionSelect }) => (
         totalQuestions={QUESTIONS_DATA.length}
       />
 
-      <h2 className="text-2xl font-semibold text-center mb-8">
+      <h2 className="text-2xl lg:text-4xl font-semibold text-center mb-8 headers-font">
         {question.title}
       </h2>
 

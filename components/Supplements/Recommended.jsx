@@ -4,7 +4,7 @@ import RecommendCard from "./RecommendCard";
 const Recommended = ({ products = [], isLoading = false }) => {
   // Create skeleton cards for loading state
   const renderSkeletonCards = () => {
-    return Array.from({ length: 3 }, (_, index) => (
+    return Array.from({ length: 4 }, (_, index) => (
       <div
         key={index}
         className="bg-[#F6F6F5] rounded-2xl p-6 border-[0.5px] border-[#E2E2E1] w-[280px] h-[480px] flex-shrink-0 flex flex-col"
@@ -26,9 +26,9 @@ const Recommended = ({ products = [], isLoading = false }) => {
   return (
     <Section>
       <h1 className="text-center headers-font text-[24px] lg:text-[32px] tracking-[-2%] font-[550] leading-[115%] mb-[56px]">
-        Recommended by Health Experts
+        Complete Your Wellness Stack with These Trusted Picks
       </h1>
-      <div className="flex gap-8 justify-start lg:justify-center items-center overflow-x-auto lg:overflow-hidden scrollbar-hide">
+      <div className="flex gap-2 md:gap-6 justify-start md:justify-center items-center overflow-x-auto scrollbar-hide lg:gab-6 max-w-[1200px] mx-auto">
         {isLoading
           ? renderSkeletonCards()
           : products.map((product, index) => (

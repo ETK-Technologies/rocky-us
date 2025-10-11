@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
+import { logger } from "@/utils/devLogger";
 import { useSearchParams, useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import Login from "./Login";
@@ -60,13 +61,13 @@ const LoginRegisterContent = () => {
               window.location.href = "/";
             }, 1500); // Small delay to ensure the toast message is visible
           } else {
-            console.error(
+            logger.error(
               "Error during patient portal logout:",
               data.error || response.statusText
             );
           }
         } catch (error) {
-          console.error("Exception during patient portal logout:", error);
+          logger.error("Exception during patient portal logout:", error);
         }
       };
 

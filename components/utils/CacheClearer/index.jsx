@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { logger } from "@/utils/devLogger";
 import { usePathname } from "next/navigation";
 
 const CacheClearer = () => {
@@ -13,7 +14,7 @@ const CacheClearer = () => {
       for (let i = 0; i < cookies.length; i++) {
         const cookie = cookies[i].trim();
         if (cookie.startsWith("clearCache=true")) {
-          console.log("Clearing all cached data due to logout");
+          logger.log("Clearing all cached data due to logout");
 
           // Clear all cached data from localStorage
           localStorage.removeItem("userProfileData");

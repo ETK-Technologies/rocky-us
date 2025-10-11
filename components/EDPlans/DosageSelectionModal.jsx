@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { logger } from "@/utils/devLogger";
 import CustomImage from "../utils/CustomImage";
 import { saveDosageSelection } from "@/utils/dosageCookieManager";
 
@@ -11,16 +12,17 @@ const DosageSelectionModal = ({
   selectedDose,
   setSelectedDose,
   onContinue,
+  isLoading = false,
 }) => {
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
       // Log product info when modal opens
-      console.log("DosageSelectionModal opened with product:", product);
+      logger.log("DosageSelectionModal opened with product:", product);
 
       // Save the default dosage selection when modal opens
       if (product?.id && selectedDose) {
-        console.log(
+        logger.log(
           "Saving default dosage for product:",
           product.id,
           "with dose:",
@@ -41,13 +43,13 @@ const DosageSelectionModal = ({
 
   const handleRadioChange = (e) => {
     const newDose = e.target.value;
-    console.log("Radio changed to:", newDose);
-    console.log("Current product in modal:", product);
+    logger.log("Radio changed to:", newDose);
+    logger.log("Current product in modal:", product);
     setSelectedDose(newDose);
 
     // Save the dosage selection to cookie if we have a product ID
     if (product?.id) {
-      console.log(
+      logger.log(
         "Saving dosage for product:",
         product.id,
         "with dose:",
@@ -55,7 +57,7 @@ const DosageSelectionModal = ({
       );
       saveDosageSelection(product.id.toString(), newDose);
     } else {
-      console.log("No product ID available for saving dosage");
+      logger.log("No product ID available for saving dosage");
     }
   };
 
@@ -199,9 +201,17 @@ const DosageSelectionModal = ({
           <div className="w-full flex justify-center">
             <button
               onClick={onContinue}
-              className="bg-[#814B00] p-[13px] px-[60px] rounded-lg text-white font-bold mt-[46px]"
+              disabled={isLoading}
+              className="bg-[#814B00] p-[13px] px-[60px] rounded-lg text-white font-bold mt-[46px] disabled:bg-gray-400 flex items-center justify-center gap-2"
             >
-              Continue
+              {isLoading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  <span>Adding to cart...</span>
+                </>
+              ) : (
+                "Continue"
+              )}
             </button>
           </div>
         </div>

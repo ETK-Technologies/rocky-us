@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { logger } from "@/utils/devLogger";
 import ProductSkeleton from "./ProductSkeleton";
 import ProductPageContent from "@/components/Product/ProductPageContent";
 import ProductNotFound from "@/components/Product/ProductNotFound";
@@ -8,6 +9,8 @@ import ZonnicProductPageContent from "./ZonnicProductPageContent";
 import DhmBlendProductPageContent from "./DhmBlend/DhmBlendProductPageContent";
 import BodyOptimizationProductPageContent from "./body-optimization/BodyOptimizationProductPageContent";
 import SupplementsProductPageContent from "./Supplements/SupplementsProductPageContent";
+import { useProductTracking } from "@/lib/hooks/useGA4Tracking";
+import { analyticsService } from "@/utils/analytics/analyticsService";
 
 export default function ProductClientWrapper({ slug, initialData = null }) {
   const [productData, setProductData] = useState(initialData);
@@ -33,7 +36,7 @@ export default function ProductClientWrapper({ slug, initialData = null }) {
     slug?.toLowerCase().includes("gut-relief") ||
     slug?.toLowerCase().includes("testosterone-support") ||
     slug?.toLowerCase().includes("hair-growth-support");
-  
+
   const bodyOptimizationProducts = [
     "ozempic",
     "mounjaro",
@@ -65,7 +68,7 @@ export default function ProductClientWrapper({ slug, initialData = null }) {
         setProductData(data);
         setError(false);
       } catch (error) {
-        console.error("Error fetching product data:", error);
+        logger.error("Error fetching product data:", error);
         setError("server_error");
       } finally {
         setLoading(false);
@@ -79,6 +82,27 @@ export default function ProductClientWrapper({ slug, initialData = null }) {
   // Check if we are still loading the full product data
   const fullDataLoading =
     productData && !productData.clientProps?.variations && !error;
+
+  // Initialize GA4 tracking for product view
+  // This will automatically track view_item when product data is loaded
+  useProductTracking(basicData, {
+    debug: process.env.NODE_ENV === "development",
+    enabled: !!basicData && !error && !loading,
+  });
+
+  // Also trigger a headless_page_view for SPA navigation when product changes
+  useEffect(() => {
+    if (basicData && !loading && !error) {
+      const pagePath =
+        typeof window !== "undefined"
+          ? window.location.pathname
+          : `/product/${slug}`;
+      analyticsService.trackHeadlessPageView({
+        page_title: basicData.name || slug,
+        page_path: pagePath,
+      });
+    }
+  }, [basicData, loading, error, slug]);
 
   // Show skeleton during initial loading
   if (loading) {

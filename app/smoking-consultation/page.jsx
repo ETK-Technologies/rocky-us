@@ -1,5 +1,4 @@
 import ZonnicConsultationQuiz from "@/components/ZonnicQuestionnaire/ZonicQuestionnaire";
-import { SmokingConsultationScripts } from "@/components/VisiOpt";
 import { cookies } from "next/headers";
 
 export default function ZonnicConsultationPage() {
@@ -21,7 +20,6 @@ export default function ZonnicConsultationPage() {
         dob={DOB}
         province={province}
       />
-      <SmokingConsultationScripts />
     </main>
   );
 }

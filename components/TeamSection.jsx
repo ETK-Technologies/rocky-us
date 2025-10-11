@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { FaLongArrowAltRight, FaRegCheckCircle } from "react-icons/fa";
 import ScrollArrows from "./ScrollArrows";
 import CustomContainImage from "./utils/CustomContainImage";
+import BrimaryButton from "./ui/buttons/BrimaryButton";
 
 const teamCards = [
   {
@@ -102,13 +103,11 @@ const TeamSection = () => {
               </li>
             ))}
           </ul>
-          <a
-            href="/about-us"
-            className=" mt-6 md:mt-8 w-full text-center flex items-center justify-center bg-[#FFFFFF] py-3 px-6 rounded-full border-solid border-2 border-[#E2E2E1] hover:bg-gray-200"
-          >
-            <span className="text-[14px] font-[500]">Meet Our Team</span>{" "}
-            <FaLongArrowAltRight className="ml-2" />
-          </a>
+
+          <BrimaryButton href="/about-us" arrowIcon={true}
+            className=" mt-6 md:mt-8 w-full text-center flex items-center justify-center bg-[#FFFFFF] py-3 px-6 rounded-full border-solid border-2 border-[#E2E2E1] hover:bg-gray-200">
+            <span className="text-sm font-medium">Meet Our Team</span>{" "}
+          </BrimaryButton>
         </div>
         <div className="overflow-x-auto !no-scrollbar relative">
           <ScrollArrows scrollContainerRef={scrollContainerRef} />
@@ -133,8 +132,8 @@ const TeamSection = () => {
                           index === 0
                             ? "object-[-10px_-13px]"
                             : index === 1
-                            ? "object-[0_10px]"
-                            : "object-[0_-45px]"
+                              ? "object-[0_10px]"
+                              : "object-[0_-45px]"
                         }
                       />
                     </div>

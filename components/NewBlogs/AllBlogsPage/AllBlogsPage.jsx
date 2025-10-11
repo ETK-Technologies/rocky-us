@@ -135,7 +135,7 @@ export default function AllBlogsPage({
 
         {/* Newsletter Signup */}
         <MoreQuestions
-          title="Join 350K+ Users & receive actionable health tips."
+          title="Join 350K+ Canadians & receive actionable health tips."
           buttonText="Sign up to our newsletter"
           buttonWidth="240"
           link="/login-register?viewshow=register"

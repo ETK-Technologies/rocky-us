@@ -1,3 +1,5 @@
+import { logger } from "@/utils/devLogger";
+
 // Dosage cookie management utility for storing and retrieving user's dosage selections
 
 const COOKIE_NAME = "dosages";
@@ -20,7 +22,7 @@ export const getDosageSelections = () => {
     const value = decodeURIComponent(cookie.split("=")[1]);
     return JSON.parse(value);
   } catch (error) {
-    console.error("Error parsing dosage selections cookie:", error);
+    logger.error("Error parsing dosage selections cookie:", error);
     return {};
   }
 };
@@ -32,14 +34,14 @@ export const getDosageSelections = () => {
  */
 export const saveDosageSelection = (productId, dosage) => {
   if (typeof window === "undefined") {
-    console.log("Window is undefined, cannot save cookie");
+    logger.log("Window is undefined, cannot save cookie");
     return;
   }
 
   try {
-    console.log("Saving dosage selection:", { productId, dosage });
+    logger.log("Saving dosage selection:", { productId, dosage });
     const selections = getDosageSelections();
-    console.log("Current selections:", selections);
+    logger.log("Current selections:", selections);
 
     // Store in format: { "259": "50mg", "260": "100mg" }
     selections[productId] = dosage;
@@ -48,12 +50,12 @@ export const saveDosageSelection = (productId, dosage) => {
     expiryDate.setDate(expiryDate.getDate() + COOKIE_EXPIRY_DAYS);
 
     const cookieValue = JSON.stringify(selections);
-    console.log("Setting cookie value:", cookieValue);
+    logger.log("Setting cookie value:", cookieValue);
 
     const cookieString = `${COOKIE_NAME}=${encodeURIComponent(
       cookieValue
     )}; expires=${expiryDate.toUTCString()}; path=/; SameSite=Lax`;
-    console.log("Setting cookie string:", cookieString);
+    logger.log("Setting cookie string:", cookieString);
 
     document.cookie = cookieString;
 
@@ -61,9 +63,9 @@ export const saveDosageSelection = (productId, dosage) => {
     const savedCookie = document.cookie
       .split("; ")
       .find((row) => row.startsWith(`${COOKIE_NAME}=`));
-    console.log("Saved cookie:", savedCookie);
+    logger.log("Saved cookie:", savedCookie);
   } catch (error) {
-    console.error("Error saving dosage selection:", error);
+    logger.error("Error saving dosage selection:", error);
   }
 };
 
@@ -74,7 +76,7 @@ export const saveDosageSelection = (productId, dosage) => {
  */
 export const getDosageSelection = (productId) => {
   const selections = getDosageSelections();
-  console.log(
+  logger.log(
     "Getting dosage selection for product",
     productId,
     ":",
@@ -101,7 +103,7 @@ export const removeDosageSelection = (productId) => {
       JSON.stringify(selections)
     )}; expires=${expiryDate.toUTCString()}; path=/; SameSite=Lax`;
   } catch (error) {
-    console.error("Error removing dosage selection:", error);
+    logger.error("Error removing dosage selection:", error);
   }
 };
 

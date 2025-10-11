@@ -41,7 +41,7 @@ const ChewalisProducts = () => {
       <div className="flex flex-wrap justify-between items-start mt-[32px] md:mt-[24px]">
         <div className="w-full md:w-[584px]">
           <p className="hidden lg:block text-[12px] font-[400] text-[#212121]">
-            In United States, erectile dysfunction medications are available
+            In Canada, erectile dysfunction medications are available
             over-the-counter (OTC) and may be obtained after a prescription.
             This medication will ensure proper dosage for legal and medical
             guidelines within the country. An important note: this document must
@@ -61,6 +61,56 @@ const ChewalisProducts = () => {
 export default ChewalisProducts;
 
 // Product Data
+
+const cialisProduct = {
+  name: "Cialis",
+  tagline: '"The weekender"',
+  image:
+    "https://myrocky.b-cdn.net/WP%20Images/Sexual%20Health/webp-images/RockyHealth-cialis-400px.webp",
+  activeIngredient: "Tadalafil",
+  strengths: ["10mg", "20mg"],
+  preferences: ["generic", "brand"],
+  frequencies: {
+    "monthly-supply": "One Month",
+    "quarterly-supply": "Three Months",
+  },
+  pillOptions: {
+    "monthly-supply": [
+      { count: 8, genericPrice: 126, brandPrice: 170 },
+      { count: 12, genericPrice: 184, brandPrice: 250 },
+    ],
+    "quarterly-supply": [
+      { count: 12, genericPrice: 184, brandPrice: 250 },
+      { count: 24, genericPrice: 358, brandPrice: 490 },
+      { count: 36, genericPrice: 532, brandPrice: 730 },
+    ],
+  },
+};
+
+const viagraProduct = {
+  name: "Viagra",
+  tagline: '"The one-nighter"',
+  image:
+    "https://myrocky.b-cdn.net/WP%20Images/Sexual%20Health/webp-images/RockyHealth-viagra-400px.webp",
+  activeIngredient: "Sildenafil",
+  strengths: ["50mg", "100mg"],
+  preferences: ["generic", "brand"],
+  frequencies: {
+    "monthly-supply": "One Month",
+    "quarterly-supply": "Three Months",
+  },
+  pillOptions: {
+    "monthly-supply": [
+      { count: 8, genericPrice: 98, brandPrice: 130 },
+      { count: 12, genericPrice: 142, brandPrice: 190 },
+    ],
+    "quarterly-supply": [
+      { count: 12, genericPrice: 142, brandPrice: 190 },
+      { count: 24, genericPrice: 274, brandPrice: 370 },
+      { count: 36, genericPrice: 406, brandPrice: 550 },
+    ],
+  },
+};
 
 // const chewalisProduct = {
 //   name: "Chewalis",
@@ -88,120 +138,6 @@ export default ChewalisProducts;
 //   },
 // };
 
-
-
-const cialisProduct = {
-  name: "Cialis",
-  tagline: '"The weekender"',
-  image:
-    "https://myrocky.b-cdn.net/WP%20Images/Sexual%20Health/webp-images/RockyHealth-cialis-400px.webp",
-  activeIngredient: "Tadalafil",
-  strengths: ["10mg", "20mg"],
-  preferences: ["generic", "brand"],
-  frequencies: {
-    "monthly-supply": "One Month",
-    "quarterly-supply": "Three Months",
-  },
-  pillOptions: {
-    "monthly-supply": [
-      {
-        count: 8,
-        genericPrice: 84,
-        brandPrice: 195,
-        variationId: "259",
-        brandVariationId: "1422",
-      },
-      {
-        count: 12,
-        genericPrice: 126,
-        brandPrice: 285,
-        variationId: "1960",
-        brandVariationId: "1962",
-      },
-    ],
-    "quarterly-supply": [
-      {
-        count: 12,
-        genericPrice: 126,
-        brandPrice: 285,
-        variationId: "260",
-        brandVariationId: "1423",
-      },
-      {
-        count: 24,
-        genericPrice: 252,
-        brandPrice: 555,
-        variationId: "261",
-        brandVariationId: "1424",
-      },
-      {
-        count: 36,
-        genericPrice: 378,
-        brandPrice: 829,
-        variationId: "1961",
-        brandVariationId: "1420",
-      },
-    ],
-  },
-};
-
-const viagraProduct = {
-  name: "Viagra",
-  tagline: '"The one-nighter"',
-  image:
-    "https://myrocky.b-cdn.net/WP%20Images/Sexual%20Health/webp-images/RockyHealth-viagra-400px.webp",
-  activeIngredient: "Sildenafil",
-  strengths: ["50mg", "100mg"],
-  preferences: ["generic", "brand"],
-  frequencies: {
-    "monthly-supply": "One Month",
-    "quarterly-supply": "Three Months",
-  },
-  pillOptions: {
-    "monthly-supply": [
-      {
-        count: 8,
-        genericPrice: 64,
-        brandPrice: 136,
-        variationId: "233",
-        brandVariationId: "1428",
-      },
-      {
-        count: 12,
-        genericPrice: 96,
-        brandPrice: 199,
-        variationId: "234",
-        brandVariationId: "1429",
-      },
-    ],
-    "quarterly-supply": [
-      {
-        count: 12,
-        genericPrice: 96,
-        brandPrice: 199,
-        variationId: "235",
-        brandVariationId: "1430",
-      },
-      {
-        count: 24,
-        genericPrice: 192,
-        brandPrice: 388,
-        variationId: "236",
-        brandVariationId: "1431",
-      },
-      {
-        count: 36,
-        genericPrice: 288,
-        brandPrice: 577,
-        variationId: "237",
-        brandVariationId: "1432",
-      },
-    ],
-  },
-};
-
-
-
 const varietyPackProduct = {
   name: "Cialis + Viagra",
   tagline: '"The Variety Pack"',
@@ -216,43 +152,13 @@ const varietyPackProduct = {
   },
   pillOptions: {
     "monthly-supply": [
-      {
-        count: "4/4",
-        genericPrice: 134,
-        brandPrice: 174,
-        variationId: "37669,37668",
-        brandVariationId: "1421,1427",
-      },
-      {
-        count: "6/6",
-        genericPrice: 183,
-        brandPrice: 235,
-        variationId: "3440,3287",
-        brandVariationId: "3471,3467",
-      },
+      { count: "4/4", genericPrice: 112, brandPrice: 160 },
+      { count: "6/6", genericPrice: 163, brandPrice: 235 },
     ],
     "quarterly-supply": [
-      {
-        count: "6/6",
-        genericPrice: 183,
-        brandPrice: 235,
-        variationId: "3439,3438",
-        brandVariationId: "3470,3466",
-      },
-      {
-        count: "12/12",
-        genericPrice: 363,
-        brandPrice: 484,
-        variationId: "37673,37674",
-        brandVariationId: "1423,1430",
-      },
-      {
-        count: "18/18",
-        genericPrice: 469,
-        brandPrice: 685,
-        variationId: "3442,3437",
-        brandVariationId: "3469,3465",
-      },
+      { count: "6/6", genericPrice: 163, brandPrice: 235 },
+      { count: "12/12", genericPrice: 316, brandPrice: 440 },
+      { count: "18/18", genericPrice: 469, brandPrice: 685 },
     ],
   },
 };

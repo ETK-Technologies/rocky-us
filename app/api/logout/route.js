@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { logger } from "@/utils/devLogger";
 
 export async function POST(req) {
   try {
@@ -20,7 +21,7 @@ export async function POST(req) {
 
     return NextResponse.redirect(new URL("/", req.nextUrl.origin));
   } catch (error) {
-    console.error("Error logging out:", error.response?.data || error.message);
+    logger.error("Error logging out:", error.response?.data || error.message);
 
     return NextResponse.json(
       {

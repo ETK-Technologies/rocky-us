@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { api, fetchProductVariations } from "@/lib/woocommerce";
+import { logger } from "@/utils/devLogger";
 
 export async function GET(request) {
   try {
@@ -7,7 +8,7 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const productId = searchParams.get("id") || "142977"; // Default to the problematic product
 
-    console.log(`[Debug API] Fetching info for product ID: ${productId}`);
+    logger.log(`[Debug API] Fetching info for product ID: ${productId}`);
 
     // Fetch the product
     try {
@@ -42,7 +43,7 @@ export async function GET(request) {
       else if (categories.includes("hair")) productType = "hair";
       else if (categories.includes("weight-loss")) productType = "weight-loss";
 
-      console.log(
+      logger.log(
         `[Debug API] Product type: ${productType}, Product variation count: ${product.variations.length}`
       );
 
@@ -81,10 +82,7 @@ export async function GET(request) {
           })),
         });
       } catch (variationsError) {
-        console.error(
-          `[Debug API] Error fetching variations:`,
-          variationsError
-        );
+        logger.error(`[Debug API] Error fetching variations:`, variationsError);
         return NextResponse.json(
           {
             error: `Error fetching variations: ${variationsError.message}`,
@@ -101,7 +99,7 @@ export async function GET(request) {
         );
       }
     } catch (productError) {
-      console.error(
+      logger.error(
         `[Debug API] Error fetching product ${productId}:`,
         productError
       );
@@ -111,7 +109,7 @@ export async function GET(request) {
       );
     }
   } catch (error) {
-    console.error("[Debug API] Error:", error);
+    logger.error("[Debug API] Error:", error);
     return NextResponse.json(
       { error: error.message || "An error occurred fetching product data" },
       { status: 500 }

@@ -1,14 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import { logger } from "@/utils/devLogger";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
+import CustomImage from "../utils/CustomImage";
 import CustomContainImage from "../utils/CustomContainImage";
 import BrandGenericModal from "../EDPlans/BrandGenericModal";
 import DosageSelectionModal from "../EDPlans/DosageSelectionModal";
 import CrossSellModal from "../EDPlans/CrossSellModal";
-import { addToCartAndRedirect } from "@/utils/crossSellCheckout";
+import { edFlowAddToCart } from "@/utils/flowCartHandler";
 
 const EdTreatment = () => {
+  const router = useRouter();
   const [selectedFrequency, setSelectedFrequency] = useState("monthly-supply");
   const [selectedPillCount, setSelectedPillCount] = useState(8);
 
@@ -18,9 +22,11 @@ const EdTreatment = () => {
   const [crossSellModalOpen, setCrossSellModalOpen] = useState(false);
   const [selectedDose, setSelectedDose] = useState("10mg");
 
+  // Loading state for checkout
+  const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
+
   const pillOptions = {
     "monthly-supply": [
-      { count: 4, price: 74, variationId: "219473" },
       { count: 8, price: 138, variationId: "219484" },
       { count: 12, price: 202, variationId: "278229" },
     ],
@@ -47,45 +53,52 @@ const EdTreatment = () => {
     setCrossSellModalOpen(true);
   };
 
-  // Get the checkout URL with proper product IDs
-  const getCheckoutUrl = () => {
-    // Only access document on the client side
-    const hasAuthToken =
-      typeof window !== "undefined"
-        ? document.cookie.includes("authToken=")
-        : false;
-
-    // Get the variation ID
-    const productIds = selectedPillOption.variationId;
-
-    // If user is logged in, send directly to checkout with the product
-    if (hasAuthToken) {
-      return `/checkout?ed-flow=1&onboarding-add-to-cart=${productIds}`;
-    }
-
-    // Otherwise, use the login-register flow
-    return `/login-register/?ed-flow=1&onboarding=1&view=account&viewshow=register&onboarding-add-to-cart=${productIds}`;
-  };
+  // Note: getCheckoutUrl() function removed - now using direct cart addition
 
   // Handle checkout
-  const handleCheckout = (addons = []) => {
-    console.log("Chewalis checkout with addons:", addons);
+  const handleCheckout = async (addons = []) => {
+    try {
+      logger.log("Chewalis checkout with addons:", addons);
+      setIsCheckoutLoading(true);
 
-    // Create main product data
-    const mainProduct = {
-      id: selectedPillOption.variationId,
-      name: "Chewalis",
-      price: currentPrice,
-      isSubscription: selectedFrequency === "monthly-supply",
-    };
+      // Create main product data
+      const mainProduct = {
+        id: selectedPillOption.variationId,
+        name: "Chewalis",
+        price: currentPrice,
+        quantity: 1,
+        isSubscription: selectedFrequency === "monthly-supply",
+        variationId: selectedPillOption.variationId,
+      };
 
-    console.log("Chewalis main product:", mainProduct);
-    console.log("Chewalis addons:", addons);
+      logger.log("Chewalis main product:", mainProduct);
+      logger.log("Chewalis addons:", addons);
 
-    setCrossSellModalOpen(false);
+      // Use the new direct cart handler
+      const result = await edFlowAddToCart(mainProduct, addons, {
+        requireConsultation: true,
+      });
 
-    // Use the centralized addToCartAndRedirect function
-    addToCartAndRedirect(mainProduct, addons, "ed");
+      if (result.success) {
+        logger.log("🎉 Chewalis - SUCCESS! Result:", result);
+        setCrossSellModalOpen(false);
+        setIsCheckoutLoading(false);
+
+        // Use Next.js navigation instead of window.location.href
+        router.push(result.redirectUrl);
+      } else {
+        logger.error("❌ Chewalis - FAILED! Error:", result.error);
+        setIsCheckoutLoading(false);
+        alert(
+          result.error ||
+            "There was an issue processing your checkout. Please try again."
+        );
+      }
+    } catch (error) {
+      logger.error("Error during Chewalis checkout:", error);
+      setIsCheckoutLoading(false);
+      alert("There was an issue processing your checkout. Please try again.");
+    }
   };
 
   // Prepare selected product data for checkout
@@ -99,7 +112,6 @@ const EdTreatment = () => {
     image:
       "https://myrocky.b-cdn.net/WP%20Images/Sexual%20Health/chewalis-ed.webp",
     dosage: selectedDose,
-    checkoutUrl: getCheckoutUrl(),
     productIds: selectedPillOption.variationId,
   };
 
@@ -163,7 +175,7 @@ const EdTreatment = () => {
               }`}
               onClick={() => {
                 setSelectedFrequency(key);
-                setSelectedPillCount(pillOptions[key][1].count); // default to middle option
+                setSelectedPillCount(pillOptions[key][0].count); // default to first option
               }}
             >
               {label}
@@ -224,6 +236,7 @@ const EdTreatment = () => {
         onClose={() => setCrossSellModalOpen(false)}
         selectedProduct={selectedProductData}
         onCheckout={handleCheckout}
+        isLoading={isCheckoutLoading}
       />
     </div>
   );

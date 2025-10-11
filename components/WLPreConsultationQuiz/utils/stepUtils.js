@@ -1,40 +1,61 @@
 // Step navigation configuration
 export const stepConfig = {  // Defines the navigation paths between steps
   navigation: {
-    1: 2, // BMI Calculator -> Medical Conditions
-    2: 3, // Medical Conditions -> Medications
-    3: 4, // Medications -> Eating Disorder
-    4: 5, // Eating Disorder -> Pregnancy
-    5: 6, // Pregnancy -> Needle Preference
-    6: 7, // Needle Preference -> Product Recommendations
-    7: 8, // Product Recommendations -> Next Step (outside of this flow)
-    8: 9, // Confirmation -> Final
+    1: 2, // Weight Concerns -> Diet Description
+    2: 3, // Diet Description -> BMI Calculator
+    3: 4, // BMI Calculator -> Weight Loss Goal
+    4: 5, // Weight Loss Goal -> Weight Loss Motivation
+    5: 6, // Weight Loss Motivation -> Weight Loss Results
+    6: 7, // Weight Loss Results -> Province Selection
+    7: 8, // Province Selection -> Age Verification
+    8: 9, // Age Verification -> Medical Conditions
+    9: 10, // Medical Conditions -> Medications
+    10: 11, // Medications -> Eating Disorder
+    11: 12, // Eating Disorder -> Pregnancy
+    12: 13, // Pregnancy -> Needle Preference
+    13: 14, // Needle Preference -> Product Recommendations
+    14: 15, // Product Recommendations -> Next Step (outside of this flow)
+    15: 16, // Confirmation -> Final
   },
 
   // Previous step navigation (for back button)
   previousStep: {
-    2: 1,
-    3: 2,
-    4: 3,
-    5: 4,
-    6: 5,
-    7: 6,
-    8: 7,
-    9: 8,
-    11: 1,
+    2: 1, // Diet Description -> Weight Concerns
+    3: 2, // BMI Calculator -> Diet Description
+    4: 3, // Weight Loss Goal -> BMI Calculator
+    5: 4, // Weight Loss Motivation -> Weight Loss Goal
+    6: 5, // Weight Loss Results -> Weight Loss Motivation
+    7: 6, // Province Selection -> Weight Loss Results
+    8: 7, // Age Verification -> Province Selection
+    9: 8, // Medical Conditions -> Age Verification
+    10: 9, // Medications -> Medical Conditions
+    11: 10, // Eating Disorder -> Medications
+    12: 11, // Pregnancy -> Eating Disorder
+    13: 12, // Needle Preference -> Pregnancy
+    14: 13, // Product Recommendations -> Needle Preference
+    15: 14, // Confirmation -> Product Recommendations
+    16: 15, // Final -> Confirmation
+    17: 1, // Keep this for any edge cases
   },
-  
+
   // Progress mapping for progress bar
   progressMap: {
-    1: 20,
-    2: 40,
-    3: 60,
-    4: 70,
-    5: 80,
-    6: 90,
-    7: 100,
-    8: 100,
-    9: 100,
+    1: 7, // Weight Concerns
+    2: 14, // Diet Description
+    3: 21, // BMI Calculator
+    4: 28, // Weight Loss Goal
+    5: 35, // Weight Loss Motivation
+    6: 42, // Weight Loss Results
+    7: 50, // Province Selection
+    8: 57, // Age Verification
+    9: 64, // Medical Conditions
+    10: 71, // Medications
+    11: 78, // Eating Disorder
+    12: 85, // Pregnancy
+    13: 92, // Needle Preference
+    14: 100, // Product Recommendations
+    15: 100, // Confirmation
+    16: 100, // Final
   },
 };
 

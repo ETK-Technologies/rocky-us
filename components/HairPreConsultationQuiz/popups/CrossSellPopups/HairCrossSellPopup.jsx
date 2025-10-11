@@ -1,8 +1,18 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import { FaInfoCircle, FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { logger } from "@/utils/devLogger";
+import { analyticsService } from "@/utils/analytics/analyticsService";
+
+import {
+  FaInfoCircle,
+  FaChevronLeft,
+  FaChevronRight,
+  FaSpinner,
+} from "react-icons/fa";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { IoIosCloseCircleOutline } from "react-icons/io";
+import CrossSellCartDisplay from "../../../shared/CrossSellCartDisplay";
+import { useCrossSellCart } from "@/lib/hooks/useCrossSellCart";
 
 const HairCrossSellPopup = ({
   isOpen,
@@ -10,9 +20,28 @@ const HairCrossSellPopup = ({
   mainProduct,
   onCheckout,
   isLoading,
+  initialCartData = null,
 }) => {
+  // Use the new cross-sell cart hook
+  const {
+    cartData,
+    cartItems,
+    cartSubtotal,
+    cartLoading,
+    addingAddonId,
+    removingItemKey,
+    error: cartError,
+    addAddon,
+    removeItem,
+    checkout,
+    isAddingAddon,
+    isRemovingItem,
+    isAddonInCart,
+  } = useCrossSellCart("hair", mainProduct, initialCartData, onClose);
+
   const [addedProducts, setAddedProducts] = useState([]);
   const [openDescriptions, setOpenDescriptions] = useState({});
+
   const [showTooltip, setShowTooltip] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState({
     hours: 15,
@@ -23,23 +52,23 @@ const HairCrossSellPopup = ({
 
   // Define hair add-on products
   const addOnProducts = [
-    {
-      id: "271",
-      title: "Essential IX Shampoo",
-      price: "23",
-      quantity: "240ml",
-      frequency: "One month supply",
-      image:
-        "https://myrocky.ca/wp-content/uploads/2021/08/RockyHealth-HQ-78-scaled-500x500.jpg",
-      description:
-        "Organic and infused with essential oils to improve hair growth.",
-      dataType: "simple",
-      dataVar: "",
-      dataAddToCart: "463",
-    },
+    // {
+    //   id: "271",
+    //   title: "Essential IX Shampoo",
+    //   price: "23",
+    //   quantity: "240ml",
+    //   frequency: "One month supply",
+    //   image:
+    //     "https://myrocky.ca/wp-content/uploads/2021/08/RockyHealth-HQ-78-scaled-500x500.jpg",
+    //   description:
+    //     "Organic and infused with essential oils to improve hair growth.",
+    //   dataType: "simple",
+    //   dataVar: "",
+    //   dataAddToCart: "463",
+    // },
     {
       id: "93366",
-      title: "Hair Growth Support",
+      title: "Essential Follicle Support",
       price: "34.99",
       quantity: "60 Caps",
       frequency: "One month supply",
@@ -49,63 +78,123 @@ const HairCrossSellPopup = ({
         "Meticulously crafted to address male pattern baldness. Packed with nutraceuticals and botanicals, this supplement supports hair growth by targeting root causes of androgenic alopecia.",
       dataType: "simple",
       dataVar: "",
-      dataAddToCart: "93366",
+      dataAddToCart: "426522",
     },
     {
-      id: "1241",
-      title: "Essential V Oil",
-      price: "35",
-      quantity: "60ml",
-      frequency: "One month supply",
+      id: "262914",
+      title: "Essential T-Boost",
+      price: 35,
+      quantity: "60 Capsules",
+      frequency: "30-days supply",
       image:
-        "https://myrocky.ca/wp-content/uploads/2021/10/RockyHealth-HQ-85-scaled-500x500.jpg",
+        "https://mycdn.myrocky.ca/wp-content/uploads/20250908134137/t-boost.png",
       description:
-        "Protect your hair with this conditioning hair mask made from 5 organic oils- this combination is great for thinning hair or maintaining a full scalp.",
+        "Helps improve overall testosterone levels, enhance libido, and promote a sense of well-being.",
       dataType: "simple",
       dataVar: "",
-      dataAddToCart: "1242",
+      dataAddToCart: "262914",
     },
     {
-      id: "2294",
-      title: "Union Matte Clay",
-      price: "25",
-      quantity: "4oz",
-      frequency: "One time purchase",
-      image:
-        "https://myrocky.ca/wp-content/uploads/2022/02/RockyHealth-Valentines-PROOFS-HQ-117-500x500.jpg",
-      description:
-        "Union Matte Clay is designed to deliver a true matte, strong, and pliable hold.",
+      id: "490612",
+      title: "Essential Night Boost",
+      price: "30.00",
+      image: "/supplements/night-boost.webp",
+      bulletPoints: [
+        "Made in Canada",
+        "Non GMO - no fillers or chemicals",
+        "Third party tested for purity",
+      ],
+      showInfoIcon: true,
       dataType: "simple",
       dataVar: "",
-      dataAddToCart: "2294",
+      dataAddToCart: "490612",
     },
+    {
+      id: "490621",
+      title: "Essential Mood Balance",
+      price: "36.00",
+      image: "/supplements/mood.webp",
+      bulletPoints: [
+        "Made in Canada",
+        "Non GMO - no fillers or chemicals",
+        "Third party tested for purity",
+      ],
+      showInfoIcon: true,
+      dataType: "simple",
+      dataVar: "",
+      dataAddToCart: "490621",
+    },
+    {
+      id: "490636",
+      title: "Essential Gut Relief",
+      price: "36.00",
+      image: "/supplements/gut.webp",
+      bulletPoints: [
+        "Made in Canada",
+        "Non GMO - no fillers or chemicals",
+        "Third party tested for purity",
+      ],
+      showInfoIcon: true,
+      dataType: "simple",
+      dataVar: "",
+      dataAddToCart: "490636",
+    },
+
+    // {
+    //   id: "1241",
+    //   title: "Essential V Oil",
+    //   price: "35",
+    //   quantity: "60ml",
+    //   frequency: "One month supply",
+    //   image:
+    //     "https://myrocky.ca/wp-content/uploads/2021/10/RockyHealth-HQ-85-scaled-500x500.jpg",
+    //   description:
+    //     "Protect your hair with this conditioning hair mask made from 5 organic oils- this combination is great for thinning hair or maintaining a full scalp.",
+    //   dataType: "simple",
+    //   dataVar: "",
+    //   dataAddToCart: "1242",
+    // },
+    // {
+    //   id: "2294",
+    //   title: "Union Matte Clay",
+    //   price: "25",
+    //   quantity: "4oz",
+    //   frequency: "One time purchase",
+    //   image:
+    //     "https://myrocky.ca/wp-content/uploads/2022/02/RockyHealth-Valentines-PROOFS-HQ-117-500x500.jpg",
+    //   description:
+    //     "Union Matte Clay is designed to deliver a true matte, strong, and pliable hold.",
+    //   dataType: "simple",
+    //   dataVar: "",
+    //   dataAddToCart: "2294",
+    // },
     {
       id: "353755",
-      title: "Rocky Dad Hat",
-      price: "30",
+      title: "Rocky Essential Cap",
+      price: "25",
       quantity: "Adjustable",
       frequency: "One time purchase",
       image:
-        "https://mycdn.myrocky.ca/wp-content/uploads/20241211132726/Copy-of-RockyHealth-15-scaled.webp",
-      description: "",
+        "https://mycdn.myrocky.ca/wp-content/uploads/20250918120236/rocky-hat.png",
+      description:
+        " Everyday headwear, refined. Designed with premium fabrics, a timeless shape, and an effortless fit.",
       dataType: "simple",
       dataVar: "",
       dataAddToCart: "353755",
     },
-    {
-      id: "359245",
-      title: "DHM Blend",
-      price: "19",
-      quantity: "5-pack",
-      frequency: "One time purchase",
-      image:
-        "https://rh-staging.etk-tech.com/wp-content/uploads/Screenshot-2024-12-19-183607.png",
-      description:
-        "A Smarter Way to Celebrate. DHM Blend is a science-backed formulation featuring Dihydromyricetin (DHM), L-Cysteine, Milk Thistle, Prickly Pear, and a Vitamin B Complex.",
-      dataType: "simple",
-      dataVar: "",
-      dataAddToCart: "359245",
-    },
+    // {
+    //   id: "368051",
+    //   title: "DHM Blend",
+    //   price: 39,
+    //   quantity: "(10 pack)",
+    //   frequency: "One time purchase",
+    //   image: "https://myrocky.b-cdn.net/WP%20Images/dhm/dhm.png",
+    //   description:
+    //     "A Smarter Way to Celebrate. DHM Blend is a science-backed formulation featuring Dihydromyricetin (DHM), L-Cysteine, Milk Thistle, Prickly Pear, and a Vitamin B Complex.",
+    //   dataType: "simple",
+    //   dataVar: "",
+    //   dataAddToCart: "368051",
+    // },
   ];
 
   useEffect(() => {
@@ -152,16 +241,19 @@ const HairCrossSellPopup = ({
     return addOnProducts.find((addon) => addon.id === addonId);
   };
 
-  // Toggle adding/removing an addon
-  const toggleAddon = (addonId) => {
-    if (addedProducts.includes(addonId)) {
-      setAddedProducts(addedProducts.filter((id) => id !== addonId));
-      console.log(`Removed addon ${addonId} from selection`);
-    } else {
+  // Toggle adding/removing an addon - now adds to cart immediately
+  const toggleAddon = async (addonId) => {
+    // Get the addon details
+    const addon = getAddonById(addonId);
+    if (!addon) return;
+
+    // Add to cart immediately
+    const success = await addAddon(addon);
+    if (success) {
+      // Track locally for UI state
       setAddedProducts([...addedProducts, addonId]);
-      console.log(`Added addon ${addonId} to selection`);
+      logger.log(`Added addon ${addonId} to cart`);
     }
-    console.log("Current added products:", addedProducts);
   };
 
   // Toggle description visibility
@@ -173,23 +265,42 @@ const HairCrossSellPopup = ({
       [addonId]: !openDescriptions[addonId],
     });
   };
-  // Handle the checkout process
+
+  // Handle the checkout process - Cart already populated, just redirect
   const handleCheckout = async () => {
     try {
-      if (onCheckout) {
-        const processedAddons = addedProducts.map((addonId) => {
-          const addon = getAddonById(addonId);
-          return {
-            ...addon,
-            id: addon.dataAddToCart || addon.id,
-            dataAddToCart: addon.dataAddToCart || addon.id,
-          };
-        });
-        console.log("Sending addons to checkout:", processedAddons);
-        onCheckout(processedAddons);
+      logger.log("🎯 Hair CrossSell - Proceeding to checkout");
+
+      // Track begin_checkout with cart items
+      try {
+        const itemsForAnalytics = cartItems.map((item) => ({
+          product: {
+            id: item.id,
+            name: item.name,
+            price: parseFloat(item.price) || 0,
+          },
+          quantity: item.quantity || 1,
+        }));
+        analyticsService.trackBeginCheckout(itemsForAnalytics);
+      } catch (e) {
+        // non-blocking
+        logger.warn("[Analytics] begin_checkout (hair cross-sell) skipped:", e);
+      }
+
+      // Get checkout URL from hook
+      const checkoutUrl = checkout();
+
+      if (checkoutUrl) {
+        // Call parent onCheckout to trigger redirect
+        if (onCheckout) {
+          onCheckout();
+        }
+      } else {
+        // Cart is empty or error occurred
+        alert("Your cart is empty. Please add products to continue.");
       }
     } catch (error) {
-      console.error("Error during checkout:", error);
+      logger.error("Error during checkout:", error);
       alert("There was an issue processing your checkout. Please try again.");
     }
   };
@@ -208,9 +319,10 @@ const HairCrossSellPopup = ({
 
   return (
     <div className="new-cross-sell-popup fixed w-screen h-screen m-auto bg-[#FFFFFF] z-[9999] top-[0] left-[0] flex flex-col headers-font tracking-tight h-[100vh] overflow-auto">
-      <div className="new-cross-sell-popup-cart-section w-[100%] max-w-7xl p-5 md:pr-10 pb-6 md:pb-12 py-12 min-h-fit mx-auto">
+      <div className="new-cross-sell-popup-cart-section w-[100%] max-w-7xl p-5 md:px-10 pb-6 md:pb-12 py-12 min-h-fit mx-auto">
         <div className="popup-cart-product-row-wrapper">
-          <div className="congratulations relative bg-[#f5f5f0] rounded-xl text-sm px-2 p-2 md:px-4 md:p-4 border border-solid border-[#E2E2E1]">
+          {/* Congratulations Banner */}
+          <div className="congratulations relative bg-[#f5f5f0] rounded-xl text-sm px-2 p-2 md:px-4 md:p-4 border border-solid border-[#E2E2E1] mb-6">
             <p className="text-left">
               Congrats! You get <span className="font-bold">FREE 2-day</span>{" "}
               express shipping.
@@ -227,102 +339,36 @@ const HairCrossSellPopup = ({
             )}
           </div>
 
-          <div className="mt-4 md:mt-8 flex border-b border-gray-200 border-solid md:py-[12px] px-10 justify-between">
-            <div>
-              <p className="font-[500] text-[12px] text-[#212121] hidden md:block">
-                Product
-              </p>
-            </div>
-            <div className="flex flex-col items-end justify-center">
-              <p className="font-[500] text-[12px] text-[#212121] hidden md:block">
-                <span>Total</span>
-              </p>
-            </div>
-          </div>
-
-          {/* Main product */}
-          <div
-            id="main-item"
-            className="popup-cart-product-row flex border-b border-gray-200 border-solid py-[24px] md:px-10 justify-between"
-          >
-            <div className="flex items-center gap-3">
-              <img
-                className="popup-cart-main-item-image object-contain float-right min-h-[70px] min-w-[70px] h-[70px] w-[70px] block rounded-xl bg-[#f3f3f3] p-1"
-                src={mainProduct?.image || "/placeholder.png"}
-                alt={mainProduct?.title || "Product image"}
-              />
-              <div>
-                <p className="popup-cart-main-item-title font-semibold text-[14px] text-gray-800 text-left">
-                  {mainProduct?.title || ""}
-                </p>
-                <span className="popup-cart-main-item-quantity text-[12px] text-[#212121] block text-left">
-                  {mainProduct?.description || ""}
-                </span>
-              </div>
-            </div>
-            <div className="flex flex-col items-end justify-center">
-              <p className="font-[500] text-[14px] text-black">
-                <span className="popup-cart-main-item-price">
-                  ${mainProduct?.price || ""}
-                </span>
-              </p>
-              <p className="popup-cart-main-item-frequency font-[400] text-[12px] text-[#212121] capitalize text-right">
-                {mainProduct?.supply || ""}
-              </p>
-            </div>
-          </div>
-
-          {/* Added addon products */}
-          {addedProducts.length > 0 &&
-            addedProducts.map((addonId) => {
-              const addon = getAddonById(addonId);
-              return (
-                <div
-                  key={addon.id}
-                  className="popup-cart-product-row flex border-b border-gray-200 border-solid py-[24px] md:px-10 justify-between relative"
-                >
-                  <div className="flex items-center gap-3 relative">
-                    {/* <button
-                      onClick={() => toggleAddon(addon.id)}
-                      className="remove-addon-item absolute -translate-y-2/4 top-2/4 left-[-35px]   "
-                    >
-                      <RiDeleteBin6Line className="text-2xl text-black hover:text-gray-500 duration-100 " />
-                    </button> */}
-                    <img
-                      className="popup-cart-item-image object-contain float-right min-h-[70px] min-w-[70px] h-[70px] w-[70px] block rounded-xl bg-[#f3f3f3] p-1"
-                      src={addon.image}
-                      alt={addon.title}
-                    />
-                    <div>
-                      <p className="popup-cart-item-title font-semibold text-[14px] text-gray-800 text-left">
-                        {addon.title}
-                      </p>
-                      <span className="popup-cart-item-quantity text-[12px] text-[#212121] block text-left">
-                        {addon.quantity}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end justify-center">
-                    <p className="font-[500] text-[14px] text-black">
-                      <span className="popup-cart-item-price">
-                        ${addon.price}
-                      </span>
-                    </p>
-                    <p className="popup-cart-item-frequency font-[400] text-[12px] text-[#212121] capitalize text-right">
-                      {addon.frequency}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
+          {/* Cart Display Component */}
+          <CrossSellCartDisplay
+            cartItems={cartItems}
+            subtotal={cartSubtotal}
+            onRemoveItem={removeItem}
+            isLoading={cartLoading}
+            removingItemKey={removingItemKey}
+            isRemovingItem={isRemovingItem}
+            flowType="hair"
+          />
         </div>
 
-        <div className="flex justify-end pt-2 popup_cart_url_outer static checkout-btn-new w-auto bg-transparent p-0">
+        <div className="flex justify-end pt-2 popup_cart_url_outer static checkout-btn-new w-auto bg-transparent p-0 max-w-7xl mx-auto px-5 md:px-10">
           <button
             onClick={handleCheckout}
-            className="popup-cart-checkout-url add_to_cart_btn block bg-black border-0 rounded-full text-white p-2 px-10 mt-2 md:mt-4 w-full text-center md:w-fit"
+            disabled={isLoading}
+            className={`popup-cart-checkout-url add_to_cart_btn block border-0 rounded-full text-white p-2 px-10 mt-2 md:mt-4 w-full text-center md:w-fit ${
+              isLoading
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-black hover:bg-gray-800"
+            }`}
           >
-            Checkout
+            {isLoading ? (
+              <>
+                <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Adding to Cart...
+              </>
+            ) : (
+              "Checkout"
+            )}
           </button>
         </div>
 
@@ -418,6 +464,7 @@ const HairCrossSellPopup = ({
                       !
                     </a>
                   </div>
+
                   {!openDescriptions[addon.id] ? (
                     <div
                       className={`addon${addon.id}-box-body relative my-[20px] mx-4 flex flex-col flex-grow`}
@@ -464,18 +511,14 @@ const HairCrossSellPopup = ({
                       </button> */}
                       <div className="flex items-center gap-2 w-full">
                         <button
-                          onClick={() => {
-                            if (!addedProducts.includes(addon.id)) {
-                              setAddedProducts([...addedProducts, addon.id]);
-                            }
-                          }}
+                          onClick={() => toggleAddon(addon.id)}
                           className={`data-addon-id-${
                             addon.id
                           } add-to-cart-addon-product cursor-pointer border ${
-                            addedProducts.includes(addon.id)
+                            isAddonInCart(addon.id) || isAddingAddon(addon.id)
                               ? "border-[#814B00] text-[#814B00]"
                               : "border-[#D8D8D8] text-black"
-                          } border-solid rounded-full w-full text-center font-[500] text-[14px] block py-2 mt-2`}
+                          } border-solid rounded-full w-full text-center font-[500] text-[14px] flex items-center justify-center gap-2 py-2 mt-2`}
                           data-addon-id={addon.id}
                           data-title={addon.title}
                           data-price={addon.price}
@@ -484,26 +527,19 @@ const HairCrossSellPopup = ({
                           data-frequency={addon.frequency}
                           data-image={addon.image}
                           style={{ position: "relative", zIndex: 20 }}
-                          disabled={addedProducts.includes(addon.id)}
+                          disabled={
+                            isAddonInCart(addon.id) || isAddingAddon(addon.id)
+                          }
                         >
-                          {addedProducts.includes(addon.id)
-                            ? "Added to Cart"
+                          {isAddingAddon(addon.id) && (
+                            <FaSpinner className="animate-spin" />
+                          )}
+                          {isAddingAddon(addon.id)
+                            ? "Adding..."
+                            : isAddonInCart(addon.id)
+                            ? "Added ✓"
                             : "Add To Cart"}
                         </button>
-                        {addedProducts.includes(addon.id) && (
-                          <button
-                            onClick={() =>
-                              setAddedProducts(
-                                addedProducts.filter((id) => id !== addon.id)
-                              )
-                            }
-                            className="remove-addon-item mt-2"
-                            aria-label="Remove addon"
-                            type="button"
-                          >
-                            <RiDeleteBin6Line className="text-2xl text-red-500 hover:text-red-700 duration-100" />
-                          </button>
-                        )}
                       </div>
                     </div>
                   ) : (
@@ -540,10 +576,24 @@ const HairCrossSellPopup = ({
 
       <button
         onClick={onClose}
-        className="cross-sell-close-popup  new-popup-dialog-close-button dialog-lightbox-close-button absolute top-3 md:top-5 right-3 md:right-10 z-[99999] cursor-pointer "
+        disabled={isLoading}
+        className={`cross-sell-close-popup new-popup-dialog-close-button dialog-lightbox-close-button absolute top-3 md:top-5 right-3 md:right-10 z-[99999] ${
+          isLoading ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+        }`}
       >
         <IoIosCloseCircleOutline className="text-2xl md:text-4xl" />
       </button>
+
+      {/* Full-screen loading overlay */}
+      {isLoading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[99999]">
+          <div className="bg-white rounded-lg p-8 flex flex-col items-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mb-4"></div>
+            <p className="text-lg font-medium">Adding items to cart...</p>
+            <p className="text-sm text-gray-600 mt-2">Please wait</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

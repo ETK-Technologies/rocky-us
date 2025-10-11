@@ -5,7 +5,7 @@ const accordionData = [
     subtitle: "Today",
     title: "Start your initial consultation ($99)",
     content:
-      "Share your health history and body optimization goals with us online to get started. One of our healthcare providers will review your answers and get back to you within 24hrs.",
+      "Share your health history and weight loss goals with us online to get started. One of our healthcare providers will review your answers and get back to you within 24hrs.",
     image:
       "https://myrocky.b-cdn.net/WP%20Images/Weight%20Loss/EnhancesCover.webp",
     isFirst: true,

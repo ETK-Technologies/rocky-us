@@ -1,10 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { logger } from "@/utils/devLogger";
+import CustomImage from "../utils/CustomImage";
 import CustomContainImage from "../utils/CustomContainImage";
-import { FaInfoCircle, FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import {
+  FaInfoCircle,
+  FaChevronLeft,
+  FaChevronRight,
+  FaSpinner,
+} from "react-icons/fa";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { IoIosCloseCircleOutline } from "react-icons/io";
+import LidocaineInfoPopup from "./LidocaineInfoPopup";
+import CrossSellCartDisplay from "../shared/CrossSellCartDisplay";
+import { useCrossSellCart } from "@/lib/hooks/useCrossSellCart";
 
 const CrossSellModal = ({
   isOpen,
@@ -12,6 +22,7 @@ const CrossSellModal = ({
   selectedProduct,
   onCheckout,
   isLoading,
+  initialCartData = null,
 }) => {
   // Early validation - don't even try to initialize the modal with invalid product data
   if (
@@ -20,7 +31,7 @@ const CrossSellModal = ({
       !selectedProduct.productIds ||
       selectedProduct.price === 0)
   ) {
-    console.error(
+    logger.error(
       "Invalid product data provided to CrossSellModal:",
       selectedProduct
     );
@@ -31,6 +42,23 @@ const CrossSellModal = ({
     return null;
   }
 
+  // Use the new cross-sell cart hook
+  const {
+    cartData,
+    cartItems,
+    cartSubtotal,
+    cartLoading,
+    addingAddonId,
+    removingItemKey,
+    error: cartError,
+    addAddon,
+    removeItem,
+    checkout,
+    isAddingAddon,
+    isRemovingItem,
+    isAddonInCart,
+  } = useCrossSellCart("ed", selectedProduct, initialCartData, onClose);
+
   const [addedProducts, setAddedProducts] = useState([]);
   const [showTooltip, setShowTooltip] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState({
@@ -39,8 +67,10 @@ const CrossSellModal = ({
     seconds: 0,
   });
   const [deliveryDate, setDeliveryDate] = useState("Thursday");
+
   const [openDescriptions, setOpenDescriptions] = useState({});
-  const [checkoutUrl, setCheckoutUrl] = useState("#");
+  const [showLidocainePopup, setShowLidocainePopup] = useState(false);
+  const [pendingLidocaineAddon, setPendingLidocaineAddon] = useState(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -163,7 +193,7 @@ const CrossSellModal = ({
       quantity: "60 Capsules",
       frequency: "30-days supply",
       image:
-        "https://myrocky.b-cdn.net/WP%20Images/Sexual%20Health/webp-images/support-removebg-preview.webp",
+        "https://mycdn.myrocky.ca/wp-content/uploads/20250908134137/t-boost.png",
       description:
         "Helps improve overall testosterone levels, enhance libido, and promote a sense of well-being.",
       dataType: "simple",
@@ -185,21 +215,21 @@ const CrossSellModal = ({
     //   dataAddToCart:
     //     "276&convert_to_sub_276=1_month_1&quantity=1&add-product-subscription=276",
     // },
-    // {
-    //   id: "52162",
-    //   title: "Lidocaine Spray",
-    //   price: 35,
-    //   quantity: "(30 applications-30g)",
-    //   frequency: "One time purchase",
-    //   image:
-    //     "https://myrocky.b-cdn.net/WP%20Images/Sexual%20Health/webp-images/RockyHealth-May2022-HQ-137-600x900.webp",
-    //   description:
-    //     "- Last 6-8x longer in bed\n- Works in 2-5 mins\n- Easy spray on\n- 20-30 uses",
-    //   dataType: "subscription",
-    //   dataVar: "1_month_1",
-    //   dataAddToCart:
-    //     "52162&convert_to_sub_52162=1_month_1&quantity=1&add-product-subscription=52162",
-    // },
+    {
+      id: "52162",
+      title: "Lidocaine Spray",
+      price: 35,
+      quantity: "(30 applications-30g)",
+      frequency: "One time purchase",
+      image:
+        "https://mycdn.myrocky.ca/wp-content/uploads/20250908133843/lidocaine.png",
+      description:
+        "- Last 6-8x longer in bed\n- Works in 2-5 mins\n- Easy spray on\n- 20-30 uses",
+      dataType: "subscription",
+      dataVar: "1_month_1",
+      dataAddToCart:
+        "52162&convert_to_sub_52162=1_month_1&quantity=1&add-product-subscription=52162",
+    },
     // {
     //   id: "13534",
     //   title: "Durex Condoms",
@@ -214,33 +244,78 @@ const CrossSellModal = ({
     //   dataVar: "",
     //   dataAddToCart: "13534",
     // },
+    // {
+    //   id: "353755",
+    //   title: "Rocky Dad Hat",
+    //   price: 30,
+    //   quantity: "",
+    //   frequency: "One time purchase",
+    //   image:
+    //     "https://mycdn.myrocky.ca/wp-content/uploads/20241211132726/Copy-of-RockyHealth-15-scaled.webp",
+    //   description: "",
+    //   dataType: "simple",
+    //   dataVar: "",
+    //   dataAddToCart: "353755",
+    // },
     {
-      id: "353755",
-      title: "Rocky Dad Hat",
-      price: 30,
-      quantity: "",
-      frequency: "One time purchase",
-      image:
-        "https://mycdn.myrocky.ca/wp-content/uploads/20241211132726/Copy-of-RockyHealth-15-scaled.webp",
-      description: "",
+      id: "490612",
+      title: "Essential Night Boost",
+      price: "30.00",
+      image: "/supplements/night-boost.webp",
+      description:
+        "Night boost is a natural sleep support supplement made with gentle, effective ingredients like L-theanine, magnesium bisglycinate, GABA, glycine, and inositol—formulated to help your body relax and ease into a deep, restful sleep.",
       dataType: "simple",
       dataVar: "",
-      dataAddToCart: "353755",
+      dataAddToCart: "490612",
     },
     {
-      id: "359245",
+      id: "490621",
+      title: "Essential Mood Balance",
+      price: "36.00",
+      image: "/supplements/mood.webp",
+      description:
+        "Ashwagandha is a traditional herb used in Ayurvedic medicine, known for its adaptogenic properties that help the body manage stress. It supports emotional well-being by helping to reduce anxiety, balance mood, and promote a sense of calm—making it a natural way to cope with daily mental and emotional stressors.",
+      dataType: "simple",
+      dataVar: "",
+      dataAddToCart: "490621",
+    },
+    {
+      id: "490636",
+      title: "Essential Gut Relief",
+      price: "36.00",
+      image: "/supplements/gut.webp",
+      description:
+        "Bloat Relief is a potent blend of natural extracts, including sweet fennel, turmeric, and milk thistle, designed to aid digestion and alleviate symptoms like bloating, gas, and indigestion.",
+      dataType: "simple",
+      dataVar: "",
+      dataAddToCart: "490636",
+    },
+    {
+      id: "368051",
       title: "DHM Blend",
-      price: 19,
-      quantity: "(5 pack)",
+      price: 39,
+      quantity: "(10 pack)",
       frequency: "One time purchase",
-      image:
-        "https://rh-staging.etk-tech.com/wp-content/uploads/Screenshot-2024-12-19-183607.png",
+      image: "https://myrocky.b-cdn.net/WP%20Images/dhm/dhm.png",
       description:
         "DHM Blend is a science-backed formulation featuring Dihydromyricetin (DHM), L-Cysteine, Milk Thistle, Prickly Pear, and a Vitamin B Complex.\nPortable & Convenient: Compact packaging makes it easy to carry in your pocket or purse.\nAffordable: Just a few dollars per serving.\nTrusted Worldwide: Over 300,000 customers globally have made DHM Blend their go-to choice.",
       dataType: "simple",
       dataVar: "",
-      dataAddToCart: "359245",
+      dataAddToCart: "368051",
     },
+
+    // {
+    //   id: "93366",
+    //   title: "Essential Follicle Support",
+    //   price: "39.00",
+    //   image:
+    //     "https://myrocky.ca/wp-content/uploads/RockyHealth-Proofs-HQ-111-Hair-1-500x500.jpg",
+    //   description:
+    //     "Essential Follicle Support is designed to support healthy growth, strengthen strands, and nourish follicles from within. Formulated with essential vitamins, minerals, and plant-based extracts, it helps improve hair resilience, scalp health, and overall vitality for stronger, fuller-looking hair.",
+    //   dataType: "simple",
+    //   dataVar: "",
+    //   dataAddToCart: "93366",
+    // },
   ];
 
   // Function to get full addon product details from its ID
@@ -248,11 +323,27 @@ const CrossSellModal = ({
     return addOnProducts.find((addon) => addon.id === addonId);
   };
 
-  const toggleAddon = (addonId) => {
-    if (addedProducts.includes(addonId)) {
-      setAddedProducts(addedProducts.filter((id) => id !== addonId));
+  // Toggle addon - now adds to cart immediately
+  const toggleAddon = async (addonId) => {
+    // Check if this is a lidocaine addon (cream or spray)
+    const isLidocaineAddon = addonId === "276" || addonId === "52162";
+
+    if (isLidocaineAddon) {
+      // Show lidocaine info popup first
+      setShowLidocainePopup(true);
+      // Store the addon ID to add after popup is confirmed
+      setPendingLidocaineAddon(addonId);
     } else {
-      setAddedProducts([...addedProducts, addonId]);
+      // Get the addon details
+      const addon = getAddonById(addonId);
+      if (!addon) return;
+
+      // Add to cart immediately
+      const success = await addAddon(addon);
+      if (success) {
+        // Track locally for UI state
+        setAddedProducts([...addedProducts, addonId]);
+      }
     }
   };
 
@@ -263,45 +354,73 @@ const CrossSellModal = ({
     });
   };
 
-  // Generate checkout URL for the href
+  const handleLidocainePopupContinue = async () => {
+    // Add the pending lidocaine addon to the cart
+    if (pendingLidocaineAddon) {
+      const addon = getAddonById(pendingLidocaineAddon);
+      if (addon) {
+        const success = await addAddon(addon);
+        if (success) {
+          setAddedProducts([...addedProducts, pendingLidocaineAddon]);
+        }
+      }
+      setPendingLidocaineAddon(null);
+    }
 
-  // Handle the checkout process
-  const handleCheckout = async () => {
+    // Save the questionnaire answer automatically
+    savePrematureEjaculationAnswer();
+  };
+
+  const savePrematureEjaculationAnswer = () => {
     try {
-      console.log("ED checkout clicked with addons:", addedProducts);
-
-      // Create main product data
-      const mainProduct = {
-        id: selectedProduct.productIds,
-        name: selectedProduct.name,
-        price: selectedProduct.price,
-        isSubscription: selectedProduct.frequency === "monthly-supply",
-      };
-
-      // Create addon data with proper structure
-      const selectedAddons = addedProducts
-        .map((addonId) => {
-          const addon = getAddonById(addonId);
-          if (addon) {
-            return {
-              id: addon.dataAddToCart || addon.id,
-              dataAddToCart: addon.dataAddToCart || addon.id,
-              name: addon.title,
-              price: addon.price,
-              isSubscription: addon.dataType === "subscription",
-            };
-          }
-          return null;
-        })
-        .filter(Boolean);
-      console.log("ED main product:", mainProduct);
-      console.log("ED selected addons:", selectedAddons);
-      // Use the centralized addToCartAndRedirect function
-      if (onCheckout) {
-        onCheckout(selectedAddons);
+      if (typeof window !== "undefined") {
+        const answerData = {
+          98: "Yes",
+          timestamp: new Date().toISOString(),
+          source: "lidocaine_addon_selection",
+        };
+        if (answerData["98"] && answerData.source && answerData.timestamp) {
+          localStorage.setItem(
+            "premature_ejaculation_answer",
+            JSON.stringify(answerData)
+          );
+          logger.log(
+            "Saved premature ejaculation answer for lidocaine addon:",
+            answerData
+          );
+        } else {
+          logger.error("Invalid lidocaine answer data structure:", answerData);
+        }
       }
     } catch (error) {
-      console.error("Error during ED checkout:", error);
+      logger.error("Error saving premature ejaculation answer:", error);
+      try {
+        localStorage.removeItem("premature_ejaculation_answer");
+      } catch (clearError) {
+        logger.error("Error clearing corrupted lidocaine data:", clearError);
+      }
+    }
+  };
+
+  // Handle the checkout process - Cart already populated, just redirect
+  const handleCheckout = async () => {
+    try {
+      logger.log("🎯 ED CrossSell - Proceeding to checkout");
+
+      // Get checkout URL from hook
+      const checkoutUrl = checkout();
+
+      if (checkoutUrl) {
+        // Call parent onCheckout to trigger redirect
+        if (onCheckout) {
+          onCheckout();
+        }
+      } else {
+        // Cart is empty or error occurred
+        alert("Your cart is empty. Please add products to continue.");
+      }
+    } catch (error) {
+      logger.error("Error during ED checkout:", error);
       alert("There was an issue processing your checkout. Please try again.");
     }
   };
@@ -320,9 +439,23 @@ const CrossSellModal = ({
 
   return (
     <div className="new-cross-sell-popup fixed w-screen m-auto bg-[#FFFFFF] z-[9999] top-[0] left-[0] flex flex-col headers-font tracking-tight h-[100vh] overflow-auto">
-      <div className="new-cross-sell-popup-cart-section w-[100%] max-w-7xl p-5 md:pr-10 pb-6 md:pb-12 py-12 min-h-fit mx-auto">
+      {/* Loading Overlay */}
+      {isLoading && (
+        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000]">
+          <div className="bg-white rounded-lg p-8 text-center shadow-xl">
+            <div className="w-12 h-12 border-4 border-gray-300 border-t-black rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-800 font-semibold text-lg mb-2">
+              Adding to Cart
+            </p>
+            <p className="text-gray-600">This may take a few seconds...</p>
+          </div>
+        </div>
+      )}
+
+      <div className="new-cross-sell-popup-cart-section w-[100%] max-w-7xl p-5 md:px-10 pb-6 md:pb-12 py-12 min-h-fit mx-auto">
         <div className="popup-cart-product-row-wrapper">
-          <div className="congratulations relative bg-[#f5f5f0] rounded-xl text-sm px-2 p-2 md:px-4 md:p-4 border border-solid border-[#E2E2E1]">
+          {/* Congratulations Banner */}
+          <div className="congratulations relative bg-[#f5f5f0] rounded-xl text-sm px-2 p-2 md:px-4 md:p-4 border border-solid border-[#E2E2E1] mb-6">
             <p className="text-left">
               Congrats! You get <span className="font-bold">FREE 2-day</span>{" "}
               express shipping.
@@ -339,114 +472,32 @@ const CrossSellModal = ({
             )}
           </div>
 
-          <div className="mt-4 md:mt-8 flex border-b border-gray-200 border-solid md:py-[12px] px-10 justify-between">
-            <div>
-              <p className="font-[500] text-[12px] text-[#212121] hidden md:block">
-                Product
-              </p>
-            </div>
-            <div className="flex flex-col items-end justify-center">
-              <p className="font-[500] text-[12px] text-[#212121] hidden md:block">
-                <span>Total</span>
-              </p>
-            </div>
-          </div>
-
-          {/* Main product */}
-          <div className="flex border-b border-gray-200 border-solid  py-[24px] md:px-10 justify-between">
-            <div className="flex items-center gap-3">
-              <div className="overflow-hidden relative float-right min-h-[70px] min-w-[70px] h-[70px] w-[70px] block rounded-xl bg-[#f3f3f3] p-1">
-                <CustomContainImage
-                  src={selectedProduct.image}
-                  alt={selectedProduct.name}
-                  fill
-                />
-              </div>
-              <div>
-                <p className="font-semibold text-[14px] text-gray-800 text-left max-w-[150px] md:max-w-full">
-                  { selectedProduct.preference == "generic" ? selectedProduct.activeIngredient || "" :  selectedProduct.name || ""} - ({selectedProduct.dosage || ""}
-                  )
-                </p>
-
-                <p className="text-[12px] text-[#212121] block text-left">
-                  {selectedProduct.frequency === "monthly-supply"
-                    ? "Every One Month"
-                    : "Every Three Months"}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-col items-end justify-center">
-              <p className="font-[500] text-[14px] text-black">
-                <span className="popup-cart-main-item-price">
-                  ${selectedProduct?.price || ""}
-                </span>
-              </p>
-              <p className="popup-cart-main-item-frequency font-[400] text-[12px] text-[#212121] capitalize text-right">
-                {selectedProduct.pills} pills ({selectedProduct.preference})
-              </p>
-              {/* <p className="font-normal text-[16px] text-gray-800">
-                ${selectedProduct.price}{" "}
-                <span className="text-xs text-gray-500">
-                  {selectedProduct.pills} pills ({selectedProduct.preference})
-                </span>
-              </p> */}
-            </div>
-          </div>
-
-          {/* Added addon products */}
-          {addedProducts.length > 0 &&
-            addedProducts.map((addonId) => {
-              const addon = getAddonById(addonId);
-              return (
-                <div
-                  key={addon.id}
-                  className="popup-cart-product-row flex border-b border-gray-200 border-solid py-[24px] md:px-10 justify-between relative"
-                >
-                  <div className="flex items-center gap-3 relative">
-                    {/* <button
-                      onClick={() => toggleAddon(addon.id)}
-                      className="remove-addon-item absolute -translate-y-2/4 top-2/4 left-[-35px]   "
-                    >
-                      <RiDeleteBin6Line className="text-2xl text-black hover:text-gray-500 duration-100 " />
-                    </button> */}
-                    <div className="relative overflow-hidden float-right min-h-[70px] min-w-[70px] h-[70px] w-[70px] block rounded-xl bg-[#f3f3f3] p-1">
-                      <CustomContainImage
-                        src={addon.image}
-                        alt={addon.title}
-                        fill
-                      />
-                    </div>
-                    <div>
-                      <p className="popup-cart-item-title font-semibold text-[14px] text-gray-800 text-left">
-                        {addon.title}
-                      </p>
-                      <span className="popup-cart-item-quantity text-[12px] text-[#212121] block text-left">
-                        {addon.quantity}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end justify-center">
-                    <p className="font-[500] text-[14px] text-black">
-                      <span className="popup-cart-item-price">
-                        ${addon.price}
-                      </span>
-                    </p>
-                    <p className="popup-cart-item-frequency font-[400] text-[12px] text-[#212121] capitalize text-right">
-                      {addon.frequency}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
+          {/* Cart Display Component */}
+          <CrossSellCartDisplay
+            cartItems={cartItems}
+            subtotal={cartSubtotal}
+            onRemoveItem={removeItem}
+            isLoading={cartLoading}
+            removingItemKey={removingItemKey}
+            isRemovingItem={isRemovingItem}
+            flowType="ed"
+          />
         </div>
 
-        <div className="flex justify-end pt-2 static checkout-btn-new w-auto bg-transparent p-0">
+        <div className="flex justify-end pt-2 static checkout-btn-new w-auto bg-transparent p-0 max-w-7xl mx-auto px-5 md:px-10">
           <button
             onClick={handleCheckout}
-            className="block bg-black border-0 rounded-full text-white p-2 px-10 mt-2 md:mt-4 w-full text-center md:w-fit"
+            disabled={isLoading}
+            className={`block border-0 rounded-full text-white p-2 px-10 mt-2 md:mt-4 w-full text-center md:w-fit flex items-center justify-center gap-2 ${
+              isLoading
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-black hover:bg-gray-800"
+            }`}
           >
-            Checkout
+            {isLoading && (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            )}
+            {isLoading ? "Adding to Cart..." : "Checkout"}
           </button>
         </div>
 
@@ -537,6 +588,7 @@ const CrossSellModal = ({
                       !
                     </a>
                   </div>
+
                   {!openDescriptions[addon.id] ? (
                     <div
                       className={`addon${addon.id}-box-body relative my-[20px] mx-4 flex flex-col flex-grow`}
@@ -551,8 +603,7 @@ const CrossSellModal = ({
                       </div>
                       <div className="text-center mb-2 border-b border-gray-200 border-solid border-1 flex-grow">
                         <h4 className="text-center font-semibold text-[14px] leading-[19px] min-h-[38px] flex items-center justify-center">
-                          {" "}
-                          .{addon.title}
+                          {addon.title}
                         </h4>
                         <small className="text-center text-[#212121] font-[400] text-[12px] mb-2 inline-block">
                           {addon.quantity}
@@ -584,18 +635,14 @@ const CrossSellModal = ({
                       </button> */}
                       <div className="flex items-center gap-2 w-full">
                         <button
-                          onClick={() => {
-                            if (!addedProducts.includes(addon.id)) {
-                              setAddedProducts([...addedProducts, addon.id]);
-                            }
-                          }}
+                          onClick={() => toggleAddon(addon.id)}
                           className={`data-addon-id-${
                             addon.id
                           } add-to-cart-addon-product cursor-pointer border ${
-                            addedProducts.includes(addon.id)
+                            isAddonInCart(addon.id) || isAddingAddon(addon.id)
                               ? "border-[#814B00] text-[#814B00]"
                               : "border-[#D8D8D8] text-black"
-                          } border-solid rounded-full w-full text-center font-[500] text-[14px] block py-2 mt-2`}
+                          } border-solid rounded-full w-full text-center font-[500] text-[14px] flex items-center justify-center gap-2 py-2 mt-2`}
                           data-addon-id={addon.id}
                           data-title={addon.title}
                           data-price={addon.price}
@@ -604,26 +651,19 @@ const CrossSellModal = ({
                           data-frequency={addon.frequency}
                           data-image={addon.image}
                           style={{ position: "relative", zIndex: 20 }}
-                          disabled={addedProducts.includes(addon.id)}
+                          disabled={
+                            isAddonInCart(addon.id) || isAddingAddon(addon.id)
+                          }
                         >
-                          {addedProducts.includes(addon.id)
-                            ? "Added to Cart"
+                          {isAddingAddon(addon.id) && (
+                            <FaSpinner className="animate-spin" />
+                          )}
+                          {isAddingAddon(addon.id)
+                            ? "Adding..."
+                            : isAddonInCart(addon.id)
+                            ? "Added ✓"
                             : "Add To Cart"}
                         </button>
-                        {addedProducts.includes(addon.id) && (
-                          <button
-                            onClick={() =>
-                              setAddedProducts(
-                                addedProducts.filter((id) => id !== addon.id)
-                              )
-                            }
-                            className="remove-addon-item mt-2"
-                            aria-label="Remove addon"
-                            type="button"
-                          >
-                            <RiDeleteBin6Line className="text-2xl text-red-500 hover:text-red-700 duration-100" />
-                          </button>
-                        )}
                       </div>
                     </div>
                   ) : (
@@ -659,11 +699,24 @@ const CrossSellModal = ({
       </div>
 
       <button
-        onClick={onClose}
-        className="cross-sell-close-popup  new-popup-dialog-close-button dialog-lightbox-close-button absolute top-3 md:top-5 right-3 md:right-10 z-[99999] cursor-pointer "
+        onClick={isLoading ? undefined : onClose}
+        disabled={isLoading}
+        className={`cross-sell-close-popup new-popup-dialog-close-button dialog-lightbox-close-button absolute top-3 md:top-5 right-3 md:right-10 z-[99999] ${
+          isLoading ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+        }`}
       >
         <IoIosCloseCircleOutline className="text-2xl md:text-4xl" />
       </button>
+
+      {/* Lidocaine Info Popup */}
+      <LidocaineInfoPopup
+        isOpen={showLidocainePopup}
+        onClose={() => {
+          setShowLidocainePopup(false);
+          setPendingLidocaineAddon(null);
+        }}
+        onContinue={handleLidocainePopupContinue}
+      />
     </div>
   );
 };

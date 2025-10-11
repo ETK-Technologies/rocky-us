@@ -6,7 +6,7 @@ const ImagesSection = ({ images }) => {
     <Section>
       <div className="overflow-x-auto lg:overflow-x-hidden scrollbar-hide">
         <div className="w-full">
-          <div className="relative flex justify-between items-center gap-8">
+          <div className="relative flex justify-between items-center lg:gap-6 gap-2">
             {images.map((image, index) => (
               <div key={`d_${index}`} className="flex-1 min-w-[260px]">
                 <CustomImage
@@ -14,9 +14,9 @@ const ImagesSection = ({ images }) => {
                   src={image.path}
                   height={384}
                   width={384}
-                  className="w-[260px] h-[260px] lg:w-[384px] lg:h-[384px] rounded-2xl mb-[24px]"
+                  className="rounded-2xl mb-[24px]"
                 />
-                <h2 className="font-[550] headers-font text-[18px] lg:text-[20px] leading-[110%] letter-spacing-[-2%] mb-[16px]">
+                <h2 className="font-[550] headers-font text-[18px] lg:text-[20px] leading-[110%] tracking-[-2%] mb-[16px]">
                   {image.title}
                 </h2>
                 <p className="font-normal text-[14px] lg:text-[16px] leading-[140%] font-[POPPINS] text-[#212121]">

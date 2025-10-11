@@ -119,47 +119,60 @@ export const createRadioQuestion = ({
                     )}
 
                     {isSelected && needsAdditionalInput && !hasInputFields && (
-                      <div className="mt-4 w-full">
-                        <input
-                          type="text"
-                          id={`${questionId}_textarea`}
-                          value={
-                            questionId === "504" && index === 4
-                              ? formData[
-                                  `l-${questionId}_${index + 1}-textarea`
-                                ] || ""
-                              : questionId === "503" && index === 3
-                              ? formData[
-                                  `l-${questionId}_${index + 1}-textarea`
-                                ] || ""
-                              : questionId === "510" && index === 0
-                              ? formData[
-                                  `l-${questionId}_${index + 1}-textarea`
-                                ] || ""
-                              : questionId === "529" && index === 0
-                              ? formData[
-                                  `l-${questionId}_${index + 1}-textarea`
-                                ] || ""
-                              : questionId === "530" && index === 0
-                              ? formData[
-                                  `l-${questionId}_${index + 1}-textarea`
-                                ] ||
-                                formData[`${questionId}_textarea`] ||
-                                ""
-                              : questionId === "531" && index === 0
-                              ? formData[
-                                  `l-${questionId}_${index + 1}-textarea`
-                                ] || ""
-                              : formData[`${questionId}_textarea`] || ""
-                          }
-                          onChange={(e) =>
-                            onSelect(e.target.value, `${questionId}_textarea`)
-                          }
-                          placeholder={additionalInputPlaceholder}
-                          className="w-full border border-[#B0A28C] rounded-md px-3 py-2"
-                        />
-                      </div>
-                    )}
+                       <div className="mt-4 w-full">
+                         {questionId === "538" ? (
+                           <input
+                             type="text"
+                             id="539"
+                             value={formData["539"] || ""}
+                             onChange={(e) => {
+                               onSelect(e.target.value, "539");
+                             }}
+                             placeholder={additionalInputPlaceholder}
+                             className="w-full border border-[#B0A28C] rounded-md px-3 py-2"
+                           />
+                         ) : (
+                           <textarea
+                             id={`${questionId}_textarea`}
+                             value={
+                               questionId === "504" && index === 4
+                                 ? formData[
+                                     `l-${questionId}_${index + 1}-textarea`
+                                   ] || ""
+                                 : questionId === "503" && index === 3
+                                 ? formData[
+                                     `l-${questionId}_${index + 1}-textarea`
+                                   ] || ""
+                                 : questionId === "510" && index === 0
+                                 ? formData[
+                                     `l-${questionId}_${index + 1}-textarea`
+                                   ] || ""
+                                 : questionId === "529" && index === 0
+                                 ? formData[
+                                     `l-${questionId}_${index + 1}-textarea`
+                                   ] || ""
+                                 : questionId === "530" && index === 0
+                                 ? formData[
+                                     `l-${questionId}_${index + 1}-textarea`
+                                   ] ||
+                                   formData[`${questionId}_textarea`] ||
+                                   ""
+                                 : questionId === "531" && index === 0
+                                 ? formData[
+                                     `l-${questionId}_${index + 1}-textarea`
+                                   ] || ""
+                                 : formData[`${questionId}_textarea`] || ""
+                             }
+                             onChange={(e) =>
+                               onSelect(e.target.value, `${questionId}_textarea`)
+                             }
+                             placeholder={additionalInputPlaceholder}
+                             className="w-full border border-[#B0A28C] rounded-md px-3 py-2 resize-none"
+                             rows={4}
+                           />
+                         )}
+                       </div>
+                     )}
                   </label>
                 </div>
               </div>
@@ -186,9 +199,6 @@ export const createCheckboxQuestion = ({
   return ({ formData, onSelect }) => {
     const handleNoneOfTheAbove = (checked) => {
       if (checked && noneOfTheAboveIndex !== -1) {
-        if (questionId === "533") {
-          console.log("Selecting 'None of these apply' for drugs question");
-        }
 
         options.forEach((option, index) => {
           if (index !== noneOfTheAboveIndex && index !== preferNotToSayIndex) {
@@ -276,9 +286,6 @@ export const createCheckboxQuestion = ({
         }
       }
       if (questionId === "533") {
-        console.log(
-          `Setting drug option: ${field}=${checked ? optionText : ""}`
-        );
       }
 
       onSelect(checked ? optionText : "", field);
@@ -408,9 +415,6 @@ export const createScaleQuestion = ({
             value={option}
             checked={formData[questionId] === option}
             onChange={() => {
-              console.log(
-                `Option selected: ${option} for question ${questionId}`
-              );
               onSelect(option);
             }}
             type="radio"
@@ -429,31 +433,54 @@ export const createCompletionMessage = ({
   questionId,
   message = [],
 }) => {
-  return ({ formData, onSelect }) => (
-    <div className="w-full md:max-w-[520px] mx-auto">
-      <QuestionLayout
-        title={title}
-        subtitle={subtitle}
-        currentPage={currentPage}
-        pageNo={pageNo}
-        questionId={questionId}
-        isPopup={true}
-      >
-        <div className="text-center">
-          {message && message.length > 0 ? (
-            message.map((paragraph, index) => (
-              <p key={index} className="mb-4">
-                {paragraph}
+  return ({ formData, onSelect, currentPage: actualCurrentPage }) => {
+    const handleGoToHome = () => {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("mh-quiz-form-data");
+        localStorage.removeItem("mh-quiz-form-data-expiry");
+      }
+      window.location.href = "/";
+    };
+
+    return (
+      <div className="w-full md:max-w-[520px] mx-auto">
+        <QuestionLayout
+          title={title}
+          subtitle={subtitle}
+          currentPage={currentPage}
+          pageNo={pageNo}
+          questionId={questionId}
+          isPopup={true}
+        >
+          <div className="text-center">
+            {message && message.length > 0 ? (
+              message.map((paragraph, index) => (
+                <p key={index} className="mb-4">
+                  {paragraph}
+                </p>
+              ))
+            ) : (
+              <p className="mb-4">
+                We've received your information. Our healthcare professionals will
+                review your answers and contact you soon.
               </p>
-            ))
-          ) : (
-            <p className="mb-4">
-              We've received your information. Our healthcare professionals will
-              review your answers and contact you soon.
-            </p>
-          )}
-        </div>
-      </QuestionLayout>
-    </div>
-  );
+            )}
+            
+            {/* Go To Home button for completion page */}
+            {actualCurrentPage === 37 && (
+              <div className="mt-8">
+                <button
+                  type="button"
+                  onClick={handleGoToHome}
+                  className="bg-black text-white py-4 px-8 rounded-full font-medium text-lg hover:bg-gray-800 transition-colors"
+                >
+                  Go To Home
+                </button>
+              </div>
+            )}
+          </div>
+        </QuestionLayout>
+      </div>
+    );
+  };
 };

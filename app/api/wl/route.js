@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { logger } from "@/utils/devLogger";
 import { randomBytes } from "crypto";
 import https from "https";
 import axios from "axios";
 
 const crmApi = axios.create({
-  baseURL: process.env.CRM_HOST + "/api",
+  baseURL: "https://crm.myrocky.ca/api",
   httpsAgent: new https.Agent({
     rejectUnauthorized: false,
   }),
@@ -17,11 +18,11 @@ const crmApi = axios.create({
 
 async function getEntrykey() {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const existingCookie = cookieStore.get("wl_entrykey");
     return existingCookie?.value || `wlq-${randomBytes(8).toString("hex")}`;
   } catch (error) {
-    console.warn("Cookie reading error:", error);
+    logger.warn("Cookie reading error:", error);
     return `wlq-${randomBytes(8).toString("hex")}`;
   }
 }
@@ -29,18 +30,18 @@ async function getEntrykey() {
 // New helper function to get user ID from cookies
 async function getUserId() {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const userId = cookieStore.get("userId");
     return userId?.value ? parseInt(userId.value) : 887; // Fallback to 887 if no user ID in cookies
   } catch (error) {
-    console.warn("Error getting user ID from cookies:", error);
+    logger.warn("Error getting user ID from cookies:", error);
     return 887; // Fallback to 887 if there's an error
   }
 }
 
 async function getUserDataFromCookies() {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const fName = cookieStore.get("displayName")?.value || "";
     const lName = cookieStore.get("lastName")?.value || "";
     const email = cookieStore.get("userEmail")?.value
@@ -59,7 +60,7 @@ async function getUserDataFromCookies() {
       province,
     };
   } catch (error) {
-    console.warn("Error getting user data from cookies:", error);
+    logger.warn("Error getting user data from cookies:", error);
     return {
       fName: "",
       lName: "",
@@ -90,7 +91,7 @@ export async function GET() {
 
 export async function POST(req) {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const ttlMs = 1800 * 1000;
     const now = Date.now();
     let entrykey = cookieStore.get("wl_entrykey")?.value;
@@ -106,10 +107,13 @@ export async function POST(req) {
     const userId = await getUserId();
     const userData = await getUserDataFromCookies();
     const contentType = req.headers.get("content-type") || "";
-    
+
     if (contentType.includes("multipart/form-data")) {
       return NextResponse.json(
-        { error: true, msg: "File uploads should be handled via frontend S3 upload" },
+        {
+          error: true,
+          msg: "File uploads should be handled via frontend S3 upload",
+        },
         { status: 400 }
       );
     }
@@ -152,7 +156,7 @@ export async function POST(req) {
       !data.id &&
       !data.token
     ) {
-      data.id = parseInt(Date.now().toString(16), 16).toString();
+      data.id = generateUniqueId();
     }
     const excludedKeys = [
       "form_id",
@@ -231,7 +235,7 @@ export async function POST(req) {
         return response;
       }
     } catch (crmError) {
-      console.error("CRM Submission Error:", crmError);
+      logger.error("CRM Submission Error:", crmError);
       data.error = true;
       data.error_message = crmError.message || "CRM submission failed";
     }
@@ -245,7 +249,7 @@ export async function POST(req) {
     });
     return response;
   } catch (error) {
-    console.error("API route error:", error);
+    logger.error("API route error:", error);
     return NextResponse.json(
       {
         error: true,
@@ -256,7 +260,6 @@ export async function POST(req) {
     );
   }
 }
-
 
 async function postWeightLossQuestionnaireDataToCRM(data) {
   const crmUrlCreate = "/get-wp-gravity-forms-data";
@@ -315,10 +318,10 @@ async function postWeightLossQuestionnaireDataToCRM(data) {
           }
         });
 
-        console.log("Successfully retrieved existing data for entry:", data.id);
+        logger.log("Successfully retrieved existing data for entry:", data.id);
       }
     } catch (error) {
-      console.warn("Error retrieving existing entry data:", error.message);
+      logger.warn("Error retrieving existing entry data:", error.message);
       try {
         const fs = require("fs").promises;
         const path = require("path");
@@ -337,9 +340,9 @@ async function postWeightLossQuestionnaireDataToCRM(data) {
           }
         });
 
-        console.log("Using cached data for entry:", data.id);
+        logger.log("Using cached data for entry:", data.id);
       } catch (cacheError) {
-        console.warn("No cached data available:", cacheError.message);
+        logger.warn("No cached data available:", cacheError.message);
       }
     }
   } else {
@@ -377,7 +380,7 @@ async function postWeightLossQuestionnaireDataToCRM(data) {
   }
 
   try {
-    console.log("CRM Submission Payload:", JSON.stringify(postData, null, 2));
+    logger.log("CRM Submission Payload:", JSON.stringify(postData, null, 2));
 
     const response = await crmApi.post(apiEndpoint, postData, {
       validateStatus: function (status) {
@@ -385,7 +388,7 @@ async function postWeightLossQuestionnaireDataToCRM(data) {
       },
     });
 
-    console.log("CRM Response:", JSON.stringify(response.data, null, 2));
+    logger.log("CRM Response:", JSON.stringify(response.data, null, 2));
 
     if (response.data && response.data.success && data.id) {
       try {
@@ -401,7 +404,7 @@ async function postWeightLossQuestionnaireDataToCRM(data) {
           const existingData = await fs.readFile(cacheFile, "utf8");
           existingCache = JSON.parse(existingData);
         } catch (readError) {
-          console.log("No existing cache found or couldn't read it");
+          logger.log("No existing cache found or couldn't read it");
         }
         const fieldsToKeep = { ...existingCache };
         if (data.form) {
@@ -501,7 +504,7 @@ async function postWeightLossQuestionnaireDataToCRM(data) {
 
         await fs.writeFile(cacheFile, JSON.stringify(fieldsToKeep, null, 2));
       } catch (cacheError) {
-        console.warn("Failed to update form cache:", cacheError.message);
+        logger.warn("Failed to update form cache:", cacheError.message);
       }
     }
 
@@ -519,7 +522,7 @@ async function postWeightLossQuestionnaireDataToCRM(data) {
 
     throw new Error(response.data?.message || "Unknown CRM submission error");
   } catch (error) {
-    console.error("CRM API fetch error:", {
+    logger.error("CRM API fetch error:", {
       message: error.message,
       name: error.name,
       response: error.response?.data,
@@ -529,4 +532,21 @@ async function postWeightLossQuestionnaireDataToCRM(data) {
 
     throw new Error(`CRM Submission Failed: ${error.message}`);
   }
+}
+
+function generateUniqueId() {
+  const OFFSET = 182000000000;
+  let id = (Date.now() + OFFSET).toString();
+
+  if (id.length < 16) {
+    id =
+      id +
+      Math.floor(Math.random() * Math.pow(10, 16 - id.length))
+        .toString()
+        .padStart(16 - id.length, "0");
+  } else if (id.length > 16) {
+    id = id.slice(0, 16);
+  }
+
+  return id;
 }

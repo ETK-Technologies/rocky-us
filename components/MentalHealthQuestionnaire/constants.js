@@ -76,15 +76,15 @@ export const QUESTION_CONFIG = {
     nextQuestion: 34,
   },
   34: {
-    // ID Upload instruction page
+    // Health Care Team Questions
     nextQuestion: 35,
   },
   35: {
-    // ID Upload page
+    // ID Upload instruction page with acknowledgement
     nextQuestion: 36,
   },
   36: {
-    // Appointment Booking page
+    // ID Upload page
     nextQuestion: 37,
   },
 };
@@ -216,9 +216,15 @@ export const VALIDATION_RULES = {
       return false;
     });
   },
-  34: (formData) => true,
+     34: (formData) => {
+     if (!formData["538"]) return false;
+     if (formData["538"] === "Yes") {
+       return !!formData["539"] && formData["539"].trim() !== "";
+     }
+     return true;
+   },
   35: (formData) => !!formData["photoIdAcknowledged"],
-  36: (formData) => !!formData["calendly_booking_completed"],
+  36: (formData) => true,
 };
 
 export const MENTAL_HEALTH_SCORES = {

@@ -6,12 +6,12 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "auto-commit": "node scripts/auto-commit.js"
+    "lint": "next lint"
   },
   "dependencies": {
-    "@stripe/react-stripe-js": "^4.0.2",
-    "@stripe/stripe-js": "^7.9.0",
+    "@react-oauth/google": "^0.12.2",
+    "@sentry/nextjs": "^10.18.0",
+    "@sentry/profiling-node": "^10.18.0",
     "@vercel/analytics": "^1.5.0",
     "@vercel/speed-insights": "^1.2.0",
     "@woocommerce/woocommerce-rest-api": "^1.0.1",
@@ -19,6 +19,7 @@
     "axios": "^1.7.9",
     "classnames": "^2.5.1",
     "framer-motion": "^11.0.3",
+    "jsonwebtoken": "^9.0.2",
     "next": "15.1.7",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -30,11 +31,12 @@
     "react-paginate": "^8.3.0",
     "react-tailwindcss-datepicker": "^2.0.0",
     "react-toastify": "^11.0.3",
-    "stripe": "^18.5.0",
     "swiper": "^11.2.4"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.21",
+    "depcheck": "^1.4.7",
+    "eslint-plugin-unused-imports": "^4.1.4",
     "postcss": "^8.5.3",
     "tailwindcss": "^3.4.17"
   }

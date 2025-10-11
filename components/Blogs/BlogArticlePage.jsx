@@ -9,7 +9,7 @@ import CategoryBtn from "@/components/Blogs/CategoryBtn";
 import CenterContainer from "@/components/Article/CenterContainer";
 import TitleWrapper from "@/components/Article/TitleWrapper";
 import Author from "@/components/Article/Author";
-import ArticleImg from "@/components/Article/ArticalImg";
+import ArticleImg from "@/components/Article/ArticleImg";
 import HtmlContent from "@/components/Article/HtmlContent";
 import Content from "@/components/Article/Content";
 import RelatedArticles from "@/components/Article/RelatedArticles";

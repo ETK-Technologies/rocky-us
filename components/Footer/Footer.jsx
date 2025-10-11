@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { logger } from "@/utils/devLogger";
 import Link from "next/link";
 import Script from "next/script";
 import CustomContainImage from "../utils/CustomContainImage";
@@ -13,8 +14,8 @@ const products = [
   { href: "/product/tadalafil-cialis/", text: "Tadalafil" },
   { href: "/product/finasteride-minoxidil-topical-foam/", text: "Hair Foam" },
   { href: "/product/ozempic/", text: "Ozempic" },
-  // { href: "/product/testosterone-support/", text: "Testosterone Support" },
-  // { href: "/product/lidocaine-spray/", text: "Lido Spray" },
+  { href: "/product/testosterone-support/", text: "Testosterone Support" },
+  { href: "/product/lidocaine-spray/", text: "Lido Spray" },
 ];
 
 const Footer = ({ className }) => {
@@ -29,7 +30,7 @@ const Footer = ({ className }) => {
   const handleSubscribe = async (e) => {
     e.preventDefault();
     const email = e.target.email.value;
-    console.log("Email:", email);
+    logger.log("Email:", email);
     if (!email) {
       setOverlayMessage({
         type: "error",
@@ -49,7 +50,7 @@ const Footer = ({ className }) => {
       });
 
       const data = await response.json();
-      console.log("Response data:", data);
+      logger.log("Response data:", data);
 
       if (response.ok && data.success) {
         setIsSubscribed(true);
@@ -66,7 +67,7 @@ const Footer = ({ className }) => {
         setOverlayMessage({ type: "error", text: errorText });
       }
     } catch (error) {
-      console.error("Subscription error:", error);
+      logger.error("Subscription error:", error);
       setOverlayMessage({
         type: "error",
         text: "An error occurred. Please try again later.",
@@ -102,15 +103,17 @@ const Footer = ({ className }) => {
           >
             Popular Products
             <span
-              className={`inline-block w-3.5 h-3.5 ml-2 transform transition-transform ${isProductsOpen ? "rotate-180" : ""
-                }`}
+              className={`inline-block w-3.5 h-3.5 ml-2 transform transition-transform ${
+                isProductsOpen ? "rotate-180" : ""
+              }`}
             >
               <IoIosArrowDown />
             </span>
           </p>
           <div
-            className={`flex flex-col gap-4 px-4 pb-4 border-b-2 border-[#faebd724] ${isProductsOpen ? "block" : "hidden"
-              }`}
+            className={`flex flex-col gap-4 px-4 pb-4 border-b-2 border-[#faebd724] ${
+              isProductsOpen ? "block" : "hidden"
+            }`}
           >
             {products.map((link) => (
               <Link
@@ -131,15 +134,17 @@ const Footer = ({ className }) => {
           >
             Learn More
             <span
-              className={`inline-block w-3.5 h-3.5 ml-2 transform transition-transform ${isLearnMoreOpen ? "rotate-180" : ""
-                }`}
+              className={`inline-block w-3.5 h-3.5 ml-2 transform transition-transform ${
+                isLearnMoreOpen ? "rotate-180" : ""
+              }`}
             >
               <IoIosArrowDown />
             </span>
           </p>
           <div
-            className={`flex flex-wrap justify-between gap-4 px-4 pb-4 border-b-2 border-[#faebd724] ${isLearnMoreOpen ? "block" : "hidden"
-              }`}
+            className={`flex flex-wrap justify-between gap-4 px-4 pb-4 border-b-2 border-[#faebd724] ${
+              isLearnMoreOpen ? "block" : "hidden"
+            }`}
           >
             {[
               { href: "/how-it-works/", text: "How It Works" },
@@ -148,6 +153,11 @@ const Footer = ({ className }) => {
               { href: "/about-us/", text: "About Us" },
               { href: "/blog/", text: "Blog" },
               { href: "/podcast/", text: "Podcast" },
+              { href: "/blog/category/hair-loss", text: "Hair Loss" },
+              { href: "/blog/category/lifestyle", text: "Lifestyle" },
+              { href: "/blog/category/mental-health", text: "Mental Health" },
+              { href: "/blog/category/sexual-health", text: "Sexual Health" },
+              { href: "/blog/category/weight-loss", text: "Weight Loss" },
             ].map((link) => (
               <Link
                 key={link.href}
@@ -167,23 +177,25 @@ const Footer = ({ className }) => {
           >
             Contact
             <span
-              className={`inline-block w-3.5 h-3.5 ml-2 transform transition-transform ${isContactOpen ? "rotate-180" : ""
-                }`}
+              className={`inline-block w-3.5 h-3.5 ml-2 transform transition-transform ${
+                isContactOpen ? "rotate-180" : ""
+              }`}
             >
               <IoIosArrowDown />
             </span>
           </p>
           <div
-            className={`flex flex-wrap justify-between gap-4 px-4 pb-4 border-b-2 border-[#faebd724] ${isContactOpen ? "block" : "hidden"
-              }`}
+            className={`flex flex-wrap justify-between gap-4 px-4 pb-4 border-b-2 border-[#faebd724] ${
+              isContactOpen ? "block" : "hidden"
+            }`}
           >
             {[
               { href: "/contact-us/", text: "Contact Us" },
               { href: "/terms-of-use/", text: "Terms & Conditions" },
               { href: "/privacy-policy/", text: "Privacy Policy" },
               {
-                href: "/service-coverage",
-                text: "Service Coverage",
+                href: "/service-across-canada/",
+                text: "Service Across Canada",
               },
             ].map((link) => (
               <Link
@@ -252,24 +264,24 @@ const Footer = ({ className }) => {
             <div className="flex flex-col justify-center items-center md:items-start">
               <h1 className="text-[#efe7df] text-[16px]">Have a question?</h1>
               <Link
-                href="mailto:contact@myrocky.com"
+                href="mailto:contact@myrocky.ca"
                 className="underline text-[14px]"
                 prefetch={false}
               >
-                contact@myrocky.com
+                contact@myrocky.ca
               </Link>
             </div>
             <div className="flex flex-col items-center md:items-end">
               <h4 className="text-[#efe7df] text-[16px]">Press inquiries?</h4>
               <Link
-                href="mailto:social@myrocky.com"
+                href="mailto:social@myrocky.ca"
                 className="underline text-[14px]"
                 prefetch={false}
               >
-                social@myrocky.com
+                social@myrocky.ca
               </Link>
             </div>
-            {/* <div className="flex flex-col items-center justify-center md:items-start">
+            <div className="flex flex-col items-center justify-center md:items-start">
               <h4 className="text-[#efe7df] text-[16px] text-center md:text-start">
                 Where can you find us?
               </h4>
@@ -286,8 +298,8 @@ const Footer = ({ className }) => {
                   <IoIosArrowDown />
                 </span>
               </p>
-            </div> */}
-            <div className="flex flex-col items-center md:items-start">
+            </div>
+            <div className="flex flex-col items-center md:items-end">
               <h4 className="text-[#efe7df] mb-2 text-[16px]">Social Media</h4>
               <div className="flex gap-4">
                 <Link
@@ -298,7 +310,7 @@ const Footer = ({ className }) => {
                   <FaFacebookF />
                 </Link>
                 <Link
-                  href="https://www.instagram.com/myrocky.ca/"
+                  href="https://www.instagram.com/myrocky/"
                   target="_blank"
                   prefetch={false}
                 >
@@ -317,8 +329,9 @@ const Footer = ({ className }) => {
 
           {/* Locations */}
           <div
-            className={`flex justify-between text-[14px] ${isLocationsOpen ? "block" : "hidden"
-              }`}
+            className={`flex justify-between text-[14px] ${
+              isLocationsOpen ? "block" : "hidden"
+            }`}
           >
             <div>
               <p>Rocky Pharmacy (308582)</p>
@@ -338,6 +351,13 @@ const Footer = ({ className }) => {
       {/* LegitScript Section */}
       <div className="bg-white flex justify-between items-center p-4 max-w-[1200px] mx-auto flex-col md:flex-row gap-2">
         <div className="flex flex-col md:flex-row items-center gap-3">
+          <div className="relative rounded-2xl overflow-hidden w-[80px] h-[80px]">
+            <CustomImage
+              src="https://static.legitscript.com/seals/11382672.png"
+              alt="LegitScript approved"
+              fill
+            />
+          </div>
           <p className="text-[0.7rem] text-center">
             ©{new Date().getFullYear()} Rocky Health Inc. All rights reserved.
             Rocky Health Pharmacy Inc. & Rocky Health Clinic Inc. are

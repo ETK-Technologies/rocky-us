@@ -50,7 +50,15 @@ const ProudPartner = ({ section = false , bg="bg-white" }) => {
             fill
           />
         </div>
-  
+        <div
+          className={`relative overflow-hidden w-[50px] h-[60px] md:w-[60px] md:h-[70px]`}
+        >
+          <CustomContainImage
+            src="https://myrocky.b-cdn.net/partner-2.png"
+            alt="boat"
+            fill
+          />
+        </div>
       </div>
     </div>
   );

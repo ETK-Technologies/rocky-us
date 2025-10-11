@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import axios from "axios";
+import { logger } from "@/utils/devLogger";
 import { cookies } from "next/headers";
 
 const BASE_URL = process.env.BASE_URL;
@@ -85,7 +86,7 @@ export async function GET(request) {
       billing_city: billing.city || "",
       billing_state: billing.state || userMeta.province || "",
       billing_postcode: billing.postcode || "",
-      billing_country: billing.country || "US",
+      billing_country: billing.country || "CA",
 
       // Shipping address fields
       shipping_address_1: shipping.address_1 || "",
@@ -94,10 +95,10 @@ export async function GET(request) {
       shipping_state:
         shipping.state || billing.state || userMeta.province || "",
       shipping_postcode: shipping.postcode || "",
-      shipping_country: shipping.country || "US",
+      shipping_country: shipping.country || "CA",
     });
   } catch (error) {
-    console.error("Error fetching user metadata:", error);
+    logger.error("Error fetching user metadata:", error);
 
     return NextResponse.json(
       {

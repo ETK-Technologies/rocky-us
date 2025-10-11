@@ -13,10 +13,6 @@ const CustomImage = ({ src, alt = "Image", className, ...props }) => {
     <Image
       src={src}
       alt={alt}
-      // className={cn(
-      //   "object-cover duration-500 ease-in-out",
-      //   isLoading ? "scale-110 blur-3xl sepia" : "scale-100 blur-0 sepia-0"
-      // )}
       className={cn(
         "object-cover duration-500 ease-in-out",
         isLoading ? "scale-110 blur-3xl sepia" : "scale-100 blur-0 sepia-0",

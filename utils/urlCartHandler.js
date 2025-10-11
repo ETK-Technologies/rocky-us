@@ -1,5 +1,7 @@
 "use client";
 
+import { logger } from "@/utils/devLogger";
+
 /**
  * Utility for handling URL-based cart operations across different product flows
  * This can be used for ED, Hair, Weight Loss, etc. product flows
@@ -28,12 +30,12 @@ const getProductInfo = async (productId) => {
   }
 
   try {
-    console.log(`Fetching product info for ${productId} from API`);
+    logger.log(`Fetching product info for ${productId} from API`);
     const response = await fetch(`/api/products/debug?id=${productId}`);
 
     if (!response.ok) {
       // Enhanced error logging with status code
-      console.error(
+      logger.error(
         `Failed to fetch product info for ID ${productId}: ${response.status} ${response.statusText}`
       );
 
@@ -55,7 +57,7 @@ const getProductInfo = async (productId) => {
 
     // If data is empty or missing product, return default
     if (!data || !data.product) {
-      console.error(`Product data not found for ID ${productId}`);
+      logger.error(`Product data not found for ID ${productId}`);
       return {
         productType: "simple",
         isVariableProduct: false,
@@ -121,7 +123,7 @@ const getProductInfo = async (productId) => {
 
     return productInfo;
   } catch (error) {
-    console.error(`Error fetching product info for ${productId}:`, error);
+    logger.error(`Error fetching product info for ${productId}:`, error);
     return {
       productType: "simple",
       isVariableProduct: false,
@@ -193,7 +195,7 @@ export const fetchProductMapping = async () => {
 
     return mapping;
   } catch (error) {
-    console.error("Error fetching product mapping:", error);
+    logger.error("Error fetching product mapping:", error);
 
     // If fetch fails, return the cached mapping if available
     if (productCache.lastUpdated) {
@@ -227,7 +229,7 @@ export const getProductId = async (product) => {
 
   try {
     // Log the product to help with debugging
-    console.log("Getting product ID for:", product);
+    logger.log("Getting product ID for:", product);
 
     // Fetch current mapping
     const mapping = await fetchProductMapping();
@@ -246,19 +248,19 @@ export const getProductId = async (product) => {
     if (product) {
       // Check if this is an ED product with a woocommerceId
       if (product.woocommerceId) {
-        console.log(`Found woocommerceId: ${product.woocommerceId}`);
+        logger.log(`Found woocommerceId: ${product.woocommerceId}`);
         return product.woocommerceId;
       }
 
       // Check if this is an ED product with productId
       if (product.productId) {
-        console.log(`Found productId: ${product.productId}`);
+        logger.log(`Found productId: ${product.productId}`);
         return product.productId;
       }
 
       // Try to match by product ID, WooCommerce ID, or database ID first
       if (product.id && /^\d+$/.test(product.id)) {
-        console.log(`Found numeric id: ${product.id}`);
+        logger.log(`Found numeric id: ${product.id}`);
         return product.id;
       }
 
@@ -268,7 +270,7 @@ export const getProductId = async (product) => {
         const edKey = `${product.name}-${product.dosage}`
           .toLowerCase()
           .replace(/\s+/g, "-");
-        console.log(`Trying ED-specific key: ${edKey}`);
+        logger.log(`Trying ED-specific key: ${edKey}`);
 
         // Check if we have a mapping for this specific ED product variation
         if (mapping.byInternalId[edKey]) {
@@ -278,32 +280,32 @@ export const getProductId = async (product) => {
 
       // Try name, slug, and internal ID
       if (product.name && mapping.byName[product.name]) {
-        console.log(`Found by name: ${product.name}`);
+        logger.log(`Found by name: ${product.name}`);
         return mapping.byName[product.name];
       }
 
       if (product.slug && mapping.bySlug[product.slug]) {
-        console.log(`Found by slug: ${product.slug}`);
+        logger.log(`Found by slug: ${product.slug}`);
         return mapping.bySlug[product.slug];
       }
 
       if (product.internalId && mapping.byInternalId[product.internalId]) {
-        console.log(`Found by internalId: ${product.internalId}`);
+        logger.log(`Found by internalId: ${product.internalId}`);
         return mapping.byInternalId[product.internalId];
       }
 
       // If we still don't have a match but product has an id, return that
       if (product.id) {
-        console.log(`Using fallback id: ${product.id}`);
+        logger.log(`Using fallback id: ${product.id}`);
         return product.id;
       }
     }
 
     // If no match is found, return null
-    console.warn("Could not find product ID for", product);
+    logger.warn("Could not find product ID for", product);
     return null;
   } catch (error) {
-    console.error("Error getting product ID:", error);
+    logger.error("Error getting product ID:", error);
 
     // If product has an id property, return that as fallback
     if (product && product.id) {
@@ -341,13 +343,14 @@ export const processUrlCartParameters = async (searchParams) => {
 
     const productIds = rawIds.map((id) => id.trim()).filter((id) => id);
 
-    console.log("Processing products from URL:", productIds);
+    logger.log("Processing products from URL:", productIds);
 
     // Detect flow type (ed, wl, etc.)
     const isEdFlow = searchParams.get("ed-flow") === "1";
     const isWlFlow = searchParams.get("wl-flow") === "1";
     const isHairFlow = searchParams.get("hair-flow") === "1";
     const isMhFlow = searchParams.get("mh-flow") === "1";
+    const isSkincareFlow = searchParams.get("skincare-flow") === "1";
 
     let flowType = "general"; // Default to general
     if (isEdFlow) {
@@ -358,98 +361,256 @@ export const processUrlCartParameters = async (searchParams) => {
       flowType = "hair";
     } else if (isMhFlow) {
       flowType = "mh";
+    } else if (isSkincareFlow) {
+      flowType = "skincare";
     }
 
     // Keep track of processed products
     const results = [];
 
     // Add debug logging
-    console.log(
+    logger.log(
       "All URL parameters:",
       Object.fromEntries([...searchParams.entries()])
     );
 
-    // Process each product ID individually
-    for (const productId of productIds) {
-      try {
-        // Skip empty product IDs
-        if (!productId) continue;
+    // Process multiple products using batch endpoint for better performance
+    try {
+      // Prepare all items for batch processing
+      const batchItems = [];
+      const isVarietyPack = searchParams.get("is_variety_pack") === "true";
+      const varietyPackId = searchParams.get("variety_pack_id");
 
-        console.log(`Starting to process product ID: ${productId}`);
+      // Build request bodies for all products
+      for (const productId of productIds) {
+        try {
+          // Skip empty product IDs
+          if (!productId) continue;
 
-        // Build the request body for this product using the smart approach
-        let requestBody = await buildSmartProductRequestBody(
-          productId,
-          searchParams
-        );
+          logger.log(`Preparing product ID for batch: ${productId}`);
 
-        // Handle dynamic variation lookup if needed
-        if (requestBody.needsDynamicVariationLookup && requestBody.attributes) {
-          console.log(
-            `Dynamically looking up variation for product ${productId}`
+          // Build the request body for this product using the smart approach
+          let requestBody = await buildSmartProductRequestBody(
+            productId,
+            searchParams
           );
-          try {
-            const variationId = await findVariationId(
-              productId,
-              requestBody.attributes
-            );
-            if (variationId) {
-              console.log(
-                `Dynamic lookup found variation ID: ${variationId} for product ${productId}`
-              );
-              requestBody.variationId = variationId;
-            } else {
-              console.log(
-                `No matching variation found via dynamic lookup for ${productId}`
-              );
-            }
-          } catch (variationError) {
-            console.error(
-              `Error finding variation for ${productId}:`,
-              variationError
-            );
+
+          // Check for variety pack metadata in URL parameters
+          if (isVarietyPack && varietyPackId) {
+            requestBody.isVarietyPack = true;
+            requestBody.varietyPackId = varietyPackId;
+            logger.log(`Adding variety pack metadata: ID ${varietyPackId}`);
           }
 
-          // Remove the flag as we've handled it
-          delete requestBody.needsDynamicVariationLookup;
+          // Handle dynamic variation lookup if needed
+          if (
+            requestBody.needsDynamicVariationLookup &&
+            requestBody.attributes
+          ) {
+            logger.log(
+              `Dynamically looking up variation for product ${productId}`
+            );
+            try {
+              const variationId = await findVariationId(
+                productId,
+                requestBody.attributes
+              );
+              if (variationId) {
+                logger.log(
+                  `Dynamic lookup found variation ID: ${variationId} for product ${productId}`
+                );
+                requestBody.variationId = variationId;
+              } else {
+                logger.log(
+                  `No matching variation found via dynamic lookup for ${productId}`
+                );
+              }
+            } catch (variationError) {
+              logger.error(
+                `Error finding variation for ${productId}:`,
+                variationError
+              );
+            }
+
+            // Remove the flag as we've handled it
+            delete requestBody.needsDynamicVariationLookup;
+          }
+
+          batchItems.push(requestBody);
+          logger.log(
+            `Prepared product ${productId} for batch:`,
+            JSON.stringify(requestBody, null, 2)
+          );
+        } catch (productError) {
+          logger.error(`Error preparing product ${productId}:`, productError);
+          // Add error to results but continue with other products
+          results.push({
+            status: "error",
+            productId,
+            message: productError.message,
+          });
+        }
+      }
+
+      // If we have items to process and more than one item, use batch endpoint
+      if (batchItems.length > 1) {
+        logger.log(`Using batch endpoint for ${batchItems.length} items`);
+
+        const batchResponse = await fetch("/api/cart/add-items-batch", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ items: batchItems }),
+        });
+
+        if (!batchResponse.ok) {
+          logger.error(
+            "Batch request failed, falling back to individual calls"
+          );
+          throw new Error("Batch operation failed");
         }
 
-        console.log(
-          `Adding product ${productId} to cart with request:`,
-          JSON.stringify(requestBody, null, 2)
-        );
+        const batchResult = await batchResponse.json();
+        logger.log("Batch operation result:", batchResult);
 
-        // Add product to cart
+        // Process batch results
+        if (batchResult.success) {
+          results.push({
+            status: "success",
+            message: batchResult.message,
+            added_items: batchResult.added_items,
+            failed_items: batchResult.failed_items,
+            total_items: batchResult.total_items,
+            cart: batchResult.cart,
+          });
+
+          // Add any error details if some items failed
+          if (batchResult.errors && batchResult.errors.length > 0) {
+            batchResult.errors.forEach((error) => {
+              results.push({
+                status: "error",
+                productId: error.item?.productId || "unknown",
+                message: error.error?.message || "Unknown error",
+                error: error,
+              });
+            });
+          }
+        } else {
+          throw new Error(batchResult.error || "Batch operation failed");
+        }
+      } else if (batchItems.length === 1) {
+        // For single item, use individual endpoint (no benefit from batch)
+        logger.log("Single item detected, using individual endpoint");
+        const item = batchItems[0];
+
         const response = await fetch("/api/cart/add-item", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(requestBody),
+          body: JSON.stringify(item),
         });
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error(
-            `Error adding product ${productId} to cart:`,
-            errorText
-          );
+          logger.error(`Error adding single product to cart:`, errorText);
           throw new Error(
-            `Failed to add product ${productId} to cart: ${response.statusText}`
+            `Failed to add product to cart: ${response.statusText}`
           );
         }
 
         const result = await response.json();
         results.push(result);
-        console.log(`Product ${productId} added to cart:`, result);
-      } catch (productError) {
-        console.error(`Error processing product ${productId}:`, productError);
-        // Continue with other products instead of failing the entire process
-        results.push({
-          status: "error",
-          productId,
-          message: productError.message,
-        });
+        logger.log("Single product added to cart:", result);
+      }
+    } catch (batchError) {
+      logger.error(
+        "Batch processing failed, falling back to individual calls:",
+        batchError
+      );
+
+      // Fallback: Process each product individually
+      for (const productId of productIds) {
+        try {
+          // Skip empty product IDs
+          if (!productId) continue;
+
+          logger.log(
+            `Fallback: Processing product ID individually: ${productId}`
+          );
+
+          // Build the request body for this product using the smart approach
+          let requestBody = await buildSmartProductRequestBody(
+            productId,
+            searchParams
+          );
+
+          // Check for variety pack metadata in URL parameters
+          const isVarietyPack = searchParams.get("is_variety_pack") === "true";
+          const varietyPackId = searchParams.get("variety_pack_id");
+
+          if (isVarietyPack && varietyPackId) {
+            requestBody.isVarietyPack = true;
+            requestBody.varietyPackId = varietyPackId;
+          }
+
+          // Handle dynamic variation lookup if needed
+          if (
+            requestBody.needsDynamicVariationLookup &&
+            requestBody.attributes
+          ) {
+            try {
+              const variationId = await findVariationId(
+                productId,
+                requestBody.attributes
+              );
+              if (variationId) {
+                requestBody.variationId = variationId;
+              }
+            } catch (variationError) {
+              logger.error(
+                `Error finding variation for ${productId}:`,
+                variationError
+              );
+            }
+            delete requestBody.needsDynamicVariationLookup;
+          }
+
+          // Add product to cart using individual endpoint
+          const response = await fetch("/api/cart/add-item", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(requestBody),
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            logger.error(
+              `Error adding product ${productId} to cart:`,
+              errorText
+            );
+            throw new Error(
+              `Failed to add product ${productId} to cart: ${response.statusText}`
+            );
+          }
+
+          const result = await response.json();
+          results.push(result);
+          logger.log(`Fallback: Product ${productId} added to cart:`, result);
+        } catch (productError) {
+          logger.error(
+            `Error processing product ${productId} in fallback:`,
+            productError
+          );
+          results.push({
+            status: "error",
+            productId,
+            message: productError.message,
+          });
+        }
       }
     }
 
@@ -462,7 +623,7 @@ export const processUrlCartParameters = async (searchParams) => {
       flowType,
     };
   } catch (error) {
-    console.error("Error processing URL cart parameters:", error);
+    logger.error("Error processing URL cart parameters:", error);
     return {
       status: "error",
       message: error.message || "Error processing cart parameters",
@@ -523,7 +684,7 @@ function buildProductRequestBody(productId, searchParams) {
   // Special handling for products that need to use variation as the product ID
   if (productConfig.useVariationAsProduct && productConfig.variationId) {
     requestBody.productId = productConfig.variationId;
-    console.log(
+    logger.log(
       `Using variation ID ${productConfig.variationId} as the product ID for ${productId}`
     );
   } else {
@@ -532,18 +693,18 @@ function buildProductRequestBody(productId, searchParams) {
 
     // Add variation ID if specified explicitly in the URL
     if (variationId) {
-      console.log(`Using explicitly provided variation ID: ${variationId}`);
+      logger.log(`Using explicitly provided variation ID: ${variationId}`);
       requestBody.variationId = variationId;
     }
     // Use subscription variation if converting to subscription
     else if (convertToSub) {
-      console.log(`Using subscription variation ID: ${convertToSub}`);
+      logger.log(`Using subscription variation ID: ${convertToSub}`);
       requestBody.variationId = convertToSub;
     }
     // Use hardcoded variation from product config for special products
     else if (productConfig.variationId && productConfig.skipDynamicLookup) {
       requestBody.variationId = productConfig.variationId;
-      console.log(
+      logger.log(
         `Using hardcoded variation ID ${requestBody.variationId} for product ${productId}`
       );
     }
@@ -555,7 +716,7 @@ function buildProductRequestBody(productId, searchParams) {
       // This will be handled asynchronously later
       requestBody.needsDynamicVariationLookup = true;
       requestBody.attributes = attributes;
-      console.log(
+      logger.log(
         `Will dynamically lookup variation ID for product ${productId} with attributes:`,
         attributes
       );
@@ -629,7 +790,7 @@ async function buildSmartProductRequestBody(productId, searchParams) {
 
   // Special case for Lidocaine Cream - it needs variation ID 276
   if (productId === "276") {
-    console.log("Adding Lidocaine Cream (276) with correct variation ID 276");
+    logger.log("Adding Lidocaine Cream (276) with correct variation ID 276");
     requestBody.productId = productId;
 
     // For Lidocaine Cream, we MUST include the variationId of 276
@@ -639,7 +800,7 @@ async function buildSmartProductRequestBody(productId, searchParams) {
     }
 
     // Return early for this special case
-    console.log(
+    logger.log(
       `Final request for Lidocaine Cream:`,
       JSON.stringify(requestBody, null, 2)
     );
@@ -648,7 +809,7 @@ async function buildSmartProductRequestBody(productId, searchParams) {
 
   // Special case for Lidocaine Spray - it should also have correct variation handling
   if (productId === "52162") {
-    console.log(
+    logger.log(
       "Adding Lidocaine Spray (52162) with correct subscription handling"
     );
     requestBody.productId = productId;
@@ -662,17 +823,36 @@ async function buildSmartProductRequestBody(productId, searchParams) {
     }
 
     // Return early for this special case
-    console.log(
+    logger.log(
       `Final request for Lidocaine Spray:`,
       JSON.stringify(requestBody, null, 2)
     );
     return requestBody;
   }
 
+  // Special handling for variety pack products (Cialis + Viagra)
+  // Check if this is a variety pack by looking for comma-separated variation IDs
+  if (variationId && variationId.includes(",")) {
+    logger.log(
+      `Detected variety pack product with variation IDs: ${variationId}`
+    );
+
+    // Generate a unique variety pack ID for this specific pack
+    const varietyPackId = `variety_pack_${Date.now()}_${Math.random()
+      .toString(36)
+      .substr(2, 9)}`;
+
+    // Add variety pack metadata
+    requestBody.isVarietyPack = true;
+    requestBody.varietyPackId = varietyPackId;
+
+    logger.log(`Added variety pack metadata with ID: ${varietyPackId}`);
+  }
+
   // Special handling for products that need to use variation as the product ID
   if (productConfig.useVariationAsProduct && productConfig.variationId) {
     requestBody.productId = productConfig.variationId;
-    console.log(
+    logger.log(
       `Using variation ID ${productConfig.variationId} as the product ID for ${productId}`
     );
   } else {
@@ -681,13 +861,13 @@ async function buildSmartProductRequestBody(productId, searchParams) {
 
     // Add variation ID if specified explicitly in the URL
     if (variationId) {
-      console.log(`Using explicitly provided variation ID: ${variationId}`);
+      logger.log(`Using explicitly provided variation ID: ${variationId}`);
 
       // CRITICAL FIX: For certain products like DHM Blend,
       // we need to use the variation ID as the product ID directly
       // Check if this product is one that needs this special handling
       if (productId === "359245") {
-        console.log(
+        logger.log(
           `Special product detected (${productId}). Using variation ID ${variationId} as product ID instead`
         );
         requestBody.productId = variationId;
@@ -698,21 +878,21 @@ async function buildSmartProductRequestBody(productId, searchParams) {
     }
     // Use subscription variation if converting to subscription
     else if (convertToSub) {
-      console.log(`Using subscription variation ID: ${convertToSub}`);
+      logger.log(`Using subscription variation ID: ${convertToSub}`);
       requestBody.variationId = convertToSub;
     }
     // Use configured variation from product config
     else if (productConfig.variationId) {
       // CRITICAL FIX: For DHM Blend, use the variation ID as the product ID
       if (productId === "359245") {
-        console.log(
+        logger.log(
           `Special product detected (${productId}). Using config variation ID ${productConfig.variationId} as product ID instead`
         );
         requestBody.productId = productConfig.variationId;
       } else {
         // Regular handling - keep both IDs
         requestBody.variationId = productConfig.variationId;
-        console.log(
+        logger.log(
           `Using provided variation ID ${requestBody.variationId} for product ${productId}`
         );
       }
@@ -726,7 +906,7 @@ async function buildSmartProductRequestBody(productId, searchParams) {
   }
 
   // Handle logging for debug purposes
-  console.log(
+  logger.log(
     `Final request for product ${productId}:`,
     JSON.stringify(requestBody, null, 2)
   );
@@ -745,7 +925,7 @@ async function findVariationByPrice(productId, targetPrice) {
     // Convert targetPrice to a number
     const price = parseFloat(targetPrice);
     if (isNaN(price)) {
-      console.log(`Invalid price format: ${targetPrice}`);
+      logger.log(`Invalid price format: ${targetPrice}`);
       return null;
     }
 
@@ -753,7 +933,7 @@ async function findVariationByPrice(productId, targetPrice) {
     const productInfo = await getProductInfo(productId);
 
     if (!productInfo.variations || productInfo.variations.length === 0) {
-      console.log(`No variations found for product ${productId}`);
+      logger.log(`No variations found for product ${productId}`);
       return null;
     }
 
@@ -773,7 +953,7 @@ async function findVariationByPrice(productId, targetPrice) {
 
         // If we find an exact match, return immediately
         if (difference < 0.01) {
-          console.log(
+          logger.log(
             `Found exact price match for ${productId}: variation ${variation.id} at $${variation.price}`
           );
           return variation.id;
@@ -782,20 +962,22 @@ async function findVariationByPrice(productId, targetPrice) {
     }
 
     if (closestVariation) {
-      console.log(
-        `Found closest price match for ${productId}: variation ${closestVariation.id
-        } at $${closestVariation.price
+      logger.log(
+        `Found closest price match for ${productId}: variation ${
+          closestVariation.id
+        } at $${
+          closestVariation.price
         } (target: $${price}, difference: $${priceDifference.toFixed(2)})`
       );
       return closestVariation.id;
     }
 
-    console.log(
+    logger.log(
       `No suitable variation found for product ${productId} at price $${price}`
     );
     return null;
   } catch (error) {
-    console.error(`Error finding variation by price for ${productId}:`, error);
+    logger.error(`Error finding variation by price for ${productId}:`, error);
     return null;
   }
 }
@@ -879,7 +1061,7 @@ async function getSmartProductConfig(productId, targetPrice = null) {
     );
 
     if (priceBasedVariationId) {
-      console.log(
+      logger.log(
         `Selected variation ${priceBasedVariationId} based on target price $${targetPrice} for product ${productId}`
       );
       return {
@@ -943,10 +1125,7 @@ async function getSmartProductConfig(productId, targetPrice = null) {
     // For all other products, return the default config
     return defaultConfig;
   } catch (error) {
-    console.error(
-      `Error getting smart product config for ${productId}:`,
-      error
-    );
+    logger.error(`Error getting smart product config for ${productId}:`, error);
     return defaultConfig;
   }
 }
@@ -996,17 +1175,17 @@ export const createCartUrl = async (
 ) => {
   try {
     // Detailed logging of the product being processed
-    console.log("===== PRODUCT INFO FOR CART URL =====");
-    console.log("Main Product:", JSON.stringify(mainProduct, null, 2));
-    console.log("Flow Type:", flowType);
-    console.log("Is Authenticated:", isAuthenticated);
+    logger.log("===== PRODUCT INFO FOR CART URL =====");
+    logger.log("Main Product:", JSON.stringify(mainProduct, null, 2));
+    logger.log("Flow Type:", flowType);
+    logger.log("Is Authenticated:", isAuthenticated);
 
     // Direct product ID mapping with fallback mechanism
     let productId = null;
 
     // Special handling for weight loss addons - use their IDs directly
     const wlAddons = {
-      353755: "Rocky Dad Hat", // Dad Hat - CORRECT ID
+      353755: "Rocky Essential Cap", // Essential Cap - CORRECT ID
       90995: "Essential T-Boost", // Essential T-Boost - CORRECT ID
       323511: "Ovulation Test Kit", // Ovulation Test Kit
       323512: "Perimenopause Test Kit", // Perimenopause Test Kit
@@ -1018,7 +1197,7 @@ export const createCartUrl = async (
     // Check if this is a direct ID that we already know
     if (mainProduct.id && wlAddons[mainProduct.id]) {
       productId = mainProduct.id;
-      console.log(`Using direct ID for ${wlAddons[productId]}: ${productId}`);
+      logger.log(`Using direct ID for ${wlAddons[productId]}: ${productId}`);
     }
     // Or if it's one of our special WL addon products by name
     else if (
@@ -1029,9 +1208,7 @@ export const createCartUrl = async (
       for (const [id, name] of Object.entries(wlAddons)) {
         if (name === mainProduct.name) {
           productId = id;
-          console.log(
-            `Found ID by direct name match for ${name}: ${productId}`
-          );
+          logger.log(`Found ID by direct name match for ${name}: ${productId}`);
           break;
         }
       }
@@ -1046,7 +1223,7 @@ export const createCartUrl = async (
         for (const prop of idProps) {
           if (mainProduct[prop] && mainProduct[prop].toString().trim()) {
             productId = mainProduct[prop].toString();
-            console.log(
+            logger.log(
               `Using product ID from property '${prop}': ${productId}`
             );
             break;
@@ -1058,7 +1235,7 @@ export const createCartUrl = async (
     // Final fallback
     if (!productId && typeof mainProduct === "string") {
       productId = mainProduct;
-      console.log(`Using raw string as product ID: ${productId}`);
+      logger.log(`Using raw string as product ID: ${productId}`);
     }
 
     if (!productId) {
@@ -1067,7 +1244,7 @@ export const createCartUrl = async (
       );
     }
 
-    console.log("Final main product ID for URL:", productId);
+    logger.log("Final main product ID for URL:", productId);
 
     // Always use checkout as the base URL - middleware will handle redirection if needed
     let baseUrl = "/checkout";
@@ -1079,7 +1256,7 @@ export const createCartUrl = async (
       priceParam = `&price_${productId}=${encodeURIComponent(
         mainProduct.price
       )}`;
-      console.log(`Adding price parameter: ${priceParam}`);
+      logger.log(`Adding price parameter: ${priceParam}`);
     }
 
     // Special handling for Weight Loss flow with any weight loss product
@@ -1097,7 +1274,7 @@ export const createCartUrl = async (
       queryParams += "&consultation-required=1";
 
       // Always include both the selected weight loss product and Body Optimization Program for WL flow
-      console.log(
+      logger.log(
         `Weight loss product detected in WL flow (ID: ${productId}). Adding Body Optimization Program (148515)`
       );
       queryParams += `&onboarding-add-to-cart=${productId},148515`;
@@ -1109,11 +1286,11 @@ export const createCartUrl = async (
 
       // Check if we have addons to add
       if (addons && addons.length > 0) {
-        console.log(`WL flow has ${addons.length} addons to process:`, addons);
+        logger.log(`WL flow has ${addons.length} addons to process:`, addons);
 
         // Process WL addons before returning
         const wlAddons = {
-          353755: "Rocky Dad Hat", // Dad Hat - CORRECT ID
+          353755: "Rocky Essential Cap", // Essential Cap - CORRECT ID
           90995: "Essential T-Boost", // Essential T-Boost - CORRECT ID
           323511: "Ovulation Test Kit", // Ovulation Test Kit
           323512: "Perimenopause Test Kit", // Perimenopause Test Kit
@@ -1124,18 +1301,18 @@ export const createCartUrl = async (
 
         const addonIds = addons
           .map((addon) => {
-            console.log("Processing WL addon:", addon);
+            logger.log("Processing WL addon:", addon);
 
             // Use dataAddToCart if available (this is the primary ID for WL addons)
             if (addon.dataAddToCart) {
-              console.log(
+              logger.log(
                 `Using dataAddToCart for WL addon: ${addon.dataAddToCart}`
               );
               return addon.dataAddToCart;
             }
             // If addon is a known WL product, use its ID directly
             else if (addon.id && wlAddons[addon.id]) {
-              console.log(
+              logger.log(
                 `Found WL addon by ID: ${addon.id} -> ${wlAddons[addon.id]}`
               );
               return addon.id;
@@ -1148,13 +1325,13 @@ export const createCartUrl = async (
               // Find the ID by name
               for (const [id, name] of Object.entries(wlAddons)) {
                 if (name === addon.name) {
-                  console.log(`Found WL addon by name: ${addon.name} -> ${id}`);
+                  logger.log(`Found WL addon by name: ${addon.name} -> ${id}`);
                   return id;
                 }
               }
             }
             // Fallback to regular id
-            console.log(`Using fallback ID for WL addon: ${addon.id}`);
+            logger.log(`Using fallback ID for WL addon: ${addon.id}`);
             return addon.id || null;
           })
           .filter((id) => id !== null);
@@ -1170,16 +1347,16 @@ export const createCartUrl = async (
             `onboarding-add-to-cart=${allProductIds.join("%2C")}`
           );
 
-          console.log("Direct addon IDs for WL flow:", addonIds);
-          console.log("Final WL flow URL query params:", queryParams);
+          logger.log("Direct addon IDs for WL flow:", addonIds);
+          logger.log("Final WL flow URL query params:", queryParams);
         }
       } else {
-        console.log("WL flow has no addons to process");
+        logger.log("WL flow has no addons to process");
       }
 
       // Build the final URL and return
       const redirectUrl = `${baseUrl}${queryParams}`;
-      console.log(
+      logger.log(
         `Created WL flow URL with product ${productId} + BO Program + addons: ${redirectUrl}`
       );
       return redirectUrl;
@@ -1205,22 +1382,22 @@ export const createCartUrl = async (
     if (addons && addons.length > 0) {
       // For WL flow, use direct IDs for addons without API calls
       if (flowType === "wl") {
-        console.log("Processing WL flow addons:", addons);
+        logger.log("Processing WL flow addons:", addons);
 
         const addonIds = addons
           .map((addon) => {
-            console.log("Processing WL addon:", addon);
+            logger.log("Processing WL addon:", addon);
 
             // Use dataAddToCart if available (this is the primary ID for WL addons)
             if (addon.dataAddToCart) {
-              console.log(
+              logger.log(
                 `Using dataAddToCart for WL addon: ${addon.dataAddToCart}`
               );
               return addon.dataAddToCart;
             }
             // If addon is a known WL product, use its ID directly
             else if (addon.id && wlAddons[addon.id]) {
-              console.log(
+              logger.log(
                 `Found WL addon by ID: ${addon.id} -> ${wlAddons[addon.id]}`
               );
               return addon.id;
@@ -1233,13 +1410,13 @@ export const createCartUrl = async (
               // Find the ID by name
               for (const [id, name] of Object.entries(wlAddons)) {
                 if (name === addon.name) {
-                  console.log(`Found WL addon by name: ${addon.name} -> ${id}`);
+                  logger.log(`Found WL addon by name: ${addon.name} -> ${id}`);
                   return id;
                 }
               }
             }
             // Fallback to regular id
-            console.log(`Using fallback ID for WL addon: ${addon.id}`);
+            logger.log(`Using fallback ID for WL addon: ${addon.id}`);
             return addon.id || null;
           })
           .filter((id) => id !== null);
@@ -1254,8 +1431,8 @@ export const createCartUrl = async (
             `onboarding-add-to-cart=${allProductIds.join("%2C")}`
           );
 
-          console.log("Direct addon IDs for WL flow:", addonIds);
-          console.log("Final WL flow URL query params:", queryParams);
+          logger.log("Direct addon IDs for WL flow:", addonIds);
+          logger.log("Final WL flow URL query params:", queryParams);
         }
       } else if (flowType === "hair") {
         // For hair flow, use direct IDs for addons without API calls
@@ -1265,18 +1442,18 @@ export const createCartUrl = async (
           471638: "Essential Night Boost",
           471652: "Essential Mood Balance",
           471657: "Essential Gut Relief",
-          353755: "Rocky Dad Hat",
+          353755: "Rocky Essential Cap",
         };
 
-        console.log("Processing hair flow addons:", addons);
+        logger.log("Processing hair flow addons:", addons);
 
         const addonIds = addons
           .map((addon) => {
-            console.log("Processing hair addon:", addon);
+            logger.log("Processing hair addon:", addon);
 
             // If addon is a known hair product, use its ID directly
             if (addon.id && hairAddons[addon.id]) {
-              console.log(
+              logger.log(
                 `Found hair addon by ID: ${addon.id} -> ${hairAddons[addon.id]}`
               );
               return addon.id;
@@ -1289,7 +1466,7 @@ export const createCartUrl = async (
               // Find the ID by name
               for (const [id, name] of Object.entries(hairAddons)) {
                 if (name === addon.name) {
-                  console.log(
+                  logger.log(
                     `Found hair addon by name: ${addon.name} -> ${id}`
                   );
                   return id;
@@ -1298,13 +1475,13 @@ export const createCartUrl = async (
             }
             // Use dataAddToCart if available (this is the primary ID for hair addons)
             else if (addon.dataAddToCart) {
-              console.log(
+              logger.log(
                 `Using dataAddToCart for hair addon: ${addon.dataAddToCart}`
               );
               return addon.dataAddToCart;
             }
             // Fallback to regular id
-            console.log(`Using fallback ID for hair addon: ${addon.id}`);
+            logger.log(`Using fallback ID for hair addon: ${addon.id}`);
             return addon.id || null;
           })
           .filter((id) => id !== null);
@@ -1319,13 +1496,13 @@ export const createCartUrl = async (
             `onboarding-add-to-cart=${allProductIds.join("%2C")}`
           );
 
-          console.log("Direct addon IDs for hair flow:", addonIds);
-          console.log("Final hair flow URL query params:", queryParams);
+          logger.log("Direct addon IDs for hair flow:", addonIds);
+          logger.log("Final hair flow URL query params:", queryParams);
         }
       } else if (flowType === "ed") {
         // For ED flow, use direct IDs for addons without API calls
         const edAddons = {
-          353755: "Rocky Dad Hat", // Dad Hat
+          353755: "Rocky Essential Cap", // Essential Cap
           90995: "Essential T-Boost", // Essential T-Boost (WL version)
           262914: "Essential T-Boost", // Essential T-Boost (ED version)
           471638: "Essential Night Boost", // Essential Night Boost
@@ -1334,27 +1511,27 @@ export const createCartUrl = async (
           276: "Lidocaine Cream", // Lidocaine Cream
           52162: "Lidocaine Spray", // Lidocaine Spray
           13534: "Durex Condoms", // Durex Condoms
-          323576: "Rocky Dad Hat", // Rocky Dad Hat (alternative ID)
+          353755: "Rocky Essential Cap", // Rocky Essential Cap (alternative ID)
           323626: "DHM Blend", // DHM Blend
           359245: "DHM Blend", // DHM Blend (alternative ID)
         };
 
-        console.log("Processing ED flow addons:", addons);
+        logger.log("Processing ED flow addons:", addons);
 
         const addonIds = addons
           .map((addon) => {
-            console.log("Processing ED addon:", addon);
+            logger.log("Processing ED addon:", addon);
 
             // Use dataAddToCart if available (this is the primary ID for ED addons)
             if (addon.dataAddToCart) {
-              console.log(
+              logger.log(
                 `Using dataAddToCart for ED addon: ${addon.dataAddToCart}`
               );
               return addon.dataAddToCart;
             }
             // If addon is a known ED product, use its ID directly
             else if (addon.id && edAddons[addon.id]) {
-              console.log(
+              logger.log(
                 `Found ED addon by ID: ${addon.id} -> ${edAddons[addon.id]}`
               );
               return addon.id;
@@ -1367,13 +1544,13 @@ export const createCartUrl = async (
               // Find the ID by name
               for (const [id, name] of Object.entries(edAddons)) {
                 if (name === addon.name) {
-                  console.log(`Found ED addon by name: ${addon.name} -> ${id}`);
+                  logger.log(`Found ED addon by name: ${addon.name} -> ${id}`);
                   return id;
                 }
               }
             }
             // Fallback to regular id
-            console.log(`Using fallback ID for ED addon: ${addon.id}`);
+            logger.log(`Using fallback ID for ED addon: ${addon.id}`);
             return addon.id || null;
           })
           .filter((id) => id !== null);
@@ -1388,8 +1565,8 @@ export const createCartUrl = async (
             `onboarding-add-to-cart=${allProductIds.join("%2C")}`
           );
 
-          console.log("Direct addon IDs for ED flow:", addonIds);
-          console.log("Final ED flow URL query params:", queryParams);
+          logger.log("Direct addon IDs for ED flow:", addonIds);
+          logger.log("Final ED flow URL query params:", queryParams);
         }
       } else {
         // Process addon products for other flows (mh, etc.)
@@ -1417,15 +1594,33 @@ export const createCartUrl = async (
       }
     }
 
+    // Add variety pack metadata to URL parameters if the product is a variety pack
+    queryParams = addVarietyPackMetadata(mainProduct, queryParams);
+
     // Build the final URL
     const redirectUrl = `${baseUrl}${queryParams}`;
-    console.log(`Created cart URL for ${flowType} flow:`, redirectUrl);
+    logger.log(`Created cart URL for ${flowType} flow:`, redirectUrl);
 
     return redirectUrl;
   } catch (error) {
-    console.error(`Error creating cart URL for ${flowType} flow:`, error);
+    logger.error(`Error creating cart URL for ${flowType} flow:`, error);
     return "/checkout"; // Always return checkout URL even in case of error
   }
+};
+
+/**
+ * Add variety pack metadata to URL parameters if the product is a variety pack
+ * @param {Object} mainProduct - The main product object
+ * @param {String} queryParams - Existing query parameters
+ * @returns {String} Updated query parameters with variety pack metadata
+ */
+const addVarietyPackMetadata = (mainProduct, queryParams) => {
+  if (mainProduct.isVarietyPack && mainProduct.varietyPackId) {
+    // Add variety pack metadata to the URL
+    const varietyPackParams = `&is_variety_pack=true&variety_pack_id=${mainProduct.varietyPackId}`;
+    return queryParams + varietyPackParams;
+  }
+  return queryParams;
 };
 
 /**
@@ -1442,15 +1637,15 @@ export const cleanupCartUrlParameters = (flowType = "ed") => {
     flowType === "ed"
       ? "ed-flow=1"
       : flowType === "wl"
-        ? "wl-flow=1"
-        : flowType === "hair"
-          ? "hair-flow=1"
-          : flowType === "mh"
-            ? "mh-flow=1"
-            : `${flowType}-flow=1`;
+      ? "wl-flow=1"
+      : flowType === "hair"
+      ? "hair-flow=1"
+      : flowType === "mh"
+      ? "mh-flow=1"
+      : `${flowType}-flow=1`;
 
   const newUrl = window.location.pathname + `?${flowParam}`;
-  console.log(`Cleaning up URL parameters, preserving flow type: ${flowType}`);
+  logger.log(`Cleaning up URL parameters, preserving flow type: ${flowType}`);
   window.history.replaceState({}, document.title, newUrl);
 };
 
@@ -1471,11 +1666,11 @@ const FALLBACK_PRODUCT_MAPPING = {
   "lidocaine-cream": "276",
   "lidocaine-spray": "52162",
   "durex-condoms": "13534",
-  "rocky-dad-hat": "323576",
+  "rocky-essential-cap": "353755",
   "dhm-blend": "323626",
 
   // Add-on products - WL cross sell (using exact product names)
-  "Rocky Dad Hat": "323576",
+  "Rocky Essential Cap": "353755",
   "Essential T-Boost": "323579",
   "Ovulation Test Kit": "287538",
   "Perimenopause Test Kit": "287539",

@@ -10,7 +10,6 @@ import TeamSection from "@/components/TeamSection";
 import FindTreatment from "@/components/Sex/FindTreatment";
 import SexBlog from "@/components/Sex/SexBlog";
 import EdProducts from "@/components/EDPlans/EdProducts";
-import { EdScript } from "@/components/VisiOpt";
 
 export default function Sex() {
   return (
@@ -35,7 +34,6 @@ export default function Sex() {
         <TeamSection />
       </Section>
       <SexBlog />
-      <EdScript />
     </main>
   );
 }

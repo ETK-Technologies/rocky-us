@@ -1,6 +1,9 @@
 import WeightLossConsultationQuiz from "@/components/WeightQuestionnaire/WeightConsultationQuiz";
 import { cookies } from "next/headers";
 
+// Force dynamic rendering for this page
+export const dynamic = "force-dynamic";
+
 export default function WeightConsultationPage() {
   const cookieStore = cookies();
   const pn = cookieStore.get("pn")?.value;

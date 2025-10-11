@@ -108,7 +108,7 @@ export default function BlogsPage() {
           goToPage={goToPage}
         ></Pagination>
         <MoreQuestions
-          title="Join 350K+ Users & receive actionable health tips."
+          title="Join 350K+ Canadians & receive actionable health tips."
           buttonText="Sign up to our newsletter"
           buttonWidth="240"
         ></MoreQuestions>

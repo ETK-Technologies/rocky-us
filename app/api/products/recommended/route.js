@@ -1,5 +1,6 @@
 import { fetchProductBySlug } from "@/lib/woocommerce";
 import { api } from "@/lib/woocommerce";
+import { logger } from "@/utils/devLogger";
 
 export async function POST(request) {
   try {
@@ -23,7 +24,7 @@ export async function POST(request) {
 
         products = response.data || [];
       } catch (error) {
-        console.error("Error fetching products by IDs:", error);
+        logger.error("Error fetching products by IDs:", error);
       }
     }
 
@@ -46,7 +47,7 @@ export async function POST(request) {
             }
             return null;
           } catch (error) {
-            console.error(`Error fetching ${slug}:`, error);
+            logger.error(`Error fetching ${slug}:`, error);
             return null;
           }
         });
@@ -54,17 +55,17 @@ export async function POST(request) {
         const fetchedProducts = await Promise.all(slugPromises);
         products = fetchedProducts.filter((p) => p !== null);
       } catch (error) {
-        console.error("Error fetching fallback products:", error);
+        logger.error("Error fetching fallback products:", error);
       }
     }
 
     return Response.json({
       success: true,
-      products: products.slice(0, 3), // Limit to 3 products
+      products: products.slice(0, 4), // Limit to 4 products
       count: products.length,
     });
   } catch (error) {
-    console.error("Error in recommended products API:", error);
+    logger.error("Error in recommended products API:", error);
     return Response.json(
       { success: false, error: "Failed to fetch recommended products" },
       { status: 500 }

@@ -5,9 +5,7 @@ import StepSection from "@/components/HRW/StepSection";
 import VerticalLine from "@/components/HRW/VerticalLine ";
 
 const StepOne = ({ activeStep, setActiveStep }) => {
-  // const handleInViewChange = (stepIndex) => {
-  //   if (activeStep !== stepIndex) setActiveStep(stepIndex);
-  // };
+
   const handleInViewChange = (stepIndex) => {
     setActiveStep((prev) => (prev !== stepIndex ? stepIndex : prev));
   };

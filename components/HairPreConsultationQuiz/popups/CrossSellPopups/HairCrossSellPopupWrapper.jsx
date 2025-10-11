@@ -6,6 +6,8 @@ const HairCrossSellPopupWrapper = ({
   onClose,
   selectedProduct,
   onCheckout,
+  isLoading = false,
+  initialCartData = null,
 }) => {
   // Props for popup
   const popupProps = {
@@ -13,6 +15,8 @@ const HairCrossSellPopupWrapper = ({
     onClose,
     mainProduct: selectedProduct,
     onCheckout,
+    isLoading,
+    initialCartData,
   };
 
   // Render the hair cross-sell popup

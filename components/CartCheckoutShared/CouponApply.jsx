@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { FaArrowRight } from "react-icons/fa";
+import { logger } from "@/utils/devLogger";
 import { DotsLoader } from "react-loaders-kit";
 import { toast } from "react-toastify";
 
@@ -26,7 +27,7 @@ const CouponApply = ({ setCartItems }) => {
         setCartItems(data);
       }
     } catch (error) {
-      console.log(error);
+      logger.log(error);
       toast.error(error);
     } finally {
       setAddingCode(false);

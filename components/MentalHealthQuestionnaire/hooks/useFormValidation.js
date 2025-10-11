@@ -76,8 +76,17 @@ export const useFormValidation = () => {
     isUploading = false,
     photoIdAcknowledged = false
   ) => {
+    // For health care team questions page
+    if (currentPage === 34) {
+      const validationRule = VALIDATION_RULES[currentPage];
+      if (validationRule && !validationRule(formData)) {
+        return showErrorMessage("Please complete all required fields");
+      }
+      return true;
+    }
+
     // For photo ID upload page
-    if (currentPage === 35) {
+    if (currentPage === 36) {
       if (!photoIdFile) {
         return showErrorMessage("Please upload a photo ID");
       }
@@ -87,7 +96,7 @@ export const useFormValidation = () => {
       return true;
     }
 
-    if (currentPage === 34) {
+    if (currentPage === 35) {
       if (!photoIdAcknowledged) {
         return showErrorMessage(
           "Please acknowledge the ID verification requirement"
@@ -96,10 +105,7 @@ export const useFormValidation = () => {
       return true;
     }
 
-    if (currentPage === 36) {
-      if (!formData.calendly_booking_completed) {
-        return showErrorMessage("Please schedule an appointment to proceed");
-      }
+    if (currentPage === 37) {
       return true;
     }
 

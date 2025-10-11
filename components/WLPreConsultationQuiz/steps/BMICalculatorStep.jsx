@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { logger } from "@/utils/devLogger";
 
 const BMICalculatorStep = ({
   userData,
@@ -27,9 +28,9 @@ const BMICalculatorStep = ({
 
     const heightInInches = feetNum * 12 + inchesNum;
     const calculatedBmi = (weightNum / (heightInInches * heightInInches)) * 703;
-    // console.log(heightFeet, heightInches);
-    // console.log(weightPounds);
-    // console.log(calculatedBmi);
+    // logger.log(heightFeet, heightInches);
+    // logger.log(weightPounds);
+    // logger.log(calculatedBmi);
 
     setUserData((prev) => ({ ...prev, bmi: calculatedBmi.toFixed(2) }));
 

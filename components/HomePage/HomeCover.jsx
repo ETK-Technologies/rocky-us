@@ -10,39 +10,38 @@ const coverCards = [
     link: "/sex",
   },
   {
-    title: "Body Optimization",
+    title: "Weight Loss",
     description: "Better Wellness, Through Science",
     image:
       "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/New%20Home%20Page/hero-2.webp",
     link: "/body-optimization",
   },
-  // {
-  //   title: "Mental Health",
-  //   description: "Your Mental Health Matters",
-  //   image:
-  //     "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/New%20Home%20Page/hero-3.webp",
-  //   link: "/mental-health",
-  // },
+  {
+    title: "Mental Health",
+    description: "Your Mental Health Matters",
+    image:
+      "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/New%20Home%20Page/hero-3.webp",
+    link: "/mental-health",
+  },
   {
     title: "Hair Loss",
     description: "Stop Hair Loss In Its Tracks",
     image:
       "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/New%20Home%20Page/hero-4.webp",
-    // link: "/hair",
-    link: "/product/finasteride-minoxidil-topical-foam/",
+    link: "/hairloss",
   },
-  // {
-  //   title: "Smoking Cessation",
-  //   description: "A New Way To Quit",
-  //   image: "/zonic/zonnic-cover.png",
-  //   link: "/product/zonnic",
-  // },
-  // {
-  //   title: "Recovery",
-  //   description: "A Smarter Way To Recover",
-  //   image: "https://myrocky.b-cdn.net/WP%20Images/dhm/DHMBlendPP.png?v=1",
-  //   link: "/product/dhm-blend",
-  // },
+  {
+    title: "Smoking Cessation",
+    description: "A New Way To Quit",
+    image: "/zonic/zonnic-cover.png",
+    link: "/product/zonnic",
+  },
+  {
+    title: "Recovery",
+    description: "A Smarter Way To Recover",
+    image: "https://myrocky.b-cdn.net/WP%20Images/dhm/DHMBlendPP.png?v=1",
+    link: "/product/dhm-blend",
+  },
 ];
 
 const HomeCover = () => {
@@ -58,7 +57,7 @@ const HomeCover = () => {
         Finding your perfect treatment can be hard; our process makes it easy.
       </p>
 
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-4 my-8 lg:my-14 max-w-4xl mx-auto">
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-2 lg:gap-4 my-8 lg:my-14">
         {coverCards &&
           coverCards.map((card) => {
             return (

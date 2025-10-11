@@ -1,5 +1,6 @@
 // Create a utility file for ED cart functions
 import { toast } from "react-toastify";
+import { logger } from "@/utils/devLogger";
 
 /**
  * Add ED product to cart directly using API
@@ -33,7 +34,7 @@ export const addEdProductToCart = async (productOptions, dosage) => {
         productOptions.preference === "brand" ? "Brand" : "Generic";
     }
 
-    console.log("Adding ED product to cart:", requestBody);
+    logger.log("Adding ED product to cart:", requestBody);
 
     // Make the API call to add the item to cart
     const response = await fetch("/api/cart/add-item", {
@@ -46,12 +47,12 @@ export const addEdProductToCart = async (productOptions, dosage) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Error adding product to cart:", errorText);
+      logger.error("Error adding product to cart:", errorText);
       throw new Error(`Failed to add product to cart: ${response.statusText}`);
     }
 
     const result = await response.json();
-    console.log("Product added to cart:", result);
+    logger.log("Product added to cart:", result);
 
     // Show success message
     toast.success("Product added to cart");
@@ -61,7 +62,7 @@ export const addEdProductToCart = async (productOptions, dosage) => {
       result,
     };
   } catch (error) {
-    console.error("Error in addEdProductToCart:", error);
+    logger.error("Error in addEdProductToCart:", error);
 
     // Show error message
     toast.error("Failed to add product to cart. Please try again.");
@@ -111,7 +112,7 @@ export const handleEdProductCheckout = async (productOptions, dosage) => {
       };
     }
   } catch (error) {
-    console.error("Error in handleEdProductCheckout:", error);
+    logger.error("Error in handleEdProductCheckout:", error);
     return {
       success: false,
       error: error.message,
@@ -143,7 +144,7 @@ export const buildEdCheckoutUrl = (
   }
 
   if (!mainProductId) {
-    console.error(
+    logger.error(
       "Error: No valid product ID found for main product",
       mainProduct
     );
@@ -199,6 +200,6 @@ export const buildEdCheckoutUrl = (
     }
   });
 
-  console.log("Generated ED checkout URL:", finalUrl);
+  logger.log("Generated ED checkout URL:", finalUrl);
   return finalUrl;
 };

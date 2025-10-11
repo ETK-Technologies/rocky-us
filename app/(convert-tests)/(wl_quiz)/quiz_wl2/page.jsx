@@ -1,5 +1,6 @@
 "use client";
 
+import { logger } from "@/utils/devLogger";
 import BO3MoneyBack from "@/components/convert_test/BO3/BO3MoneyBack";
 import RockyDifference from "@/components/convert_test/BO3/RockyDifference";
 import { useCallback, useRef, useState } from "react";
@@ -36,9 +37,12 @@ const Questions = [
     id: 3,
     title: "Which weight loss medications are you interested in?",
     options: [
-      { id: "Compounded", label: "Compounded semaglutide injection" },
-      { id: "GLP-1", label: "GLP-1 injections (Ozempic®, Wegovy®)" },
-      { id: "I", label: "I want a provider recommendation" },
+      { id: "glp-1", label: "GLP-1 injections" },
+      { id: "oral", label: "Oral Medication, no injections" },
+      {
+        id: "provide_recommendation",
+        label: "I want a provider recommendation",
+      },
     ],
   },
   {
@@ -78,7 +82,7 @@ const WeightLossProgramItems = [
   {
     id: "4",
     time: "",
-    title: "Fits your schedulen",
+    title: "Fits your schedule",
     description:
       "Traditional weight loss demands your life revolve around it. Our approach integrates seamlessly into your existing routine, with treatment plans and check-ins that adapt to your schedule, rather than the othey way around it.",
   },
@@ -96,7 +100,8 @@ const loseUpItems = [
     id: "2",
     time: "Step 2",
     title: "Take a lab test",
-    description: "",
+    description:
+      "If you're a candidate for treatment, our clinician will provide you with the appropriate lab requisition or alternatively you can provide us with recent results.",
   },
   {
     id: "3",
@@ -109,7 +114,8 @@ const loseUpItems = [
     id: "4",
     time: "Step 4",
     title: "Ongoing care & support",
-    description: "",
+    description:
+      "You'll have access to your clinician and the pharmacy team at all times should you have any questions.",
   },
 ];
 
@@ -124,7 +130,7 @@ export default function QuizWL2() {
 
     const nextQuestionId = parseInt(questionId) + 1;
 
-    console.log("Next Question ID:", nextQuestionId);
+    logger.log("Next Question ID:", nextQuestionId);
     if (nextQuestionId <= Questions.length) {
       const nextQuestion = document.getElementById(
         `question-${nextQuestionId}`
@@ -147,6 +153,8 @@ export default function QuizWL2() {
         total_questions={Questions.length}
         answers={answers}
         onOptionSelect={handleOptionSelect}
+        hero_title="Lose Weight Smarter, Not Harder"
+        hero_description="Personalized weight loss plans that fit your goals and busy routine."
       />
       {Questions.slice(1).map((question, index) => (
         <Section key={question.id}>

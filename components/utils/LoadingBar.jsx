@@ -3,6 +3,8 @@
 import { useState, useEffect, Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
+let isEDQuizPage = false;
+
 function LoadingBarContent() {
   const [loading, setLoading] = useState(false);
   const [showLoader, setShowLoader] = useState(false);
@@ -12,6 +14,11 @@ function LoadingBarContent() {
   useEffect(() => {
     let timeoutId;
     let delayLoaderTimeout;
+
+    isEDQuizPage = pathname.startsWith("/ed-consultation-quiz");
+    if (isEDQuizPage) {
+      return;
+    }
 
     // Start loading when route changes
     setLoading(true);
@@ -35,6 +42,10 @@ function LoadingBarContent() {
       clearTimeout(delayLoaderTimeout);
     };
   }, [pathname, searchParams]);
+
+  if (isEDQuizPage) {
+    return null;
+  }
 
   if (!showLoader) return null;
 

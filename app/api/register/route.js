@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import axios from "axios";
 import { cookies } from "next/headers";
+import { logger } from "@/utils/devLogger";
 
 const BASE_URL = process.env.BASE_URL;
 
@@ -94,7 +95,7 @@ export async function POST(req) {
           );
         }
       } catch (err) {
-        console.log("Error checking email:", err);
+        logger.log("Error checking email:", err);
         // Continue even if email check fails
       }
 
@@ -178,7 +179,7 @@ export async function POST(req) {
           gender: gender || "",
         };
 
-        console.log("Registering user with new WordPress endpoint");
+        logger.log("Registering user with new WordPress endpoint");
 
         const response = await axios.post(
           `${BASE_URL}/wp-json/custom/v1/register`,
@@ -217,10 +218,19 @@ export async function POST(req) {
         cookieStore.set("phone", phone);
         cookieStore.set("DOB", date_of_birth);
 
+        // Set cart nonce if provided in the response
+        if (response.data.nonce) {
+          cookieStore.set("cart-nonce", response.data.nonce);
+          logger.log(
+            "Set cart-nonce cookie after registration:",
+            response.data.nonce
+          );
+        }
+
         // Verify that the userId was stored successfully
         const storedUserId = cookieStore.get("userId");
         if (!storedUserId || storedUserId.value !== userId.toString()) {
-          console.error("Failed to store userId in cookies");
+          logger.error("Failed to store userId in cookies");
           return NextResponse.json(
             {
               success: false,
@@ -238,11 +248,12 @@ export async function POST(req) {
             first_name,
             last_name,
             email,
+            response: response.data,
           },
           cookieVerified: true,
         });
       } catch (error) {
-        console.error(
+        logger.error(
           "Error registering user with WordPress endpoint:",
           error.response?.data || error.message
         );
@@ -277,7 +288,7 @@ export async function POST(req) {
       { status: 400 }
     );
   } catch (error) {
-    console.error(
+    logger.error(
       "Error registering user:",
       error.response?.data || error.message
     );

@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { logger } from "@/utils/devLogger";
 import React from "react";
+import { useRouter } from "next/navigation";
 import { ProgressBar } from "../EdQuestionnaire/ProgressBar";
 import { QuestionLayout } from "../EdQuestionnaire/QuestionLayout";
 import { QuestionOption } from "../EdQuestionnaire/QuestionOption";
@@ -15,7 +17,7 @@ import {
   handleEdProductCheckout,
   buildEdCheckoutUrl,
 } from "@/utils/edCartHandler";
-import { addToCartAndRedirect } from "@/utils/crossSellCheckout";
+import { addToCartEarly, finalizeFlowCheckout } from "@/utils/flowCartHandler";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -27,6 +29,7 @@ import {
 import FaqsSection from "../FaqsSection";
 
 const EDPreConsultationQuiz = () => {
+  const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
   const [answers, setAnswers] = useState({});
   const [error, setError] = useState("");
@@ -41,6 +44,7 @@ const EDPreConsultationQuiz = () => {
   const [showCrossSellModal, setShowCrossSellModal] = useState(false);
   const [isBackNavigation, setIsBackNavigation] = useState(false);
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
+  const [initialCartData, setInitialCartData] = useState(null);
 
   const maxPage = 6;
   const progress = Math.max(10, Math.ceil((currentPage / maxPage) * 100));
@@ -80,7 +84,7 @@ const EDPreConsultationQuiz = () => {
           : null;
       setSelectedDose(defaultDose);
       setShowDosagePopup(true);
-      // console.log("selectd dose", selectedDose);
+      // logger.log("selectd dose", selectedDose);
     }
   };
 
@@ -92,40 +96,27 @@ const EDPreConsultationQuiz = () => {
     }));
   };
 
-  const handleCheckout = async (addons = []) => {
-    setIsCheckoutLoading(true);
-    setShowCrossSellModal(false);
-
+  const handleCheckout = async () => {
     try {
-      console.log("ED PreConsultation checkout with addons:", addons);
-      // Instead of using hardcoded product IDs, use the actual variationId from selectedProductOptions
-      let productId = "";
+      logger.log(
+        "🎯 ED PreConsultation - Proceeding to checkout (cart already populated)"
+      );
 
-      if (selectedProductOptions && selectedProductOptions.variationId) {
-        // Use the correct variation ID from the selected product options
-        productId = selectedProductOptions.variationId;
-      } else {
-        // Fallback in case variationId is not available
-        console.error(
-          "Error: No variation ID found in selected product options",
-          selectedProductOptions
-        );
-        setError("Product selection error. Please try again.");
-        setIsCheckoutLoading(false);
-        return;
-      }
-      const mainProduct = {
-        id: productId,
-        name: selectedProduct?.name,
-        price: selectedProductOptions?.price || 0,
-        isSubscription: selectedProductOptions?.frequency === "monthly-supply",
-      };
-      console.log("ED PreConsultation main product:", mainProduct);
-      console.log("ED PreConsultation addons:", addons);
-      // Use the centralized addToCartAndRedirect function
-      addToCartAndRedirect(mainProduct, addons, "ed");
+      // Start loading state
+      setIsCheckoutLoading(true);
+
+      // Product and any addons are already in cart
+      // Just generate checkout URL and redirect
+      const checkoutUrl = finalizeFlowCheckout("ed", true);
+
+      logger.log("Redirecting to:", checkoutUrl);
+
+      // Close modal and navigate on success
+      setShowCrossSellModal(false);
+      setIsCheckoutLoading(false);
+      window.location.href = checkoutUrl;
     } catch (error) {
-      console.error("Error during ED PreConsultation checkout:", error);
+      logger.error("Error during ED PreConsultation checkout:", error);
       setError("An unexpected error occurred. Please try again.");
       setIsCheckoutLoading(false);
     }
@@ -270,7 +261,11 @@ const EDPreConsultationQuiz = () => {
   if (showProducts && recommendedProduct) {
     return (
       <div className="flex flex-col min-h-screen bg-white subheaders-font font-medium">
-        <ToastContainer position="top-center" />
+        <ToastContainer
+          position="top-center"
+          pauseOnHover={false}
+          style={{ zIndex: 9999 }}
+        />
         <QuestionnaireNavbar
           onBackClick={handleBackClick}
           currentPage={currentPage}
@@ -353,21 +348,124 @@ const EDPreConsultationQuiz = () => {
                 selectedDose={selectedDose}
                 setSelectedDose={handleDoseSelect}
                 handleBackClick={handleBackClick}
-                onContinue={() => {
+                isLoading={isCheckoutLoading}
+                onContinue={async () => {
                   if (selectedDose) {
-                    setShowDosagePopup(false);
-                    // Only open cross-sell modal if we have valid product options with a variationId
-                    if (
-                      selectedProductOptions &&
-                      selectedProductOptions.variationId
-                    ) {
-                      setShowCrossSellModal(true);
-                    } else {
-                      console.error(
-                        "Cannot proceed to cross-sell: Missing variation ID",
-                        selectedProductOptions
+                    // Set loading state to show spinner in button
+                    setIsCheckoutLoading(true);
+
+                    // Small delay to ensure UI updates
+                    await new Promise((resolve) => setTimeout(resolve, 150));
+
+                    try {
+                      // Validate product options
+                      if (
+                        !selectedProductOptions ||
+                        !selectedProductOptions.variationId
+                      ) {
+                        logger.error(
+                          "Cannot proceed: Missing variation ID",
+                          selectedProductOptions
+                        );
+                        setError("Product selection error. Please try again.");
+                        setIsCheckoutLoading(false);
+                        return;
+                      }
+
+                      const productId = selectedProductOptions.variationId;
+
+                      // Check if this is a variety pack product
+                      const isVarietyPack = productId.includes(",");
+                      let varietyPackId = null;
+
+                      if (isVarietyPack) {
+                        varietyPackId = `variety_pack_${Date.now()}_${Math.random()
+                          .toString(36)
+                          .substr(2, 9)}`;
+                        logger.log(
+                          `Detected variety pack product with ID: ${varietyPackId}`
+                        );
+                      }
+
+                      // Create main product data
+                      const mainProduct = {
+                        id: productId,
+                        name: selectedProduct?.name,
+                        price: selectedProductOptions?.price || 0,
+                        image: selectedProduct?.image,
+                        isSubscription:
+                          selectedProductOptions?.frequency ===
+                          "monthly-supply",
+                        variationId: productId,
+                        isVarietyPack: isVarietyPack,
+                        varietyPackId: varietyPackId,
+                        // Add variation data for display
+                        variation: [
+                          {
+                            attribute: "Subscription Type",
+                            value:
+                              selectedProductOptions?.frequency ===
+                              "monthly-supply"
+                                ? "Monthly Supply"
+                                : "Quarterly Supply",
+                          },
+                          {
+                            attribute: "Tabs frequency",
+                            value: `${selectedProductOptions?.pillCount || 8} ${
+                              selectedProduct?.selectedPreference === "brand"
+                                ? "(Brand)"
+                                : "(Generic)"
+                            }`,
+                          },
+                        ],
+                      };
+
+                      logger.log(
+                        "🛒 ED PreConsultation - Adding product to cart early:",
+                        mainProduct
                       );
-                      setError("Product selection error. Please try again.");
+
+                      // Add product to cart early (before cross-sell popup)
+                      const result = await addToCartEarly(mainProduct, "ed", {
+                        requireConsultation: true,
+                        varietyPackId: varietyPackId,
+                      });
+
+                      if (result.success) {
+                        logger.log(
+                          "✅ Product added to cart, opening cross-sell popup"
+                        );
+                        // Store the cart data to pass to the modal
+                        if (result.cartData) {
+                          setInitialCartData(result.cartData);
+                        }
+
+                        // Close dosage popup
+                        setShowDosagePopup(false);
+
+                        // Small delay before opening cross-sell modal
+                        await new Promise((resolve) =>
+                          setTimeout(resolve, 300)
+                        );
+
+                        setShowCrossSellModal(true);
+                      } else {
+                        logger.error(
+                          "❌ Failed to add product to cart:",
+                          result.error
+                        );
+                        setError(
+                          result.error ||
+                            "Failed to add product to cart. Please try again."
+                        );
+                      }
+                    } catch (error) {
+                      logger.error("Error adding product to cart:", error);
+                      setError(
+                        "There was an issue adding the product to cart. Please try again."
+                      );
+                    } finally {
+                      setIsCheckoutLoading(false);
                     }
                   }
                 }}
@@ -403,6 +501,7 @@ const EDPreConsultationQuiz = () => {
                 }}
                 onCheckout={handleCheckout}
                 isLoading={isCheckoutLoading}
+                initialCartData={initialCartData}
               />
             )}
 
@@ -444,7 +543,30 @@ const EDPreConsultationQuiz = () => {
       className="flex flex-col min-h-screen bg-white subheaders-font font-medium"
       suppressHydrationWarning={true}
     >
-      <ToastContainer position="top-center" />
+      <ToastContainer
+        position="top-center"
+        pauseOnHover={false}
+        style={{ zIndex: 9999 }}
+      />
+
+      {/* Loading overlay during transition between dosage popup and cross-sell */}
+      {isCheckoutLoading && !showDosagePopup && !showCrossSellModal && (
+        <div className="fixed inset-0 z-[9999999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-8 shadow-2xl flex flex-col items-center space-y-4 max-w-sm mx-4">
+            <div className="relative w-16 h-16">
+              <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
+              <div className="absolute inset-0 border-4 border-t-[#704e37] rounded-full animate-spin"></div>
+            </div>
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Preparing your order...
+              </h3>
+              <p className="text-sm text-gray-600">Just a moment</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <QuestionnaireNavbar
         onBackClick={handleBackClick}
         currentPage={currentPage}
@@ -643,7 +765,7 @@ const faqs = [
   {
     question: "What is the safest drug for ED?",
     answer:
-      "All medications go through extensive clinical trials and quality checks before getting approved by  FDA. The safety and effectiveness for ED medications is well established, making it an excellent treatment for most men. Our online questionnaire will take into account your personal medical history and determine if these pills are right for you!",
+      "All medications go through extensive clinical trials and quality checks before getting approved by Health Canada. The safety and effectiveness for ED medications is well established, making it an excellent treatment for most men. Our online questionnaire will take into account your personal medical history and determine if these pills are right for you!",
   },
   {
     question: "What is the most effective pill for ED?",
@@ -663,7 +785,7 @@ const faqs = [
   {
     question: "Are ED drugs available OTC?",
     answer:
-      "In United States, erectile dysfunction medications are not available over-the-counter and can only be obtained with a prescription. ED medications that are sold without a prescription is illegal and could potentially result in harm from counterfeit drugs. Rocky provides access to a licensed health care team so you can be certain that you are getting safe and effective care. Through our online platform, you will be guided through a series of medical questions which is then received by a Canadian licensed doctor. They will review this information, and once approved, treatment is delivered straight to your home.",
+      "In Canada, erectile dysfunction medications are not available over-the-counter and can only be obtained with a prescription. ED medications that are sold without a prescription is illegal and could potentially result in harm from counterfeit drugs. Rocky provides access to a licensed health care team so you can be certain that you are getting safe and effective care. Through our online platform, you will be guided through a series of medical questions which is then received by a Canadian licensed doctor. They will review this information, and once approved, treatment is delivered straight to your home.",
   },
   {
     question: "How can I improve my ED?",

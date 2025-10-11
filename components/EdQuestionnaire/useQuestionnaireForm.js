@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
+import { logger } from "@/utils/devLogger";
 
 /**
  * Custom hook to manage questionnaire form state and operations
- * 
+ *
  * @param {Object} initialFormData - Default form data structure
  * @param {String} storageKey - Key used to store form data in localStorage
  * @param {String} storageExpiryKey - Key used to store expiry time in localStorage
@@ -15,7 +16,7 @@ export function useQuestionnaireForm({
   storageKey,
   storageExpiryKey,
   apiEndpoint,
-  formType
+  formType,
 }) {
   const [formData, setFormData] = useState(initialFormData);
   const [progress, setProgress] = useState(10);
@@ -26,14 +27,32 @@ export function useQuestionnaireForm({
     if (storedData) {
       try {
         const parsedData = JSON.parse(storedData);
-        setFormData(parsedData);
+        if (!parsedData || typeof parsedData !== 'object') {
+          logger.warn(`Invalid ${formType} form data structure, clearing localStorage`);
+          localStorage.removeItem(storageKey);
+          localStorage.removeItem(storageExpiryKey);
+          return;
+        }
         
+        setFormData(parsedData);
+
         if (parsedData.page_step) {
-          setCurrentPage(parseInt(parsedData.page_step));
+          const pageStep = parseInt(parsedData.page_step);
+          const maxPages = formType === "hair" ? 20 : 22;
+          if (isNaN(pageStep) || pageStep < 1 || pageStep > maxPages) {
+            logger.warn(`Invalid page number ${pageStep} for ${formType}, resetting to page 1`);
+            setCurrentPage(1);
+            setProgress(0);
+            return;
+          }
+          
+          setCurrentPage(pageStep);
           setProgress(parseInt(parsedData.completion_percentage || 0));
         }
       } catch (error) {
-        console.error(`Error parsing stored ${formType} data:`, error);
+        logger.error(`Error parsing stored ${formType} data:`, error);
+        localStorage.removeItem(storageKey);
+        localStorage.removeItem(storageExpiryKey);
       }
     }
   }, [formType, storageKey, storageExpiryKey]);
@@ -43,8 +62,8 @@ export function useQuestionnaireForm({
    * @returns {String|null} Stored form data or null if expired/not found
    */
   const readLocalStorage = () => {
-    if (typeof window === 'undefined') return null;
-    
+    if (typeof window === "undefined") return null;
+
     const now = new Date();
     const ttl = localStorage.getItem(storageExpiryKey);
 
@@ -54,7 +73,7 @@ export function useQuestionnaireForm({
       localStorage.removeItem(storageKey);
       localStorage.removeItem(storageExpiryKey);
     }
-    
+
     return null;
   };
 
@@ -64,17 +83,17 @@ export function useQuestionnaireForm({
    * @returns {Boolean} Success indicator
    */
   const updateLocalStorage = (dataToStore = formData) => {
-    if (typeof window === 'undefined') return false;
-    
+    if (typeof window === "undefined") return false;
+
     const now = new Date();
-    const ttl = now.getTime() + (1000 * 60 * 60);
-    
+    const ttl = now.getTime() + 1000 * 60 * 60;
+
     try {
       localStorage.setItem(storageKey, JSON.stringify(dataToStore));
       localStorage.setItem(storageExpiryKey, ttl.toString());
       return true;
     } catch (error) {
-      console.error(`Error storing ${formType} data in local storage:`, error);
+      logger.error(`Error storing ${formType} data in local storage:`, error);
       return false;
     }
   };
@@ -100,59 +119,72 @@ export function useQuestionnaireForm({
     try {
       const essentialData = {
         form_id: formData.form_id,
-        action: formType === 'hair' ? 'hair_questionnaire_data_upload' : 'ed_questionnaire_data_upload',
-        [formType === 'hair' ? 'hair_entrykey' : 'entrykey']: formData[formType === 'hair' ? 'hair_entrykey' : 'entrykey'] || '',
-        id: formData.id || '',
-        token: formData.token || '',
-        stage: formData.stage || 'consultation-after-checkout',
+        action:
+          formType === "hair"
+            ? "hair_questionnaire_data_upload"
+            : "ed_questionnaire_data_upload",
+        [formType === "hair" ? "hair_entrykey" : "entrykey"]:
+          formData[formType === "hair" ? "hair_entrykey" : "entrykey"] || "",
+        id: formData.id || "",
+        token: formData.token || "",
+        stage: formData.stage || "consultation-after-checkout",
         page_step: currentPage,
-        completion_state: formData.completion_state || 'Partial',
+        completion_state: formData.completion_state || "Partial",
         completion_percentage: progress,
-        source_site: formData.source_site || 'https://myrocky.ca'
+        source_site: formData.source_site || "https://myrocky.ca",
       };
 
       const userInfo = {
-        '130_3': formData['130_3'] || '',
-        '130_6': formData['130_6'] || '',
-        '131': formData['131'] || '',
-        '132': formData['132'] || '',
-        '158': formData['158'] || '',
-        '161_4': formData['161_4'] || '',
-        'selected-dosage': formData['selected-dosage'] || ''
+        "130_3": formData["130_3"] || "",
+        "130_6": formData["130_6"] || "",
+        131: formData["131"] || "",
+        132: formData["132"] || "",
+        158: formData["158"] || "",
+        "161_4": formData["161_4"] || "",
+        "selected-dosage": formData["selected-dosage"] || "",
       };
 
       const allFormData = {};
       for (const [key, value] of Object.entries(formData)) {
-        if (value !== undefined && value !== null && value !== '') {
+        if (value !== undefined && value !== null && value !== "") {
           allFormData[key] = value;
         }
       }
 
-      const dataToSubmit = specificData ? {...allFormData, ...specificData} : allFormData;
+      const dataToSubmit = specificData
+        ? { ...allFormData, ...specificData }
+        : allFormData;
 
       const response = await fetch(apiEndpoint, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           ...essentialData,
           ...userInfo,
-          ...dataToSubmit
+          ...dataToSubmit,
         }),
-        credentials: 'include'
+        credentials: "include",
       });
 
       const data = await response.json();
 
       if (data.error) {
-        console.error("Form submission error:", data.msg || data.error_message);
-        
+        logger.error("Form submission error:", data.msg || data.error_message);
+
         if (data.data_not_found) {
-          alert('An error has been encountered while processing your data. If your session has expired, you will be asked to login again.');
-          window.location.href = `https://myrocky.ca/${formType === 'hair' ? 'hair-main-questionnaire' : 'ed-consultation-quiz'}/?stage=${data.redirect_to_stage}`;
+          alert(
+            "An error has been encountered while processing your data. If your session has expired, you will be asked to login again."
+          );
+          const redirectStage = data.redirect_to_stage || "consultation-after-checkout";
+          window.location.href = `/${
+            formType === "hair"
+              ? "hair-main-questionnaire"
+              : "ed-consultation-quiz"
+          }/?stage=${redirectStage}`;
         }
-        
+
         return null;
       }
 
@@ -160,22 +192,22 @@ export function useQuestionnaireForm({
         ...formData,
         id: data.id || formData.id,
         token: data.token || formData.token,
-        [formType === 'hair' ? 'hair_entrykey' : 'entrykey']: 
-          data[formType === 'hair' ? 'hair_entrykey' : 'entrykey'] || 
-          formData[formType === 'hair' ? 'hair_entrykey' : 'entrykey']
+        [formType === "hair" ? "hair_entrykey" : "entrykey"]:
+          data[formType === "hair" ? "hair_entrykey" : "entrykey"] ||
+          formData[formType === "hair" ? "hair_entrykey" : "entrykey"],
       };
 
       setFormData(updatedFormData);
       updateLocalStorage(updatedFormData);
 
-      if (formData.completion_state === 'Full') {
-        setCurrentPage(formType === 'hair' ? 20 : 22);
+      if (formData.completion_state === "Full") {
+        setCurrentPage(formType === "hair" ? 20 : 22);
         setProgress(100);
       }
 
       return data;
     } catch (error) {
-      console.error('Error submitting form:', error);
+      logger.error("Error submitting form:", error);
       return null;
     }
   };
@@ -192,7 +224,7 @@ export function useQuestionnaireForm({
     const updatedData = {
       ...formData,
       completion_percentage: progressValue,
-      page_step: currentPage
+      page_step: currentPage,
     };
 
     setFormData(updatedData);
@@ -213,6 +245,6 @@ export function useQuestionnaireForm({
     readLocalStorage,
     updateLocalStorage,
     submitFormData,
-    updateProgressData
+    updateProgressData,
   };
 }

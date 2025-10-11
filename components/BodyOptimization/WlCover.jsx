@@ -18,7 +18,7 @@ const items = [
 ];
 const wlCoverData = {
   proudPartner: true,
-  title: "Trusted by 300,000+ Users",
+  title: "Trusted by 300,000+ Canadians",
   subtitle: "Your Health Journey Simplified with a Prescription",
   image: "https://myrocky.b-cdn.net/WP%20Images/Weight%20Loss/new-hero.webp",
   imageHeight: "md:h-[520px]",
@@ -36,8 +36,8 @@ const wlCoverData = {
   ],
 };
 
-const WlCover = ({btnColor = null}) => {
-  if(btnColor) wlCoverData.buttons[0].color = btnColor;
+const WlCover = ({ btnColor = null }) => {
+  if (btnColor) wlCoverData.buttons[0].color = btnColor;
   return (
     <>
       <PageCover data={wlCoverData} items={items} />

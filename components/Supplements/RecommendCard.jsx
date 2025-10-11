@@ -6,6 +6,9 @@ import CustomImage from "../utils/CustomImage";
 import { FaCheckCircle } from "react-icons/fa";
 
 const RecommendCard = ({ product }) => {
+  const [showTooltip, setShowTooltip] = useState(false);
+  const toggleTooltip = () => setShowTooltip(!showTooltip);
+
   // Extract product data with fallbacks (updated for new API structure)
   const productName = product?.name || "Product";
   const productImage = product?.images?.[0]?.src || "/supplements/product.png";
@@ -61,32 +64,41 @@ const RecommendCard = ({ product }) => {
   const productDescription = getProductBenefits();
 
   return (
-    <div className="bg-[#F6F6F5] relative rounded-2xl p-6 border-[0.5px] border-[#E2E2E1] w-[280px] h-[480px] flex-shrink-0 flex flex-col">
-      <div className="text-center">
-        <CustomImage
-          src={productImage}
-          width={200}
-          height={200}
-          className="w-[150px] h-[150px] lg:w-[200px] lg:h-[200px] rounded-full mx-auto mb-[16px]"
-          alt={productName}
-        />
+    <div className="bg-[#F6F6F5] relative rounded-2xl border-[0.5px] border-[#E2E2E1] min-w-[270px] max-w-[270px] md:min-w-[282px] md:max-w-[282px] min-h-[400px] max-h-[400px] md:min-h-[440px] md:max-h-[440px] flex-shrink-0 flex flex-col  pt-[32px] px-[24px] pb-[24px] ">
+      <CustomImage
+        src={productImage}
+        width={200}
+        height={200}
+        className="w-[150px] h-[150px] md:w-[200px] md:h-[200px] rounded-full mx-auto mb-[10px]"
+        alt={productName}
+      />
+      <div className="relative w-full ">
+        <h2
+          onClick={toggleTooltip}
+          onMouseEnter={() => setShowTooltip(true)}
+          onMouseLeave={() => setShowTooltip(false)}
+          className="overflow-hidden text-ellipsis  cursor-help font-[550]  headers-font text-[15px] lg:text-[20px] leading-[110%] tracking-[-2%] mb-[6px] line-clamp-2"
+        >
+          {productName}
+        </h2>
+        {/* Tooltip */}
+        {showTooltip && (
+          <div className="absolute top-full left-0 z-10 mt-1 w-fit bg-black text-white text-xs p-2 rounded shadow-md">
+            {productName}
+          </div>
+        )}
       </div>
-
-      <h2 className="font-[550] headers-font  text-[17px] lg:text-[20px] leading-[110%] tracking-[-2%] mb-[16px]">
-        {productName}
-      </h2>
-
       {/* Description - flex-grow to take up available space */}
-      <div className="mb-[24px] flex-grow">
+      <div className="my-[10px] mb-[24px]">
         {productDescription.map((desc, index) => (
           <div
             key={index}
-            className="flex gap-[8px] justify-start items-center mb-2"
+            className="flex  justify-start items-center gap-[6px] mb-[8px]"
           >
-            <FaCheckCircle className="text-[#AE7E56] text-[14px] flex-shrink-0" />
-            <div>
-              <span className="font-[POPPINS] text-[14px]">{desc}</span>
-            </div>
+            <FaCheckCircle className="text-[#AE7E56] text-[12px] flex-shrink-0" />
+            <span className="overflow-hidden text-ellipsis font-[POPPINS] text-[12px] lg:text-[14px] font-normal tracking-[0px] leading-[100%] line-clamp-1">
+              {desc}
+            </span>
           </div>
         ))}
       </div>
@@ -94,12 +106,12 @@ const RecommendCard = ({ product }) => {
       {/* View Product Button - always at bottom */}
       <Link
         href={productLink}
-        className="bg-white absolute mx-auto left-[5%] w-[90%] bottom-[15px]  p-3 rounded-full flex justify-between hover:bg-gray-50 transition-colors"
+        className="group bg-white w-full py-3 px-6 rounded-full flex justify-between hover:bg-black hover:text-white transition-colors"
       >
-        <span className="font-[POPPINS] font-semibold text-[14px] lg:text-[16px] text-[#000000]">
+        <span className="font-[POPPINS] font-semibold text-[13px] lg:text-[15px] text-[#000000] group-hover:text-white">
           View
         </span>
-        <span className="font-[POPPINS] font-semibold text-[14px] lg:text-[16px] text-[#000000]">
+        <span className="font-[POPPINS] font-semibold text-[13px] lg:text-[15px] text-[#000000] group-hover:text-white">
           $
           {typeof productPrice === "number"
             ? productPrice.toFixed(2)

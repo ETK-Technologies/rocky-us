@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import axios from "axios";
 import { cookies } from "next/headers";
+import { logger } from "@/utils/devLogger";
 
 const BASE_URL = process.env.BASE_URL;
 
@@ -23,7 +24,7 @@ export async function POST(req) {
       }
     );
 
-    console.log("Login response:", response.data);
+    logger.log("Login response:", response.data);
 
     const { token } = response.data;
 
@@ -94,7 +95,7 @@ export async function POST(req) {
     // Verify the cookies were set correctly
     const storedUserId = cookieStore.get("userId");
     if (!storedUserId || storedUserId.value !== userId) {
-      console.error("Failed to store userId in cookies");
+      logger.error("Failed to store userId in cookies");
       return NextResponse.json(
         {
           error: "Failed to store user session. Please try again.",
@@ -109,14 +110,27 @@ export async function POST(req) {
       userDisplayName: firstName || userDisplayName.split(" ")[0],
     });
   } catch (error) {
-    console.error("Error logging in:", error.response?.data || error.message);
+    logger.error("Error logging in:", error.response?.data || error.message);
+
+    // Check for authentication-related error codes from WordPress
+    const errorCode = error.response?.data?.code;
+    const isAuthError =
+      errorCode === "incorrect_password" ||
+      errorCode === "invalid_email" ||
+      errorCode === "invalid_username" ||
+      errorCode === "[jwt_auth] invalid_username" ||
+      errorCode === "[jwt_auth] incorrect_password";
+
+    // Use 401 for authentication errors, otherwise use response status or 500
+    const statusCode = isAuthError ? 401 : error.response?.status || 500;
 
     return NextResponse.json(
       {
         error:
           error.response?.data?.message || "Login failed. Please try again.",
+        code: errorCode, // Include the error code for frontend handling
       },
-      { status: error.response?.status || 500 }
+      { status: statusCode }
     );
   }
 }

@@ -1,15 +1,14 @@
 import Link from "next/link";
 import Logo from "../Navbar/Logo";
 
-const QuestionnaireNavbar = ({ onBackClick, currentPage }) => {
+const QuestionnaireNavbar = ({ onBackClick, currentPage, hideBackButton = false }) => {
   const isThankYouPage = currentPage === 22;
-  const showBackButton = currentPage > 1 && !isThankYouPage;
+  const showBackButton = currentPage > 1 && !isThankYouPage && !hideBackButton;
 
   return (
     <header
-      className={`questionnaire-header w-full py-2 relative  ${
-        isThankYouPage ? "bg-transparent z-10" : ""
-      }`}
+      className={`questionnaire-header w-full py-2 relative  ${isThankYouPage ? "bg-transparent z-10" : ""
+        }`}
       suppressHydrationWarning={true}
     >
       <div className="w-full md:w-[520px] mx-auto px-5 md:px-0 relative h-[40px] flex items-center">
@@ -47,7 +46,7 @@ const QuestionnaireNavbar = ({ onBackClick, currentPage }) => {
           ) : (
             <button
               onClick={() => (window.location.href = "/")}
-              className="cursor-pointer mr-[18px] md:mr-0"
+              className="cursor-pointer md:mr-0"
               aria-label="Go to home"
             >
               <Logo withLink={false} />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { logger } from "@/utils/devLogger";
 import { ProductImage } from "@/components/Product";
 import { useAddItemToCart } from "@/lib/cart/cartHooks";
 import { useRouter } from "next/navigation";
@@ -24,7 +25,7 @@ const DhmBlendProductDetails = ({ product, variations, isLoading }) => {
   // Initialize product data on load
   useEffect(() => {
     if (!isLoading && product) {
-      console.log("Product loaded:", product);
+      logger.log("Product loaded:", product);
 
       // Extract distinct frequency options from variations
       if (product.variations_data && product.variations_data.length > 0) {
@@ -45,7 +46,7 @@ const DhmBlendProductDetails = ({ product, variations, isLoading }) => {
 
         if (uniqueFrequencies.size > 0) {
           const frequencies = Array.from(uniqueFrequencies);
-          console.log("Found frequency options:", frequencies);
+          logger.log("Found frequency options:", frequencies);
           setFrequencyOptions(frequencies);
 
           // Select the first frequency by default
@@ -64,7 +65,7 @@ const DhmBlendProductDetails = ({ product, variations, isLoading }) => {
   // When frequency changes, update available packs
   useEffect(() => {
     if (!isLoading && product?.variations_data && selectedFrequency) {
-      console.log("Filtering variations for frequency:", selectedFrequency);
+      logger.log("Filtering variations for frequency:", selectedFrequency);
 
       // Filter variations by selected frequency
       const filteredVariations = product.variations_data.filter((variation) => {
@@ -80,7 +81,7 @@ const DhmBlendProductDetails = ({ product, variations, isLoading }) => {
         );
       });
 
-      console.log(
+      logger.log(
         `Found ${filteredVariations.length} variations matching frequency: ${selectedFrequency}`
       );
 
@@ -101,7 +102,7 @@ const DhmBlendProductDetails = ({ product, variations, isLoading }) => {
         if (packAttribute && Array.isArray(packAttribute.options)) {
           // Get all pack options from product attributes
           const packValues = packAttribute.options;
-          console.log("DHM pack options from attributes:", packValues);
+          logger.log("DHM pack options from attributes:", packValues);
 
           // Sort variations by price (low to high)
           filteredVariations.sort(
@@ -119,11 +120,11 @@ const DhmBlendProductDetails = ({ product, variations, isLoading }) => {
                   : null;
 
               if (!matchingVariation) {
-                console.log(`No variation found for pack: ${packValue}`);
+                logger.log(`No variation found for pack: ${packValue}`);
                 return null;
               }
 
-              console.log(
+              logger.log(
                 `Matched ${packValue} with variation ID ${matchingVariation.variation_id}, price: ${matchingVariation.display_price}`
               );
 
@@ -141,7 +142,7 @@ const DhmBlendProductDetails = ({ product, variations, isLoading }) => {
 
       if (packOptions.length === 0 && filteredVariations.length > 0) {
         // Fallback: If we couldn't match by attributes, create pack options based on the variations
-        console.log("Creating pack options directly from variations by price");
+        logger.log("Creating pack options directly from variations by price");
 
         // DHM has 10-pack, 30-pack, and 60-pack options
         const packNames = ["10-pack", "30-pack", "60-pack"];
@@ -165,7 +166,7 @@ const DhmBlendProductDetails = ({ product, variations, isLoading }) => {
         });
       }
 
-      console.log("Final pack options:", packOptions);
+      logger.log("Final pack options:", packOptions);
       setAvailablePacks(packOptions);
 
       // Select first pack by default
@@ -181,7 +182,7 @@ const DhmBlendProductDetails = ({ product, variations, isLoading }) => {
 
   // Handle frequency selection
   const handleFrequencyChange = (frequency) => {
-    console.log("Changing frequency to:", frequency);
+    logger.log("Changing frequency to:", frequency);
     setSelectedFrequency(frequency);
     setSelectedPacks(null);
     setSelectedVariation(null);
@@ -190,7 +191,7 @@ const DhmBlendProductDetails = ({ product, variations, isLoading }) => {
 
   // Handle pack selection - follows the PHP code pattern
   const handlePackSelection = (pack) => {
-    console.log("Selected pack:", pack);
+    logger.log("Selected pack:", pack);
     setSelectedPacks(pack.value);
     setVariationPrice(pack.price);
     setSelectedVariation({
@@ -207,7 +208,7 @@ const DhmBlendProductDetails = ({ product, variations, isLoading }) => {
       setIsAddingToCart(true);
 
       if (!product || !product.id) {
-        console.error("No product ID available for adding to cart");
+        logger.error("No product ID available for adding to cart");
         return;
       }
 
@@ -245,14 +246,14 @@ const DhmBlendProductDetails = ({ product, variations, isLoading }) => {
           product.type === "variable" ||
           product.type === "variable-subscription"
         ) {
-          console.log(
+          logger.log(
             `Variable product detected, using variation ID ${variationId} as productId`
           );
           cartData.productId = variationId;
         }
       }
 
-      console.log("Adding to cart with data:", cartData);
+      logger.log("Adding to cart with data:", cartData);
       await addItemToCart(cartData);
 
       // Refresh the cart in the navbar
@@ -261,7 +262,7 @@ const DhmBlendProductDetails = ({ product, variations, isLoading }) => {
       // Show cart popup
       setShowCartPopup(true);
     } catch (error) {
-      console.error("Error adding item to cart:", error);
+      logger.error("Error adding item to cart:", error);
     } finally {
       setIsAddingToCart(false);
     }
@@ -299,7 +300,7 @@ const DhmBlendProductDetails = ({ product, variations, isLoading }) => {
               dangerouslySetInnerHTML={{
                 __html:
                   product?.description ||
-                  "Science-backed formula with DHM, L-Cysteine, Milk Thistle, Prickly Pear, and Vitamin B Complex. DHM Blend is authorized for sale by  FDA.",
+                  "Science-backed formula with DHM, L-Cysteine, Milk Thistle, Prickly Pear, and Vitamin B Complex. DHM Blend is authorized for sale by Health Canada.",
               }}
             />
           </div>

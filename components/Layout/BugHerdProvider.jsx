@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, createContext, useContext } from 'react';
+import { useEffect, useState, createContext, useContext } from "react";
+import { logger } from "@/utils/devLogger";
 
 // Create a context to make BugHerd user data available throughout the app
 export const BugHerdContext = createContext(null);
@@ -14,33 +15,39 @@ export default function BugHerdProvider({ children }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    // BugHerd provider temporarily disabled
+    // Uncomment the code below to re-enable BugHerd user data fetching
+
+    /*
     // Fetch BugHerd user data when component mounts
-    fetch('https://myrocky.ca/wp-json/custom/v1/bugherd-user')
-      .then(res => {
+    fetch("/api/bugherd-user")
+      .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch BugHerd data");
         return res.json();
       })
-      .then(data => {
+      .then((data) => {
         setUser(data.data);
         setLoading(false);
       })
-      .catch(err => {
-        console.error("BugHerd API error:", err);
+      .catch((err) => {
+        logger.error("BugHerd API error:", err);
         setError(err);
         setLoading(false);
       });
+    */
+
+    // Set loading to false immediately since we're not fetching data
+    setLoading(false);
   }, []);
 
   // Value to be provided to consumers of this context
   const value = {
     user,
     loading,
-    error
+    error,
   };
 
   return (
-    <BugHerdContext.Provider value={value}>
-      {children}
-    </BugHerdContext.Provider>
+    <BugHerdContext.Provider value={value}>{children}</BugHerdContext.Provider>
   );
-} 
+}

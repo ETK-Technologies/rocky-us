@@ -1,64 +1,144 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 
-const WLProductCard = ({ product, isRecommended, onSelect, isSelected }) => {
+const WLProductCard = ({ product, onSelect, isSelected }) => {
+  const [showMobilePopup, setShowMobilePopup] = useState(false);
+
+  useEffect(() => {
+    if (showMobilePopup) {
+      document.body.classList.add("overflow-hidden");
+    } else {
+      document.body.classList.remove("overflow-hidden");
+    }
+    return () => {
+      document.body.classList.remove("overflow-hidden");
+    };
+  }, [showMobilePopup]);
+
   return (
-    <div
-      className={`bg-[#FFFFFF] flex flex-col gap-2 rounded-2xl p-6 
-        ${
-          isSelected
-            ? "border border-[#A7885A]"
-            : "border border-transparent drop-shadow-lg"
-        } 
-         cursor-pointer transition-all duration-200 ease-in-out 
-        hover:shadow-xl hover:scale-[1.01] ${
-          product.supplyAvailable ? "" : "opacity-75"
-        }`}
-      onClick={() => product.supplyAvailable && onSelect && onSelect(product)}
-    >
-      <div className="flex justify-between">
-        {product.supplyAvailable ? (
-          <p className="text-[#047000] w-fit bg-[#D0FDD0] rounded-full py-[2px] px-[10px] font-normal text-sm">
-            Supply available
-          </p>
-        ) : (
-          <p className="text-[#C53030] w-fit bg-red-400 rounded-full py-[2px] px-[10px] font-normal text-sm">
-            Out of stock
-          </p>
-        )}
-        {isSelected && (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6 text-[#A7885A]"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+    <>
+      <div
+        className={`bg-[#FFFFFF] flex flex-col gap-2 rounded-2xl p-6 
+          ${
+            isSelected
+              ? "border border-[#A7885A]"
+              : "border border-transparent drop-shadow-lg"
+          } 
+           cursor-pointer transition-all duration-200 ease-in-out 
+          hover:shadow-xl hover:scale-[1.01] ${
+            product.supplyAvailable ? "" : "opacity-75"
+          }`}
+        onClick={() => product.supplyAvailable && onSelect && onSelect(product)}
+      >
+        <div className="flex justify-between">
+          {product.supplyAvailable ? (
+            <p className="text-[#047000] w-fit bg-[#D0FDD0] rounded-full py-[2px] px-[10px] font-normal text-sm">
+              Supply available
+            </p>
+          ) : (
+            <p className="text-[#C53030] w-fit bg-red-400 rounded-full py-[2px] px-[10px] font-normal text-sm">
+              Out of stock
+            </p>
+          )}
+          {isSelected && (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6 text-[#A7885A]"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          )}
+        </div>
+        <h2 className="text-xl md:text-2xl text-[#000000] font-medium">
+          {product.name}
+          {product.id !== "490537" && (
+            <span className="text-sm md:text-base align-top">®</span>
+          )}
+        </h2>
+        <p className="text-sm md:text-base text-[#212121]">
+          {product.description}
+        </p>
+        <div className="w-full h-full mt-2 relative">
+          <img
+            src={product.url}
+            alt={product.name}
+            className="w-full h-full object-contain rounded-2xl"
+          />
+        </div>
+        <p className="text-sm text-[#212121] mt-1">{product.details}</p>
+
+        {product.id === "490537" && (
+          <p
+            className="text-[#AE7E56] text-sm underline text-center mt-2"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowMobilePopup(true);
+            }}
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
+            See why people are switching to oral.
+          </p>
         )}
-      </div>
-      <h2 className="text-xl md:text-2xl text-[#000000] font-medium">
-        {product.name}
-        <span className="text-sm md:text-base align-top">®</span>
-      </h2>
-      <p className="text-sm md:text-base text-[#212121]">
-        {product.description}
-      </p>
-      <div className="w-full h-full mt-2 relative">
-        <img
-          src={product.url}
-          alt={product.name}
-          className="w-full h-full object-contain rounded-2xl"
-        />
       </div>
 
-      <p className="text-sm text-[#212121] mt-1">{product.details}</p>
-    </div>
+      {showMobilePopup && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center sm:justify-center">
+          <div className="bg-white rounded-t-2xl w-full p-6 pb-10 relative sm:rounded-2xl sm:max-w-2xl sm:w-full sm:pb-6">
+            <div className="flex justify-end items-center mb-2 cursor-pointer">
+              <button
+                className="text-xl bg-[#0000001A] rounded-full px-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowMobilePopup(false);
+                }}
+                aria-label="Close"
+              >
+                &times;
+              </button>
+            </div>
+            <h3 className="text-xl font-medium text-[#000000] mb-2">
+              The 3 Advantages Of Oral Semaglutide
+            </h3>
+            <p className="mb-5 text-[#212121] text-sm ">
+              Oral semaglutide delivers injectable-level results—with none of
+              the needles, and all of the lifestyle benefits.
+            </p>
+            <ol className="list-decimal pl-4 space-y-5">
+              <li className="text-[#212121] text-sm">
+                <span className="font-semibold text-base text-[#212121] ">
+                  Equal Weight Loss Results
+                </span>
+                <br />
+                Sublingual semaglutide delivers weight loss results on par with
+                injections.
+              </li>
+              <li className="text-[#212121] text-sm">
+                <span className="font-semibold text-base text-[#212121]">
+                  Needle-Free Option
+                </span>
+                <br />
+                No injections – Just a quick under-tongue dose any time of the
+                day.
+              </li>
+              <li className="text-[#212121] text-sm">
+                <span className="font-semibold text-base text-[#212121]">
+                  No Refrigeration Needed
+                </span>
+                <br />
+                Room-temperature stable—stash it in a purse, desk, or carry-on
+                with zero cold-chain hassle.
+              </li>
+            </ol>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

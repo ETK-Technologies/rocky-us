@@ -1,21 +1,29 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { logger } from "@/utils/devLogger";
+import { useRouter } from "next/navigation";
 import React from "react";
 import { ProgressBar } from "../EdQuestionnaire/ProgressBar";
 import { QuestionLayout } from "../EdQuestionnaire/QuestionLayout";
 import { QuestionOption } from "../EdQuestionnaire/QuestionOption";
 import QuestionnaireNavbar from "../EdQuestionnaire/QuestionnaireNavbar";
 import { WarningPopup } from "../EdQuestionnaire/WarningPopup";
-import DOBInput from "@/components/DOBInput";
+import DOBInput from "../shared/DOBInput";
+import { addToCartDirectly } from "../../utils/flowCartHandler";
+import { getConsultationProduct } from "../../utils/hairProductsConfig";
 
 const HairPreConsultationQuiz = () => {
+  // Next.js router for navigation
+  const router = useRouter();
+
   const [currentPage, setCurrentPage] = useState(1);
   const [answers, setAnswers] = useState({});
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showProducts, setShowProducts] = useState(false);
   const [recommendedProduct, setRecommendedProduct] = useState(null);
+  const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
   const [dateInput, setDateInput] = useState("");
   const [dateValInput, setDateValInput] = useState("");
   const [age, setAge] = useState(null);
@@ -54,27 +62,31 @@ const HairPreConsultationQuiz = () => {
     }
   };
 
-  const handleDateChange = (newValue) => {
-    setDateValInput(newValue);
-    // Normalize to MM/DD/YYYY for internal validation/age calc
-    let formattedValue = newValue;
-    if (typeof newValue === "string" && newValue.includes("-")) {
-      const parts = newValue.split("-");
-      if (parts.length === 3) {
-        const [year, month, day] = parts;
-        formattedValue = `${month.padStart(2, "0")}/${day.padStart(
-          2,
-          "0"
-        )}/${year}`;
-      }
+  const handleDateChange = (value) => {
+    // DOBInput returns either "YYYY-MM-DD" format (when valid) or "MM/DD/YYYY" format
+    let formattedValue = value;
+
+    // If it's in YYYY-MM-DD format, convert to MM/DD/YYYY
+    if (value && value.includes("-") && value.length === 10) {
+      const [year, month, day] = value.split("-");
+      formattedValue = `${month}/${day}/${year}`;
     }
+
+    setDateValInput(value);
     setDateInput(formattedValue);
+
     if (isValidDate(formattedValue)) {
       const calculatedAge = getAge(formattedValue);
+      logger.log(
+        "Date validation - formattedValue:",
+        formattedValue,
+        "calculatedAge:",
+        calculatedAge
+      );
       setAge(calculatedAge);
 
       if (calculatedAge < minAgeValidity) {
-        setShowUnderagePopup(true); // Show popup for underage
+        setShowUnderagePopup(false); // Show popup for underage only on final validation
       } else if (
         calculatedAge >= minAgeValidity &&
         calculatedAge <= maxAgeValidity
@@ -84,10 +96,33 @@ const HairPreConsultationQuiz = () => {
           158: formattedValue,
         });
       }
+    } else {
+      logger.log("Date validation failed for:", formattedValue);
     }
   };
 
-  const formatDateInput = (value) => value;
+  const formatDateInput = (value) => {
+    const date = new Date(value);
+    const formattedDate = `${(date.getMonth() + 1)
+      .toString()
+      .padStart(2, "0")}/${date
+      .getDate()
+      .toString()
+      .padStart(2, "0")}/${date.getFullYear()}`;
+    return formattedDate;
+
+    // const digits = value.replace(/\D/g, "");
+    // if (digits.length <= 2) {
+    //   return digits;
+    // } else if (digits.length <= 4) {
+    //   return `${digits.substring(0, 2)}/${digits.substring(2)}`;
+    // } else {
+    //   return `${digits.substring(0, 2)}/${digits.substring(
+    //     2,
+    //     4
+    //   )}/${digits.substring(4, 8)}`;
+    // }
+  };
 
   const isValidDate = (dateString) => {
     const regex = /^\d{2}\/\d{2}\/\d{4}$/;
@@ -114,7 +149,14 @@ const HairPreConsultationQuiz = () => {
 
   const getAge = (dateString) => {
     const today = new Date();
-    const birthDate = new Date(dateString);
+
+    // Parse MM/DD/YYYY format properly
+    const parts = dateString.split("/");
+    const month = parseInt(parts[0], 10) - 1; // Month is 0-indexed in JavaScript Date
+    const day = parseInt(parts[1], 10);
+    const year = parseInt(parts[2], 10);
+
+    const birthDate = new Date(year, month, day);
     let age = today.getFullYear() - birthDate.getFullYear();
     const m = today.getMonth() - birthDate.getMonth();
 
@@ -185,7 +227,7 @@ const HairPreConsultationQuiz = () => {
         setRecommendedProduct(null);
         setCurrentPage(5);
 
-        console.log(showProducts);
+        logger.log(showProducts);
       } else {
         setCurrentPage(currentPage - 1);
       }
@@ -216,51 +258,57 @@ const HairPreConsultationQuiz = () => {
   }, [currentPage, cameFromBack]);
 
   const getRecommendedProduct = () => {
-    const hairType = answers[137];
     const resultDesired = answers[138];
 
-    let product = {
-      title: "",
-      image: "",
-      price: "",
-      frequency: "",
-      pills: "",
-      url: "",
-    };
-
-    if (resultDesired === "Regrowing my hair") {
-      product = {
-        title: "2 in 1 Growth Plan",
-        image:
-          "https://myrocky.b-cdn.net/WP%20Images/Questionnaire/FinistridenMinioxidalFoam.png",
-        price: "160",
-        frequency: "2 Months Supply",
-        pills: "Finasteride & Minoxidil Foam",
-        url: "/login-register/?hair-flow=1&onboarding=1&view=account&viewshow=register&onboarding-add-to-cart=96913&consultation-required=1&convert_to_sub_96913=2_month",
-      };
-    } else if (resultDesired === "Preventing future hair loss") {
-      product = {
-        title: "Finasteride (Propecia) Tablets",
-        image:
-          "https://myrocky.b-cdn.net/WP%20Images/Questionnaire/Finastride.png",
-        price: "123.75",
-        frequency: "3 Months supply",
-        pills: "",
-        url: "/login-register/?hair-flow=1&onboarding=1&view=account&viewshow=register&consultation-required=1&convert_to_sub_2838=3_month_24&onboarding-add-to-cart=2838",
-      };
-    } else if (resultDesired === "Both") {
-      product = {
-        title: "2 in 1 Growth Plan",
-        image:
-          "https://myrocky.b-cdn.net/WP%20Images/Questionnaire/FinistridenMinioxidalFoam.png",
-        price: "160",
-        frequency: "2 Months Supply",
-        pills: "Finasteride & Minoxidil Foam",
-        url: "/login-register/?hair-flow=1&onboarding=1&view=account&viewshow=register&onboarding-add-to-cart=96913&consultation-required=1&convert_to_sub_96913=2_month",
-      };
+    try {
+      // Get product from centralized configuration
+      const product = getConsultationProduct(resultDesired);
+      logger.log(
+        `🛒 Hair Consultation - Got product for "${resultDesired}":`,
+        product
+      );
+      return product;
+    } catch (error) {
+      logger.error("Error getting consultation product:", error);
+      // Fallback to default if mapping not found
+      return getConsultationProduct("Regrowing my hair");
     }
+  };
 
-    return product;
+  // Handle checkout with direct cart addition
+  const handleCheckout = async () => {
+    if (!recommendedProduct) return;
+
+    setIsCheckoutLoading(true);
+
+    try {
+      logger.log(
+        "🛒 Hair Pre-Consultation - Recommended Product:",
+        recommendedProduct
+      );
+      const result = await addToCartDirectly(recommendedProduct, [], "hair", {
+        requireConsultation: true,
+        subscriptionPeriod: recommendedProduct.subscriptionPeriod,
+      });
+
+      if (result.success) {
+        logger.log("🎉 Hair Pre-Consultation - SUCCESS! Result:", result);
+
+        // Use Next.js navigation instead of window.location.href
+        window.location.href = result.redirectUrl;
+      } else {
+        logger.error("❌ Hair Pre-Consultation - FAILED! Error:", result.error);
+        alert(
+          result.error ||
+            "There was an issue processing your checkout. Please try again."
+        );
+        setIsCheckoutLoading(false);
+      }
+    } catch (error) {
+      logger.error("Error during hair flow checkout:", error);
+      alert("There was an issue processing your checkout. Please try again.");
+      setIsCheckoutLoading(false);
+    }
   };
 
   if (showProducts && recommendedProduct) {
@@ -305,12 +353,24 @@ const HairPreConsultationQuiz = () => {
             </p>
 
             <div className="fixed bottom-0 w-[335px] md:w-[520px] p-4 bg-white -translate-x-2/4 left-2/4">
-              <a
-                href={recommendedProduct.url}
-                className="w-full bg-black text-white py-3 px-6 rounded-full font-medium hover:bg-gray-800 transition-colors block text-center no-underline"
+              <button
+                onClick={handleCheckout}
+                disabled={isCheckoutLoading}
+                className={`w-full py-3 px-6 rounded-full font-medium transition-colors block text-center ${
+                  isCheckoutLoading
+                    ? "bg-gray-400 cursor-not-allowed text-white"
+                    : "bg-black text-white hover:bg-gray-800"
+                }`}
               >
-                Get my growth plan now
-              </a>
+                {isCheckoutLoading ? (
+                  <>
+                    <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Adding to Cart...
+                  </>
+                ) : (
+                  "Get my growth plan now"
+                )}
+              </button>
               <div className="flex items-center justify-center mt-2 text-sm">
                 <img
                   src="https://myrocky.b-cdn.net/WP%20Images/Questionnaire/reset.png"
@@ -322,6 +382,17 @@ const HairPreConsultationQuiz = () => {
             </div>
           </div>
         </div>
+
+        {/* Full-screen loading overlay */}
+        {isCheckoutLoading && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[99999]">
+            <div className="bg-white rounded-lg p-8 flex flex-col items-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mb-4"></div>
+              <p className="text-lg font-medium">Adding items to cart...</p>
+              <p className="text-sm text-gray-600 mt-2">Please wait</p>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -527,21 +598,13 @@ const HairPreConsultationQuiz = () => {
                 >
                   My birthday is
                 </label>
-                {/* <input
-                  id="birthdate"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#AE7E56] focus:border-[#AE7E56]"
-                  name="158"
-                  type="tel"
-                  placeholder="mm/dd/yyyy"
+                <DOBInput
                   value={dateInput}
                   onChange={handleDateChange}
-                /> */}
-                <DOBInput
-                  value={dateValInput}
-                  onChange={(newValue) => handleDateChange(newValue)}
-                  required
-                  name="158"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#AE7E56] focus:border-[#AE7E56]"
+                  placeholder="MM/DD/YYYY"
+                  minAge={18}
+                  required
                 />
                 <WarningPopup
                   isOpen={showUnderagePopup}

@@ -100,7 +100,7 @@ const loseUpItems = [
     id: "2",
     time: "Step 2",
     title: "Take a lab test",
-    description: "",
+    description: "If you're a candidate for treatment, our clinician will provide you with the appropriate lab requisition or alternatively you can provide us with recent results.",
   },
   {
     id: "3",
@@ -113,15 +113,15 @@ const loseUpItems = [
     id: "4",
     time: "Step 4",
     title: "Ongoing care & support",
-    description: "",
+    description: "You'll have access to your clinician and the pharmacy team at all times should you have any questions.",
   },
 ];
 
 const faqs = [
   {
-    question: "How much does the Body Optimization Program cost?",
+    question: "How much does the Weight Loss Program cost?",
     answer:
-      "The initial consultation fee is $99. The cost of medication along with a $40 program fee is charged monthly. The program fee includes access to clinicians, new prescriptions and pharmacy counselling.",
+      "The initial consultation fee is $99. The cost of medication along with a $60 program fee is charged monthly. The program fee includes access to clinicians, new prescriptions and pharmacy counselling.",
   },
   {
     question: "Do you accept insurance?",
@@ -156,12 +156,12 @@ const faqs = [
   {
     question: "How do GLP-1s work?",
     answer:
-      "Body Optimization injections available through Rocky belong to the GLP-1 class of medications, mimicking the natural hormone GLP-1. They work by reducing appetite and promoting a feeling of fullness, leading to reduced food intake and body optimization.",
+      "Weight Loss injections available through Rocky belong to the GLP-1 class of medications, mimicking the natural hormone GLP-1. They work by reducing appetite and promoting a feeling of fullness, leading to reduced food intake and weight loss.",
   },
   {
     question: "How can I get a GLP-1 prescription at Rocky?",
     answer:
-      'Simply click <a href="/wl-pre-consultation" class="underlined-link">here</a> and get started today!',
+      'Simply click <a href="/wl-pre-consultation" style="text-decoration: underline;">here</a> and get started today!',
   },
   {
     question: "Which GLP-1s does Rocky offer?",
@@ -171,22 +171,30 @@ const faqs = [
 ];
 
 export default function BodyOptimization3V2() {
-  const [openModal, setOpenModal] = useState(false);
-  const [showFixedDiv, setShowFixedDiv] = useState(false);
+  const [openModalV1, setopenModalV1] = useState(false);
+  const [openModalV2, setopenModalV2] = useState(false);
 
   useEffect(() => {
     const modalOpened = localStorage.getItem("modalOpened");
     if (!modalOpened) {
       const timer = setTimeout(() => {
-        setOpenModal(true);
+        if(window.openModalV1 == true) {
+           setopenModalV1(true);
+        } else if (window.openModalV2 == true) {
+           setopenModalV2(true);
+        }
+
         localStorage.setItem("modalOpened", "true");
       }, 45000);
 
       return () => clearTimeout(timer);
     } else {
-      setOpenModal(false);
+      setopenModalV1(false);
+      setopenModalV2(false);
     }
   }, []);
+
+  const [showFixedDiv, setShowFixedDiv] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -218,7 +226,9 @@ export default function BodyOptimization3V2() {
         </Link>
       </div>
 
-      {openModal && <WLModalSlider setOpenModal={openModal} />}
+      {openModalV1 && <WLModal setOpenModal={openModalV1} />}
+      {openModalV2 && <WLModalSlider setOpenModal={openModalV2} />}
+
       <BoHeroSection items={items}></BoHeroSection>
       <ImagesSection />
       <LoseUp

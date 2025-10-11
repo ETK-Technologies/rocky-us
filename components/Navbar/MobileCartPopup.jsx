@@ -2,8 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { IoClose } from "react-icons/io5";
 import { useState, useEffect } from "react";
+import { formatPrice } from "@/utils/priceFormatter";
 
-export default function ({
+export default function MobileCartPopup({
   open,
   onClose,
   cartItems,
@@ -107,10 +108,24 @@ export default function ({
                     ></span>
                   </div>
                   <div className="text-[#212121] text-sm">
-                    $
+                    {item.quantity || 1} × $
                     {item.prices?.sale_price
-                      ? item.prices.sale_price / 100
-                      : item.prices?.regular_price / 100 || item.price}
+                      ? formatPrice(item.prices.sale_price / 100)
+                      : formatPrice(
+                          item.prices?.regular_price / 100 || item.price
+                        )}
+                  </div>
+                  <div className="text-[#212121] text-sm font-semibold">
+                    Total: $
+                    {item.prices?.sale_price
+                      ? formatPrice(
+                          (item.prices.sale_price / 100) *
+                          (item.quantity || 1)
+                        )
+                      : formatPrice(
+                          (item.prices?.regular_price / 100 || item.price) *
+                          (item.quantity || 1)
+                        )}
                   </div>
                 </div>
                 <button

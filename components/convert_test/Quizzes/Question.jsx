@@ -1,4 +1,3 @@
-import Link from "next/link";
 import ProgressIndicatorTC from "./ProgressIndicatorTC";
 
 const Question = ({
@@ -22,16 +21,16 @@ const Question = ({
           </h2>
 
           <div>
-            <div className="flex flex-col gap-4 mt-8">
+            <div className="grid w-full flex-col gap-4 mt-8">
               {options.map((option, index) => (
                 <button
                   key={index}
                   onClick={() => onOptionSelect(no, option.id)}
                   //isSelected={answers[1] === option.id}
                   className={`
-                      w-full  md:w-[400px] h-[44px] p-4 border 
+                      w-full md:w-[400px] h-[44px] p-4 border 
                   rounded-full text-center transition-colors  flex justify-center items-center
-                  text-[14px] font-[POPPINS] font-medium leading-[140%] tracking-[0px] 
+                  text-[14px]  font-medium leading-[140%] tracking-[0px] 
                   ${
                     answers[no] === option.id
                       ? "bg-[#03A670] text-white border-[#03A670]"

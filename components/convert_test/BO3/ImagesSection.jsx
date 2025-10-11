@@ -28,7 +28,7 @@ const ImagesSection = () => {
           <div className="flex flex-col sm:flex-row gap-8">
             {ImageCards.map((imageCard, key) => (
               <ImageItem
-                className={`flex-1 md:px-[40px] md:pt-[40px] px-[16px] pt-[24px] ${imageCard.bgColor}`}
+                className={`flex-1 md:px-[40px] md:pt-[40px] px-[16px] pt-[24px] overflow-hidden ${imageCard.bgColor}`}
                 image={imageCard.image}
                 title={imageCard.title}
                 description={imageCard.description}

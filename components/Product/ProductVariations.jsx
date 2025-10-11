@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { logger } from "@/utils/devLogger";
 import { VARIATION_TYPES } from "@/lib/constants/productTypes";
 import {
   isForcedSubscriptionProduct,
@@ -249,7 +250,7 @@ const ProductVariations = ({
         }
       }
     } catch (e) {
-      console.error("Error initializing variations:", e);
+      logger.error("Error initializing variations:", e);
     }
   }, []);
 

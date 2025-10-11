@@ -1,9 +1,12 @@
 "use client";
 
 import { useRef } from "react";
+import Link from "next/link";
 import ScrollArrows from "../ScrollArrows";
 import EdProductCard from "./EdProductCard";
 import CustomImage from "../utils/CustomImage";
+import HighesttRate from "../convert_test/Flows/HighestRate";
+import EdComparisonTable from "../Sex/EdComparisonTable";
 
 const EdProducts = ({ showonly }) => {
   const scrollContainerRef = useRef(null);
@@ -13,7 +16,7 @@ const EdProducts = ({ showonly }) => {
     const productsMap = {
       cialis: cialisProduct,
       viagra: viagraProduct,
-      // chewalis: chewalisProduct,
+      chewalis: chewalisProduct,
       variety: varietyPackProduct,
     };
 
@@ -22,7 +25,7 @@ const EdProducts = ({ showonly }) => {
       return [
         cialisProduct,
         viagraProduct,
-        // chewalisProduct,
+        chewalisProduct,
         varietyPackProduct,
       ];
     }
@@ -36,10 +39,7 @@ const EdProducts = ({ showonly }) => {
     }
 
     // If no match is found, return all products as fallback
-    return [
-      cialisProduct,
-      viagraProduct /* chewalisProduct, varietyPackProduct */,
-    ];
+    return [cialisProduct, viagraProduct, chewalisProduct, varietyPackProduct];
   };
 
   const filteredProducts = getFilteredProducts();
@@ -54,7 +54,7 @@ const EdProducts = ({ showonly }) => {
           Pause or cancel at any time
         </p>
       </div>
-      <div className="overflow-x-auto !no-scrollbar relative px-2 sm:px-4 md:px-0">
+      <div className="overflow-x-auto !no-scrollbar relative">
         <div className="mx-auto">
           <div className="relative">
             {/* Only show scroll arrows when there's more than one product */}
@@ -64,12 +64,18 @@ const EdProducts = ({ showonly }) => {
 
             <div
               ref={scrollContainerRef}
-              className="flex gap-3 sm:gap-4 items-start justify-start md:justify-center snap-x snap-mandatory"
+              className={`flex gap-2 md:gap-4 items-start ${filteredProducts.length > 1
+                ? "overflow-x-auto snap-x snap-mandatory no-scrollbar"
+                : "justify-center"
+                }`}
             >
               {filteredProducts.map((product, index) => (
                 <div
                   key={index}
-                  className="flex-shrink-0 min-w-[80vw] md:min-w-max snap-center"
+                  className={`${filteredProducts.length === 1
+                    ? "w-full max-w-[450px]"
+                    : "flex-shrink-0"
+                    }`}
                 >
                   <EdProductCard product={product} />
                 </div>
@@ -79,21 +85,43 @@ const EdProducts = ({ showonly }) => {
         </div>
       </div>
 
-      <div className="flex flex-wrap justify-between items-start mt-[32px] md:mt-[24px]">
-        <div className="w-full md:w-[584px] ">
-          <p className=" hidden lg:block text-[12px]  font-[400] text-[#212121]">
-            In United States, erectile dysfunction medications are available
-            over-the-counter (OTC) and may be obtained after a prescription.
-            This medication will ensure proper dosage for legal and medical
-            guidelines within the country. An important note: this document must
-            not change the correct products, treating, and proper advice that a
-            licensed healthcare provider can use. A licensed healthcare team can
-            be sure you are getting the right care and treatment.
-          </p>
-        </div>
-        <div className="relative overflow-hidden mx-auto  md:mr-0 w-[315px] h-[48px] flex justify-center lg:justify-end mt-4 md:mt-0">
-          <CustomImage src="/OCP-IMGS.webp" fill />
-        </div>
+      {/* ED Treatment Comparison Table */}
+      {/* <div className="mt-12 mb-12">
+        <EdComparisonTable leftAlign={true} />
+      </div> */}
+
+      {/* Find What's Best for Me Button */}
+      <div className="flex justify-center mt-8 mb-8">
+        <Link
+          href="/ed-pre-consultation-quiz/"
+          className="bg-white border-2 border-black text-black px-8 py-3 rounded-full flex items-center justify-center space-x-3 hover:bg-gray-50 transition font-medium"
+        >
+          <span>Find What's Best For Me</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </Link>
+      </div>
+
+      <div className="md:flex justify-center items-center mt-[50px] mb-[65px] hidden">
+        <CustomImage
+          src="/OCP-IMGS.webp"
+          className="w-auto"
+          width="344"
+          height="100"
+        />
+      </div>
+      <div className="md:mt-0 mt-[33px]">
+        <HighesttRate blockMode={true} />
+      </div>
+
+      <div className="md:hidden justify-center items-center flex mt-[32px]">
+        <CustomImage
+          src="/OCP-IMGS.webp"
+          className="w-auto"
+          width="344"
+          height="100"
+        />
       </div>
     </>
   );

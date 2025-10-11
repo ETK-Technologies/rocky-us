@@ -1,4 +1,5 @@
 import { api } from "@/lib/woocommerce";
+import { logger } from "@/utils/devLogger";
 
 export async function GET(request, { params }) {
   try {
@@ -35,7 +36,7 @@ export async function GET(request, { params }) {
 
     return Response.json(productInfo);
   } catch (error) {
-    console.error("Error fetching product by ID:", error);
+    logger.error("Error fetching product by ID:", error);
     return Response.json(
       { error: "Failed to fetch product" },
       { status: error.response?.status || 500 }

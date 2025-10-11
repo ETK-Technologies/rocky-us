@@ -1,16 +1,26 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { logger } from "@/utils/devLogger";
 import CustomContainImage from "./utils/CustomContainImage";
 import dynamic from "next/dynamic";
+import TrustpilotReviewsFallback from "./ui/trustpilotFallback/TrustpilotReviewsFallback";
 
 const ReviewsSection = () => {
   const trustpilotRef = useRef(null);
   const [isClient, setIsClient] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
+  const [showFallback, setShowFallback] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
+
+    // Set a timeout to show fallback if script doesn't load within 5 seconds
+    const fallbackTimeout = setTimeout(() => {
+      if (!isScriptLoaded && !hasError) {
+        setShowFallback(true);
+      }
+    }, 5000);
 
     if (typeof window !== "undefined" && typeof document !== "undefined") {
       const existingScript = document.getElementById("trustpilot-script");
@@ -28,6 +38,7 @@ const ReviewsSection = () => {
         try {
           if (window.Trustpilot) {
             setIsScriptLoaded(true);
+            clearTimeout(fallbackTimeout);
             const widgets =
               document.getElementsByClassName("trustpilot-widget");
             for (let i = 0; i < widgets.length; i++) {
@@ -37,15 +48,18 @@ const ReviewsSection = () => {
             }
           }
         } catch (error) {
-          console.error("Error initializing TrustPilot:", error);
+          logger.error("Error initializing TrustPilot:", error);
           setHasError(true);
+          setShowFallback(true);
         }
       };
 
       script.onload = initTrustpilot;
       script.onerror = () => {
-        console.error("Failed to load TrustPilot script");
+        logger.error("Failed to load TrustPilot script");
         setHasError(true);
+        setShowFallback(true);
+        clearTimeout(fallbackTimeout);
       };
 
       document.head.appendChild(script);
@@ -55,12 +69,17 @@ const ReviewsSection = () => {
       }
 
       return () => {
+        clearTimeout(fallbackTimeout);
         if (script.parentNode) {
           script.parentNode.removeChild(script);
         }
       };
     }
-  }, []);
+
+    return () => {
+      clearTimeout(fallbackTimeout);
+    };
+  }, [isScriptLoaded, hasError]);
 
   useEffect(() => {
     if (
@@ -72,11 +91,16 @@ const ReviewsSection = () => {
       try {
         window.Trustpilot.loadFromElement(trustpilotRef.current);
       } catch (error) {
-        console.error("Error initializing TrustPilot widget:", error);
+        logger.error("Error initializing TrustPilot widget:", error);
         setHasError(true);
       }
     }
   }, [isClient, isScriptLoaded]);
+
+  // Show fallback if script failed to load or timeout reached
+  if (showFallback || hasError) {
+    return <TrustpilotReviewsFallback />;
+  }
 
   return (
     <section className="reviews-section" aria-labelledby="reviews-heading">
@@ -116,7 +140,7 @@ const ReviewsSection = () => {
                 try {
                   window.Trustpilot.loadFromElement(el);
                 } catch (error) {
-                  console.error("Error loading TrustPilot widget:", error);
+                  logger.error("Error loading TrustPilot widget:", error);
                 }
               }
             }}
@@ -124,23 +148,7 @@ const ReviewsSection = () => {
         )}
       </div>
 
-      {hasError && (
-        <div className="text-center py-4 text-red-500">
-          <p>
-            Unable to load reviews. Please check our TrustPilot page directly.
-          </p>
-          <a
-            href="https://www.trustpilot.com/review/myrocky.ca"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline hover:text-red-700 transition-colors"
-          >
-            View reviews on TrustPilot
-          </a>
-        </div>
-      )}
-
-      {isClient && !hasError && (
+      {isClient && !hasError && !showFallback && (
         <div
           ref={trustpilotRef}
           className="trustpilot-widget"

@@ -1,81 +1,35 @@
 "use client";
 
 import { useState, Suspense } from "react";
+import { logger } from "@/utils/devLogger";
 import Link from "next/link";
 import {
   MdOutlineRemoveRedEye,
   MdOutlineVisibilityOff,
   MdArrowForward,
   MdArrowBack,
-  MdClose,
 } from "react-icons/md";
 import { toast } from "react-toastify";
 import { useSearchParams, useRouter } from "next/navigation";
 import Loader from "@/components/Loader";
-import DOBInput from "@/components/DOBInput";
+import DOBInput from "../shared/DOBInput";
 import {
   getSavedProducts,
   clearSavedProducts,
 } from "../../utils/crossSellCheckout";
+import { processSavedFlowProducts } from "../../utils/flowCartHandler";
 import { migrateLocalCartToServer } from "@/lib/cart/cartService";
 import {
-  ALL_US_STATES,
-  PHASE_1_STATES,
-  getStateLabel,
-} from "@/lib/constants/usStates";
-
-// Popup component for unsupported states
-const UnsupportedStatePopup = ({ isOpen, onClose, selectedState, router }) => {
-  if (!isOpen) return null;
-
-  const handleUnderstood = () => {
-    onClose();
-    router.push("/service-coverage");
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white rounded-lg p-6 max-w-md mx-4 relative">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
-        >
-          <MdClose size={24} />
-        </button>
-
-        <div className="text-center">
-          <h3 className="text-xl font-semibold text-gray-800 mb-4">
-            Service Not Available
-          </h3>
-          <p className="text-gray-600 mb-6">
-            We apologize, but our services are not currently available in{" "}
-            {getStateLabel(selectedState) || selectedState}. We are actively
-            working to expand our coverage and will notify you once we are
-            available in your state.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <button
-              onClick={handleUnderstood}
-              className="bg-black text-white px-6 py-2 rounded-full hover:bg-gray-800 transition-colors font-medium"
-            >
-              See Where We Serve
-            </button>
-            <button
-              onClick={onClose}
-              className="bg-white border border-gray-300 text-gray-700 px-6 py-2 rounded-full hover:bg-gray-50 transition-colors font-medium"
-            >
-              Understood
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+  checkQuebecZonnicRestriction,
+  getQuebecRestrictionMessage,
+  isQuebecProvince,
+} from "@/utils/zonnicQuebecValidation";
+import CartMigrationOverlay from "@/components/CartMigrationOverlay";
 
 const RegisterContent = ({ setActiveTab, registerRef }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [isMigratingCart, setIsMigratingCart] = useState(false);
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -84,48 +38,22 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
     confirm_password: "",
     phone: "",
     date_of_birth: "",
-    province: "", // We'll keep this field name for backend compatibility but use it for states
+    province: "",
     gender: "",
   });
-  const [datePickerValue, setDatePickerValue] = useState("");
+  const [datePickerValue, setDatePickerValue] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
-  const [showUnsupportedPopup, setShowUnsupportedPopup] = useState(false);
-  const [selectedUnsupportedState, setSelectedUnsupportedState] = useState("");
   const redirectTo = searchParams.get("redirect_to");
   const isEdFlow = searchParams.get("ed-flow") === "1";
 
-  const genderOptions = [
-    { value: "", label: "Select gender" },
-    { value: "male", label: "Male" },
-    { value: "female", label: "Female" },
-  ];
-
   const handleChange = (e) => {
-    const { name, value } = e.target;
-
-    // Special handling for state selection
-    if (name === "province") {
-      // We keep the field name as "province" for backend compatibility
-      // Check if the selected state is supported (Phase 1)
-      if (value && !PHASE_1_STATES.includes(value)) {
-        setSelectedUnsupportedState(value);
-        setShowUnsupportedPopup(true);
-        return; // Don't update the form data
-      }
-    }
-
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [e.target.name]: e.target.value,
     }));
-  };
-
-  const closeUnsupportedPopup = () => {
-    setShowUnsupportedPopup(false);
-    setSelectedUnsupportedState("");
   };
 
   const togglePasswordVisibility = () => {
@@ -136,40 +64,78 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
     setShowConfirmPassword(!showConfirmPassword);
   };
 
-  const handleCrossSellProducts = async () => {
+  const provinces = [
+    { value: "", label: "Select a province" },
+    { value: "Ontario", label: "Ontario" },
+    { value: "British Columbia", label: "British Columbia" },
+    { value: "Quebec", label: "Quebec" },
+    { value: "Alberta", label: "Alberta" },
+    { value: "Manitoba", label: "Manitoba" },
+    { value: "New Brunswick", label: "New Brunswick" },
+    { value: "Nova Scotia", label: "Nova Scotia" },
+    { value: "Saskatchewan", label: "Saskatchewan" },
+    { value: "Other", label: "Other" },
+  ];
+
+  const genderOptions = [
+    { value: "", label: "Select gender" },
+    { value: "male", label: "Male" },
+    { value: "female", label: "Female" },
+  ];
+
+  const handleCrossSellProducts = async (isFromCrossSell = false) => {
     try {
-      const savedProducts = getSavedProducts();
+      logger.log(
+        `Processing flow products after registration. From cross-sell: ${isFromCrossSell}`
+      );
 
-      if (savedProducts) {
-        const products = [
-          {
-            id: savedProducts.mainProduct.id,
-            quantity: 1,
-          },
-          ...savedProducts.addons.map((addon) => ({
-            id: addon.id,
-            quantity: 1,
-          })),
-        ];
+      // First, check for new flow products (direct cart approach)
+      // This should always be processed regardless of cross-sell popup origin
+      const flowProductsResult = await processSavedFlowProducts();
+      if (flowProductsResult.success) {
+        logger.log(
+          "Processed saved flow products after registration:",
+          flowProductsResult
+        );
+        return flowProductsResult.redirectUrl;
+      }
 
-        const response = await fetch("/api/cart/add", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ products }),
-        });
+      // Only process old cross-sell products if NOT from a cross-sell popup
+      if (!isFromCrossSell) {
+        // Fallback to old cross-sell products (URL-based approach)
+        const savedProducts = getSavedProducts();
 
-        if (!response.ok) {
-          console.error("Failed to add cross-sell products to cart");
+        if (savedProducts) {
+          const products = [
+            {
+              id: savedProducts.mainProduct.id,
+              quantity: 1,
+            },
+            ...savedProducts.addons.map((addon) => ({
+              id: addon.id,
+              quantity: 1,
+            })),
+          ];
+
+          const response = await fetch("/api/cart/add", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ products }),
+          });
+
+          if (!response.ok) {
+            logger.error("Failed to add cross-sell products to cart");
+          }
+
+          clearSavedProducts();
+
+          return "/checkout?ed-flow=1";
         }
-
-        clearSavedProducts();
-
-        return "/checkout?ed-flow=1";
       }
     } catch (error) {
-      console.error("Error handling cross-sell products:", error);
+      logger.error("Error handling cross-sell products:", error);
     }
 
     return null;
@@ -213,7 +179,7 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
       return false;
     }
     if (!formData.province) {
-      toast.error("State is required");
+      toast.error("Province is required");
       return false;
     }
     return true;
@@ -247,12 +213,20 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
       if (res.ok && data.success) {
         setCurrentStep(2);
       } else {
+        // Debug logging to help identify the issue
+        logger.log("Register API Error Response:", {
+          status: res.status,
+          ok: res.ok,
+          data: data,
+          error: data.error,
+        });
+
         toast.error(
           data.error || "Registration failed. Please check and try again."
         );
       }
     } catch (err) {
-      console.error("Registration error:", err);
+      logger.error("Registration error:", err);
       toast.error("Registration failed. Please check and try again.");
     } finally {
       setLoading(false);
@@ -286,23 +260,10 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
     }));
   };
 
-  const handleDateChange = (newValue) => {
-    setDatePickerValue(newValue);
-    // Convert YYYY-MM-DD to MM/DD/YYYY if needed for form processing
-    let formattedDate = newValue;
-    if (typeof newValue === "string" && newValue.includes("-")) {
-      const parts = newValue.split("-");
-      if (parts.length === 3) {
-        const [year, month, day] = parts;
-        formattedDate = `${month.padStart(2, "0")}/${day.padStart(
-          2,
-          "0"
-        )}/${year}`;
-      }
-    }
+  const handleDateChange = (value) => {
     setFormData((prev) => ({
       ...prev,
-      date_of_birth: formattedDate,
+      date_of_birth: value,
     }));
   };
 
@@ -343,6 +304,7 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
       const data = await res.json();
 
       if (res.ok && data.success) {
+        logger.log(data.data.response);
         document.getElementById("cart-refresher")?.click();
         toast.success(data.message || "You registered successfully!");
 
@@ -357,26 +319,30 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
         if (!isFromCrossSell) {
           let migrateSuccess = false;
           try {
-            console.log(
+            logger.log(
               "Starting cart migration process for new registration..."
             );
+            setIsMigratingCart(true);
             await migrateLocalCartToServer();
             migrateSuccess = true;
-            console.log("Cart migration completed successfully");
+            logger.log("Cart migration completed successfully");
 
             // Now that migration is complete, refresh the cart display
             document.getElementById("cart-refresher")?.click();
-            console.log("Cart display refreshed after migration");
+            logger.log("Cart display refreshed after migration");
 
             // Dispatch a custom event to ensure cart is updated throughout the app
             const cartUpdatedEvent = new CustomEvent("cart-updated");
             document.dispatchEvent(cartUpdatedEvent);
           } catch (migrateError) {
-            console.error("Error migrating cart items:", migrateError);
+            logger.error("Error migrating cart items:", migrateError);
             // Don't block registration flow if migration fails
+            setIsMigratingCart(false);
           }
+          // Note: We don't hide the overlay here for successful migrations
+          // It will stay visible during the redirect delays and disappear when page navigates
         } else {
-          console.log(
+          logger.log(
             "Skipping cart migration as user came from cross-sell popup"
           );
         }
@@ -387,7 +353,7 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
           redirectTo &&
           redirectTo.includes("/checkout")
         ) {
-          console.log(
+          logger.log(
             "Waiting for cart migration to complete before checkout redirect..."
           );
           await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -395,13 +361,69 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
 
         let redirectPath;
 
-        // Skip cross-sell product handling if we came from a cross-sell popup
-        if (isEdFlow && !isFromCrossSell) {
-          redirectPath = await handleCrossSellProducts();
-        }
+        // Always check for saved flow products (new direct cart approach)
+        // Only skip old cross-sell handling if we came from a cross-sell popup
+        redirectPath = await handleCrossSellProducts(isFromCrossSell);
 
         if (!redirectPath) {
           redirectPath = redirectTo || "/";
+        }
+
+        // Check for Quebec restriction after successful registration
+        if (formData.province && isQuebecProvince(formData.province)) {
+          try {
+            // Fetch cart items to check for Zonnic products
+            const cartResponse = await fetch("/api/cart");
+            if (cartResponse.ok) {
+              const cartData = await cartResponse.json();
+              if (cartData.items && cartData.items.length > 0) {
+                const restriction = checkQuebecZonnicRestriction(
+                  cartData.items,
+                  formData.province,
+                  formData.province
+                );
+
+                if (restriction.blocked) {
+                  // Remove Zonnic products from cart
+                  const zonnicItems = cartData.items.filter(
+                    (item) =>
+                      item.name && item.name.toLowerCase().includes("zonnic")
+                  );
+
+                  for (const zonnicItem of zonnicItems) {
+                    try {
+                      await fetch("/api/cart", {
+                        method: "DELETE",
+                        headers: {
+                          "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                          itemKey: zonnicItem.key,
+                        }),
+                      });
+                      logger.log(
+                        `Removed Zonnic product ${zonnicItem.name} from cart due to Quebec restriction`
+                      );
+                    } catch (removeError) {
+                      logger.error(
+                        "Error removing Zonnic product from cart:",
+                        removeError
+                      );
+                    }
+                  }
+
+                  // Store popup state in localStorage to show after redirect
+                  localStorage.setItem("showQuebecPopup", "true");
+                  localStorage.setItem(
+                    "quebecPopupMessage",
+                    getQuebecRestrictionMessage()
+                  );
+                }
+              }
+            }
+          } catch (error) {
+            logger.error("Error checking cart for Quebec restriction:", error);
+          }
         }
 
         router.push(redirectPath);
@@ -421,12 +443,20 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
           gender: "",
         });
       } else {
+        // Debug logging to help identify the issue
+        logger.log("Register API Step 2 Error Response:", {
+          status: res.status,
+          ok: res.ok,
+          data: data,
+          error: data.error,
+        });
+
         toast.error(
           data.error || "Registration failed. Please check and try again."
         );
       }
     } catch (err) {
-      console.error("Registration error:", err);
+      logger.error("Registration error:", err);
       toast.error("Registration failed. Please check and try again.");
     } finally {
       setLoading(false);
@@ -435,6 +465,7 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
 
   return (
     <>
+      <CartMigrationOverlay show={isMigratingCart} />
       <div className="px-3 mx-auto pt-5 text-center">
         <h2
           className={`text-[#251f20] ${
@@ -612,20 +643,17 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
               </div>
               <div className="w-full flex flex-col items-start justify-center gap-2">
                 <label htmlFor="date_of_birth">Date of Birth</label>
-                <div className="relative w-full">
-                  <DOBInput
-                    value={datePickerValue}
-                    onChange={handleDateChange}
-                    required
-                    name="date_of_birth"
-                    id="date_of_birth"
-                    className="block w-[100%] rounded-[8px] h-[40px] text-md m-auto border-gray-500 border px-4 focus:outline focus:outline-2 focus:outline-black focus:ring-0 focus:border-transparent pr-10"
-                    placeholder="MM/DD/YYYY"
-                  />
-                </div>
+                <DOBInput
+                  value={formData.date_of_birth}
+                  onChange={handleDateChange}
+                  className="block w-full rounded-[8px] h-[40px] text-md m-auto border-gray-500 border px-4 focus:outline focus:outline-2 focus:outline-black focus:ring-0 focus:border-transparent pr-10"
+                  placeholder="mm/dd/yyyy"
+                  minAge={18}
+                  required
+                />
               </div>
               <div className="w-full flex flex-col items-start justify-center gap-2">
-                <label htmlFor="province">State</label>
+                <label htmlFor="province">Province</label>
                 <select
                   id="province"
                   name="province"
@@ -635,11 +663,7 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
                   style={{ outlineColor: "black" }}
                   required
                 >
-                  {ALL_US_STATES.filter(
-                    (option) =>
-                      option.value === "" ||
-                      PHASE_1_STATES.includes(option.value)
-                  ).map((option) => (
+                  {provinces.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
@@ -684,7 +708,7 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
             </button>
           </div>
 
-          <div className="w-full text-center text-xs text-gray-600 mb-6">
+          <div className="w-full text-center text-xs text-gray-600 mb-6 pt-[4rem]">
             <p className="mb-3">
               By continuing, you agree to and have read the{" "}
               <Link href="/terms-of-use" className="text-[#AE7E56] underline">
@@ -710,15 +734,6 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
           </div>
         </div>
       </form>
-
-      {showUnsupportedPopup && (
-        <UnsupportedStatePopup
-          isOpen={showUnsupportedPopup}
-          onClose={closeUnsupportedPopup}
-          selectedState={selectedUnsupportedState}
-          router={router}
-        />
-      )}
     </>
   );
 };

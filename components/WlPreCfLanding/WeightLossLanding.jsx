@@ -50,7 +50,7 @@ export default function WeightLossLanding() {
         </h1>
 
         <p className="text-xs md:text-sm text-[#212121] mb-8 max-w-2xl mx-auto">
-          By combining  FDA Approved medications and custom support so
+          By combining Health Canada approved medications and custom support so
           you can lose weight for good— without restrictive diets.
         </p>
 

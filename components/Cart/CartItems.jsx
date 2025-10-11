@@ -1,10 +1,13 @@
 import { CiTrash } from "react-icons/ci";
 import CustomImage from "../utils/CustomImage";
+import { logger } from "@/utils/devLogger";
 import { DotsLoader } from "react-loaders-kit";
 import { useState } from "react";
 import { useEmptyCart } from "@/lib/cart/cartHooks";
 import { toast } from "react-toastify";
 import { canRemoveItem } from "@/lib/cart/cartService";
+import { analyticsService } from "@/utils/analytics/analyticsService";
+import { formatPrice } from "@/utils/priceFormatter";
 
 const CartItems = ({ items, setCartItems }) => {
   const emptyCart = useEmptyCart();
@@ -24,7 +27,7 @@ const CartItems = ({ items, setCartItems }) => {
         refresherElement.setAttribute("data-refreshed", Date.now().toString());
       }
     } catch (error) {
-      console.error("Error emptying cart:", error);
+      logger.error("Error emptying cart:", error);
     } finally {
       setIsEmptyingCart(false);
     }
@@ -135,7 +138,7 @@ const CartItem = ({ item, setCartItems, allItems }) => {
   const subscription = item.extensions?.subscriptions;
   const isSubscription = subscription && subscription.billing_interval;
 
-  // Special handling for Oral Semaglutide product (ID: 490537)
+  // Special handling for Sublingual Semaglutide product (ID: 490537)
   // This product should be treated as a monthly subscription even if WooCommerce metadata is missing
   const isOralSemaglutide = item.id === 490537 || item.product_id === 490537;
   const isSubscriptionWithFallback = isSubscription || isOralSemaglutide;
@@ -153,7 +156,7 @@ const CartItem = ({ item, setCartItems, allItems }) => {
     const pluralPeriod = interval > 1 ? `${period}s` : period;
     supply = `every ${interval} ${pluralPeriod}`;
   } else if (isOralSemaglutide) {
-    // Default to monthly for Oral Semaglutide if no subscription data
+    // Default to monthly for Sublingual Semaglutide if no subscription data
     supply = "every 4 weeks";
   }
 
@@ -168,6 +171,34 @@ const CartItem = ({ item, setCartItems, allItems }) => {
 
     try {
       setLoading(true);
+      // Track delta before updating
+      const prevQty = item.quantity;
+      const newQty = quantity;
+      const delta = (newQty || 0) - (prevQty || 0);
+      const productForTracking = {
+        id: item.product_id || item.id,
+        sku: item.sku,
+        name: item.name,
+        price:
+          (item.prices?.sale_price || item.prices?.regular_price || 0) / 100 ||
+          (item.totals?.line_subtotal && prevQty
+            ? item.totals.line_subtotal / 100 / prevQty
+            : 0),
+        attributes: item.variation?.length
+          ? item.variation.map((v) => ({
+            name: v.attribute || v.name,
+            options: [v.value],
+          }))
+          : [],
+      };
+      if (delta > 0) {
+        analyticsService.trackAddToCart(productForTracking, delta);
+      } else if (delta < 0) {
+        analyticsService.trackRemoveFromCart(
+          productForTracking,
+          Math.abs(delta)
+        );
+      }
 
       const res = await fetch("/api/cart", {
         headers: {
@@ -183,7 +214,7 @@ const CartItem = ({ item, setCartItems, allItems }) => {
       const data = await res.json();
       setCartItems(data);
     } catch (error) {
-      console.error("Error updating item quantity:", error);
+      logger.error("Error updating item quantity:", error);
     } finally {
       setLoading(false);
       document.getElementById("cart-refresher")?.click();
@@ -196,6 +227,32 @@ const CartItem = ({ item, setCartItems, allItems }) => {
 
     try {
       setDeleteLoading(true);
+      // Track full removal
+      try {
+        const productForTracking = {
+          id: item.product_id || item.id,
+          sku: item.sku,
+          name: item.name,
+          price:
+            (item.prices?.sale_price || item.prices?.regular_price || 0) /
+            100 ||
+            (item.totals?.line_subtotal && item.quantity
+              ? item.totals.line_subtotal / 100 / item.quantity
+              : 0),
+          attributes: item.variation?.length
+            ? item.variation.map((v) => ({
+              name: v.attribute || v.name,
+              options: [v.value],
+            }))
+            : [],
+        };
+        analyticsService.trackRemoveFromCart(
+          productForTracking,
+          item.quantity || 1
+        );
+      } catch (e) {
+        logger.warn("[Analytics] remove_from_cart tracking skipped:", e);
+      }
 
       // Item-specific loading state allows other items to be deleted in parallel
       const res = await fetch("/api/cart", {
@@ -219,7 +276,7 @@ const CartItem = ({ item, setCartItems, allItems }) => {
 
       setCartItems(data);
     } catch (error) {
-      console.error("Error removing item from cart:", error);
+      logger.error("Error removing item from cart:", error);
       toast.error("Failed to remove item from cart. Please try again.");
     } finally {
       setDeleteLoading(false);
@@ -241,9 +298,8 @@ const CartItem = ({ item, setCartItems, allItems }) => {
               <>
                 <CiTrash
                   size={20}
-                  className={`cursor-pointer ${
-                    deleteLoading ? "opacity-50" : ""
-                  }`}
+                  className={`cursor-pointer ${deleteLoading ? "opacity-50" : ""
+                    }`}
                   onClick={handleDeleteItem}
                 />
                 {deleteLoading && (
@@ -282,13 +338,26 @@ const CartItem = ({ item, setCartItems, allItems }) => {
                 <>
                   <p className="text-[12px] font-[400] text-[#212121] inline">
                     {currencySymbol}
-                    {itemPrice.toFixed(2)}{" "}
+                    {formatPrice(itemPrice)}{" "}
                   </p>
                   <p className="text-[12px] font-[400] text-[#212121] inline">
                     / {isSubscriptionWithFallback && intervalText}
                     {!isSubscriptionWithFallback &&
                       item.variation[1] &&
                       item.variation[1]?.value}
+                    {item.name?.toLowerCase().includes("zonnic") &&
+                      item.variation?.find(v => v.attribute?.toLowerCase() === "flavors")?.value && (
+                        <>
+                          {" / "}
+                          <span className="text-[12px] font-[400] text-[#212121]">
+                            {
+                              item.variation.find(
+                                v => v.attribute?.toLowerCase() === "flavors"
+                              )?.value
+                            }
+                          </span>
+                        </>
+                      )}
                   </p>
                 </>
               )}
@@ -299,7 +368,7 @@ const CartItem = ({ item, setCartItems, allItems }) => {
                   </p>
                   <p className="text-sm md:text-base text-[#212121]">
                     Initial fee $99 | <br className="hidden md:block" /> Monthly
-                    fee $40
+                    fee $60
                   </p>
                   <p className="text-sm md:text-base font-[500] text-[#212121] mt-2 underline">
                     Includes:
@@ -319,9 +388,8 @@ const CartItem = ({ item, setCartItems, allItems }) => {
 
         <div className="hidden md:flex justify-self-end  items-center justify-between p-2 w-[104px] h-[40px] rounded-full border border-[#E2E2E1]">
           <button
-            className={`quantity-minus w-[20px] h-[20px] ${
-              item.quantity === 1 && "cursor-not-allowed"
-            }`}
+            className={`quantity-minus w-[20px] h-[20px] ${item.quantity === 1 && "cursor-not-allowed"
+              }`}
             disabled={item.quantity === 1 || loading}
             onClick={() => handleQuantityEdit(item.quantity - 1)}
           >
@@ -343,7 +411,7 @@ const CartItem = ({ item, setCartItems, allItems }) => {
               <span className="woocommerce-Price-currencySymbol">
                 {currencySymbol}
               </span>
-              {itemTotalPrice}
+              {formatPrice(itemTotalPrice)}
             </bdi>
           </span>
         </div>
@@ -351,9 +419,8 @@ const CartItem = ({ item, setCartItems, allItems }) => {
         <div className="md:hidden flex items-center gap-2 mt-4">
           <div className="min-w-[104px] justify-self-end flex items-center justify-between p-2 w-[104px] h-[40px] rounded-full border border-[#E2E2E1]">
             <button
-              className={`quantity-minus w-[20px] h-[20px] ${
-                item.quantity === 1 && "cursor-not-allowed"
-              }`}
+              className={`quantity-minus w-[20px] h-[20px] ${item.quantity === 1 && "cursor-not-allowed"
+                }`}
               disabled={item.quantity === 1 || loading}
               onClick={() => handleQuantityEdit(item.quantity - 1)}
             >
@@ -373,9 +440,8 @@ const CartItem = ({ item, setCartItems, allItems }) => {
               <>
                 <CiTrash
                   size={20}
-                  className={`cursor-pointer ${
-                    deleteLoading ? "opacity-50" : ""
-                  }`}
+                  className={`cursor-pointer ${deleteLoading ? "opacity-50" : ""
+                    }`}
                   onClick={handleDeleteItem}
                 />
                 {deleteLoading && (

@@ -1,0 +1,389 @@
+{
+  "exportFormatVersion": 2,
+  "exportTime": "",
+  "containerVersion": {
+    "path": "accounts/0/containers/0/versions/0",
+    "container": {
+      "path": "accounts/0/containers/0",
+      "domainName": [],
+      "name": "Attentive Helper Kit",
+      "usageContext": [
+        "WEB"
+      ]
+    },
+    "macro": [
+      {
+        "name": "DLV – ecommerce",
+        "type": "v",
+        "parameter": [
+          {
+            "key": "dataLayerVersion",
+            "type": "INTEGER",
+            "value": "2"
+          },
+          {
+            "key": "name",
+            "type": "TEMPLATE",
+            "value": "ecommerce"
+          }
+        ]
+      },
+      {
+        "name": "DLV – ecommerce.items",
+        "type": "v",
+        "parameter": [
+          {
+            "key": "dataLayerVersion",
+            "type": "INTEGER",
+            "value": "2"
+          },
+          {
+            "key": "name",
+            "type": "TEMPLATE",
+            "value": "ecommerce.items"
+          }
+        ]
+      },
+      {
+        "name": "DLV – ecommerce.value",
+        "type": "v",
+        "parameter": [
+          {
+            "key": "dataLayerVersion",
+            "type": "INTEGER",
+            "value": "2"
+          },
+          {
+            "key": "name",
+            "type": "TEMPLATE",
+            "value": "ecommerce.value"
+          }
+        ]
+      },
+      {
+        "name": "DLV – ecommerce.currency",
+        "type": "v",
+        "parameter": [
+          {
+            "key": "dataLayerVersion",
+            "type": "INTEGER",
+            "value": "2"
+          },
+          {
+            "key": "name",
+            "type": "TEMPLATE",
+            "value": "ecommerce.currency"
+          }
+        ]
+      },
+      {
+        "name": "DLV – ecommerce.transaction_id",
+        "type": "v",
+        "parameter": [
+          {
+            "key": "dataLayerVersion",
+            "type": "INTEGER",
+            "value": "2"
+          },
+          {
+            "key": "name",
+            "type": "TEMPLATE",
+            "value": "ecommerce.transaction_id"
+          }
+        ]
+      },
+      {
+        "name": "DLV – ecommerce.coupon",
+        "type": "v",
+        "parameter": [
+          {
+            "key": "dataLayerVersion",
+            "type": "INTEGER",
+            "value": "2"
+          },
+          {
+            "key": "name",
+            "type": "TEMPLATE",
+            "value": "ecommerce.coupon"
+          }
+        ]
+      },
+      {
+        "name": "DLV – billing_phone_hash",
+        "type": "v",
+        "parameter": [
+          {
+            "key": "dataLayerVersion",
+            "type": "INTEGER",
+            "value": "2"
+          },
+          {
+            "key": "name",
+            "type": "TEMPLATE",
+            "value": "order_data.billing_phone_hash"
+          }
+        ]
+      },
+      {
+        "name": "DLV – billing_email_hash",
+        "type": "v",
+        "parameter": [
+          {
+            "key": "dataLayerVersion",
+            "type": "INTEGER",
+            "value": "2"
+          },
+          {
+            "key": "name",
+            "type": "TEMPLATE",
+            "value": "order_data.billing_email_hash"
+          }
+        ]
+      },
+      {
+        "name": "DLV – page_location",
+        "type": "v",
+        "parameter": [
+          {
+            "key": "dataLayerVersion",
+            "type": "INTEGER",
+            "value": "2"
+          },
+          {
+            "key": "name",
+            "type": "TEMPLATE",
+            "value": "page_location"
+          }
+        ]
+      },
+      {
+        "name": "DLV – page_path",
+        "type": "v",
+        "parameter": [
+          {
+            "key": "dataLayerVersion",
+            "type": "INTEGER",
+            "value": "2"
+          },
+          {
+            "key": "name",
+            "type": "TEMPLATE",
+            "value": "page_path"
+          }
+        ]
+      },
+      {
+        "name": "JS – Items (array or empty)",
+        "type": "jsm",
+        "parameter": [
+          {
+            "key": "javascript",
+            "type": "TEMPLATE",
+            "value": "function() {\n  var ec = {{DLV – ecommerce}};\n  if (!ec || !ec.items) return [];\n  return ec.items;\n}"
+          }
+        ]
+      },
+      {
+        "name": "JS – First Item",
+        "type": "jsm",
+        "parameter": [
+          {
+            "key": "javascript",
+            "type": "TEMPLATE",
+            "value": "function() {\n  var items = {{JS – Items (array or empty)}};\n  return items && items.length ? items[0] : {};\n}"
+          }
+        ]
+      },
+      {
+        "name": "JS – Product Name",
+        "type": "jsm",
+        "parameter": [
+          {
+            "key": "javascript",
+            "type": "TEMPLATE",
+            "value": "function() {\n  var it = {{JS – First Item}};\n  return it.item_name || it.name || '';\n}"
+          }
+        ]
+      },
+      {
+        "name": "JS – Product ID",
+        "type": "jsm",
+        "parameter": [
+          {
+            "key": "javascript",
+            "type": "TEMPLATE",
+            "value": "function() {\n  var it = {{JS – First Item}};\n  return it.item_id || it.id || it.sku || '';\n}"
+          }
+        ]
+      },
+      {
+        "name": "JS – Product Variant ID",
+        "type": "jsm",
+        "parameter": [
+          {
+            "key": "javascript",
+            "type": "TEMPLATE",
+            "value": "function() {\n  var it = {{JS – First Item}};\n  return it.item_variant || '';\n}"
+          }
+        ]
+      },
+      {
+        "name": "JS – Product Category",
+        "type": "jsm",
+        "parameter": [
+          {
+            "key": "javascript",
+            "type": "TEMPLATE",
+            "value": "function() {\n  var it = {{JS – First Item}};\n  return it.item_category || it.category || '';\n}"
+          }
+        ]
+      },
+      {
+        "name": "JS – Product Price",
+        "type": "jsm",
+        "parameter": [
+          {
+            "key": "javascript",
+            "type": "TEMPLATE",
+            "value": "function() {\n  var it = {{JS – First Item}};\n  var p = parseFloat(it.price);\n  return isNaN(p) ? 0 : p;\n}"
+          }
+        ]
+      },
+      {
+        "name": "JS – Product Quantity",
+        "type": "jsm",
+        "parameter": [
+          {
+            "key": "javascript",
+            "type": "TEMPLATE",
+            "value": "function() {\n  var it = {{JS – First Item}};\n  var q = parseInt(it.quantity, 10);\n  return isNaN(q) ? 1 : q;\n}"
+          }
+        ]
+      },
+      {
+        "name": "JS – Value",
+        "type": "jsm",
+        "parameter": [
+          {
+            "key": "javascript",
+            "type": "TEMPLATE",
+            "value": "function() {\n  var v = {{DLV – ecommerce.value}};\n  var p = parseFloat(v);\n  return isNaN(p) ? 0 : p;\n}"
+          }
+        ]
+      },
+      {
+        "name": "JS – Currency",
+        "type": "jsm",
+        "parameter": [
+          {
+            "key": "javascript",
+            "type": "TEMPLATE",
+            "value": "function() {\n  return {{DLV – ecommerce.currency}} || 'CAD';\n}"
+          }
+        ]
+      },
+      {
+        "name": "JS – Transaction ID",
+        "type": "jsm",
+        "parameter": [
+          {
+            "key": "javascript",
+            "type": "TEMPLATE",
+            "value": "function() {\n  return {{DLV – ecommerce.transaction_id}} || '';\n}"
+          }
+        ]
+      },
+      {
+        "name": "JS – Items JSON (stringified)",
+        "type": "jsm",
+        "parameter": [
+          {
+            "key": "javascript",
+            "type": "TEMPLATE",
+            "value": "function() {\n  try {\n    var arr = {{JS – Items (array or empty)}};\n    return JSON.stringify(arr || []);\n  } catch(e) { return '[]'; }\n}"
+          }
+        ]
+      }
+    ],
+    "trigger": [
+      {
+        "name": "CE – virtual_page_view",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [],
+        "filter": [],
+        "parameter": [
+          {
+            "key": "eventName",
+            "type": "TEMPLATE",
+            "value": "virtual_page_view"
+          }
+        ]
+      },
+      {
+        "name": "CE – view_item",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [],
+        "filter": [],
+        "parameter": [
+          {
+            "key": "eventName",
+            "type": "TEMPLATE",
+            "value": "view_item"
+          }
+        ]
+      },
+      {
+        "name": "CE – add_to_cart",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [],
+        "filter": [],
+        "parameter": [
+          {
+            "key": "eventName",
+            "type": "TEMPLATE",
+            "value": "add_to_cart"
+          }
+        ]
+      },
+      {
+        "name": "CE – view_cart",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [],
+        "filter": [],
+        "parameter": [
+          {
+            "key": "eventName",
+            "type": "TEMPLATE",
+            "value": "view_cart"
+          }
+        ]
+      },
+      {
+        "name": "CE – begin_checkout",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [],
+        "filter": [],
+        "parameter": [
+          {
+            "key": "eventName",
+            "type": "TEMPLATE",
+            "value": "begin_checkout"
+          }
+        ]
+      },
+      {
+        "name": "CE – purchase",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [],
+        "filter": [],
+        "parameter": [
+          {
+            "key": "eventName",
+            "type": "TEMPLATE",
+            "value": "purchase"
+          }
+        ]
+      }
+    ]
+  }
+}
