@@ -30,7 +30,7 @@ const FAQTabs = ({
         >
           Hair Loss
         </button>
-        <button
+        {/* <button
           className={`text-left inline-block w-fit ${
             activeTab === "hairCare"
               ? "font-bold text-black border-b-2 border-black"
@@ -39,7 +39,7 @@ const FAQTabs = ({
           onClick={() => scrollToSection(hairCareRef, "hairCare")}
         >
           Hair Care
-        </button>
+        </button> */}
       </div>
     </div>
   );

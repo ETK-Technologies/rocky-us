@@ -9,13 +9,7 @@ import FAQSContainer from "@/components/FAQS/FAQSContainer";
 import MoreQuestionContainer from "@/components/FAQS/MoreQuestionContainer";
 import SearchResult from "@/components/FAQS/SearchResult";
 
-const FaqsButton = [
-  "all",
-  "sexual health",
-  "weight loss",
-  "hair loss",
-  "mental health",
-];
+const FaqsButton = ["all", "hair loss", "weight loss", "sexual health"];
 
 const Faqs = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -27,7 +21,6 @@ const Faqs = () => {
       ...HairLossFaqs.map((faq) => ({ ...faq, category: "hair loss" })),
       ...WlFaqs.map((faq) => ({ ...faq, category: "weight loss" })),
       ...SexualHealthFaqs.map((faq) => ({ ...faq, category: "sexual health" })),
-      ...MentalHealthfaqs.map((faq) => ({ ...faq, category: "mental health" })),
     ];
   }, []);
 
@@ -62,8 +55,6 @@ const Faqs = () => {
 
     // Otherwise, filter by category
     switch (selectedCategory) {
-      case "mental health":
-        return MentalHealthfaqs;
       case "weight loss":
         return WlFaqs;
       case "hair loss":
@@ -152,12 +143,9 @@ const HomeFaqs = [
         
         <p>Rocky offers a range of treatments across the following categories:</p>
         
-        <div><span class="font-[700]">Sexual health:</span> Sildenafil (Generic), Tadalafil (Generic), Viagra (Brand), Cialis (Brand), Dissolvable Tadalafil, Numb Ointment, Numb Spray, Testosterone Supplements. </div>
-        <div><span class="font-[700]">Hair loss:</span> Finasteride & Minoxidil Topical Foam, Finasteride (Propecia), Minoxidil (Rogaine), Hair Kits, Hair Care Products, Hair Growth Supplements. </div>
-        <div><span class="font-[700]">Weight loss:</span> Ozempic®, Mounjaro®, Wegovy®, Rybelsus®. </div>
-        <div><span class="font-[700]">Mental health:</span> Buproprion XL (Generic), Wellbutrin XL® (Brand), Citalopram (generic), Celexa® (brand), Escitalopram (generic), Cipralex® (brand), Fluoxetine (generic), Prozac® (brand), Paroxetine (generic), Paxil® (brand), Sertraline (generic), Zoloft® (brand), Trazadone (generic), Venlafaxine XR® (generic), Effexor (brand). </div>
-        <div><span class="font-[700]">Recovery:</span> DHM Blend®. </div>
-        <div><span class="font-[700]">Smoking cessation:</span> Zonnic®. </div>
+        <div><span class="font-[700]">Sexual health:</span> Sildenafil (Generic), Tadalafil (Generic) </div>
+        <div><span class="font-[700]">Hair loss:</span> Finasteride & Minoxidil Topical Foam </div>
+        <div><span class="font-[700]">Body optimization:</span> Ozempic®, Mounjaro®, Wegovy®, Rybelsus®. </div>
       </div>
     `,
   },
@@ -180,7 +168,12 @@ const HomeFaqs = [
     question: "How can I contact Rocky for support?",
     answer:
       "For support, message us through the portal, email the appropriate department, or call +1 (416) 900-1444 (Mon–Fri, 6 PM–8 PM EST)",
-  }
+  },
+  {
+    question: "What is the name and address of our affiliate partner pharmacy?",
+    answer:
+      "Affiliate Partner Pharmacy: Dania Discount Drugs Inc.5420 NW 33rd Ave Suite 7B Fort Lauderdale, FL 33309",
+  },
 ];
 const HairLossFaqs = [
   {
@@ -233,7 +226,7 @@ const SexualHealthFaqs = [
   {
     question: "What is the safest medication for ED?",
     answer:
-      "All medications go through extensive clinical trials and quality checks before getting approved by Health Canada. The safety and effectiveness of erectile dysfunction medications is well established, which is why it is an excellent treatment option for most men. Our online questionnaire will take into account your personal medical history and determine if these pills are right for you!",
+      "All medications go through extensive clinical trials and quality checks before getting approved by the U.S. FDA. The safety and effectiveness of erectile dysfunction medications is well established, which is why it is an excellent treatment option for most men. Our online questionnaire will take into account your personal medical history and determine if these pills are right for you!",
   },
   {
     question: "What is the most effective medication for ED?",
@@ -253,7 +246,7 @@ const SexualHealthFaqs = [
   {
     question: "Are ED medications available OTC?",
     answer:
-      "In Canada, erectile dysfunction medications are not available over-the-counter (OTC) and can only be obtained with a prescription. ED medications sold without a prescription are illegal and could potentially result in harm; ED medication in the counterfeit market does not undergo the correct production, testing, and approval and thus is not safe. Rocky provides access to a licensed health care team so you can be certain that you are getting safe and effective care. Through our online platform, you will be guided through a series of medical questions which are then reviewed by a licensed Canadian physician. Once the medical questionnaire is reviewed, you will be notified if you have been approved, and if so, the appropriate treatment is delivered to your doorstep.",
+      "In the United States, erectile dysfunction medications are not available over-the-counter (OTC) and can only be obtained with a prescription. ED medications sold without a prescription are illegal and could potentially result in harm; ED medication in the counterfeit market does not undergo the correct production, testing, and approval and thus is not safe. Rocky provides access to a licensed health care team so you can be certain that you are getting safe and effective care. Through our online platform, you will be guided through a series of medical questions which are then reviewed by a licensed U.S. physician. Once the medical questionnaire is reviewed, you will be notified if you have been approved, and if so, the appropriate treatment is delivered to your doorstep.",
   },
   {
     question: "How can I improve my ED?",
@@ -261,12 +254,11 @@ const SexualHealthFaqs = [
       "There are multiple factors that promote your sexual health. There are certainly ways in which you can improve your erectile dysfunction. Lifestyle changes that promote overall health are a great place to start. Eating a healthy diet that promotes heart vitality, regularly exercising and cutting down on health-harming behavior, such as cigarette smoking and recreational drug usage, can have an impactful change. Of course, there is also your mental well-being and intimate relationships that you should take into consideration. Therapy may be useful in these instances to help identify the root cause of any psychological difficulties you may be experiencing. Lastly, we have to mention alcohol. Its widely enjoyed and we wouldn’t want you to miss out on the fun, but if you notice that it may be hampering your experience in the bedroom, maybe give it a miss or reduce your consumption next time.",
   },
 ];
-
 const WlFaqs = [
   {
-    question: "How much does the Weight Loss Program cost?",
+    question: "How much does the Body Optimization Program cost?",
     answer:
-      "The initial consultation fee is $99. The cost of medication along with a $60 program fee is charged monthly. The program fee includes access to clinicians, new prescriptions and pharmacy counselling.",
+      "The initial consultation fee is $99. The cost of medication along with a $40 program fee is charged monthly. The program fee includes access to clinicians, new prescriptions and pharmacy counselling.",
   },
   {
     question: "Do you accept insurance?",
@@ -291,7 +283,7 @@ const WlFaqs = [
   {
     question: "How do I schedule a call with my provider?",
     answer:
-      "After submitting your questionnaire, you will be able to schedule a call with a licensed Canadian prescriber. To request this, simply send a message to your prescriber through your account by clicking on messages. They will send you a link to schedule a call at your convenience.",
+      "After submitting your questionnaire, you will be able to schedule a call with a licensed U.S. prescriber. To request this, simply send a message to your prescriber through your account by clicking on messages. They will send you a link to schedule a call at your convenience.",
   },
   {
     question: "Can I cancel at any time?",
@@ -301,54 +293,16 @@ const WlFaqs = [
   {
     question: "How do GLP-1s work?",
     answer:
-      "Weight Loss injections available through Rocky belong to the GLP-1 class of medications, mimicking the natural hormone GLP-1. They work by reducing appetite and promoting a feeling of fullness, leading to reduced food intake and weight loss.",
+      "Body Optimization injections available through Rocky belong to the GLP-1 class of medications, mimicking the natural hormone GLP-1. They work by reducing appetite and promoting a feeling of fullness, leading to reduced food intake and body optimization.",
   },
   {
     question: "How can I get a GLP-1 prescription at Rocky?",
     answer:
-      'Simply click <a href="/wl-pre-consultation" style="text-decoration: underline;">here</a> and get started today!',
+      'Simply click <a href="/wl-pre-consultation" class="underlined-link">here</a> and get started today!',
   },
   {
     question: "Which GLP-1s does Rocky offer?",
     answer:
       "Rocky provides prescriptions for several GLP-1 medications, including Ozempic, Mounjaro® and Wegovy.",
-  },
-];
-
-const MentalHealthfaqs = [
-  {
-    question: "What is anxiety?",
-    answer:
-      "Anxiety is your body's response to stress. It's a common experience, but if you find yourself dealing with persistent, overwhelming worry or fear that disrupts your daily life, you might have an anxiety disorder.",
-  },
-  {
-    question: "Do I need anxiety treatment?",
-    answer:
-      "If your anxiety feels uncontrollable, persistent, or hinders your ability to function, seeking treatment can be beneficial. Frequent panic attacks or intense worry may also indicate the need for treatment. Consult a healthcare provider to discuss anxiety treatment options.",
-  },
-  {
-    question: "What anxiety treatments are available?",
-    answer:
-      "We provide various Health Canada approved medications prescribed by licensed Canadian healthcare professionals. These daily medications are intended for managing long-term anxiety. We also provide a hub where you can find self-help resources.",
-  },
-  {
-    question: "What is depression?",
-    answer:
-      "Depression, also known as major depressive disorder, presents with a range of symptoms. These can include prolonged feelings of sadness, disinterest in daily activities, disrupted sleep patterns, and emotions such as guilt or a sense of purposelessness.",
-  },
-  {
-    question: "How can depression be addressed?",
-    answer:
-      "Depression can be treated through various approaches. This includes, but not limited to, medications, therapy or speaking to a licensed specialist. Our experts will guide you down the right path.",
-  },
-  {
-    question: "What kinds of depression treatments are available?",
-    answer:
-      "Every person is treated with a personalized plan to match their needs. We provide different treatment options to guide you after your assessment. We provide various Health Canada approved medications prescribed by licensed Canadian healthcare professionals. These daily medications are intended for managing long-term depression. We also provide a hub where you can find self-help resources.",
-  },
-  {
-    question: "Does health insurance cover my treatment?",
-    answer:
-      "Treatment coverage varies among plans and provinces, with specific eligibility criteria. To make the most of available coverage, we can provide you with an invoice post-purchase to submit for an insurance claim. Your insurance provider will then reimburse you according to your plan.",
   },
 ];

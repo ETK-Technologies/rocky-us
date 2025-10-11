@@ -1,7 +1,7 @@
 import Trustpilot from "@/components/Sex/Trustpilot";
 import CustomImage from "@/components/utils/CustomImage";
 
-const HighesttRate = ({blockMode = false}) => {
+const HighesttRate = ({ blockMode = false }) => {
   const ratings = [
     {
       image:
@@ -11,7 +11,7 @@ const HighesttRate = ({blockMode = false}) => {
     {
       image:
         "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/New%20ED%20Page/ch-2.png",
-      text: "Health Canada approved meds",
+      text: "FDA Approved meds",
     },
     {
       image:
@@ -31,12 +31,20 @@ const HighesttRate = ({blockMode = false}) => {
   ];
   return (
     <>
-      <section className={`py-10 ${blockMode ? "" : "pt-[7rem] md:pt-[4rem] mt-[10rem] relative"} `}>
+      <section
+        className={`py-10 ${
+          blockMode ? "" : "pt-[7rem] md:pt-[4rem] mt-[10rem] relative"
+        } `}
+      >
         {/* Ratings Section */}
-        <div className={` w-[335px] md:!w-[calc(100%_-_50px)] md:max-w-[1184px] lg:w-full mx-auto  bg-white border border-solid border-[#E2E2E1] rounded-lg py-[32px] md:py-[40px] shadow-[0px_1px_1px_0px_#E2E2E1] ${blockMode ? '': 'absolute -translate-x-2/4 left-2/4 -top-[10rem]'}`}>
+        <div
+          className={` w-[335px] md:!w-[calc(100%_-_50px)] md:max-w-[1184px] lg:w-full mx-auto  bg-white border border-solid border-[#E2E2E1] rounded-lg py-[32px] md:py-[40px] shadow-[0px_1px_1px_0px_#E2E2E1] ${
+            blockMode ? "" : "absolute -translate-x-2/4 left-2/4 -top-[10rem]"
+          }`}
+        >
           <div className="overflow-hidden mx-auto lg:max-w-5xl">
             <h2 className="text-[22px] md:text-[30px] leading-[25.3px] md:leading-[33px] font-[450] text-center mx-auto md:tracking-[-0.02em] max-w-[271px] md:max-w-full headers-font">
-              Canada&apos;s highest rated online pharmacy
+              The United States highest rated online pharmacy
             </h2>
             <div className="mb-8 md:mb-10 mt-4">
               <Trustpilot />
