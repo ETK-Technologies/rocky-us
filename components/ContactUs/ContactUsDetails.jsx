@@ -35,10 +35,10 @@ export default function ContactUsDetails() {
               For customer care inquiries:
             </p>
             <Link
-              href="mailto:contact@myrocky.ca"
+              href="mailto:contact@myrocky.com"
               className="text-[14px] md:text-[16px] leading-[140%] font-[600] text-[#814b00] hover:text-[#4e340fec]  "
             >
-              contact@myrocky.ca
+              contact@myrocky.com
             </Link>
           </div>
 
@@ -47,10 +47,10 @@ export default function ContactUsDetails() {
               For clinical inquiries:
             </p>
             <Link
-              href="mailto:clinic@myrocky.ca"
+              href="mailto:clinic@myrocky.com"
               className="text-[14px] md:text-[16px] leading-[140%] font-[600] text-[#814b00] hover:text-[#4e340fec]  "
             >
-              clinic@myrocky.ca
+              clinic@myrocky.com
             </Link>
           </div>
 
@@ -63,10 +63,10 @@ export default function ContactUsDetails() {
                 Rocky Pharmacy (310538)
               </p>
               <Link
-                href="mailto:info@myrocky.ca"
+                href="mailto:info@myrocky.com"
                 className="text-[14px] md:text-[16px] leading-[140%] font-[600] text-[#814b00] hover:text-[#4e340fec]  "
               >
-                pharmacy@myrocky.ca
+                pharmacy@myrocky.com
               </Link>
             </div>
             <div>
@@ -78,10 +78,10 @@ export default function ContactUsDetails() {
               </p>
 
               <Link
-                href="tel:+14169001444"
+                href="tel:+18887391444"
                 className="text-[14px] md:text-[16px] leading-[140%] font-[600] text-[#814b00] hover:text-[#4e340fec]  "
               >
-                +1 (416) 900-1444
+                +1 (888) 739-1444
               </Link>
             </div>
             <div>
@@ -96,7 +96,7 @@ export default function ContactUsDetails() {
                 +1 (289) 276-1173
               </Link>
             </div>
-            <div>
+            {/* <div>
               <p className="text-[14px] md:text-[16px] font-[500] leading-[140%] mb-1">
                 Pharmacy address:
               </p>
@@ -111,10 +111,10 @@ export default function ContactUsDetails() {
               <p className="text-[14px] md:text-[16px] leading-[140%] font-[600] text-[#814b00] hover:text-[#4e340fec]  ">
                 Mon-Fri 6-8pm EST
               </p>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
     </div>
   );
-} 
+}

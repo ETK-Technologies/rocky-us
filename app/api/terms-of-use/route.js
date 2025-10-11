@@ -4,7 +4,7 @@ import { logger } from "@/utils/devLogger";
 export async function GET(req) {
   try {
     // Fetch Terms of Use page from WordPress
-    const pageId = 556566;
+    const pageId = 218;
 
     if (!process.env.BASE_URL || !process.env.ADMIN_TOKEN) {
       return new Response(

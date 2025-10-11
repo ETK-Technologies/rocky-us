@@ -1,20 +1,12 @@
 import React, { useState } from "react";
+import {
+  ALL_US_STATES,
+  PHASE_1_STATES,
+  getStateLabel,
+} from "@/lib/constants/usStates";
 
 const ProvinceSelectionStep = ({ onProvinceSelect }) => {
   const [selectedProvince, setSelectedProvince] = useState("");
-
-  const provinces = [
-    { value: "", label: "Select province" },
-    { value: "Ontario", label: "Ontario" },
-    { value: "British Columbia", label: "British Columbia" },
-    { value: "Quebec", label: "Quebec" },
-    { value: "Alberta", label: "Alberta" },
-    { value: "Manitoba", label: "Manitoba" },
-    { value: "New Brunswick", label: "New Brunswick" },
-    { value: "Nova Scotia", label: "Nova Scotia" },
-    { value: "Saskatchewan", label: "Saskatchewan" },
-    { value: "Other", label: "Other" },
-  ];
 
   const handleProvinceChange = (e) => {
     setSelectedProvince(e.target.value);
@@ -44,7 +36,7 @@ const ProvinceSelectionStep = ({ onProvinceSelect }) => {
             htmlFor="province"
             className="block text-[16px] font-medium text-black mb-3"
           >
-            Province
+            State
           </label>
           <select
             id="province"
@@ -54,7 +46,10 @@ const ProvinceSelectionStep = ({ onProvinceSelect }) => {
             onChange={handleProvinceChange}
             style={{ outlineColor: "black" }}
           >
-            {provinces.map((option) => (
+            {ALL_US_STATES.filter(
+              (option) =>
+                option.value === "" || PHASE_1_STATES.includes(option.value)
+            ).map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
