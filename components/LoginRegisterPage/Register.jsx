@@ -26,6 +26,12 @@ import {
 } from "@/utils/zonnicQuebecValidation";
 import CartMigrationOverlay from "@/components/CartMigrationOverlay";
 
+import {
+  ALL_US_STATES,
+  PHASE_1_STATES,
+  getStateLabel,
+} from "@/lib/constants/usStates";
+
 const RegisterContent = ({ setActiveTab, registerRef }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -653,7 +659,7 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
                 />
               </div>
               <div className="w-full flex flex-col items-start justify-center gap-2">
-                <label htmlFor="province">Province</label>
+                <label htmlFor="province">State</label>
                 <select
                   id="province"
                   name="province"
@@ -663,7 +669,11 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
                   style={{ outlineColor: "black" }}
                   required
                 >
-                  {provinces.map((option) => (
+                  {ALL_US_STATES.filter(
+                    (option) =>
+                      option.value === "" ||
+                      PHASE_1_STATES.includes(option.value)
+                  ).map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
