@@ -1,7 +1,7 @@
 {
   "wlProducts": {
     "OZEMPIC": {
-      "id": "142976", 
+      "id": "142976",
       "name": "Ozempic",
       "description": "(semaglutide) injection",
       "price": "320.00",
@@ -15,7 +15,7 @@
       "name": "Mounjaro",
       "description": "(tirzepatide) injection",
       "price": "505.00",
-      "details": "Mounjaro® is the brand name for Tirzepatide which is a Health Canada approved drug. It helps reduce appetite and keeps you feeling fuller for longer.",
+      "details": "Mounjaro® is the brand name for Tirzepatide which is a FDA approved drug. It helps reduce appetite and keeps you feeling fuller for longer.",
       "url": "/products/monjaro.png",
       "supplyAvailable": true
     },

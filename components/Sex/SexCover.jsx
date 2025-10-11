@@ -3,7 +3,7 @@ const items = [
   {
     icon: "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/Pre%20Sell/hospital%201.png",
     alt: "Hospital",
-    text: "Health Canada-Approved medication",
+    text: "FDA-Approved medication",
   },
   {
     icon: "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/Pre%20Sell/dns-services%201.png",

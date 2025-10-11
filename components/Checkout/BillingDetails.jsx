@@ -4,6 +4,7 @@ import DOBInput from "../shared/DOBInput";
 import PostCanadaAddressAutocomplete from "./PostCanada/PostCanadaAddressAutocomplete";
 import { checkAgeRestriction } from "@/utils/ageValidation";
 import { logger } from "@/utils/devLogger";
+import { US_STATES_WITH_CODES, PHASE_1_STATES } from "@/lib/constants/usStates";
 
 const BillingDetails = ({
   formData,
@@ -173,7 +174,7 @@ const BillingDetails = ({
             htmlFor="billing_state"
             className="block text-[14px] font-[500] leading-[19.6px] text-[#212121] mb-2"
           >
-            Province*
+            State*
           </label>
           <div className="relative">
             <select
@@ -188,21 +189,16 @@ const BillingDetails = ({
               }`}
             >
               <option value="" disabled="">
-                Select your province
+                Select your state
               </option>
-              <option value="AB">Alberta</option>
-              <option value="BC">British Columbia</option>
-              <option value="MB">Manitoba</option>
-              <option value="NB">New Brunswick</option>
-              <option value="NL">Newfoundland and Labrador</option>
-              <option value="NT">Northwest Territories</option>
-              <option value="NS">Nova Scotia</option>
-              <option value="NU">Nunavut</option>
-              <option value="ON">Ontario</option>
-              <option value="PE">Prince Edward Island</option>
-              <option value="QC">Quebec</option>
-              <option value="SK">Saskatchewan</option>
-              <option value="YT">Yukon Territory</option>
+              {US_STATES_WITH_CODES.filter(
+                (state) =>
+                  state.value !== "" && PHASE_1_STATES.includes(state.code)
+              ).map((state) => (
+                <option key={state.code} value={state.code}>
+                  {state.label}
+                </option>
+              ))}
             </select>
             <div className="absolute right-3 top-1/2 w-5 h-5 transform -translate-y-1/2 pointer-events-none">
               {isUpdatingShipping ? (

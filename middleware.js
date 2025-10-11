@@ -28,6 +28,13 @@ export function middleware(req) {
       return NextResponse.redirect(new URL(`/blog/${slug}`, req.url));
     }
 
+    // Check if the path is blocked (hashed in navbar)
+    if (isBlockedRoute(pathname)) {
+      const blockedUrl = new URL("/blocked", req.url);
+      blockedUrl.searchParams.set("path", pathname);
+      return NextResponse.redirect(blockedUrl);
+    }
+
     const authToken = req.cookies.get("authToken")?.value;
     const isLoginPage = pathname === "/login-register";
     const isPatientPortalLogout =
@@ -165,10 +172,10 @@ function shouldProtectRoute(pathname) {
     "/wl-consultation",
     "/mh-quiz",
     "/my-account",
-    "/smoking-consultation",
-    "/acne-consultation-quiz",
-    "/anti-aging-consultation-quiz",
-    "/hyperpigmentation-consultation-quiz",
+    // "/smoking-consultation",
+    // "/acne-consultation-quiz",
+    // "/anti-aging-consultation-quiz",
+    // "/hyperpigmentation-consultation-quiz",
     //"/ed-pre-consultation-quiz",
     //"/wl-pre-consultation",
     //"/hair-pre-consultation-quiz"
@@ -178,6 +185,25 @@ function shouldProtectRoute(pathname) {
 
   // Check if the current path should be protected
   return protectedRoutes.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
+  );
+}
+
+// Helper function to determine which routes are blocked (hashed in navbar)
+function isBlockedRoute(pathname) {
+  // List of routes that are hashed/blocked in the navbar
+  const blockedRoutes = [
+    "/mental-health",
+    "/product/dhm-blend",
+    "/zonnic",
+    "/product/zonnic",
+    "/merch",
+    // "/hair",
+    // Add other routes that are hashed in navbar
+  ];
+
+  // Check if the current path should be blocked
+  return blockedRoutes.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   );
 }

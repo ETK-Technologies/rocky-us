@@ -14,8 +14,8 @@ const products = [
   { href: "/product/tadalafil-cialis/", text: "Tadalafil" },
   { href: "/product/finasteride-minoxidil-topical-foam/", text: "Hair Foam" },
   { href: "/product/ozempic/", text: "Ozempic" },
-  { href: "/product/testosterone-support/", text: "Testosterone Support" },
-  { href: "/product/lidocaine-spray/", text: "Lido Spray" },
+  // { href: "/product/testosterone-support/", text: "Testosterone Support" },
+  // { href: "/product/lidocaine-spray/", text: "Lido Spray" },
 ];
 
 const Footer = ({ className }) => {
@@ -153,11 +153,11 @@ const Footer = ({ className }) => {
               { href: "/about-us/", text: "About Us" },
               { href: "/blog/", text: "Blog" },
               { href: "/podcast/", text: "Podcast" },
-              { href: "/blog/category/hair-loss", text: "Hair Loss" },
-              { href: "/blog/category/lifestyle", text: "Lifestyle" },
-              { href: "/blog/category/mental-health", text: "Mental Health" },
-              { href: "/blog/category/sexual-health", text: "Sexual Health" },
-              { href: "/blog/category/weight-loss", text: "Weight Loss" },
+              // { href: "/blog/category/hair-loss", text: "Hair Loss" },
+              // { href: "/blog/category/lifestyle", text: "Lifestyle" },
+              // { href: "/blog/category/mental-health", text: "Mental Health" },
+              // { href: "/blog/category/sexual-health", text: "Sexual Health" },
+              // { href: "/blog/category/weight-loss", text: "Weight Loss" },
             ].map((link) => (
               <Link
                 key={link.href}
@@ -194,8 +194,8 @@ const Footer = ({ className }) => {
               { href: "/terms-of-use/", text: "Terms & Conditions" },
               { href: "/privacy-policy/", text: "Privacy Policy" },
               {
-                href: "/service-across-canada/",
-                text: "Service Across Canada",
+                href: "/service-coverage/",
+                text: "Service Coverage",
               },
             ].map((link) => (
               <Link
@@ -264,24 +264,24 @@ const Footer = ({ className }) => {
             <div className="flex flex-col justify-center items-center md:items-start">
               <h1 className="text-[#efe7df] text-[16px]">Have a question?</h1>
               <Link
-                href="mailto:contact@myrocky.ca"
+                href="mailto:contact@myrocky.com"
                 className="underline text-[14px]"
                 prefetch={false}
               >
-                contact@myrocky.ca
+                contact@myrocky.com
               </Link>
             </div>
             <div className="flex flex-col items-center md:items-end">
               <h4 className="text-[#efe7df] text-[16px]">Press inquiries?</h4>
               <Link
-                href="mailto:social@myrocky.ca"
+                href="mailto:social@myrocky.com"
                 className="underline text-[14px]"
                 prefetch={false}
               >
-                social@myrocky.ca
+                social@myrocky.com
               </Link>
             </div>
-            <div className="flex flex-col items-center justify-center md:items-start">
+            {/* <div className="flex flex-col items-center justify-center md:items-start">
               <h4 className="text-[#efe7df] text-[16px] text-center md:text-start">
                 Where can you find us?
               </h4>
@@ -298,8 +298,8 @@ const Footer = ({ className }) => {
                   <IoIosArrowDown />
                 </span>
               </p>
-            </div>
-            <div className="flex flex-col items-center md:items-end">
+            </div> */}
+            <div className="flex flex-col items-center md:items-start">
               <h4 className="text-[#efe7df] mb-2 text-[16px]">Social Media</h4>
               <div className="flex gap-4">
                 <Link
