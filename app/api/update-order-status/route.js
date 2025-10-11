@@ -12,117 +12,74 @@ export async function POST(req) {
 
     const {
       orderId,
-      status, // 'processing', 'on-hold', 'completed', 'failed', etc.
+      status,
       paymentIntentId,
       chargeId,
-      transactionId,
-      paymentMethod = "stripe",
+      paymentMethod,
       cardBrand,
       cardLast4,
-      errorMessage,
+      errorMessage, // For failed status
     } = requestData;
 
-    // Validate required fields
-    if (!orderId) {
+    if (!orderId || !status) {
       return NextResponse.json(
-        { error: "Order ID is required" },
-        { status: 400 }
-      );
-    }
-
-    if (!status) {
-      return NextResponse.json(
-        { error: "Status is required" },
+        { error: "Order ID and status are required" },
         { status: 400 }
       );
     }
 
     logger.log("=== UPDATING ORDER STATUS ===");
     logger.log("Order ID:", orderId);
-    logger.log("New Status:", status);
+    logger.log("Status:", status);
     logger.log("Payment Intent:", paymentIntentId);
-    logger.log("=============================");
+    logger.log("Charge ID:", chargeId);
+    logger.log("==============================");
 
-    // Prepare update data
-    const updateData = {
-      status: status,
-    };
-
-    // Add payment metadata
     const metaData = [];
 
+    // Add Stripe metadata
     if (paymentIntentId) {
-      metaData.push({
-        key: "_stripe_intent_id",
-        value: paymentIntentId,
-      });
+      metaData.push({ key: "_stripe_intent_id", value: paymentIntentId });
     }
-
     if (chargeId) {
-      metaData.push({
-        key: "_stripe_charge_id",
-        value: chargeId,
-      });
+      metaData.push({ key: "_stripe_charge_id", value: chargeId });
+      metaData.push({ key: "_transaction_id", value: chargeId });
     }
-
-    if (transactionId) {
-      metaData.push({
-        key: "_transaction_id",
-        value: transactionId,
-      });
-      updateData.transaction_id = transactionId;
-    }
-
     if (paymentMethod) {
-      metaData.push({
-        key: "_payment_method",
-        value: paymentMethod,
-      });
-      updateData.payment_method = paymentMethod;
-      updateData.payment_method_title =
-        paymentMethod === "stripe" ? "Stripe" : paymentMethod;
+      metaData.push({ key: "_payment_method", value: paymentMethod });
+      metaData.push({ key: "_payment_method_title", value: "Stripe" });
+    }
+    if (cardBrand) {
+      metaData.push({ key: "_stripe_card_brand", value: cardBrand });
+    }
+    if (cardLast4) {
+      metaData.push({ key: "_stripe_card_last4", value: cardLast4 });
     }
 
-    if (cardBrand && cardLast4) {
-      metaData.push(
-        {
-          key: "_stripe_card_brand",
-          value: cardBrand,
-        },
-        {
-          key: "_stripe_card_last4",
-          value: cardLast4,
-        }
-      );
-    }
-
-    if (errorMessage) {
-      metaData.push({
-        key: "_payment_error",
-        value: errorMessage,
-      });
-    }
+    const updateData = {
+      status: status,
+      payment_method: paymentMethod || "stripe_cc",
+      payment_method_title: "Stripe",
+    };
 
     // Add metadata to update
     if (metaData.length > 0) {
       updateData.meta_data = metaData;
     }
 
-    // Add order note based on status
+    // Prepare order note based on status
     let orderNote = "";
-    if (status === "on-hold" && chargeId) {
-      orderNote = `Payment authorized via Stripe (Charge: ${chargeId}). Awaiting manual capture.`;
-    } else if (status === "on-hold" && paymentIntentId) {
-      orderNote = `Payment authorized via Stripe (Intent: ${paymentIntentId}). Awaiting manual capture.`;
-    } else if (status === "processing" && chargeId) {
-      orderNote = `Payment captured via Stripe (Charge: ${chargeId}).`;
-    } else if (status === "processing" && paymentIntentId) {
-      orderNote = `Payment captured via Stripe (Intent: ${paymentIntentId}).`;
+    if (status === "on-hold" && (chargeId || paymentIntentId)) {
+      const reference = chargeId || paymentIntentId;
+      orderNote = `Payment authorized via Stripe (${reference}). Awaiting manual capture.`;
+    } else if (status === "processing" && (chargeId || paymentIntentId)) {
+      const reference = chargeId || paymentIntentId;
+      orderNote = `Payment captured via Stripe (${reference}).`;
     } else if (status === "failed") {
       orderNote = `Payment failed: ${errorMessage || "Unknown error"}`;
     }
 
-    logger.log("Update data:", JSON.stringify(updateData, null, 2));
+    logger.log("Update payload:", JSON.stringify(updateData, null, 2));
 
     // Update order using WooCommerce REST API
     const response = await axios.put(
@@ -138,34 +95,26 @@ export async function POST(req) {
       }
     );
 
-    logger.log("Order updated successfully:", {
-      order_id: response.data.id,
-      status: response.data.status,
-    });
+    logger.log("Order updated:", response.data.id, response.data.status);
 
-    // Add order note if we have one
+    // Add order note
     if (orderNote) {
-      try {
-        await axios.post(
-          `${BASE_URL}/wp-json/wc/v3/orders/${orderId}/notes`,
-          {
-            note: orderNote,
-            customer_note: false,
+      await axios.post(
+        `${BASE_URL}/wp-json/wc/v3/orders/${orderId}/notes`,
+        {
+          note: orderNote,
+          customer_note: false,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Basic ${Buffer.from(
+              `${CONSUMER_KEY}:${CONSUMER_SECRET}`
+            ).toString("base64")}`,
           },
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Basic ${Buffer.from(
-                `${CONSUMER_KEY}:${CONSUMER_SECRET}`
-              ).toString("base64")}`,
-            },
-          }
-        );
-        logger.log("Order note added successfully");
-      } catch (noteError) {
-        logger.error("Failed to add order note:", noteError.message);
-        // Don't fail the whole request if note addition fails
-      }
+        }
+      );
+      logger.log("Order note added");
     }
 
     return NextResponse.json({
@@ -178,8 +127,8 @@ export async function POST(req) {
       },
     });
   } catch (error) {
-    logger.error("Failed to update order status:", error);
-    logger.error("Error details:", error.response?.data);
+    logger.error("❌ Failed to update order status:", error);
+    logger.error("Error details:", error.response?.data || error.message);
 
     return NextResponse.json(
       {

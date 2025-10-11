@@ -477,6 +477,8 @@ export async function POST(req) {
         order_id: response.data.id, // For compatibility
         order_key: response.data.order_key,
         status: response.data.status,
+        total: response.data.total, // Add total for Stripe payment
+        currency: response.data.currency || "USD",
         payment_deferred: true,
         message:
           "Order created successfully. Payment will be processed separately.",

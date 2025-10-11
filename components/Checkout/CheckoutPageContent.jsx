@@ -33,6 +33,7 @@ import { checkAgeRestriction } from "@/utils/ageValidation";
 import QuebecRestrictionPopup from "../Popups/QuebecRestrictionPopup";
 import AgeRestrictionPopup from "../Popups/AgeRestrictionPopup";
 import { getAwinFromUrlOrStorage } from "@/utils/awin";
+import StripeElementsPayment from "./StripeElementsPayment";
 
 const CheckoutPageContent = () => {
   const router = useRouter();
@@ -68,6 +69,10 @@ const CheckoutPageContent = () => {
   const [savedCards, setSavedCards] = useState([]);
   const [selectedCard, setSelectedCard] = useState(null);
   const [isLoadingSavedCards, setIsLoadingSavedCards] = useState(false);
+
+  // Stripe Elements payment modal state
+  const [showStripePayment, setShowStripePayment] = useState(false);
+  const [pendingOrderData, setPendingOrderData] = useState(null);
 
   // Initialize checkout validation hook
   const {
@@ -1344,7 +1349,67 @@ const CheckoutPageContent = () => {
         }
       }
 
-      // Continue with WooCommerce Store API checkout
+      // For NEW CARD payments with Stripe Elements
+      if (!selectedCard && dataToSend.useStripe) {
+        try {
+          logger.log("Creating pending order for Stripe Elements payment...");
+
+          // Create pending order first
+          const orderResponse = await fetch("/api/create-pending-order", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(dataToSend),
+          });
+
+          const orderResult = await orderResponse.json();
+
+          if (!orderResult.success) {
+            throw new Error(orderResult.error || "Failed to create order");
+          }
+
+          logger.log("✅ Pending order created:", orderResult.data.id);
+          logger.log("Order total:", orderResult.data.total);
+
+          // Parse the total amount
+          let amountInCents = 0;
+          const orderTotal = orderResult.data.total;
+
+          if (typeof orderTotal === "string") {
+            // Remove currency symbols and convert to number
+            const numericTotal = parseFloat(orderTotal.replace(/[^0-9.]/g, ""));
+            amountInCents = Math.round(numericTotal * 100);
+          } else if (typeof orderTotal === "number") {
+            amountInCents = Math.round(orderTotal * 100);
+          }
+
+          logger.log("Amount in cents:", amountInCents);
+
+          // Validate amount
+          if (!amountInCents || amountInCents <= 0 || isNaN(amountInCents)) {
+            logger.error("Invalid amount:", amountInCents);
+            toast.error("Failed to calculate order total. Please try again.");
+            setSubmitting(false);
+            return;
+          }
+
+          // Show Stripe Elements payment form
+          setPendingOrderData({
+            orderId: orderResult.data.id,
+            orderKey: orderResult.data.order_key,
+            amount: amountInCents,
+          });
+          setShowStripePayment(true);
+          setSubmitting(false);
+          return;
+        } catch (error) {
+          logger.error("Failed to create pending order:", error);
+          toast.error(error.message || "Failed to create order");
+          setSubmitting(false);
+          return;
+        }
+      }
+
+      // Continue with WooCommerce Store API checkout (for Bambora or non-Stripe payments)
       const res = await fetch("/api/checkout", {
         method: "POST",
         body: JSON.stringify(dataToSend),
@@ -1436,6 +1501,38 @@ const CheckoutPageContent = () => {
     }
   };
 
+  // Stripe payment success handler
+  const handleStripePaymentSuccess = (order) => {
+    logger.log("✅ Stripe payment successful, redirecting...");
+
+    // Empty cart
+    (async () => {
+      try {
+        const { emptyCart } = await import("@/lib/cart/cartService");
+        await emptyCart();
+        logger.log("Cart emptied successfully");
+      } catch (error) {
+        logger.error("Error emptying cart:", error);
+      }
+    })();
+
+    // Redirect to success page
+    router.push(
+      `/checkout/order-received/${order.id}?key=${
+        order.order_key
+      }${buildFlowQueryString()}`
+    );
+  };
+
+  // Stripe payment error handler
+  const handleStripePaymentError = (error) => {
+    logger.error("❌ Stripe payment error:", error);
+    toast.error(error.message || "Payment failed. Please try again.");
+    setShowStripePayment(false);
+    setPendingOrderData(null);
+    setSubmitting(false);
+  };
+
   // Show loading indicator if cart is not yet loaded or URL parameters are being processed
   if (!cartItems || isProcessingUrlParams) {
     return <CheckoutSkeleton />;
@@ -1502,6 +1599,87 @@ const CheckoutPageContent = () => {
         }}
         message="Sorry, you must be at least 19 years old to purchase this product."
       />
+
+      {/* Stripe Elements Payment Modal */}
+      {showStripePayment && pendingOrderData && (
+        <div className="stripe-payment-modal">
+          <div
+            className="modal-overlay"
+            onClick={() => {
+              if (window.confirm("Are you sure you want to cancel payment?")) {
+                setShowStripePayment(false);
+                setPendingOrderData(null);
+                setSubmitting(false);
+              }
+            }}
+          />
+          <div className="modal-content">
+            <h2>Complete Your Payment</h2>
+            <p className="order-info">
+              Order #{pendingOrderData.orderId} - $
+              {(pendingOrderData.amount / 100).toFixed(2)}
+            </p>
+            <StripeElementsPayment
+              orderId={pendingOrderData.orderId}
+              amount={pendingOrderData.amount}
+              onSuccess={handleStripePaymentSuccess}
+              onError={handleStripePaymentError}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Stripe Payment Modal Styles */}
+      <style jsx>{`
+        .stripe-payment-modal {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          z-index: 9999;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .modal-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.7);
+          backdrop-filter: blur(4px);
+          cursor: pointer;
+        }
+
+        .modal-content {
+          position: relative;
+          background: white;
+          padding: 40px;
+          border-radius: 12px;
+          max-width: 600px;
+          width: 90%;
+          max-height: 90vh;
+          overflow-y: auto;
+          z-index: 10000;
+          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-content h2 {
+          margin: 0 0 10px;
+          font-size: 24px;
+          font-weight: 600;
+          color: #333;
+        }
+
+        .modal-content .order-info {
+          margin: 0 0 30px;
+          color: #666;
+          font-size: 16px;
+        }
+      `}</style>
     </>
   );
 };

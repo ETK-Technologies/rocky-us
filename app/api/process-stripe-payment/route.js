@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { logger } from "@/utils/devLogger";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export async function POST(req) {
   try {
@@ -10,16 +10,9 @@ export async function POST(req) {
 
     const {
       orderId,
-      cardNumber,
-      cardExpMonth,
-      cardExpYear,
-      cardCvc,
+      paymentMethodId, // From Stripe Elements
       amount, // Amount in cents
       currency = "usd",
-      description,
-      customerEmail,
-      customerName,
-      billingDetails,
       metadata = {},
     } = requestData;
 
@@ -31,9 +24,9 @@ export async function POST(req) {
       );
     }
 
-    if (!cardNumber || !cardExpMonth || !cardExpYear || !cardCvc) {
+    if (!paymentMethodId) {
       return NextResponse.json(
-        { error: "Card details are required" },
+        { error: "Payment method is required" },
         { status: 400 }
       );
     }
@@ -47,104 +40,99 @@ export async function POST(req) {
 
     logger.log("=== STRIPE PAYMENT PROCESSING ===");
     logger.log("Order ID:", orderId);
+    logger.log("Payment Method:", paymentMethodId);
     logger.log("Amount:", amount, currency);
-    logger.log("=====================================");
+    logger.log("===================================");
 
-    // STEP 1: Create Source on backend (respects raw card data API setting)
-    logger.log("Creating Stripe Source on backend...");
-    let source;
-    try {
-      source = await stripe.sources.create({
-        type: "card",
-        card: {
-          number: cardNumber,
-          exp_month: parseInt(cardExpMonth),
-          exp_year: parseInt(cardExpYear),
-          cvc: cardCvc,
-        },
-        owner: billingDetails || {
-          name: customerName,
-          email: customerEmail,
-        },
-      });
+    // Create PaymentIntent with manual capture
+    logger.log("Creating Stripe PaymentIntent...");
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(amount), // Ensure it's an integer
+      currency: currency.toLowerCase(),
+      payment_method: paymentMethodId,
+      capture_method: "manual", // Authorization only - manual capture later
+      confirm: true, // Confirm immediately
+      metadata: {
+        order_id: orderId,
+        ...metadata,
+      },
+      return_url: `${
+        process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+      }/checkout/order-received/${orderId}`,
+    });
 
-      logger.log("Source created successfully:", source.id);
-      logger.log("Card details:", {
-        brand: source.card?.brand,
-        last4: source.card?.last4,
+    logger.log("PaymentIntent created:", {
+      id: paymentIntent.id,
+      status: paymentIntent.status,
+      amount: paymentIntent.amount,
+      captureMethod: paymentIntent.capture_method,
+    });
+
+    // Check status
+    if (
+      paymentIntent.status === "requires_capture" ||
+      paymentIntent.status === "succeeded"
+    ) {
+      logger.log("✅ Payment authorized successfully");
+
+      // Get charge ID
+      const chargeId =
+        paymentIntent.latest_charge ||
+        paymentIntent.charges?.data?.[0]?.id ||
+        null;
+
+      return NextResponse.json({
+        success: true,
+        paymentIntentId: paymentIntent.id,
+        chargeId: chargeId,
+        status: paymentIntent.status,
+        amount: paymentIntent.amount,
+        currency: paymentIntent.currency,
+        message: "Payment authorized successfully",
       });
-    } catch (error) {
-      logger.error("Failed to create Stripe Source:", error.message);
+    }
+
+    // Handle requires_action (3D Secure)
+    if (paymentIntent.status === "requires_action") {
+      logger.log("⚠️ Payment requires additional action (3D Secure)");
+      return NextResponse.json({
+        success: false,
+        requiresAction: true,
+        clientSecret: paymentIntent.client_secret,
+        message: "Additional authentication required",
+      });
+    }
+
+    // Handle failed payment
+    if (
+      paymentIntent.status === "canceled" ||
+      paymentIntent.status === "requires_payment_method"
+    ) {
+      logger.error(
+        "❌ Payment failed:",
+        paymentIntent.last_payment_error?.message
+      );
       return NextResponse.json(
         {
-          error: "Failed to process card details",
-          details: error.message,
+          success: false,
+          error: paymentIntent.last_payment_error?.message || "Payment failed",
         },
         { status: 400 }
       );
     }
 
-    // STEP 2: Create Charge with manual capture using the Source
-    // The Charges API works perfectly with Sources and supports capture: false
-    logger.log("Creating Stripe Charge with Source...");
-    const charge = await stripe.charges.create({
-      amount: Math.round(amount), // Ensure it's an integer
-      currency: currency.toLowerCase(),
-      source: source.id, // Use the Source we just created
-      capture: false, // IMPORTANT: Don't capture immediately (authorization only)
-      description: description || `Order #${orderId}`,
-      receipt_email: customerEmail || undefined,
-      metadata: {
-        order_id: orderId,
-        customer_name: customerName,
-        ...metadata,
-      },
-    });
-
-    logger.log("Charge created successfully:", {
-      id: charge.id,
-      status: charge.status,
-      amount: charge.amount,
-      captured: charge.captured,
-      paid: charge.paid,
-    });
-
-    // Check if charge succeeded (authorized)
-    if (charge.status === "succeeded" && !charge.captured) {
-      logger.log("Payment authorized successfully - ready for manual capture");
-
-      return NextResponse.json({
-        success: true,
-        chargeId: charge.id,
-        paymentIntentId: charge.payment_intent || charge.id, // Use charge ID as reference
-        status: "requires_capture",
-        amount: charge.amount,
-        currency: charge.currency,
-        cardBrand: charge.source?.brand,
-        cardLast4: charge.source?.last4,
-        message: "Payment authorized successfully",
-      });
-    }
-
-    // Handle failed charges
-    if (charge.status === "failed") {
-      logger.error("Charge failed:", charge.failure_message);
-      return NextResponse.json({
-        success: false,
-        status: "failed",
-        message: charge.failure_message || "Payment failed",
-      });
-    }
-
     // Handle other statuses
-    logger.warn("Unexpected charge status:", charge.status);
-    return NextResponse.json({
-      success: false,
-      status: charge.status,
-      message: `Payment status: ${charge.status}`,
-    });
+    logger.warn("⚠️ Unexpected payment status:", paymentIntent.status);
+    return NextResponse.json(
+      {
+        success: false,
+        status: paymentIntent.status,
+        message: `Payment status: ${paymentIntent.status}`,
+      },
+      { status: 400 }
+    );
   } catch (error) {
-    logger.error("Stripe payment processing failed:", error);
+    logger.error("❌ Stripe payment processing failed:", error);
     logger.error("Error details:", {
       message: error.message,
       type: error.type,
@@ -152,27 +140,35 @@ export async function POST(req) {
       decline_code: error.decline_code,
     });
 
-    // Return user-friendly error message
-    let errorMessage = "Payment processing failed";
-
+    // Transform Stripe errors into user-friendly messages
+    let userFriendlyMessage = "Payment failed. Please try again.";
     if (error.type === "StripeCardError") {
-      errorMessage = error.message || "Your card was declined";
+      userFriendlyMessage = error.message;
+    } else if (error.type === "StripeRateLimitError") {
+      userFriendlyMessage = "Too many requests. Please try again later.";
     } else if (error.type === "StripeInvalidRequestError") {
-      errorMessage = "Invalid payment request";
+      userFriendlyMessage = error.message;
     } else if (error.type === "StripeAPIError") {
-      errorMessage = "Payment service temporarily unavailable";
+      userFriendlyMessage = "Stripe API error. Please try again later.";
+    } else if (error.type === "StripeConnectionError") {
+      userFriendlyMessage = "Network error. Please check your connection.";
+    } else if (error.type === "StripeAuthenticationError") {
+      userFriendlyMessage =
+        "Stripe authentication failed. Please check API keys.";
     }
 
     return NextResponse.json(
       {
-        error: errorMessage,
+        success: false,
+        error: userFriendlyMessage,
         details: {
+          message: error.message,
           type: error.type,
           code: error.code,
           decline_code: error.decline_code,
         },
       },
-      { status: 400 }
+      { status: error.statusCode || 500 }
     );
   }
 }
