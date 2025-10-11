@@ -70,19 +70,6 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
     setShowConfirmPassword(!showConfirmPassword);
   };
 
-  const provinces = [
-    { value: "", label: "Select a province" },
-    { value: "Ontario", label: "Ontario" },
-    { value: "British Columbia", label: "British Columbia" },
-    { value: "Quebec", label: "Quebec" },
-    { value: "Alberta", label: "Alberta" },
-    { value: "Manitoba", label: "Manitoba" },
-    { value: "New Brunswick", label: "New Brunswick" },
-    { value: "Nova Scotia", label: "Nova Scotia" },
-    { value: "Saskatchewan", label: "Saskatchewan" },
-    { value: "Other", label: "Other" },
-  ];
-
   const genderOptions = [
     { value: "", label: "Select gender" },
     { value: "male", label: "Male" },

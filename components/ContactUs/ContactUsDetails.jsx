@@ -35,7 +35,7 @@ export default function ContactUsDetails() {
               For customer care inquiries:
             </p>
             <Link
-              href="mailto:contact@myrocky.ca"
+              href="mailto:contact@myrocky.com"
               className="text-[14px] md:text-[16px] leading-[140%] font-[600] text-[#814b00] hover:text-[#4e340fec]  "
             >
               contact@myrocky.com
@@ -47,7 +47,7 @@ export default function ContactUsDetails() {
               For clinical inquiries:
             </p>
             <Link
-              href="mailto:clinic@myrocky.ca"
+              href="mailto:clinic@myrocky.com"
               className="text-[14px] md:text-[16px] leading-[140%] font-[600] text-[#814b00] hover:text-[#4e340fec]  "
             >
               clinic@myrocky.com
@@ -63,7 +63,7 @@ export default function ContactUsDetails() {
                 Rocky Pharmacy (310538)
               </p>
               <Link
-                href="mailto:info@myrocky.ca"
+                href="mailto:info@myrocky.com"
                 className="text-[14px] md:text-[16px] leading-[140%] font-[600] text-[#814b00] hover:text-[#4e340fec]  "
               >
                 pharmacy@myrocky.com
@@ -78,7 +78,7 @@ export default function ContactUsDetails() {
               </p>
 
               <Link
-                href="tel:+14169001444"
+                href="tel:+18887391444"
                 className="text-[14px] md:text-[16px] leading-[140%] font-[600] text-[#814b00] hover:text-[#4e340fec]  "
               >
                 +1 (888) 739-1444
