@@ -22,9 +22,9 @@ export default function PharmacyServices() {
       <ul className="space-y-1 list-disc text-[16px] md:text-[18px] font-[400] ml-6 md:ml-8 mb-6">
         <li>
           Each product page on{" "}
-          <a href="/myrocky.ca" className="text-blue-500 ">
+          <a href="/myrocky.com" className="text-blue-500 ">
             {" "}
-            myrocky.ca
+            myrocky.com
           </a>{" "}
           has counselling points on what to expect from the medication, the
           medication's appropriate use, side effects, why it may be useful, and
@@ -71,7 +71,7 @@ export default function PharmacyServices() {
         Patients can file a complaint if required. In order to file a complaint,
         send an email clearly outlining the patient name, address, order number,
         product/medication purchased, and explain the problem thoroughly. Emails
-        can be sent to pharmacy@myrocky.ca. 
+        can be sent to pharmacy@myrocky.com. 
       </p>
       <p className="text-[16px] md:text-[18px] leading-[160%] font-[400] text-[#000000D9] mb-6">
         <strong>Packaging and fulfillment restrictions</strong>

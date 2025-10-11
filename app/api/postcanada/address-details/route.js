@@ -31,7 +31,7 @@ export async function POST(request) {
     // Set origin based on environment
     const origin =
       process.env.NODE_ENV === "production"
-        ? "https://www.myrocky.ca"
+        ? "https://www.myrocky.com"
         : "http://localhost:3000";
 
     const response = await fetch(url.toString(), {

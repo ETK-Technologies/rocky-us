@@ -13,7 +13,7 @@ const products = [
     name: "My Rocky Hair Kit",
     description:
       "A power house combination of prescription and natural hair products.",
-    img: "https://mycdn.myrocky.ca/wp-content/uploads/20240403135520/RockyHealth-HQ-88-scaled.jpg",
+    img: "https://mycdn.myrocky.com/wp-content/uploads/20240403135520/RockyHealth-HQ-88-scaled.jpg",
     items: [
       { name: "Finasteride", quantity: "1X", size: "1 mg tablet(s)" },
       { name: "Minoxidil", quantity: "1X", size: "60 ml / 2 fl oz" },
@@ -47,7 +47,7 @@ const products = [
     id: "2",
     name: "Prescription Hair Kit",
     description: "A combination of prescription and OTC hair products.",
-    img: "https://mycdn.myrocky.ca/wp-content/uploads/20240403135519/RockyHealth-HQ-84-scaled.jpg",
+    img: "https://mycdn.myrocky.com/wp-content/uploads/20240403135519/RockyHealth-HQ-84-scaled.jpg",
     items: [
       { name: "Finasteride", quantity: "1X", size: "1 mg tablet(s)" },
       { name: "Minoxidil", quantity: "1X", size: "60 ml / 2 fl oz" },
@@ -66,7 +66,7 @@ const products = [
     name: "Organic Hair Kit",
     description:
       "Improve the health of your scalp and provide your hair with the right environment to thrive. Our all natural and organic products have the ingredients to do just that.",
-    img: "https://mycdn.myrocky.ca/wp-content/uploads/20240403135521/RockyHealth-HQ-86-scaled.jpg",
+    img: "https://mycdn.myrocky.com/wp-content/uploads/20240403135521/RockyHealth-HQ-86-scaled.jpg",
     items: [
       {
         name: "Essential IX Shampoo",
@@ -99,15 +99,15 @@ const products = [
 
 // Items are a single product details in combo packages and not the same combo products
 const items = [
-  { id: 1, name: "Finasteride", img: "https://mycdn.myrocky.ca/wp-content/uploads/20240403135529/RockyHealth-HQ-81-scaled.jpg", size: "1 mg tablet(s)" },
-  { id: 2, name: "Minoxidil", img: "https://mycdn.myrocky.ca/wp-content/uploads/20240403135528/RockyHealth-HQ-80-scaled.jpg", size: "60 ml / 2 fl oz" },
+  { id: 1, name: "Finasteride", img: "https://mycdn.myrocky.com/wp-content/uploads/20240403135529/RockyHealth-HQ-81-scaled.jpg", size: "1 mg tablet(s)" },
+  { id: 2, name: "Minoxidil", img: "https://mycdn.myrocky.com/wp-content/uploads/20240403135528/RockyHealth-HQ-80-scaled.jpg", size: "60 ml / 2 fl oz" },
   {
     id: 3,
     name: "Essential IX Shampoo",
-    img: "https://mycdn.myrocky.ca/wp-content/uploads/20240403135526/RockyHealth-HQ-78-scaled.jpg",
+    img: "https://mycdn.myrocky.com/wp-content/uploads/20240403135526/RockyHealth-HQ-78-scaled.jpg",
     size: "240 ml / 8 fl oz",
   },
-  { id: 4, name: "Essential V Oil", img: "https://mycdn.myrocky.ca/wp-content/uploads/20240403135331/RockyHealth-HQ-85-scaled.jpg", size: "60 ml / 2 fl oz" },
+  { id: 4, name: "Essential V Oil", img: "https://mycdn.myrocky.com/wp-content/uploads/20240403135331/RockyHealth-HQ-85-scaled.jpg", size: "60 ml / 2 fl oz" },
 ];
 
 const faqs = [

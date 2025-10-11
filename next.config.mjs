@@ -63,6 +63,11 @@ const nextConfig = {
       },
       {
         protocol: "https",
+        hostname: "myrocky.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
         hostname: "cdn.vectorstock.com",
         pathname: "/**",
       },

@@ -9,7 +9,7 @@ const StatisticsSection = memo(() => {
         {/* Background Image */}
         <div className="absolute inset-0 z-0">
           <Image
-            src="https://mycdn.myrocky.ca/wp-content/uploads/20250408140715/bg-individual.jpg"
+            src="https://mycdn.myrocky.com/wp-content/uploads/20250408140715/bg-individual.jpg"
             alt="Water droplets on skin"
             fill
             className="object-cover object-center"

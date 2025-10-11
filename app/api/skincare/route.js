@@ -6,7 +6,7 @@ import https from "https";
 import axios from "axios";
 
 const crmApi = axios.create({
-    baseURL: "https://crm.myrocky.ca/api",
+    baseURL: "https://crm.myrocky.com/api",
     httpsAgent: new https.Agent({
         rejectUnauthorized: false,
     }),
@@ -63,7 +63,7 @@ export async function GET() {
 
     const response = NextResponse.json(data);
     response.cookies.set("skincare_entrykey", entrykey, {
-        domain: "myrocky.ca",
+        domain: "myrocky.com",
         path: "/",
         expires: new Date(Date.now() + 1800 * 1000),
         httpOnly: false,
@@ -105,7 +105,7 @@ export async function POST(req) {
             page_step: rawData.page_step || 1,
             completion_state: rawData.completion_state || "Partial",
             completion_percentage: rawData.completion_percentage || 10,
-            source_site: rawData.source_site || "https://myrocky.ca",
+            source_site: rawData.source_site || "https://myrocky.com",
             wp_user_id: userId,
             created_by: userId,
         };
@@ -154,7 +154,7 @@ export async function POST(req) {
 
         const response = NextResponse.json(data);
         response.cookies.set("skincare_entrykey", entrykey, {
-            domain: "myrocky.ca",
+            domain: "myrocky.com",
             path: "/",
             expires: new Date(Date.now() + 1800 * 1000),
             httpOnly: false,
@@ -189,7 +189,7 @@ async function postSkincareQuestionnaireDataToCRM(data) {
         page_step: parseInt(data.page_step) || 1,
         completion_state: data.completion_state || "Partial",
         completion_percentage: parseInt(data.completion_percentage) || 10,
-        source_site: data.source_site || "https://myrocky.ca",
+        source_site: data.source_site || "https://myrocky.com",
         wp_user_id: data.wp_user_id || (await getUserId()),
         created_by: data.created_by || (await getUserId()),
         skincare_entrykey: data.skincare_entrykey || "",

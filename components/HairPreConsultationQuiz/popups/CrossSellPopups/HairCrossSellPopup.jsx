@@ -59,7 +59,7 @@ const HairCrossSellPopup = ({
     //   quantity: "240ml",
     //   frequency: "One month supply",
     //   image:
-    //     "https://myrocky.ca/wp-content/uploads/2021/08/RockyHealth-HQ-78-scaled-500x500.jpg",
+    //     "https://myrocky.com/wp-content/uploads/2021/08/RockyHealth-HQ-78-scaled-500x500.jpg",
     //   description:
     //     "Organic and infused with essential oils to improve hair growth.",
     //   dataType: "simple",
@@ -73,7 +73,7 @@ const HairCrossSellPopup = ({
       quantity: "60 Caps",
       frequency: "One month supply",
       image:
-        "https://myrocky.ca/wp-content/uploads/RockyHealth-Proofs-HQ-111-Hair-1-500x500.jpg",
+        "https://myrocky.com/wp-content/uploads/RockyHealth-Proofs-HQ-111-Hair-1-500x500.jpg",
       description:
         "Meticulously crafted to address male pattern baldness. Packed with nutraceuticals and botanicals, this supplement supports hair growth by targeting root causes of androgenic alopecia.",
       dataType: "simple",
@@ -87,7 +87,7 @@ const HairCrossSellPopup = ({
       quantity: "60 Capsules",
       frequency: "30-days supply",
       image:
-        "https://mycdn.myrocky.ca/wp-content/uploads/20250908134137/t-boost.png",
+        "https://mycdn.myrocky.com/wp-content/uploads/20250908134137/t-boost.png",
       description:
         "Helps improve overall testosterone levels, enhance libido, and promote a sense of well-being.",
       dataType: "simple",
@@ -147,7 +147,7 @@ const HairCrossSellPopup = ({
     //   quantity: "60ml",
     //   frequency: "One month supply",
     //   image:
-    //     "https://myrocky.ca/wp-content/uploads/2021/10/RockyHealth-HQ-85-scaled-500x500.jpg",
+    //     "https://myrocky.com/wp-content/uploads/2021/10/RockyHealth-HQ-85-scaled-500x500.jpg",
     //   description:
     //     "Protect your hair with this conditioning hair mask made from 5 organic oils- this combination is great for thinning hair or maintaining a full scalp.",
     //   dataType: "simple",
@@ -161,7 +161,7 @@ const HairCrossSellPopup = ({
     //   quantity: "4oz",
     //   frequency: "One time purchase",
     //   image:
-    //     "https://myrocky.ca/wp-content/uploads/2022/02/RockyHealth-Valentines-PROOFS-HQ-117-500x500.jpg",
+    //     "https://myrocky.com/wp-content/uploads/2022/02/RockyHealth-Valentines-PROOFS-HQ-117-500x500.jpg",
     //   description:
     //     "Union Matte Clay is designed to deliver a true matte, strong, and pliable hold.",
     //   dataType: "simple",
@@ -175,7 +175,7 @@ const HairCrossSellPopup = ({
       quantity: "Adjustable",
       frequency: "One time purchase",
       image:
-        "https://mycdn.myrocky.ca/wp-content/uploads/20250918120236/rocky-hat.png",
+        "https://mycdn.myrocky.com/wp-content/uploads/20250918120236/rocky-hat.png",
       description:
         " Everyday headwear, refined. Designed with premium fabrics, a timeless shape, and an effortless fit.",
       dataType: "simple",

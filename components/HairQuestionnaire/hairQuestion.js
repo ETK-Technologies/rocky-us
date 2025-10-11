@@ -8,22 +8,22 @@ export const hairQuestionList = [
       {
         body: "Receding hairline",
         imageSrc:
-          "https://myrocky.ca/wp-content/themes/salient-child/img/receding.svg",
+          "https://myrocky.com/wp-content/themes/salient-child/img/receding.svg",
       },
       {
         body: "Thinning at the crown",
         imageSrc:
-          "https://myrocky.ca/wp-content/themes/salient-child/img/crown.svg",
+          "https://myrocky.com/wp-content/themes/salient-child/img/crown.svg",
       },
       {
         body: "Overall hair loss/thinning",
         imageSrc:
-          "https://myrocky.ca/wp-content/themes/salient-child/img/overall.svg",
+          "https://myrocky.com/wp-content/themes/salient-child/img/overall.svg",
       },
       {
         body: "Full head of hair",
         imageSrc:
-          "https://myrocky.ca/wp-content/themes/salient-child/img/nowhere.svg",
+          "https://myrocky.com/wp-content/themes/salient-child/img/nowhere.svg",
       },
     ],
   },
@@ -371,7 +371,7 @@ export const hairQuestionList = [
     type: "acknowledgement",
     questionHeader: "Upload Photo ID",
     message:
-      "Please note this step is mandatory. If you are unable to complete at this time, email your ID to clinicadmin@myrocky.ca",
+      "Please note this step is mandatory. If you are unable to complete at this time, email your ID to clinicadmin@myrocky.com",
     additionalMessage:
       "Your questionnaire will not be reviewed without this. As per our T&C's a $45 cancellation fee will be charged if we are unable to verify you.",
   },

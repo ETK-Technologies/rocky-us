@@ -217,7 +217,7 @@ export function QuestionRenderer({
 
           <div className="mb-8">
             <img
-              src="https://mycdn.myrocky.ca/wp-content/uploads/20240212065206/pngegg.png"
+              src="https://mycdn.myrocky.com/wp-content/uploads/20240212065206/pngegg.png"
               className="block h-auto mx-auto my-6 max-w-[150px]"
               alt="Success Checkmark"
             />

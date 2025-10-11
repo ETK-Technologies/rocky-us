@@ -51,7 +51,7 @@ export default function WeightLossConsultationQuiz({
       page_step: 1,
       completion_state: "Partial",
       completion_percentage: 0,
-      source_site: "https://myrocky.ca",
+      source_site: "https://myrocky.com",
       "130_3": fname || "",
       "130_6": lname || "",
       131: userEmail || "@w3mg.in",
@@ -963,7 +963,7 @@ export default function WeightLossConsultationQuiz({
       }
       e.target.value = "";
       document.getElementById("frontPhotoPreview").src =
-        "https://myrocky.ca/wp-content/themes/salient-child/img/photo_upload_icon.png";
+        "https://myrocky.com/wp-content/themes/salient-child/img/photo_upload_icon.png";
       setFrontPhotoFile(null);
       toggleUploadButton();
       return false;
@@ -1058,7 +1058,7 @@ export default function WeightLossConsultationQuiz({
       }
       e.target.value = "";
       document.getElementById("sidePhotoPreview").src =
-        "https://myrocky.ca/wp-content/themes/salient-child/img/photo_upload_icon.png";
+        "https://myrocky.com/wp-content/themes/salient-child/img/photo_upload_icon.png";
       setSidePhotoFile(null);
       toggleUploadButton();
       return false;
@@ -1617,7 +1617,7 @@ export default function WeightLossConsultationQuiz({
         page_step: currentPage,
         completion_state: dataToSubmit.completion_state || "Partial",
         completion_percentage: dataToSubmit.completion_percentage || progress,
-        source_site: "https://myrocky.ca",
+        source_site: "https://myrocky.com",
       };
 
       logTextareaFields(completeData);
@@ -3541,7 +3541,7 @@ export default function WeightLossConsultationQuiz({
                 <form
                   id="wl-quiz-form"
                   method="post"
-                  action="https://myrocky.ca/wp-admin/admin-ajax.php"
+                  action="https://myrocky.com/wp-admin/admin-ajax.php"
                 >
                   <input type="hidden" name="form_id" value="6" />
                   <input
@@ -3579,7 +3579,7 @@ export default function WeightLossConsultationQuiz({
                   <input
                     type="hidden"
                     name="source_site"
-                    value="https://myrocky.ca"
+                    value="https://myrocky.com"
                   />
 
                   <input
@@ -4604,10 +4604,10 @@ export default function WeightLossConsultationQuiz({
                                 unable to complete at this time, email your ID
                                 to{" "}
                                 <a
-                                  href="mailto:clinicadmin@myrocky.ca"
+                                  href="mailto:clinicadmin@myrocky.com"
                                   className="underline"
                                 >
-                                  clinicadmin@myrocky.ca
+                                  clinicadmin@myrocky.com
                                 </a>
                                 .
                               </p>
@@ -4769,7 +4769,7 @@ export default function WeightLossConsultationQuiz({
                                   <div className="flex w-full items-center">
                                     <img
                                       className="w-16 h-16 object-contain mr-4"
-                                      src="https://myrocky.ca/wp-content/themes/salient-child/img/photo_upload_icon.png"
+                                      src="https://myrocky.com/wp-content/themes/salient-child/img/photo_upload_icon.png"
                                       id="frontPhotoPreview"
                                       alt="Upload icon"
                                     />
@@ -4801,7 +4801,7 @@ export default function WeightLossConsultationQuiz({
                                   <div className="flex w-full items-center">
                                     <img
                                       className="w-16 h-16 object-contain mr-4"
-                                      src="https://myrocky.ca/wp-content/themes/salient-child/img/photo_upload_icon.png"
+                                      src="https://myrocky.com/wp-content/themes/salient-child/img/photo_upload_icon.png"
                                       id="sidePhotoPreview"
                                       alt="Upload icon"
                                     />
@@ -4884,9 +4884,9 @@ export default function WeightLossConsultationQuiz({
                                 to{" "}
                                 <a
                                   className="text-gray-600 underline"
-                                  href="mailto:clinicadmin@myrocky.ca"
+                                  href="mailto:clinicadmin@myrocky.com"
                                 >
-                                  clinicadmin@myrocky.ca
+                                  clinicadmin@myrocky.com
                                 </a>
                                 .
                               </p>
@@ -5035,7 +5035,7 @@ export default function WeightLossConsultationQuiz({
                         )}
                     </div>
                     <img
-                      src="https://myrocky.ca/wp-content/themes/salient-child/img/please_wait_animation.gif"
+                      src="https://myrocky.com/wp-content/themes/salient-child/img/please_wait_animation.gif"
                       alt=""
                       style={{ margin: "0 auto" }}
                     />

@@ -15,10 +15,10 @@ const ContactUs = () => {
           <li>
             <span className="font-[600] opacity-100 mt-4 mb-4">By email: </span>
             <a
-              href="mailto:contact@myrocky.ca"
+              href="mailto:contact@myrocky.com"
               className="hover:underline hover:text-gray-900 duration-300"
             >
-              contact@myrocky.ca
+              contact@myrocky.com
             </a>
           </li>
         </ul>

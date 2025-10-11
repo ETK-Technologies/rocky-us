@@ -56,10 +56,10 @@ export default function SimpleTermsContent() {
             We apologize, but our terms content is temporarily unavailable.
             Please try refreshing the page or contact us at{" "}
             <a
-              href="mailto:contact@myrocky.ca"
+              href="mailto:contact@myrocky.com"
               className="text-blue-600 underline"
             >
-              contact@myrocky.ca
+              contact@myrocky.com
             </a>{" "}
             if the issue persists.
           </p>

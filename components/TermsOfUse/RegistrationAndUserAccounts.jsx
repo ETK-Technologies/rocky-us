@@ -18,7 +18,7 @@ export default function RegistrationAndUserAccounts() {
         account and your use of the Services. You also agree to immediately
         notify Rocky of any unauthorized use of your username, password or any
         other breach of security that you become aware of involving or relating
-        to the Services by emailing Rocky contact@myrocky.ca . Rocky may take
+        to the Services by emailing Rocky contact@myrocky.com . Rocky may take
         any and all actions it deems necessary or reasonable to maintain the
         security of the Sites, Services and your Secure User account.{" "}
       </p>

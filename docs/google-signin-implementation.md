@@ -74,8 +74,8 @@ Make sure your Google OAuth credentials are configured with the correct:
 
 Example:
 
-- `https://myrocky.ca`
-- `https://www.myrocky.ca`
+- `https://myrocky.com`
+- `https://www.myrocky.com`
 - `http://localhost:3000` (for development)
 
 ## Features

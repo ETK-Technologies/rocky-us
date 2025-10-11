@@ -22,7 +22,7 @@ const testimonials = [
     description: "Everything you need to know about Weight Loss",
     videoSrc: "https://myrocky.b-cdn.net/Updated%20Ozempic%20-%20Vertical.mp4",
     imageSrc:
-      "https://mycdn.myrocky.ca/wp-content/uploads/20240403134241/Dr.-George-Mankaryous.png",
+      "https://mycdn.myrocky.com/wp-content/uploads/20240403134241/Dr.-George-Mankaryous.png",
   },
   {
     id: 3,
@@ -32,7 +32,7 @@ const testimonials = [
     videoSrc:
       "https://myrocky.b-cdn.net/Counting%20clicks%20with%20Ozempic%201mg%20Pen.%20.mp4",
     imageSrc:
-      "https://mycdn.myrocky.ca/wp-content/uploads/20240403133954/cropped-2-2-100x100-1.png",
+      "https://mycdn.myrocky.com/wp-content/uploads/20240403133954/cropped-2-2-100x100-1.png",
   },
 ];
 

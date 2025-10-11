@@ -45,7 +45,7 @@ const MentalProductCard = [
         buttonName: "Get Treatment",
         link: "/mh-pre-quiz/",
         image:
-          "https://mycdn.myrocky.ca/wp-content/uploads/20240403134012/MH-Capsules.png",
+          "https://mycdn.myrocky.com/wp-content/uploads/20240403134012/MH-Capsules.png",
       },
       {
         title: "Paroxetine",
@@ -63,7 +63,7 @@ const MentalProductCard = [
         buttonName: "Get Treatment",
         link: "/mh-pre-quiz/",
         image:
-          "https://mycdn.myrocky.ca/wp-content/uploads/20240403134012/MH-Capsules.png",
+          "https://mycdn.myrocky.com/wp-content/uploads/20240403134012/MH-Capsules.png",
       },
       {
         title: "Trazadone",
@@ -80,7 +80,7 @@ const MentalProductCard = [
         buttonName: "Get Treatment",
         link: "/mh-pre-quiz/",
         image:
-          "https://mycdn.myrocky.ca/wp-content/uploads/20240403134012/MH-Capsules.png",
+          "https://mycdn.myrocky.com/wp-content/uploads/20240403134012/MH-Capsules.png",
       },
     ],
   },

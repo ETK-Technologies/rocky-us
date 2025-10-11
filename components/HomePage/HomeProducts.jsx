@@ -144,7 +144,7 @@ const hairProductCard = [
 //       subtitle: "A Smarter Way to Recover",
 //       link: "/product/dhm-blend",
 //       image:
-//         "bg-[url('https://mycdn.myrocky.ca/wp-content/uploads/20250306132419/DHM.jpg')] ",
+//         "bg-[url('https://mycdn.myrocky.com/wp-content/uploads/20250306132419/DHM.jpg')] ",
 //     },
 //     ProductCard: [
 //       {

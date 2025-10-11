@@ -279,7 +279,7 @@ const DhmBlendProductDetails = ({ product, variations, isLoading }) => {
               src={
                 product?.images?.[0]?.src ||
                 product?.imageUrl ||
-                "https://mycdn.myrocky.ca/wp-content/uploads/20241231155604/DHMBlendPP.jpg"
+                "https://mycdn.myrocky.com/wp-content/uploads/20241231155604/DHMBlendPP.jpg"
               }
               alt={product?.name || "DHM Blend"}
               priority

@@ -10,7 +10,7 @@ export default function Introduction() {
         ”) own and operate the websites located at www.rockyhealth.com,
         (collectively, the “<b>Websites</b>,” and collectively with any
         affiliated mobile application (“<b>App</b>”), the “<b>Sites</b>”) as
-        well as the Trademarks, Rocky Health ™,  My Rocky ™, myrocky.ca ™ 
+        well as the Trademarks, Rocky Health ™,  My Rocky ™, myrocky.com ™ 
         (collectively, the “<b>Trademarks</b>” and attached hereto as Appendix
         A). The Sites are intended to facilitate the provision of the Services
         to registered users. The “<b>Services</b>” may include (i) providing

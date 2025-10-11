@@ -11,9 +11,9 @@ const maleAddOnProducts = [
     quantity: "60 Capsules", // Match ED flow
     frequency: "30-days supply", // Match ED flow
     imageUrl:
-      "https://mycdn.myrocky.ca/wp-content/uploads/20250908134137/t-boost.png",
+      "https://mycdn.myrocky.com/wp-content/uploads/20250908134137/t-boost.png",
     image:
-      "https://mycdn.myrocky.ca/wp-content/uploads/20250908134137/t-boost.png", // Add image field
+      "https://mycdn.myrocky.com/wp-content/uploads/20250908134137/t-boost.png", // Add image field
     bulletPoints: [
       "Helps improve overall testosterone levels",
       "Enhances libido",
@@ -82,7 +82,7 @@ const maleAddOnProducts = [
     name: "Rocky Essential Cap",
     price: "25",
     imageUrl:
-      "https://mycdn.myrocky.ca/wp-content/uploads/20250918120236/rocky-hat.png",
+      "https://mycdn.myrocky.com/wp-content/uploads/20250918120236/rocky-hat.png",
     bulletPoints: ["One size fits all", "Adjustable strap", "Cotton twill"],
     dataType: "simple",
     dataVar: "",
@@ -93,7 +93,7 @@ const maleAddOnProducts = [
   //   name: "Essential Follicle Support",
   //   price: "39.00",
   //   imageUrl:
-  //     "https://myrocky.ca/wp-content/uploads/RockyHealth-Proofs-HQ-111-Hair-1-500x500.jpg",
+  //     "https://myrocky.com/wp-content/uploads/RockyHealth-Proofs-HQ-111-Hair-1-500x500.jpg",
   //   bulletPoints: [
   //     "Made in Canada",
   //     "Non GMO - no fillers or chemicals",
