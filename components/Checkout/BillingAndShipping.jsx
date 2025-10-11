@@ -4,8 +4,16 @@ import OrderNotes from "./OrderNotes";
 import SelectDelivery from "./SelectDelivery";
 import Link from "next/link";
 
-const BillingAndShipping = ({ setFormData, formData }) => {
-  const handleBillingAddressChange = (e) => {
+const BillingAndShipping = ({
+  setFormData,
+  formData,
+  onProvinceChange,
+  cartItems,
+  isUpdatingShipping,
+  onAgeValidation,
+  onAgeValidationReset,
+}) => {
+  const handleBillingAddressChange = (e, fromAutocomplete = false) => {
     setFormData((prev) => {
       return {
         ...prev,
@@ -15,9 +23,15 @@ const BillingAndShipping = ({ setFormData, formData }) => {
         },
       };
     });
+
+    // Check for Quebec restriction when province changes
+    if (e.target.name === "state" && onProvinceChange) {
+      // Pass shouldClearFields as false when coming from autocomplete
+      onProvinceChange(e.target.value, "billing", !fromAutocomplete);
+    }
   };
 
-  const handleShippingAddressChange = (e) => {
+  const handleShippingAddressChange = (e, fromAutocomplete = false) => {
     setFormData((prev) => {
       return {
         ...prev,
@@ -27,6 +41,12 @@ const BillingAndShipping = ({ setFormData, formData }) => {
         },
       };
     });
+
+    // Check for Quebec restriction when province changes
+    if (e.target.name === "state" && onProvinceChange) {
+      // Pass shouldClearFields as false when coming from autocomplete
+      onProvinceChange(e.target.value, "shipping", !fromAutocomplete);
+    }
   };
   const handleAnotherShippingAddressChange = (e) => {
     setFormData((prev) => {
@@ -62,7 +82,7 @@ const BillingAndShipping = ({ setFormData, formData }) => {
     });
   };
   return (
-    <div className="w-full lg:max-w-[640px] h-full justify-self-end px-4 mt-8 lg:mt-0 lg:pr-[80px] lg:pt-[50px]">
+    <div className="w-full lg:max-w-[640px] h-full justify-self-end px-4 mt-8 lg:mt-0 lg:pr-[80px] lg:pt-[50px] overflow-x-hidden">
       <div className="pb-[16px] md:pb-[32px]">
         <button
           onClick={() => (window.location.href = "/cart")}
@@ -108,6 +128,10 @@ const BillingAndShipping = ({ setFormData, formData }) => {
         <BillingDetails
           formData={formData}
           handleBillingAddressChange={handleBillingAddressChange}
+          isUpdatingShipping={isUpdatingShipping}
+          onAgeValidation={onAgeValidation}
+          onAgeValidationReset={onAgeValidationReset}
+          cartItems={cartItems}
         />
         <ShippingAddress
           handleAnotherShippingAddressChange={
@@ -115,6 +139,7 @@ const BillingAndShipping = ({ setFormData, formData }) => {
           }
           formData={formData}
           handleShippingAddressChange={handleShippingAddressChange}
+          isUpdatingShipping={isUpdatingShipping}
         />
         <OrderNotes handleOrderNotesChange={handleOrderNotesChange} />
         <SelectDelivery

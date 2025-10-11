@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import axios from "axios";
+import { logger } from "@/utils/devLogger";
 
 export async function GET(request) {
   try {
@@ -35,7 +36,7 @@ export async function GET(request) {
         { status: 200 }
       );
     } catch (apiError) {
-      console.error("API token verification error:", apiError.response?.data);
+      logger.error("API token verification error:", apiError.response?.data);
       return NextResponse.json(
         {
           success: false,
@@ -48,7 +49,7 @@ export async function GET(request) {
       );
     }
   } catch (error) {
-    console.error("Token verification error:", error);
+    logger.error("Token verification error:", error);
     return NextResponse.json(
       {
         success: false,

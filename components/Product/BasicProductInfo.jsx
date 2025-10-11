@@ -2,17 +2,11 @@
 
 import { ProductImage } from "@/components/Product";
 import Link from "next/link";
+import { formatPrice } from "@/utils/priceFormatter";
 
 export default function BasicProductInfo({ product }) {
   if (!product) return null;
 
-  // Format price to always show 2 decimal places
-  const formatPrice = (value) => {
-    if (typeof value !== "number") {
-      value = parseFloat(value) || 0;
-    }
-    return value.toFixed(2);
-  };
 
   return (
     <div className="w-full">

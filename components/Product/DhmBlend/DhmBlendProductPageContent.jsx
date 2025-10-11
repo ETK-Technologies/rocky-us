@@ -72,7 +72,7 @@ const DhmBlendProductPageContent = memo(({ clientProps }) => {
             {
               question: "What is DHM Blend?",
               answer:
-                "DHM Blend is a science-backed formula with DHM, L-Cysteine, Milk Thistle, Prickly Pear, and Vitamin B Complex. It's authorized for sale by  FDA and designed to support recovery.",
+                "DHM Blend is a science-backed formula with DHM, L-Cysteine, Milk Thistle, Prickly Pear, and Vitamin B Complex. It's authorized for sale by Health Canada and designed to support recovery.",
             },
             {
               question: "How does DHM Blend work?",

@@ -9,13 +9,13 @@ const accordionData = [
   {
     title: "Work with your body, not against it",
     content:
-      "Traditional diets don’t work because nearly 70% of weight is genetically determined. Through medication, and a comprehensive data-backed body optimization plan, you can work with your body, rather than against it.",
+      "Traditional diets don't work because nearly 70% of weight is genetically determined. Through medication, and a comprehensive data-backed weight loss plan, you can work with your body, rather than against it.",
     icon: "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/body.png",
   },
   {
     title: "No restrictive diets, just science",
     content:
-      "No restrictive diets or miracle cures—just scientifically-backed body optimization treatments designed to fit seamlessly into your life. Break the cycle of yo-yo dieting with strategies that address the biological factors influencing your weight.",
+      "No restrictive diets or miracle cures—just scientifically-backed weight loss treatments designed to fit seamlessly into your life. Break the cycle of yo-yo dieting with strategies that address the biological factors influencing your weight.",
     icon: "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/science.png",
   },
   {

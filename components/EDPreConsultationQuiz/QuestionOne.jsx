@@ -50,12 +50,12 @@ const QuestionOne = ({ currentPage, answer, onAnswerChange }) => {
           {!isAuthenticated && (
             <p className="text-sm font-normal">
               Already have an account?{" "}
-              <Link
+              <a
                 href="/login-register?viewshow=login&ed-flow=1"
                 className="font-[400] text-[#C19A6B] underline ml-1"
               >
                 Sign in
-              </Link>
+              </a>
             </p>
           )}
         </div>

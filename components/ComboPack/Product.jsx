@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { logger } from "@/utils/devLogger";
 import { ProductImage } from "../Product";
 import CheckBox from "./Checkbox";
 import { useAddItemToCart } from "@/lib/cart/cartHooks";
@@ -121,7 +122,7 @@ const Product = ({ product }) => {
       }
 
       // Handle other products
-      console.log("Adding regular product to cart:", product.id);
+      logger.log("Adding regular product to cart:", product.id);
       const cartData = {
         productId: product.id,
         quantity: 1,
@@ -134,7 +135,7 @@ const Product = ({ product }) => {
       document.getElementById("cart-refresher")?.click();
       setShowCartPopup(true);
     } catch (error) {
-      console.error("Error adding to cart:", error);
+      logger.error("Error adding to cart:", error);
       alert("Error adding to cart: " + error.message);
     } finally {
       setIsLoading(false);

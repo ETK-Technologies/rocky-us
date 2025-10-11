@@ -1,5 +1,7 @@
 "use client";
 
+import { formatPrice } from "@/utils/priceFormatter";
+
 /**
  * PriceDisplay Component
  * Standardized component for displaying product prices
@@ -11,13 +13,6 @@ const PriceDisplay = ({
   size = "medium",
   className = "",
 }) => {
-  // Format price to always show 2 decimal places
-  const formatPrice = (value) => {
-    if (typeof value !== "number") {
-      value = parseFloat(value) || 0;
-    }
-    return value.toFixed(2);
-  };
 
   // Determine if there's a discount
   const hasDiscount = regularPrice && regularPrice > price;

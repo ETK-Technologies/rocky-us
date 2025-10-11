@@ -29,7 +29,7 @@ export const PhotoIdUpload = ({
           type="file"
           ref={fileInputRef}
           id="photo-id-file"
-          accept="image/jpeg,image/png"
+          accept="image/jpeg,image/jpg,image/png,image/heif,image/heic"
           className="hidden"
           onChange={handlePhotoIdFileSelect}
         />
@@ -120,9 +120,9 @@ export const PhotoIdUpload = ({
               Please capture a selfie of yourself holding your ID
             </p>{" "}
             <p className="text-center text-sm text-gray-500 mb-8">
-              Only JPEG and PNG images are supported.
+              Only JPG, JPEG, PNG, HEIF, and HEIC images are supported.
               <br />
-              Max allowed file size per image is 10MB
+              Max allowed file size per image is 20MB
             </p>
           </div>
         )}

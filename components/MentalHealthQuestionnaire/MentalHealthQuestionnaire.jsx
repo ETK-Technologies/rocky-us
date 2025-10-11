@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { logger } from "@/utils/devLogger";
 import { useRouter } from "next/navigation";
 import QuestionnaireNavbar from "../EdQuestionnaire/QuestionnaireNavbar";
 import { ProgressBar } from "../EdQuestionnaire/ProgressBar";
@@ -15,7 +16,7 @@ import { VALIDATION_RULES, QUESTION_CONFIG } from "./constants";
 
 const RADIO_BUTTON_QUESTIONS = [
   1, 2, 5, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
-  29, 30, 31, 33,
+  29, 30, 31, 33, 34, 35,
 ];
 
 export default function MentalHealthQuestionnaire({
@@ -88,7 +89,7 @@ export default function MentalHealthQuestionnaire({
     handleTapToUpload,
     handlePhotoIdFileSelect,
     handlePhotoIdUpload,
-    } = usePhotoIdHandling(
+  } = usePhotoIdHandling(
     formData,
     handleFormChange,
     submitFormData,
@@ -124,17 +125,16 @@ export default function MentalHealthQuestionnaire({
     };
   }, []);
   useEffect(() => {
+    if (currentPage === 37) {
+      setShowContinueButton(false);
+      return;
+    }
+
     if (currentPage >= 11 && currentPage <= 26) {
       const questionId = currentPage.toString();
       const hasAnswer = !!formData[questionId];
-      console.log(
-        `Page ${questionId} has answer: ${
-          hasAnswer ? formData[questionId] : "none"
-        }, cameFromBack: ${cameFromBack}`
-      );
 
       const shouldShow = cameFromBack || hasAnswer;
-      console.log(`Should show continue button: ${shouldShow}`);
       setShowContinueButton(shouldShow);
       return;
     }
@@ -198,10 +198,17 @@ export default function MentalHealthQuestionnaire({
           formData["533_5"] ||
           formData["533_6"];
         setShowContinueButton(!!anyDrugSelected);
+      } else if (currentPage === 34) {
+        const hasSelection = !!formData["538"];
+        const hasText =
+          formData["538"] === "Yes"
+            ? !!formData["539"] && formData["539"].trim() !== ""
+            : true;
+        setShowContinueButton(hasSelection && hasText);
+      } else if (currentPage === 35) {
+        setShowContinueButton(true);
       } else {
-        setShowContinueButton(
-          currentPage === 1 || !isRadioButtonQuestion || currentPage === 34
-        );
+        setShowContinueButton(currentPage === 1 || !isRadioButtonQuestion);
       }
     }
   }, [currentPage, cameFromBack, isRadioButtonQuestion, formData]);
@@ -215,9 +222,6 @@ export default function MentalHealthQuestionnaire({
         formData["533_4"] ||
         formData["533_5"] ||
         formData["533_6"];
-      console.log(
-        `[Effect] Page 33 drugs selected: ${anyDrugSelected ? "YES" : "NO"}`
-      );
       setShowContinueButton(!!anyDrugSelected);
     }
   }, [formData, currentPage]);
@@ -352,7 +356,6 @@ export default function MentalHealthQuestionnaire({
   };
 
   const moveToNextSlide = async () => {
-    console.log("Current form data:", formData);
     if (cameFromBack) {
       setCameFromBack(false);
     }
@@ -407,8 +410,6 @@ export default function MentalHealthQuestionnaire({
         formData["533_5"] ||
         formData["533_6"];
 
-      console.log(`Moving from page 33, drugs selected: ${anyDrugSelected}`);
-
       if (!anyDrugSelected) {
         showError("Please select at least one option");
         return;
@@ -436,6 +437,7 @@ export default function MentalHealthQuestionnaire({
     const newProgress = calculateProgress(nextPage);
 
     try {
+      const shouldAwaitSubmission = currentPage === 1 || currentPage >= 36;
       if (currentPage === 4) {
         const feelingsData = {};
 
@@ -449,9 +451,21 @@ export default function MentalHealthQuestionnaire({
           feelingsData["l-504_5-textarea"] = formData["l-504_5-textarea"];
         }
 
-        await submitFormData(feelingsData);
+        if (shouldAwaitSubmission) {
+          await submitFormData(feelingsData);
+        } else {
+          submitFormData(feelingsData).catch((error) => {
+            logger.error("Background form submission error:", error);
+          });
+        }
       } else {
-        await submitFormData();
+        if (shouldAwaitSubmission) {
+          await submitFormData();
+        } else {
+          submitFormData().catch((error) => {
+            logger.error("Background form submission error:", error);
+          });
+        }
       }
 
       window.history.pushState(
@@ -463,7 +477,7 @@ export default function MentalHealthQuestionnaire({
       setProgress(newProgress);
       setQuestionsStack(updatedStack);
     } catch (error) {
-      console.error("Error submitting form data:", error);
+      logger.error("Error submitting form data:", error);
       const loaderElement = document.getElementById(
         "please-wait-loader-overlay"
       );
@@ -529,13 +543,15 @@ export default function MentalHealthQuestionnaire({
   const handleCompletionContinue = () => {
     setShowCompletionWarning(false);
     clearAllWarningStates();
-    router.push("/");
+    // Clear localStorage data before redirect
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("mh-quiz-form-data");
+      localStorage.removeItem("mh-quiz-form-data-expiry");
+    }
+    // Use redirect instead of navigation for MH quiz completion
+    window.location.href = "/";
   };
   const handleFormChangeWithAutoAdvance = (field, value) => {
-    console.log(
-      `handleFormChangeWithAutoAdvance called with field: ${field}, value: ${value}`
-    );
-
     handleFormChange(field, value);
 
     if (
@@ -552,7 +568,6 @@ export default function MentalHealthQuestionnaire({
     }
 
     const isPHQ9orGAD7Question = field >= "511" && field <= "526";
-    console.log(`Is PHQ9/GAD7 question: ${isPHQ9orGAD7Question}`);
     if (isRadioButtonQuestion && !cameFromBack && !isPHQ9orGAD7Question) {
       const updatedFormData = { ...formData, [field]: value };
 
@@ -608,7 +623,13 @@ export default function MentalHealthQuestionnaire({
           setProgress(newProgress);
 
           setTimeout(() => {
-            submitFormData();
+            if (currentPage === 1 || currentPage >= 36) {
+              submitFormData();
+            } else {
+              submitFormData().catch((error) => {
+                logger.error("Background form submission error:", error);
+              });
+            }
 
             isIntentionalNavigationRef.current = false;
           }, 100);
@@ -622,10 +643,6 @@ export default function MentalHealthQuestionnaire({
       }, 100);
     } else {
       if (isPHQ9orGAD7Question && value) {
-        console.log(
-          `PHQ9/GAD7 question answered: ${field} = ${value}, showing continue button`
-        );
-
         setShowContinueButton(true);
 
         setTimeout(() => {
@@ -634,7 +651,13 @@ export default function MentalHealthQuestionnaire({
       }
 
       setTimeout(() => {
-        submitFormData();
+        if (currentPage === 1 || currentPage >= 36) {
+          submitFormData();
+        } else {
+          submitFormData().catch((error) => {
+            logger.error("Background form submission error:", error);
+          });
+        }
       }, 100);
     }
   };
@@ -669,7 +692,13 @@ export default function MentalHealthQuestionnaire({
         }, 100);
       } else {
         setTimeout(() => {
-          submitFormData();
+          if (currentPage === 1 || currentPage >= 36) {
+            submitFormData();
+          } else {
+            submitFormData().catch((error) => {
+              logger.error("Background form submission error:", error);
+            });
+          }
         }, 100);
       }
     }
@@ -714,7 +743,7 @@ export default function MentalHealthQuestionnaire({
         lastName={lastName}
         setFirstName={setFirstName}
         setLastName={setLastName}
-      />      
+      />
       <ContinueButton
         showContinueButton={showContinueButton}
         currentPage={currentPage}
@@ -760,10 +789,10 @@ export default function MentalHealthQuestionnaire({
             className="block w-[100px] h-auto m-auto pt-6"
             style={{ marginBottom: "10px" }}
             alt="Preloader Wheel"
-          />          
+          />
           Syncing. Please wait ... <br />
           <small style={{ color: "#999", letterSpacing: 0 }}>
-            {uploadProgress === 0 
+            {uploadProgress === 0
               ? "Preparing upload..."
               : `${uploadProgress}% uploaded`}
             <br />

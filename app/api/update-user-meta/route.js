@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import axios from "axios";
+import { logger } from "@/utils/devLogger";
 import { cookies } from "next/headers";
 
 const BASE_URL = process.env.BASE_URL;
@@ -10,7 +11,7 @@ export async function POST(req) {
       await req.json();
 
     // Get the auth token from cookies
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const authToken = cookieStore.get("authToken")?.value;
 
     if (!authToken) {
@@ -55,7 +56,7 @@ export async function POST(req) {
       );
     }
   } catch (error) {
-    console.error(
+    logger.error(
       "Error updating user metadata:",
       error.response?.data || error.message
     );

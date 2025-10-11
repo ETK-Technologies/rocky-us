@@ -21,14 +21,9 @@ const faqs = [
     answer:
       "Rocky handles the privacy and security of all our customers with great care. Our platform meets all required regulatory compliance, as well having systems in place to ensure all information provided is secured. Any medical or personal information provided is only accessed by the medical team managing your care.",
   },
-  {
-    question: "What is the name and address of our affiliate partner pharmacy?",
-    answer:"Affiliate Partner Pharmacy: Dania Discount Drugs Inc.5420 NW 33rd Ave Suite 7B Fort Lauderdale, FL 33309",
-  }
-
 ];
 
-const HomeFaqsSection = ({ faqs: dynamicFaqs, title, name, subtitle }) => {
+const HomeFaqsSection = ({ faqs: dynamicFaqs, title, name, subtitle , isFirstCardOpen}) => {
   // Use dynamic FAQs if provided, otherwise use default FAQs
   const faqsToUse = dynamicFaqs || faqs;
 
@@ -39,7 +34,7 @@ const HomeFaqsSection = ({ faqs: dynamicFaqs, title, name, subtitle }) => {
         title={title || "Your Questions, Answered"}
         name={name || "Meet Rocky"}
         subtitle={subtitle || "Frequently asked questions"}
-        isFirstCardOpen={true}
+        isFirstCardOpen={isFirstCardOpen !== undefined ? isFirstCardOpen : true}
       />
       <MoreQuestions link="/faqs/" />
     </>

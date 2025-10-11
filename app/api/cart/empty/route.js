@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import axios from "axios";
+import { logger } from "@/utils/devLogger";
 import { cookies } from "next/headers";
 import { clearLocalCart } from "@/lib/cart/cartService";
 
@@ -29,34 +30,97 @@ export async function POST() {
     }
 
     // For authenticated users, call the WordPress REST API endpoint
-    const response = await axios.post(
-      `${BASE_URL}/wp-json/custom/v1/empty-cart`,
-      {},
-      {
-        headers: {
-          Authorization: `${encodedCredentials.value}`,
-          "X-WP-Nonce": nonce,
-        },
+    try {
+      const response = await axios.post(
+        `${BASE_URL}/wp-json/custom/v1/empty-cart`,
+        {},
+        {
+          headers: {
+            Authorization: `${encodedCredentials.value}`,
+            "X-WP-Nonce": nonce,
+          },
+        }
+      );
+
+      // Update the cart nonce if available
+      if (response.headers && response.headers.nonce) {
+        cookieStore.set("cart-nonce", response.headers.nonce);
       }
-    );
 
-    // Update the cart nonce if available
-    if (response.headers && response.headers.nonce) {
-      cookieStore.set("cart-nonce", response.headers.nonce);
+      logger.log("WordPress empty-cart endpoint successful");
+      return NextResponse.json({
+        success: true,
+        message: "Cart emptied successfully",
+        items: [],
+        total_items: 0,
+        total_price: "0.00",
+      });
+    } catch (wpError) {
+      logger.error(
+        "WordPress empty-cart endpoint failed:",
+        wpError.response?.data || wpError.message
+      );
+
+      // Fallback: Try to clear cart using WooCommerce REST API
+      try {
+        logger.log("Attempting fallback cart clearing via WooCommerce API...");
+
+        // Get current cart items first
+        const cartResponse = await axios.get(
+          `${BASE_URL}/wp-json/wc/store/cart`,
+          {
+            headers: {
+              Authorization: `${encodedCredentials.value}`,
+            },
+          }
+        );
+
+        if (
+          cartResponse.data &&
+          cartResponse.data.items &&
+          cartResponse.data.items.length > 0
+        ) {
+          // Remove each item individually
+          for (const item of cartResponse.data.items) {
+            try {
+              await axios.post(
+                `${BASE_URL}/wp-json/wc/store/cart/remove-item`,
+                { key: item.key },
+                {
+                  headers: {
+                    Authorization: `${encodedCredentials.value}`,
+                    nonce: nonce,
+                  },
+                }
+              );
+              logger.log(`Removed item ${item.key} from cart`);
+            } catch (itemError) {
+              logger.error(
+                `Failed to remove item ${item.key}:`,
+                itemError.response?.data || itemError.message
+              );
+            }
+          }
+        }
+
+        logger.log("Fallback cart clearing completed");
+        return NextResponse.json({
+          success: true,
+          message: "Cart emptied successfully (fallback method)",
+          items: [],
+          total_items: 0,
+          total_price: "0.00",
+        });
+      } catch (fallbackError) {
+        logger.error(
+          "Fallback cart clearing also failed:",
+          fallbackError.response?.data || fallbackError.message
+        );
+        throw wpError; // Re-throw original error
+      }
     }
-
-    return NextResponse.json({
-      success: true,
-      message: "Cart emptied successfully",
-      items: [],
-      total_items: 0,
-      total_price: "0.00",
-    });
   } catch (error) {
-    console.error(
-      "Error emptying cart:",
-      error.response?.data || error.message
-    );
+    logger.error("Error emptying cart:", error.response?.data || error.message);
 
     return NextResponse.json(
       {

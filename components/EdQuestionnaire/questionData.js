@@ -1,3 +1,5 @@
+import { logger } from "@/utils/devLogger";
+
 export const questions = [
   {
     id: 1,
@@ -201,19 +203,26 @@ export const questions = [
         name: "33_3",
         value: "Low sexual desire",
         requiresConsent: true,
+        consentPopupContent: {
+          title: "Low Sex Drive Notice",
+          message:
+            "You've indicated you have low sex drive.\n\nWhile erectile dysfunction and low libido can sometimes occur together, they are often caused by different underlying issues.\n\n💡 Please note: Treatments for erectile dysfunction are unlikely to improve sex drive.\n\nLow libido may require further evaluation, as it can be linked to hormonal, psychological, or medical factors.\n\n👉 We strongly recommend that you consult your physician or a healthcare professional for a full assessment.",
+          acknowledgementRequired: true,
+          acknowledgementField: "97_1",
+        },
       },
       {
         id: "33_5",
         name: "33_5",
         value: "Ejaculating too early",
         requiresConsent: true,
+        consentPopupContent: {
+          title: "Please read",
+          message:
+            "Premature ejaculation lacks a strict definition but is generally considered penetrative sex lasting under three minutes, leading to dissatisfaction. If this sounds like your experience, ED treatments won't help—please visit our premature ejaculation page instead.",
+        },
       },
     ],
-    consentPopupContent: {
-      title: "Please read",
-      message:
-        "Premature ejaculation lacks a strict definition but is generally considered penetrative sex lasting under three minutes, leading to dissatisfaction. If this sounds like your experience, ED treatments won't help—please visit our premature ejaculation page instead.",
-    },
   },
   {
     id: 9,
@@ -439,7 +448,7 @@ export const questions = [
         "Intended benefits of Cialis(Tadalafil) / Viagra(Sildenafil) for sexual health:",
       benefits: ["To help get and/or maintain an erection"],
       benefitsNote:
-        "*If you are experiencing other sexual health issues, we encourage you to book an appointment to discuss with our healthcare team.",
+        "*This isn’t a full list of potential side effects. To learn more, please book an appointment or send a message to your clinician",
       sideEffectsTitle: "Possible Side Effects:",
       sideEffects: [
         "Headaches",
@@ -537,12 +546,12 @@ export const questions = [
     subtitle2: "Your face and ID must be clearly visible",
     inputType: "upload",
     fileUpload: {
-      accept: "image/jpeg,image/png",
+      accept: "image/jpeg,image/jpg,image/png",
       label: "Tap to upload the ID photo",
-      maxSize: 5 * 1024 * 1024, // 5MB
+      maxSize: 20 * 1024 * 1024, // 20MB
       noteText: "Please capture a selfie of yourself",
       restrictions:
-        "Only JPEG and PNG images are supported.\nMax allowed file size per image is 5MB",
+        "Only JPG, JPEG, and PNG images are supported.\nMax allowed file size per image is 20MB",
     },
   },
   {
@@ -560,7 +569,7 @@ export const questions = [
           platform: "facebook",
         },
         {
-          url: "https://www.instagram.com/myrocky.ca/",
+          url: "https://www.instagram.com/myrocky/",
           platform: "instagram",
         },
         {
@@ -595,6 +604,6 @@ export const getQuestionById = (questionId) => {
 
 export const getQuestionByPage = (pageNumber) => {
   const question = questions.find((q) => q.pageNo === pageNumber);
-  console.log(`Getting question for page ${pageNumber}:`, question);
+  logger.log(`Getting question for page ${pageNumber}:`, question);
   return question;
 };

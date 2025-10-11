@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import axios from "axios";
+import { logger } from "@/utils/devLogger";
 import { cookies } from "next/headers";
 
 const BASE_URL = process.env.BASE_URL;
@@ -33,10 +34,7 @@ export async function GET(req) {
 
     return NextResponse.json(response.data);
   } catch (error) {
-    console.error(
-      "Error getting order:",
-      error.response?.data || error.message
-    );
+    logger.error("Error getting order:", error.response?.data || error.message);
 
     return NextResponse.json(
       {

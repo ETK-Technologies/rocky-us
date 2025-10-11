@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, Suspense } from "react";
+import { logger } from "@/utils/devLogger";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "react-toastify";
@@ -54,7 +55,7 @@ const ForgotPasswordContent = () => {
         );
       }
     } catch (err) {
-      console.error("Error:", err);
+      logger.error("Error:", err);
       toast.error("An error occurred while processing your request.");
     } finally {
       setSubmitting(false);

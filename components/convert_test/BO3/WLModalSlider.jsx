@@ -16,7 +16,7 @@ const WLModalSlider = (modalOpen = false) => {
     <>
       {modalView && (
         <>
-          <div className="bg-black bg-opacity-50 fixed inset-0 z-40"></div>
+          <div id="Modal_v2" className="bg-black bg-opacity-50 fixed inset-0 z-40"></div>
           <div
             aria-hidden="true"
             className="fixed inset-0 z-50 flex items-center justify-center"

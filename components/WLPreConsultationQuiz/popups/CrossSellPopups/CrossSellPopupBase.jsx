@@ -1,9 +1,23 @@
 import React, { useEffect, useState } from "react";
-import { addToCartAndRedirect } from "@/utils/crossSellCheckout";
-import { FaChevronLeft, FaChevronRight } from "react-icons/fa6";
+import { useRouter } from "next/navigation";
+import { logger } from "@/utils/devLogger";
+import { addRequiredConsultation } from "@/utils/requiredConsultation";
+import { analyticsService } from "@/utils/analytics/analyticsService";
+import { FaChevronLeft, FaChevronRight, FaSpinner } from "react-icons/fa6";
 import { FaInfoCircle } from "react-icons/fa";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { IoIosCloseCircleOutline } from "react-icons/io";
+import CrossSellCartDisplay from "../../../shared/CrossSellCartDisplay";
+import { useCrossSellCart } from "@/lib/hooks/useCrossSellCart";
+
+// Weight loss product IDs that require consultation
+const WEIGHT_LOSS_PRODUCT_IDS = [
+  //"490537", // ORAL_SEMAGLUTIDE
+  "142975", // OZEMPIC
+  "160468", // MOUNJARO
+  "250827", // WEGOVY
+  "369618", // RYBELSUS
+];
 
 const CrossSellPopup = ({
   isOpen,
@@ -12,7 +26,28 @@ const CrossSellPopup = ({
   addOnProducts,
   onCheckout,
   selectedProductId,
+  initialCartData = null,
 }) => {
+  const router = useRouter();
+
+  // Use the new cross-sell cart hook
+  const {
+    cartData,
+    cartItems,
+    cartSubtotal,
+    cartLoading,
+    addingAddonId,
+    removingItemKey,
+    error: cartError,
+    addAddon,
+    removeItem,
+    checkout,
+    isAddingAddon,
+    isRemovingItem,
+    isAddonInCart,
+  } = useCrossSellCart("wl", mainProduct, initialCartData, onClose);
+
+  const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState({
     hours: 15,
@@ -23,8 +58,6 @@ const CrossSellPopup = ({
   const [openDescriptions, setOpenDescriptions] = useState({});
   const [addedProducts, setAddedProducts] = useState([]);
 
-  if (!isOpen) return null;
-
   // Toggle description visibility
   const toggleDescription = (addonId, event) => {
     event.preventDefault();
@@ -34,20 +67,24 @@ const CrossSellPopup = ({
     });
   };
 
-  // Handle adding an add-on product
-  const handleAddProduct = (addon) => {
-    if (!addedProducts.includes(addon.id)) {
+  // Handle adding an add-on product - now adds to cart immediately
+  const handleAddProduct = async (addon) => {
+    // Add to cart immediately
+    const success = await addAddon(addon);
+    if (success) {
+      // Track locally for UI state
       setAddedProducts((prevProducts) => {
         const newProducts = [...prevProducts, addon.id];
-        console.log(`Added WL addon ${addon.id} (${addon.name}) to selection`);
-        console.log("Updated WL added products:", newProducts);
+        logger.log(`Added WL addon ${addon.id} (${addon.name}) to cart`);
+        logger.log("Updated WL added products:", newProducts);
         return newProducts;
       });
-    }
-    if (WEIGHT_LOSS_PRODUCT_IDS.includes(String(addon.id))) {
-      addRequiredConsultation(addon.id, "wl-flow");
+      // Only add required consultation for specified products
+      if (WEIGHT_LOSS_PRODUCT_IDS.includes(String(addon.id))) {
+        addRequiredConsultation(addon.id, "wl-flow");
+      }
     } else {
-      console.log(`WL addon ${addon.id} (${addon.name}) already in selection`);
+      logger.log(`Failed to add WL addon ${addon.id} (${addon.name}) to cart`);
     }
   };
 
@@ -55,8 +92,8 @@ const CrossSellPopup = ({
   const handleRemoveAddon = (addonId) => {
     setAddedProducts((prevProducts) => {
       const newProducts = prevProducts.filter((id) => id !== addonId);
-      console.log(`Removed WL addon ${addonId} from selection`);
-      console.log("Updated WL added products:", newProducts);
+      logger.log(`Removed WL addon ${addonId} from selection`);
+      logger.log("Updated WL added products:", newProducts);
       return newProducts;
     });
   };
@@ -70,6 +107,7 @@ const CrossSellPopup = ({
     }
   };
 
+  // ALL useEffect hooks must be called before any conditional returns
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -109,11 +147,28 @@ const CrossSellPopup = ({
     }
   }, [isOpen]);
 
+  // Conditional returns AFTER all hooks
+  if (!isOpen) return null;
+
+  // Loading overlay
+  if (isCheckoutLoading) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[9999]">
+        <div className="bg-white p-8 rounded-lg text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
+          <p className="text-lg font-medium">Adding to Cart...</p>
+          <p className="text-sm text-gray-600">Please wait</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="new-cross-sell-popup fixed w-screen m-auto bg-[#FFFFFF] z-[9999] top-[0] left-[0] flex flex-col headers-font tracking-tight h-[100vh] overflow-auto">
-      <div className="new-cross-sell-popup-cart-section w-[100%] max-w-7xl p-5 md:pr-10 pb-6 md:pb-12 py-12 min-h-fit mx-auto">
+      <div className="new-cross-sell-popup-cart-section w-[100%] max-w-7xl p-5 md:px-10 pb-6 md:pb-12 py-12 min-h-fit mx-auto">
         <div className="popup-cart-product-row-wrapper">
-          <div className="congratulations relative bg-[#f5f5f0] rounded-xl text-sm px-2 p-2 md:px-4 md:p-4 border border-solid border-[#E2E2E1]">
+          {/* Congratulations Banner */}
+          <div className="congratulations relative bg-[#f5f5f0] rounded-xl text-sm px-2 p-2 md:px-4 md:p-4 border border-solid border-[#E2E2E1] mb-6">
             <p className="text-left">
               Congrats! You get <span className="font-bold">FREE 2-day</span>{" "}
               express shipping.
@@ -130,139 +185,117 @@ const CrossSellPopup = ({
             )}
           </div>
 
-          <div className="mt-4 md:mt-8 flex border-b border-gray-200 border-solid md:py-[12px] px-10 justify-between">
-            <div>
-              <p className="font-[500] text-[12px] text-[#212121] hidden md:block">
-                Product
-              </p>
-            </div>
-            <div className="flex flex-col items-end justify-center">
-              <p className="font-[500] text-[12px] text-[#212121] hidden md:block">
-                <span>Total</span>
-              </p>
-            </div>
-          </div>
-
-          <div
-            id="main-item"
-            className="popup-cart-product-row flex border-b border-gray-200 border-solid py-[24px] md:px-10 justify-between"
-          >
-            <div className="flex items-center gap-3">
-              <img
-                className="popup-cart-main-item-image object-contain float-right min-h-[70px] min-w-[70px] h-[70px] w-[70px] block rounded-xl bg-[#f3f3f3]"
-                src={mainProduct?.imageUrl || "/placeholder.png"}
-                alt={mainProduct?.name || "Product image"}
-              />
-              <div>
-                <p className="popup-cart-main-item-title font-semibold text-[14px] text-gray-800 text-left">
-                  {mainProduct?.name || ""}
-                </p>
-                <span className="popup-cart-main-item-quantity text-[12px] text-[#212121] block text-left">
-                  {mainProduct?.description || ""}
-                </span>
-              </div>
-            </div>
-            <div className="flex flex-col items-end justify-center">
-              <p className="font-[500] text-[14px] text-black">
-                <span className="popup-cart-main-item-price">
-                  ${mainProduct?.price || ""}
-                </span>
-              </p>
-              <p className="popup-cart-main-item-frequency font-[400] text-[12px] text-[#212121] capitalize text-right">
-                {mainProduct?.supply || ""}
-              </p>
-            </div>
-          </div>
-
-          {/* Added addon products */}
-          {addedProducts.length > 0 &&
-            addedProducts.map((addonId) => {
-              const addon = addOnProducts.find(
-                (product) => product.id === addonId
-              );
-              if (!addon) return null;
-
-              return (
-                <div
-                  key={addon.id}
-                  className="popup-cart-product-row flex border-b border-gray-200 border-solid py-[24px] md:px-10 justify-between relative"
-                >
-                  <div className="flex items-center gap-3">
-                    <img
-                      className="popup-cart-item-image float-right min-h-[70px] min-w-[70px] h-[70px] w-[70px] block rounded-xl bg-[#f3f3f3] object-cover"
-                      src={addon.imageUrl}
-                      alt={addon.name}
-                    />
-                    <div>
-                      <p className="popup-cart-item-title font-semibold text-[14px] text-gray-800 text-left">
-                        {addon.name}
-                      </p>
-                      <span className="popup-cart-item-quantity text-[12px] text-[#212121] block text-left">
-                        {addon.quantity || "1-time purchase"}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end justify-center">
-                    <p className="font-[500] text-[14px] text-black">
-                      <span className="popup-cart-item-price">
-                        ${addon.price}
-                      </span>
-                    </p>
-                    <p className="popup-cart-item-frequency font-[400] text-[12px] text-[#212121] capitalize text-right">
-                      {addon.frequency || "1-time purchase"}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
+          {/* Cart Display Component */}
+          <CrossSellCartDisplay
+            cartItems={cartItems}
+            subtotal={cartSubtotal}
+            onRemoveItem={removeItem}
+            isLoading={cartLoading}
+            removingItemKey={removingItemKey}
+            isRemovingItem={isRemovingItem}
+            flowType="wl"
+            requiredItemIds={["148515"]}
+          />
         </div>
 
-        <div className="flex justify-end pt-2 popup_cart_url_outer static checkout-btn-new w-auto bg-transparent p-0">
+        <div className="flex justify-end pt-2 popup_cart_url_outer static checkout-btn-new w-auto bg-transparent p-0 max-w-7xl mx-auto px-5 md:px-10">
           <button
             className="popup-cart-checkout-url add_to_cart_btn block bg-black border-0 rounded-full text-white p-2 px-10 mt-2 md:mt-4 w-full text-center md:w-fit"
-            onClick={(e) => {
+            onClick={async (e) => {
               e.preventDefault();
 
-              // Create a consistent format for the main product
-              const mainProductForCheckout = {
-                ...mainProduct,
-                id: selectedProductId,
-                isSubscription: mainProduct.isSubscription || false,
-              };
+              try {
+                setIsCheckoutLoading(true);
 
-              // Get all selected addon products
-              const selectedAddons = addedProducts
-                .map((addonId) => {
-                  const addon = addOnProducts.find((p) => p.id === addonId);
-                  if (addon) {
-                    return {
-                      id: addon.dataAddToCart || addon.id,
-                      dataAddToCart: addon.dataAddToCart || addon.id,
-                      name: addon.name,
-                      price: addon.price,
-                      isSubscription: addon.dataType === "subscription",
-                    };
+                // Create a consistent format for the main product
+                const mainProductForCheckout = {
+                  id: selectedProductId,
+                  name: mainProduct.name,
+                  price: mainProduct.price,
+                  quantity: 1,
+                  isSubscription: mainProduct.isSubscription || false,
+                };
+
+                // Add required consultation for main product if needed
+                if (
+                  WEIGHT_LOSS_PRODUCT_IDS.includes(String(selectedProductId))
+                ) {
+                  addRequiredConsultation(selectedProductId, "wl-flow");
+                }
+
+                // Get all selected addon products
+                const selectedAddons = addedProducts
+                  .map((addonId) => {
+                    const addon = addOnProducts.find((p) => p.id === addonId);
+                    if (addon) {
+                      return {
+                        id: addon.dataAddToCart || addon.id,
+                        name: addon.name,
+                        price: addon.price,
+                        quantity: 1,
+                        isSubscription: addon.dataType === "subscription",
+                      };
+                    }
+                    return null;
+                  })
+                  .filter(Boolean);
+
+                logger.log("WL main product:", mainProductForCheckout);
+                logger.log("WL addons:", selectedAddons);
+
+                // Use the new direct cart handler
+                // Cart already has all products, just get checkout URL
+                const checkoutUrl = checkout();
+                const result = {
+                  success: !!checkoutUrl,
+                  redirectUrl: checkoutUrl,
+                };
+
+                if (result.success) {
+                  // Track analytics with cart items
+                  try {
+                    const itemsForAnalytics = cartItems.map((item) => ({
+                      product: {
+                        id: item.id,
+                        name: item.name,
+                        price: parseFloat(item.price) || 0,
+                      },
+                      quantity: item.quantity || 1,
+                    }));
+                    analyticsService.trackBeginCheckout(itemsForAnalytics);
+                  } catch (e) {
+                    logger.warn(
+                      "[Analytics] begin_checkout (WL cross-sell) skipped:",
+                      e
+                    );
                   }
-                  return null;
-                })
-                .filter(Boolean);
 
-              // Use the addToCartAndRedirect function which handles cart clearing for WL flow
-              addToCartAndRedirect(mainProductForCheckout, selectedAddons, "wl")
-                .then(() => {
+                  // Close popup and navigate on success
+                  onClose();
+                  setIsCheckoutLoading(false);
+                  window.location.href = result.redirectUrl;
+
                   if (typeof onCheckout === "function") {
                     onCheckout();
                   }
-                })
-                .catch((error) => {
-                  console.error("Error in checkout process:", error);
+                } else {
+                  logger.error("WL checkout failed:", result.error);
+                  setIsCheckoutLoading(false);
                   alert(
                     "There was an issue processing your checkout. Please try again."
                   );
-                });
+                }
+              } catch (error) {
+                logger.error("Error in WL checkout process:", error);
+                setIsCheckoutLoading(false);
+                alert(
+                  "There was an issue processing your checkout. Please try again."
+                );
+              }
             }}
+            disabled={isCheckoutLoading}
           >
-            Checkout
+            {isCheckoutLoading ? "Adding to Cart..." : "Checkout"}
           </button>
         </div>
 
@@ -323,6 +356,7 @@ const CrossSellPopup = ({
                         !
                       </a>
                     </div>
+
                     {!openDescriptions[addon.id] ? (
                       <div
                         className={`addon${addon.id}-box-body relative my-[20px] mx-4 flex flex-col flex-grow`}
@@ -356,10 +390,10 @@ const CrossSellPopup = ({
                             className={`data-addon-id-${
                               addon.id
                             } add-to-cart-addon-product cursor-pointer border ${
-                              addedProducts.includes(addon.id)
+                              isAddonInCart(addon.id) || isAddingAddon(addon.id)
                                 ? "border-[#814B00] text-[#814B00]"
                                 : "border-[#D8D8D8] text-black"
-                            } border-solid rounded-full w-full text-center font-[500] text-[14px] block py-2 mt-2`}
+                            } border-solid rounded-full w-full text-center font-[500] text-[14px] flex items-center justify-center gap-2 py-2 mt-2`}
                             data-addon-id={addon.id}
                             data-title={addon.name}
                             data-price={addon.price}
@@ -368,21 +402,19 @@ const CrossSellPopup = ({
                             data-frequency={addon.frequency}
                             data-image={addon.imageUrl}
                             style={{ position: "relative", zIndex: 20 }}
+                            disabled={
+                              isAddonInCart(addon.id) || isAddingAddon(addon.id)
+                            }
                           >
-                            {addedProducts.includes(addon.id)
-                              ? "Added to Cart"
+                            {isAddingAddon(addon.id) && (
+                              <FaSpinner className="animate-spin" />
+                            )}
+                            {isAddingAddon(addon.id)
+                              ? "Adding..."
+                              : isAddonInCart(addon.id)
+                              ? "Added ✓"
                               : "Add To Cart"}
                           </button>
-                          {addedProducts.includes(addon.id) && (
-                            <button
-                              onClick={() => handleRemoveAddon(addon.id)}
-                              className="remove-addon-item mt-2"
-                              aria-label="Remove addon"
-                              type="button"
-                            >
-                              <RiDeleteBin6Line className="text-2xl text-red-500 hover:text-red-700 duration-100" />
-                            </button>
-                          )}
                         </div>
                       </div>
                     ) : (

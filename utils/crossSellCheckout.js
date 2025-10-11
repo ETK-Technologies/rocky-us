@@ -1,7 +1,7 @@
 "use client";
 
-import { createCartUrl, getProductIdMapping } from "./urlCartHandler";
-import { emptyCart } from "../lib/cart/cartService";
+import { logger } from "@/utils/devLogger";
+import { addToCartDirectly } from "./flowCartHandler";
 
 /**
  * Check if user is authenticated
@@ -69,53 +69,111 @@ export const clearSavedProducts = () => {
 };
 
 /**
- * Add products to cart and redirect to appropriate page
+ * Add products to cart and redirect to appropriate page using direct cart addition
  * @param {Object} mainProduct - The main selected product
  * @param {Array} addons - Array of addon product objects
  * @param {String} flowType - Type of flow (ed, wl, hair, etc.)
- * @returns {void}
+ * @param {Object} options - Additional options for cart addition
+ * @returns {Promise<Object>} Result with success status and redirect URL
  */
 export const addToCartAndRedirect = async (
   mainProduct,
-  addons,
-  flowType = "ed"
+  addons = [],
+  flowType = "ed",
+  options = {}
 ) => {
   try {
-    const isAuthenticated = isUserAuthenticated();
+    logger.log(`🛒 CrossSell - Starting ${flowType} flow cart addition`);
+    logger.log("Main Product:", mainProduct);
+    logger.log("Addons:", addons);
 
-    // If this is the WL flow, clear the cart first before adding new items
-    if (flowType === "wl") {
-      console.log("WL pre-consultation flow detected. Clearing cart first...");
-      try {
-        await emptyCart();
-        console.log("Cart cleared successfully for WL pre-consultation flow");
-      } catch (clearError) {
-        console.error("Error clearing cart:", clearError);
-        // Continue with the checkout process even if clearing fails
-      }
+    // Use direct cart addition with proper options
+    const result = await addToCartDirectly(mainProduct, addons, flowType, {
+      requireConsultation: options.requireConsultation || false,
+      preserveExistingCart: flowType !== "wl", // WL flow clears cart, others preserve
+      subscriptionPeriod: options.subscriptionPeriod || null,
+      varietyPackId: options.varietyPackId || null,
+      ...options,
+    });
+
+    if (result.success) {
+      logger.log(
+        `🎉 CrossSell - ${flowType} flow SUCCESS! Redirecting to:`,
+        result.redirectUrl
+      );
+
+      // Use window.location.href for compatibility with existing components
+      window.location.href = result.redirectUrl;
+
+      return result;
+    } else {
+      logger.error(`❌ CrossSell - ${flowType} flow FAILED:`, result.error);
+      alert(
+        result.error ||
+          "There was an issue processing your checkout. Please try again."
+      );
+      return result;
     }
-
-    // Using the centralized URL cart handler to create the redirect URL
-    // Since createCartUrl is now async, we need to await the result
-    const redirectUrl = await createCartUrl(
-      mainProduct,
-      addons,
-      flowType, // Pass the flowType parameter instead of hardcoding "ed"
-      isAuthenticated
-    );
-
-    // Save products for retrieval after login if user is not authenticated
-    if (!isAuthenticated) {
-      saveProductsForCheckout(mainProduct, addons, flowType);
-    }
-
-    // Log the final URL
-    console.log(`Redirecting to ${flowType} checkout:`, redirectUrl);
-
-    // Redirect to the appropriate page
-    window.location.href = redirectUrl;
   } catch (error) {
-    console.error(`Error in addToCartAndRedirect for ${flowType} flow:`, error);
+    logger.error(`Error in addToCartAndRedirect for ${flowType} flow:`, error);
     alert("There was an issue processing your checkout. Please try again.");
+    return {
+      success: false,
+      error: error.message,
+      flowType,
+    };
+  }
+};
+
+/**
+ * Modern version that returns the result without redirecting (for use with router.push)
+ * @param {Object} mainProduct - The main selected product
+ * @param {Array} addons - Array of addon product objects
+ * @param {String} flowType - Type of flow (ed, wl, hair, etc.)
+ * @param {Object} options - Additional options for cart addition
+ * @returns {Promise<Object>} Result with success status and redirect URL
+ */
+export const addToCartDirectlyWithResult = async (
+  mainProduct,
+  addons = [],
+  flowType = "ed",
+  options = {}
+) => {
+  try {
+    logger.log(
+      `🛒 CrossSell (Modern) - Starting ${flowType} flow cart addition`
+    );
+    logger.log("Main Product:", mainProduct);
+    logger.log("Addons:", addons);
+
+    // Use direct cart addition with proper options
+    const result = await addToCartDirectly(mainProduct, addons, flowType, {
+      requireConsultation: options.requireConsultation || false,
+      preserveExistingCart: flowType !== "wl", // WL flow clears cart, others preserve
+      subscriptionPeriod: options.subscriptionPeriod || null,
+      varietyPackId: options.varietyPackId || null,
+      ...options,
+    });
+
+    if (result.success) {
+      logger.log(`🎉 CrossSell (Modern) - ${flowType} flow SUCCESS!`, result);
+    } else {
+      logger.error(
+        `❌ CrossSell (Modern) - ${flowType} flow FAILED:`,
+        result.error
+      );
+    }
+
+    return result;
+  } catch (error) {
+    logger.error(
+      `Error in addToCartDirectlyWithResult for ${flowType} flow:`,
+      error
+    );
+    return {
+      success: false,
+      error: error.message,
+      flowType,
+    };
   }
 };

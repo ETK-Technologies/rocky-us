@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import axios from "axios";
 import { cookies } from "next/headers";
+import { logger } from "@/utils/devLogger";
 
 const BASE_URL = process.env.BASE_URL;
 
@@ -17,14 +18,14 @@ export async function GET() {
         try {
           // Try to parse the local cart data from the cookie
           const parsedCart = JSON.parse(localCart.value);
-          console.log(
+          logger.log(
             "Retrieved local cart from cookie with items:",
             parsedCart.items?.length || 0
           );
 
           // Ensure items exists and is an array
           if (!parsedCart.items || !Array.isArray(parsedCart.items)) {
-            console.warn(
+            logger.warn(
               "Local cart missing items array, initializing empty cart"
             );
             parsedCart.items = [];
@@ -73,12 +74,12 @@ export async function GET() {
             is_local_cart: true, // Add a flag to indicate this is a local cart
           });
         } catch (e) {
-          console.error("Error parsing local cart from cookie:", e);
+          logger.error("Error parsing local cart from cookie:", e);
         }
       }
 
       // If no local cart data is found or parsing fails, return an empty cart
-      console.log("User not authenticated, returning empty cart");
+      logger.log("User not authenticated, returning empty cart");
 
       return NextResponse.json({
         items: [],
@@ -102,13 +103,13 @@ export async function GET() {
     // Ensure the response has the expected structure
     const responseData = response.data;
     if (!responseData.items || !Array.isArray(responseData.items)) {
-      console.warn("Server returned invalid cart structure, fixing...");
+      logger.warn("Server returned invalid cart structure, fixing...");
       responseData.items = responseData.items || [];
     }
 
     return NextResponse.json(responseData);
   } catch (error) {
-    console.error("Error getting cart:", error.response?.data || error.message);
+    logger.error("Error getting cart:", error.response?.data || error.message);
 
     // Return a valid cart structure even on error
     return NextResponse.json(
@@ -158,16 +159,13 @@ export async function PUT(req) {
     // Ensure response data has the expected structure
     const responseData = response.data;
     if (!responseData.items || !Array.isArray(responseData.items)) {
-      console.warn("Server returned invalid cart structure, fixing...");
+      logger.warn("Server returned invalid cart structure, fixing...");
       responseData.items = responseData.items || [];
     }
 
     return NextResponse.json(responseData);
   } catch (error) {
-    console.error(
-      "Error updating cart:",
-      error.response?.data || error.message
-    );
+    logger.error("Error updating cart:", error.response?.data || error.message);
 
     // Return a valid cart structure even on error
     return NextResponse.json(
@@ -221,11 +219,10 @@ export async function DELETE(req) {
     const checkBodyOptimizationRemoval = (cartItems, itemToRemoveKey) => {
       const BODY_OPTIMIZATION_PROGRAM_ID = "148515";
       const WEIGHT_LOSS_PRODUCT_IDS = [
-        "142977",
-        "453501",
-        "276277",
-        "369797",
-        "490537",
+        "142976", // Ozempic
+        "160469", // Mounjaro
+        "276274", // Wegovy
+        "369795", // Rybelsus
       ];
 
       const itemToRemove = cartItems.find(
@@ -260,11 +257,10 @@ export async function DELETE(req) {
     const getItemsToRemoveWithWL = (cartItems, itemToRemoveKey) => {
       const BODY_OPTIMIZATION_PROGRAM_ID = "148515";
       const WEIGHT_LOSS_PRODUCT_IDS = [
-        "142977",
-        "453501",
-        "276277",
-        "369797",
-        "490537",
+        "142976", // Ozempic
+        "160469", // Mounjaro
+        "276274", // Wegovy
+        "369795", // Rybelsus
       ];
 
       const itemToRemove = cartItems.find(
@@ -286,10 +282,55 @@ export async function DELETE(req) {
 
       if (bodyOptimizationItem) {
         itemsToRemove.push(bodyOptimizationItem.key);
-        console.log(
+        logger.log(
           "Also removing Body Optimization Program when removing Weight Loss product"
         );
       }
+
+      return itemsToRemove;
+    };
+
+    // Helper function to get items to remove for variety pack products
+    const getItemsToRemoveWithVarietyPack = (cartItems, itemToRemoveKey) => {
+      const itemToRemove = cartItems.find(
+        (item) => item.key === itemToRemoveKey
+      );
+
+      if (!itemToRemove) {
+        return [itemToRemoveKey];
+      }
+
+      // Check if this item is part of a variety pack
+      const isVarietyPack = itemToRemove.meta_data?.some(
+        (meta) => meta.key === "_is_variety_pack" && meta.value === "true"
+      );
+
+      if (!isVarietyPack) {
+        return [itemToRemoveKey];
+      }
+
+      // Get the variety pack ID
+      const varietyPackId = itemToRemove.meta_data?.find(
+        (meta) => meta.key === "_variety_pack_id"
+      )?.value;
+
+      if (!varietyPackId) {
+        return [itemToRemoveKey];
+      }
+
+      // Find all items that are part of the same variety pack
+      const varietyPackItems = cartItems.filter((item) =>
+        item.meta_data?.some(
+          (meta) =>
+            meta.key === "_variety_pack_id" && meta.value === varietyPackId
+        )
+      );
+
+      const itemsToRemove = varietyPackItems.map((item) => item.key);
+
+      logger.log(
+        `Removing variety pack products together: ${itemsToRemove.length} items`
+      );
 
       return itemsToRemove;
     };
@@ -300,7 +341,7 @@ export async function DELETE(req) {
       itemKey
     );
     if (!removalCheck.allowed) {
-      console.warn(
+      logger.warn(
         "Body Optimization Program removal blocked:",
         removalCheck.message
       );
@@ -311,17 +352,28 @@ export async function DELETE(req) {
           total_items: currentCart.total_items || 0,
           total_price: currentCart.total_price || "0.00",
         },
-        { status: 400 }
+        { status: 500 }
       );
     }
 
     // Get all items that should be removed
     const itemKeysToRemove = getItemsToRemoveWithWL(currentCart.items, itemKey);
 
+    // Also check for variety pack products
+    const varietyPackItemsToRemove = getItemsToRemoveWithVarietyPack(
+      currentCart.items,
+      itemKey
+    );
+
+    // Combine both arrays and remove duplicates
+    const allItemsToRemove = [
+      ...new Set([...itemKeysToRemove, ...varietyPackItemsToRemove]),
+    ];
+
     // Remove all items
     let finalCartData = currentCart;
 
-    for (const keyToRemove of itemKeysToRemove) {
+    for (const keyToRemove of allItemsToRemove) {
       try {
         const response = await axios.post(
           `${BASE_URL}/wp-json/wc/store/cart/remove-item`,
@@ -342,9 +394,9 @@ export async function DELETE(req) {
           cookieStore.set("cart-nonce", response.headers.nonce);
         }
 
-        console.log(`Item ${keyToRemove} removed from server cart`);
+        logger.log(`Item ${keyToRemove} removed from server cart`);
       } catch (error) {
-        console.error(
+        logger.error(
           `Error removing item ${keyToRemove} from cart:`,
           error.response?.data || error.message
         );
@@ -354,13 +406,13 @@ export async function DELETE(req) {
 
     // Ensure response data has the expected structure
     if (!finalCartData.items || !Array.isArray(finalCartData.items)) {
-      console.warn("Server returned invalid cart structure, fixing...");
+      logger.warn("Server returned invalid cart structure, fixing...");
       finalCartData.items = finalCartData.items || [];
     }
 
     return NextResponse.json(finalCartData);
   } catch (error) {
-    console.error(
+    logger.error(
       "Error removing item from cart:",
       error.response?.data || error.message
     );

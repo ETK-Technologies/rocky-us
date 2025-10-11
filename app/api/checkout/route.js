@@ -3,62 +3,17 @@ import axios from "axios";
 import { cookies } from "next/headers";
 import fs from "fs";
 import path from "path";
+import { logger } from "@/utils/devLogger";
+import {
+  transformPaymentError,
+  logPaymentError,
+} from "@/utils/paymentErrorHandler";
+import {
+  validateCheckoutData,
+  formatValidationErrors,
+} from "@/utils/checkoutValidation";
 
 const BASE_URL = process.env.BASE_URL;
-
-// Function to format postcode based on country (USA-focused)
-function formatPostcode(postcode, country) {
-  if (!postcode) return "";
-
-  // Remove all spaces and convert to uppercase
-  let cleanPostcode = postcode.replace(/\s+/g, "").toUpperCase();
-
-  switch (country) {
-    case "US": // United States (primary)
-      // US ZIP codes: 12345 or 12345-6789
-      if (/^\d{5}$/.test(cleanPostcode)) {
-        return cleanPostcode;
-      }
-      if (/^\d{9}$/.test(cleanPostcode)) {
-        return `${cleanPostcode.slice(0, 5)}-${cleanPostcode.slice(5)}`;
-      }
-      // If it looks like a ZIP code with dash, keep it
-      if (/^\d{5}-\d{4}$/.test(cleanPostcode)) {
-        return cleanPostcode;
-      }
-      break;
-    case "CA": // Canada (legacy support)
-      // Canadian postal codes: A1A1A1 -> A1A 1A1
-      if (
-        cleanPostcode.length === 6 &&
-        /^[A-Z]\d[A-Z]\d[A-Z]\d$/.test(cleanPostcode)
-      ) {
-        return `${cleanPostcode.slice(0, 3)} ${cleanPostcode.slice(3)}`;
-      }
-      break;
-    case "GB": // United Kingdom
-      // UK postcodes have various formats, keep as is but ensure proper spacing
-      if (cleanPostcode.length >= 5) {
-        const outward = cleanPostcode.slice(0, -3);
-        const inward = cleanPostcode.slice(-3);
-        return `${outward} ${inward}`;
-      }
-      break;
-    default:
-      // For other countries, if it looks like US ZIP, format as US
-      if (/^\d{5}$/.test(cleanPostcode) || /^\d{9}$/.test(cleanPostcode)) {
-        if (cleanPostcode.length === 9) {
-          return `${cleanPostcode.slice(0, 5)}-${cleanPostcode.slice(5)}`;
-        }
-        return cleanPostcode;
-      }
-      // Otherwise return cleaned version
-      return cleanPostcode;
-  }
-
-  // If no specific formatting applies, return cleaned version
-  return cleanPostcode;
-}
 
 export async function POST(req) {
   try {
@@ -93,15 +48,60 @@ export async function POST(req) {
       shippingAddressTwo,
       shippingCity,
       shippingState,
-      shippingPostcode,
+      shippingPostCode,
       shippingCountry,
       shippingPhone,
       totalAmount, // Ensure it's passed from the frontend
-      isFreeOrder, // Flag for zero-amount orders
-      paymentMethod, // Custom payment method for free orders
-      payment_data, // Stripe payment data array
-      payment_intent_id, // Stripe PaymentIntent ID (optional)
+      awin_awc,
+      awin_channel,
     } = requestData;
+
+    // Validate checkout data before processing
+    const validationResult = validateCheckoutData({
+      billing_address: {
+        first_name: firstName,
+        last_name: lastName,
+        address_1: addressOne,
+        address_2: addressTwo,
+        city,
+        state,
+        postcode,
+        country,
+        email,
+        phone,
+      },
+      shipping_address: {
+        ship_to_different_address: shipToAnotherAddress,
+        first_name: shippingFirstName,
+        last_name: shippingLastName,
+        address_1: shippingAddressOne,
+        address_2: shippingAddressTwo,
+        city: shippingCity,
+        state: shippingState,
+        postcode: shippingPostCode,
+        country: shippingCountry,
+        phone: shippingPhone,
+      },
+      cardNumber,
+      cardExpMonth,
+      cardExpYear,
+      cardCVD,
+      useSavedCard,
+    });
+
+    if (!validationResult.isValid) {
+      logger.log("Checkout validation failed:", validationResult.errors);
+      return NextResponse.json(
+        {
+          error: "Validation failed",
+          details: validationResult.errors,
+          message: formatValidationErrors(validationResult.errors),
+        },
+        { status: 500 }
+      );
+    }
+
+    logger.log("Checkout data validation passed");
 
     const cookieStore = await cookies();
     const encodedCredentials = cookieStore.get("authToken");
@@ -114,46 +114,77 @@ export async function POST(req) {
       );
     }
 
-    // Build checkout data for WooCommerce API
+    let token = "";
+    let cardNumberLastFourNumbers = "";
+
+    // Process payment token if using new card
+    if (!useSavedCard && cardNumber) {
+      cardNumberLastFourNumbers = cardNumber.slice(-4);
+      try {
+        token = await generateToken({
+          cvd: cardCVD,
+          expiry_month: cardExpMonth,
+          expiry_year: cardExpYear,
+          number: cardNumber,
+        });
+      } catch (error) {
+        return NextResponse.json(
+          { error: "Failed to process card. Check your details." },
+          { status: 500 }
+        );
+      }
+    }
+
+    // Determine AWIN values with server-side fallback
+    const awcCookie = cookieStore.get("awc")?.value || "";
+    const resolvedAwinAwc = (requestData.awin_awc || "").trim() || awcCookie;
+    const resolvedAwinChannel =
+      (requestData.awin_channel || "").trim() ||
+      (resolvedAwinAwc ? "aw" : "other");
+
+    // Prepare WooCommerce Store API checkout payload
     const checkoutData = {
       billing_address: {
         first_name: firstName,
         last_name: lastName,
+        company: "",
         address_1: addressOne,
-        address_2: addressTwo,
-        city: city,
-        state: state,
-        postcode: formatPostcode(postcode, country),
-        country: country,
-        email: email,
-        phone: phone,
+        address_2: addressTwo || "",
+        city,
+        state,
+        postcode,
+        country,
+        email,
+        phone,
       },
       shipping_address: shipToAnotherAddress
         ? {
-            first_name: shippingFirstName,
-            last_name: shippingLastName,
-            address_1: shippingAddressOne,
-            address_2: shippingAddressTwo,
-            city: shippingCity,
-            state: shippingState,
-            postcode: formatPostcode(shippingPostcode, shippingCountry),
-            country: shippingCountry,
+            first_name: shippingFirstName || firstName,
+            last_name: shippingLastName || lastName,
+            company: "",
+            address_1: shippingAddressOne || addressOne,
+            address_2: shippingAddressTwo || addressTwo || "",
+            city: shippingCity || city,
+            state: shippingState || state,
+            postcode: shippingPostCode || postcode,
+            country: shippingCountry || country,
+            phone: shippingPhone || phone,
           }
         : {
             first_name: firstName,
             last_name: lastName,
+            company: "",
             address_1: addressOne,
-            address_2: addressTwo,
-            city: city,
-            state: state,
-            postcode: formatPostcode(postcode, country),
-            country: country,
+            address_2: addressTwo || "",
+            city,
+            state,
+            postcode,
+            country,
+            phone,
           },
-      payment_method: isFreeOrder ? "coupon_100_percent" : "stripe_cc", // Use Stripe credit card payment method
-      payment_data: payment_data || [],
       customer_note: customerNotes || "",
-      origin: "headless", // Indicate this is a headless checkout
-      ...(payment_intent_id && { payment_intent_id }), // Add PaymentIntent ID if provided (only for new card payments)
+      payment_method: "bambora_credit_card",
+      payment_data: [],
       meta_data: [
         {
           key: "_meta_discreet",
@@ -163,72 +194,114 @@ export async function POST(req) {
           key: "_meta_mail_box",
           value: toMailBox ? "1" : "0",
         },
-        // Payment profile ID will be added after payment via order update
-        // Add free order metadata
-        ...(isFreeOrder
-          ? [
-              {
-                key: "_payment_method_title",
-                value: "Paid with 100% Coupon Discount",
-              },
-              {
-                key: "_free_order_coupon_payment",
-                value: "true",
-              },
-            ]
-          : []),
+        // AWIN tracking metadata from frontend utility
+        { key: "_awin_awc", value: resolvedAwinAwc || "" },
+        { key: "_awin_channel", value: resolvedAwinChannel },
+        { key: "_is_created_from_rocky_fe", value: "true" },
       ],
     };
 
-    // Handle payment data - use what's passed from frontend or set defaults for free orders
-    if (isFreeOrder) {
-      console.log("Processing free order with 100% coupon discount");
-      checkoutData.payment_data = [
+    // Add appropriate payment data based on payment method
+    if (useSavedCard && savedCardToken) {
+      checkoutData.payment_data.push(
         {
-          key: "free-order-coupon-payment",
+          // The token parameter is for the customer profile code in Bambora
+          key: "bambora_credit_card-customer-code",
+          value: savedCardToken,
+        },
+        {
+          // The card ID parameter
+          key: "bambora_credit_card-card-id",
+          value: savedCardId || "1",
+        },
+        {
+          // This enables payment with saved cards
+          key: "tokenize",
           value: "true",
         },
-      ];
-    } else if (payment_data && payment_data.length > 0) {
-      // For regular payments with payment_data, check if we have an existing PaymentIntent
-      const existingPaymentIntent = payment_data.find(
-        (item) => item.key === "wc-stripe-payment-intent"
+        {
+          // Specify that we're using an existing saved card
+          key: "wc-bambora_credit_card-payment-token",
+          value: savedCardToken,
+        },
+        {
+          // This indicates we're not saving a new card
+          key: "wc-bambora_credit_card-new-payment-method",
+          value: "0",
+        }
       );
 
-      if (existingPaymentIntent) {
-        console.log(
-          "Using existing PaymentIntent:",
-          existingPaymentIntent.value
-        );
-        // WooCommerce Stripe plugin will use the existing PaymentIntent
-        // No need to modify payment_data - it's already correctly formatted
-      } else {
-        console.log(
-          "No existing PaymentIntent found, WooCommerce will create one"
-        );
-        // WooCommerce Stripe plugin will create a new PaymentIntent
+      // Add CVV if provided
+      if (cardCVD) {
+        checkoutData.payment_data.push({
+          key: "wc-bambora-credit-card-cvv",
+          value: cardCVD,
+        });
       }
     } else {
-      // Empty payment_data array - create order WITHOUT payment processing
-      console.log(
-        "Creating order WITHOUT payment processing (empty payment_data)"
+      // For new cards, continue with the existing implementation
+      checkoutData.payment_data.push(
+        {
+          key: "wc-bambora-credit-card-js-token",
+          value: token,
+        },
+        {
+          key: "wc-bambora-credit-card-account-number",
+          value: cardNumberLastFourNumbers,
+        },
+        {
+          key: "wc-bambora-credit-card-card-type",
+          value: cardType,
+        },
+        {
+          key: "wc-bambora-credit-card-exp-month",
+          value: cardExpMonth,
+        },
+        {
+          key: "wc-bambora-credit-card-exp-year",
+          value: cardExpYear,
+        },
+        {
+          key: "wc-bambora_credit_card-new-payment-method",
+          value: "1",
+        }
       );
-      console.log(
-        "PaymentIntent will be created via WooCommerce AJAX API after order creation"
-      );
-      checkoutData.payment_data = [];
     }
 
-    // Log headless checkout info
-    console.log("WooCommerce Store API checkout:", {
-      origin: checkoutData.origin,
-      payment_intent_id:
-        payment_intent_id || "not provided (free order or saved card)",
-      payment_method: checkoutData.payment_method,
-      payment_data_length: checkoutData.payment_data?.length || 0,
-      is_payment_processing: checkoutData.payment_data?.length > 0,
-      is_free_order: isFreeOrder,
-    });
+    // Debug the final checkout data with enhanced logging
+    logger.log("FINAL checkoutData", JSON.stringify(checkoutData, null, 2));
+
+    // Write to server log file for debugging
+    const fs = require("fs");
+    const path = require("path");
+    const logDir =
+      process.env.NODE_ENV === "development"
+        ? path.join(process.cwd(), "tmp")
+        : "/tmp";
+
+    try {
+      // Create tmp directory if it doesn't exist
+      if (!fs.existsSync(logDir)) {
+        fs.mkdirSync(logDir, { recursive: true });
+      }
+
+      // Write checkout data to log file
+      fs.writeFileSync(
+        path.join(logDir, `checkout-log-${Date.now()}.json`),
+        JSON.stringify(
+          {
+            timestamp: new Date().toISOString(),
+            checkoutData,
+            savedCardUsed: useSavedCard,
+            totalAmount,
+          },
+          null,
+          2
+        )
+      );
+    } catch (logError) {
+      logger.error("Error writing debug log:", logError);
+    }
 
     // Call the WooCommerce Store API checkout endpoint
     const response = await axios.post(
@@ -243,65 +316,6 @@ export async function POST(req) {
       }
     );
 
-    // Handle free orders (100% coupon payment)
-
-    // Try to find order ID in different possible locations
-    const orderId =
-      response.data.id ||
-      response.data.order_id ||
-      response.data.order?.id ||
-      response.data.data?.id ||
-      null;
-
-    if (isFreeOrder && orderId) {
-      try {
-        // Update order status to on-hold for free orders
-        const orderUpdateData = {
-          status: "on-hold",
-          payment_method_title: "Paid with 100% Coupon Discount",
-        };
-
-        const updateResponse = await axios.put(
-          `${BASE_URL}/wp-json/wc/v3/orders/${orderId}`,
-          orderUpdateData,
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Basic ${Buffer.from(
-                `${process.env.CONSUMER_KEY}:${process.env.CONSUMER_SECRET}`
-              ).toString("base64")}`,
-            },
-          }
-        );
-
-        // Add order note for free orders
-        const orderNoteData = {
-          note: "✅ Order placed on-hold with 100% coupon discount. No payment processing required.",
-          customer_note: false, // This is an admin note
-        };
-
-        await axios.post(
-          `${BASE_URL}/wp-json/wc/v3/orders/${orderId}/notes`,
-          orderNoteData,
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Basic ${Buffer.from(
-                `${process.env.CONSUMER_KEY}:${process.env.CONSUMER_SECRET}`
-              ).toString("base64")}`,
-            },
-          }
-        );
-      } catch (updateError) {
-        console.error(
-          "Error updating free order status or adding note:",
-          updateError.message
-        );
-        console.error("Full error details:", updateError.response?.data);
-        // Don't fail the order creation if status update fails
-      }
-    }
-
     // Return the response in a consistent format
     return NextResponse.json({
       success: true,
@@ -310,26 +324,69 @@ export async function POST(req) {
         order_key: response.data.order_key,
         status: response.data.status,
         payment_result: response.data.payment_result,
-        data_sent: checkoutData,
-        order_data: response.data,
       },
     });
   } catch (error) {
-    console.error("Error processing checkout:", error);
+    // If checkout failed, try to refresh the cart nonce
+    try {
+      const cookieStore = await cookies();
+      const encodedCredentials = cookieStore.get("authToken");
 
-    // Enhanced error handling with more details
-    const errorMessage =
-      error.response?.data?.message ||
-      error.response?.data?.error ||
-      error.message ||
-      "An error occurred during checkout";
+      if (encodedCredentials?.value) {
+        const cartResponse = await axios.get(
+          `${BASE_URL}/wp-json/wc/store/cart`,
+          {
+            headers: { Authorization: encodedCredentials.value },
+          }
+        );
+
+        const refreshedNonce = cartResponse.headers?.nonce;
+        if (refreshedNonce) {
+          cookieStore.set("cart-nonce", refreshedNonce);
+        }
+      }
+    } catch (refreshError) {
+      logger.error("Error refreshing cart nonce:", refreshError);
+    }
+
+    // Transform technical errors into user-friendly messages
+    const originalError =
+      error.response?.data?.message || error.message || "Failed to checkout.";
+    const userFriendlyMessage = transformPaymentError(
+      originalError,
+      error.response?.data
+    );
+
+    // Log the original error for debugging
+    logPaymentError("checkout", error, userFriendlyMessage);
 
     return NextResponse.json(
       {
-        error: errorMessage,
-        details: error.response?.data,
+        error: userFriendlyMessage,
+        details: error.response?.data || null,
       },
       { status: error.response?.status || 500 }
     );
   }
+}
+
+async function generateToken({ cvd, expiry_month, expiry_year, number }) {
+  const res = await axios.post(
+    "https://www.beanstream.com/scripts/tokenization/tokens",
+    { cvd, expiry_month, expiry_year, number },
+    {
+      headers: {
+        "Content-Type": "application/json",
+        Host: "www.beanstream.com",
+        Origin: "https://libs.na.bambora.com",
+        Referer: "https://libs.na.bambora.com",
+      },
+    }
+  );
+
+  if (!res.data || !res.data.token) {
+    throw new Error("No token from Bambora API");
+  }
+
+  return res.data.token;
 }

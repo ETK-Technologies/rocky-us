@@ -419,7 +419,6 @@ export const QuestionnaireForm = ({
           <QuestionTypes.DrugsQuestion
             formData={formData}
             onSelect={(value, field) => {
-              console.log(`Drug option selected: ${field} = ${value}`);
               handleFormChange(field, value);
               setTimeout(() => {
                 const updatedFormData = {
@@ -435,12 +434,27 @@ export const QuestionnaireForm = ({
                   updatedFormData["533_5"] ||
                   updatedFormData["533_6"];
 
-                console.log(`Any drug selected: ${anyDrugSelected}`);
               }, 10);
             }}
           />
         );
       case 34:
+        return (
+          <QuestionTypes.HealthCareTeamQuestions
+            formData={formData}
+            onSelect={(value, textValue) => {
+              if (textValue !== undefined) {
+                handleFormChange("539", textValue);
+              } else {
+                handleFormChange("538", value);
+                if (value === "No") {
+                  handleFormChange("539", "");
+                }
+              }
+            }}
+          />
+        );
+      case 35:
         return (
           <>
             <QuestionTypes.PhotoIdInstructionsPage currentPage={currentPage} />
@@ -463,7 +477,7 @@ export const QuestionnaireForm = ({
             </div>
           </>
         );
-      case 35:
+      case 36:
         return (
           <QuestionTypes.PhotoIdUpload
             formData={formData}
@@ -485,25 +499,13 @@ export const QuestionnaireForm = ({
             isUploading={isUploading}
           />
         );
-      case 36:
-        return (
-          <QuestionTypes.AppointmentBookingPage
-            formData={formData}
-            onSelect={(value, field) => handleFormChange(field, value)}
-            userName={
-              firstName && lastName
-                ? `${firstName} ${lastName}`
-                : formData.legal_first_name
-                ? `${formData.legal_first_name} ${formData.legal_last_name}`
-                : ""
-            }
-            userEmail={formData["email"] || ""}
-            phoneNumber={formData["phone"] || ""}
-          />
-        );
       case 37:
         return (
-          <QuestionTypes.QuestionnaireComplete currentPage={currentPage} />
+          <QuestionTypes.QuestionnaireComplete 
+            currentPage={currentPage}
+            formData={formData}
+            onSelect={handleFormChange}
+          />
         );
       default:
         return null;

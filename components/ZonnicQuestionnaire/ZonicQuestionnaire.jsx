@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { logger } from "@/utils/devLogger";
 import { useRouter } from "next/navigation";
 import { QuestionLayout } from "../EdQuestionnaire/QuestionLayout";
 import { QuestionOption } from "../EdQuestionnaire/QuestionOption";
@@ -9,7 +10,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import QuestionnaireNavbar from "../EdQuestionnaire/QuestionnaireNavbar";
 import { ProgressBar } from "../EdQuestionnaire/ProgressBar";
 import { WarningPopup } from "../EdQuestionnaire/WarningPopup";
-const { uploadFileToS3WithProgress } = await import("@/utils/s3/frontend-upload");
+const { uploadFileToS3WithProgress } = await import(
+  "@/utils/s3/frontend-upload"
+);
 
 export default function ZonnicConsultationQuiz({
   phone,
@@ -40,7 +43,7 @@ export default function ZonnicConsultationQuiz({
   const [showUnknownBpWarning, setShowUnknownBpWarning] = useState(false);
   const [photoIdFile, setPhotoIdFile] = useState(null);
   const fileInputRef = useRef(null);
-  const [questionsStack, setQuestionsStack] = useState([]);  
+  const [questionsStack, setQuestionsStack] = useState([]);
   const [pendingSubmissions, setPendingSubmissions] = useState([]);
   const [isSyncing, setIsSyncing] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
@@ -271,7 +274,7 @@ export default function ZonnicConsultationQuiz({
           setPendingSubmissions((prev) => prev.slice(1));
         }
       } catch (error) {
-        console.error("Background sync error:", error);
+        logger.error("Background sync error:", error);
         if (isMounted) {
           setPendingSubmissions((prev) => prev.slice(1));
         }
@@ -335,6 +338,14 @@ export default function ZonnicConsultationQuiz({
 
     try {
       const quizFormData = JSON.parse(storedData);
+      if (!quizFormData || typeof quizFormData !== 'object') {
+        logger.warn("Invalid Zonnic form data structure, clearing localStorage");
+        localStorage.removeItem("smoking-quiz-form-data");
+        localStorage.removeItem("smoking-quiz-form-data-expiry");
+        setDataLoaded(true);
+        return;
+      }
+      
       const mergedData = {
         ...quizFormData,
         158: processedProps.dob || quizFormData["158"],
@@ -349,8 +360,14 @@ export default function ZonnicConsultationQuiz({
 
       if (quizFormData.page_step) {
         const storedPage = parseInt(quizFormData.page_step);
-        setCurrentPage(storedPage);
-        setProgress(parseInt(quizFormData.completion_percentage || 0));
+        if (isNaN(storedPage) || storedPage < 1 || storedPage > 20) {
+          logger.warn(`Invalid page number ${storedPage} for Zonnic, resetting to page 1`);
+          setCurrentPage(1);
+          setProgress(0);
+        } else {
+          setCurrentPage(storedPage);
+          setProgress(parseInt(quizFormData.completion_percentage || 0));
+        }
       }
 
       if (quizFormData["196"]) {
@@ -362,10 +379,11 @@ export default function ZonnicConsultationQuiz({
 
       setDataLoaded(true);
     } catch (error) {
-      console.error("Error parsing stored quiz data:", error);
+      logger.error("Error parsing stored quiz data:", error);
+      localStorage.removeItem("smoking-quiz-form-data");
+      localStorage.removeItem("smoking-quiz-form-data-expiry");
       setDataLoaded(true);
     }
-
   }, [
     dataLoaded,
     router,
@@ -460,6 +478,18 @@ export default function ZonnicConsultationQuiz({
     }
   }, [currentPage, photoIdFile, formData]);
 
+  useEffect(() => {
+    if (currentPage === questionList.length + 2) {
+      const updatedFormData = {
+        ...formData,
+        page_step: currentPage,
+        completion_percentage: 100,
+        completion_state: "Full",
+      };
+      updateLocalStorage(updatedFormData);
+    }
+  }, [currentPage, formData, questionList.length]);
+
   const readLocalStorage = () => {
     if (typeof window !== "undefined") {
       const now = new Date();
@@ -488,7 +518,7 @@ export default function ZonnicConsultationQuiz({
         localStorage.setItem("smoking-quiz-form-data-expiry", ttl.toString());
         return true;
       } catch (error) {
-        console.error("Error storing data in local storage:", error);
+        logger.error("Error storing data in local storage:", error);
         return false;
       }
     }
@@ -652,7 +682,7 @@ export default function ZonnicConsultationQuiz({
         }
       }
     } catch (error) {
-      console.error("Error comparing stored names:", error);
+      logger.error("Error comparing stored names:", error);
     }
   };
   const handleTextAreaChange = (fieldName, value) => {
@@ -688,21 +718,26 @@ export default function ZonnicConsultationQuiz({
     clearError();
 
     const fileType = file.type;
-    if (fileType !== "image/jpeg" && fileType !== "image/png") {
+    const fileName = file.name.toLowerCase();
+    const fileExtension = fileName.split(".").pop();
+
+    const supportedTypes = ["image/jpeg", "image/jpg", "image/png"];
+
+    if (!supportedTypes.includes(fileType)) {
       const errorBox = formRef.current?.querySelector(".error-box");
       if (errorBox) {
         errorBox.classList.remove("hidden");
-        errorBox.textContent = "Only JPEG and PNG images are supported";
+        errorBox.textContent = "Only JPG, JPEG, and PNG images are supported";
       }
       e.target.value = "";
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) {
+    if (file.size > 20 * 1024 * 1024) {
       const errorBox = formRef.current?.querySelector(".error-box");
       if (errorBox) {
         errorBox.classList.remove("hidden");
-        errorBox.textContent = "Maximum file size is 10MB";
+        errorBox.textContent = "Maximum file size is 20MB";
       }
       e.target.value = "";
       document.getElementById("photo-id-preview").src = "";
@@ -729,7 +764,7 @@ export default function ZonnicConsultationQuiz({
 
     try {
       setIsUploading(true);
-      showLoader();      
+      showLoader();
       const s3Url = await uploadFileToS3WithProgress(
         photoIdFile,
         "questionnaire/smoking-photo-ids",
@@ -778,7 +813,7 @@ export default function ZonnicConsultationQuiz({
 
       return true;
     } catch (error) {
-      console.error("Error uploading photo:", error);
+      logger.error("Error uploading photo:", error);
       hideLoader();
       throw error;
     } finally {
@@ -872,7 +907,7 @@ export default function ZonnicConsultationQuiz({
 
       return data;
     } catch (error) {
-      console.error("Error submitting form:", error);
+      logger.error("Error submitting form:", error);
       return null;
     }
   };
@@ -950,7 +985,7 @@ export default function ZonnicConsultationQuiz({
         setCurrentPage(questionList.length + 1);
         setProgress(100);
       } catch (error) {
-        console.error("Photo upload error:", error);
+        logger.error("Photo upload error:", error);
         const errorBox = formRef.current?.querySelector(".error-box");
         if (errorBox) {
           errorBox.classList.remove("hidden");
@@ -988,7 +1023,7 @@ export default function ZonnicConsultationQuiz({
   const moveToNextSlideWithoutValidation = async (previousUpdates = {}) => {
     setIsMovingForward(true);
 
-    const shouldShowLoader = false;
+    const shouldShowLoader = currentPage === 0 && !formData.token;
     if (shouldShowLoader) {
       showLoader();
     }
@@ -1017,7 +1052,7 @@ export default function ZonnicConsultationQuiz({
     try {
       await submitFormData();
     } catch (error) {
-      console.error("Error during form submission:", error);
+      logger.error("Error during form submission:", error);
     } finally {
       if (shouldShowLoader) {
         hideLoader();
@@ -1235,16 +1270,23 @@ export default function ZonnicConsultationQuiz({
     if (currentPage === 8 && photoIdFile) {
       try {
         if (!isValidated()) {
-          console.log("Validation failed");
+          logger.log("Validation failed");
           return;
         }
 
         await handlePhotoIdUpload();
 
-        setCurrentPage(questionList.length + 2);
+        const thankYouPage = questionList.length + 2;
+        setCurrentPage(thankYouPage);
         setProgress(100);
+        const updatedFormData = {
+          ...formData,
+          page_step: thankYouPage,
+          completion_percentage: 100,
+        };
+        updateLocalStorage(updatedFormData);
       } catch (error) {
-        console.error("Photo upload error:", error);
+        logger.error("Photo upload error:", error);
         const errorBox = formRef.current?.querySelector(".error-box");
         if (errorBox) {
           errorBox.classList.remove("hidden");
@@ -1288,10 +1330,17 @@ export default function ZonnicConsultationQuiz({
       await submitFormData(updatedFormData);
       setNameUpdateOption("");
       setShowNameDifferencePopup(false);
-      setCurrentPage(questionList.length + 2);
+      const thankYouPage = questionList.length + 2;
+      setCurrentPage(thankYouPage);
       setProgress(100);
+      const finalFormData = {
+        ...updatedFormData,
+        page_step: thankYouPage,
+        completion_percentage: 100,
+      };
+      updateLocalStorage(finalFormData);
     } catch (error) {
-      console.error("Customer verification error:", error);
+      logger.error("Customer verification error:", error);
       const errorBox = formRef.current?.querySelector(".error-box");
       if (errorBox) {
         errorBox.classList.remove("hidden");
@@ -1304,7 +1353,14 @@ export default function ZonnicConsultationQuiz({
   };
   return (
     <div className="flex flex-col min-h-screen bg-white">
-      {dataLoaded && (
+      {!dataLoaded ? (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#AE7E56] mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading questionnaire...</p>
+          </div>
+        </div>
+      ) : (
         <>
           <QuestionnaireNavbar
             onBackClick={handleBackClick}
@@ -1845,7 +1901,7 @@ export default function ZonnicConsultationQuiz({
                                 type="file"
                                 ref={fileInputRef}
                                 id="photo-id-file"
-                                accept="image/jpeg,image/png"
+                                accept="image/jpeg,image/jpg,image/png"
                                 className="hidden"
                                 onChange={handlePhotoIdFileSelect}
                               />
@@ -1896,9 +1952,10 @@ export default function ZonnicConsultationQuiz({
                                       holding your ID
                                     </p>{" "}
                                     <p className="text-center text-sm text-gray-500 mb-8">
-                                      Only JPEG and PNG images are supported.
+                                      Only JPG, JPEG, and PNG images are
+                                      supported.
                                       <br />
-                                      Max allowed file size per image is 10MB
+                                      Max allowed file size per image is 20MB
                                     </p>
                                   </>
                                 )}
@@ -2119,7 +2176,7 @@ export default function ZonnicConsultationQuiz({
           />
         </>
       )}
-      
+
       {/* Loader Overlay */}
       <div
         id="please-wait-loader-overlay"
@@ -2144,7 +2201,7 @@ export default function ZonnicConsultationQuiz({
             style={{ marginBottom: "10px" }}
             alt="Preloader Wheel"
           />
-          {uploadProgress === 0 
+          {uploadProgress === 0
             ? "Preparing upload..."
             : `${uploadProgress}% uploaded`}
           <br />

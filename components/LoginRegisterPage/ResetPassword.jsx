@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, Suspense, useEffect } from "react";
+import { logger } from "@/utils/devLogger";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "react-toastify";
@@ -50,7 +51,7 @@ const ResetPasswordContent = () => {
           toast.error(data.message || "Invalid or expired password reset link");
         }
       } catch (error) {
-        console.error("Error verifying token:", error);
+        logger.error("Error verifying token:", error);
         toast.error("Failed to verify reset token");
       } finally {
         setVerifyingToken(false);
@@ -115,7 +116,7 @@ const ResetPasswordContent = () => {
         );
       }
     } catch (err) {
-      console.error("Error:", err);
+      logger.error("Error:", err);
       toast.error("An error occurred while processing your request");
     } finally {
       setSubmitting(false);

@@ -6,7 +6,6 @@ import dynamic from "next/dynamic";
 import ZonnicProductDetails from "./ZonnicProductDetails";
 import HowRockyWorks from "@/components/HowRockyWorks";
 import { memo } from "react";
-import { ZonnicProductScript } from "@/components/VisiOpt";
 
 // Dynamically import non-critical components to improve initial load time
 // const DynamicProfessionalAdvice = dynamic(
@@ -68,7 +67,6 @@ const ZonnicProductPageContent = memo(({ clientProps }) => {
 
   return (
     <div className="zonnic-product-page">
-      <ZonnicProductScript />
       <div className="container mx-auto px-4 py-8">
         <ZonnicProductDetails
           product={product}

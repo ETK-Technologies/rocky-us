@@ -24,6 +24,9 @@
 .DS_Store
 *.pem
 
+# temporary files
+/tmp
+
 # debug
 npm-debug.log*
 yarn-debug.log*
@@ -46,3 +49,12 @@ post-copilot.bat
 # old logic
 /old-logic-php
 /old-popups-php
+
+# Northbeam Backfill Pixel Only Orders Scripts Folder
+/nb_backfill_scripts
+
+.cursor
+# Sentry Config File
+.env.sentry-build-plugin
+
+*.php

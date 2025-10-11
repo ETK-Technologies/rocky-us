@@ -1,6 +1,9 @@
 import MentalHealthQuestionnaire from "@/components/MentalHealthQuestionnaire/MentalHealthQuestionnaire";
 import { cookies } from "next/headers";
 
+// Force dynamic rendering for this page
+export const dynamic = "force-dynamic";
+
 export default function MHConsultationPage() {
   const cookieStore = cookies();
   const pn = cookieStore.get("pn")?.value;
@@ -10,7 +13,7 @@ export default function MHConsultationPage() {
 
   return (
     <main className="min-h-screen">
-      <MentalHealthQuestionnaire 
+      <MentalHealthQuestionnaire
         pn={pn}
         userName={userName}
         userEmail={userEmail}

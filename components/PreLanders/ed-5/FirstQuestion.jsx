@@ -1,19 +1,17 @@
 import { memo } from "react";
 import ProgressIndicator from "./ProgressIndicator";
 import OptionButton from "./OptionButton";
-
-// Import the questions data
 import { QUESTIONS_DATA } from "./constants";
 
 const FirstQuestion = memo(({ question, answers, onOptionSelect }) => (
-  <div className="w-full md:w-1/2 p-6 bg-white rounded-r-lg">
-    <div className="max-w-md mx-auto">
+  <div className="w-full md:w-1/2 p-6 bg-white rounded-r-lg md:h-[720px] flex items-center">
+    <div className="mx-auto w-full">
       <ProgressIndicator
         currentQuestion={1}
         totalQuestions={QUESTIONS_DATA.length}
       />
 
-      <h2 className="text-2xl font-semibold text-center mb-8">
+      <h2 className="text-2xl lg:text-4xl font-semibold text-center mb-8 headers-font">
         {question.title}
       </h2>
 

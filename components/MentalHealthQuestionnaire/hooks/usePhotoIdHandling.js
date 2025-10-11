@@ -1,6 +1,9 @@
 import { useState, useRef, useCallback } from "react";
-import { QUESTION_CONFIG } from "../constants";      
-const { uploadFileToS3WithProgress } = await import("@/utils/s3/frontend-upload");
+import { logger } from "@/utils/devLogger";
+import { QUESTION_CONFIG } from "../constants";
+const { uploadFileToS3WithProgress } = await import(
+  "@/utils/s3/frontend-upload"
+);
 
 export const usePhotoIdHandling = (
   formData,
@@ -34,21 +37,26 @@ export const usePhotoIdHandling = (
     const file = e.target.files[0];
 
     const fileType = file.type;
-    if (fileType !== "image/jpeg" && fileType !== "image/png") {
+    const fileName = file.name.toLowerCase();
+    const fileExtension = fileName.split(".").pop();
+
+    const supportedTypes = ["image/jpeg", "image/jpg", "image/png"];
+
+    if (!supportedTypes.includes(fileType)) {
       const errorBox = document.querySelector(".error-box");
       if (errorBox) {
         errorBox.classList.remove("hidden");
-        errorBox.textContent = "Only JPEG and PNG images are supported";
+        errorBox.textContent = "Only JPG, JPEG, and PNG images are supported";
       }
       e.target.value = "";
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) {
+    if (file.size > 20 * 1024 * 1024) {
       const errorBox = document.querySelector(".error-box");
       if (errorBox) {
         errorBox.classList.remove("hidden");
-        errorBox.textContent = "Maximum file size is 10MB";
+        errorBox.textContent = "Maximum file size is 20MB";
       }
       e.target.value = "";
       const preview = document.getElementById("photo-id-preview");
@@ -106,15 +114,6 @@ export const usePhotoIdHandling = (
       setIsUploading(true);
       showLoader();
 
-      try {
-        await fetch("/api/s3/configure-cors");
-      } catch (corsError) {
-        console.log(
-          "CORS configuration check failed, continuing with upload:",
-          corsError
-        );
-      }
-      
       const s3Url = await uploadFileToS3WithProgress(
         photoIdFile,
         "questionnaire/mental-health-photo-ids",
@@ -157,15 +156,18 @@ export const usePhotoIdHandling = (
 
       return true;
     } catch (error) {
-      console.error("Error uploading ID:", error);
+      logger.error("Error uploading ID:", error);
 
       if (error.message && error.message.includes("File size exceeds")) {
         showError(
-          "The file size exceeds the maximum allowed size of 10MB. Please select a smaller image."
+          "The file size exceeds the maximum allowed size of 20MB. Please select a smaller image."
         );
-      } else if (error.message && error.message.includes("Only JPEG and PNG")) {
+      } else if (
+        error.message &&
+        error.message.includes("Only JPG, JPEG, PNG, HEIF, and HEIC")
+      ) {
         showError(
-          "Only JPEG and PNG images are supported. Please select a different image."
+          "Only JPG, JPEG, PNG, HEIF, and HEIC images are supported. Please select a different image."
         );
       } else if (error.message && error.message.includes("presigned")) {
         showError(

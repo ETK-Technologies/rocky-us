@@ -1,8 +1,11 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { logger } from "@/utils/devLogger";
 import { useEffect, useState } from "react";
 import { shouldUseMinimalLayout } from "@/utils/layoutConfig";
+import { getAwinFromUrlOrStorage } from "@/utils/awin";
+import { analyticsService } from "@/utils/analytics/analyticsService";
 
 /**
  * The LayoutDetector component handles dynamic layout changes
@@ -75,7 +78,22 @@ const LayoutDetector = () => {
       );
 
       // For debugging - uncomment if needed
-      // console.log(`Client path: ${normalizedPath}, Minimal Layout: ${shouldBeMinimal}`);
+      // logger.log(`Client path: ${normalizedPath}, Minimal Layout: ${shouldBeMinimal}`);
+
+      // Fire a global headless_page_view on every client-side route change
+      try {
+        analyticsService.trackHeadlessPageView({
+          page_title: document.title || normalizedPath || "",
+          page_path: normalizedPath || window.location.pathname,
+        });
+      } catch (e) {
+        // non-blocking
+      }
+
+      // Capture AWIN awc param once per route change if present
+      try {
+        getAwinFromUrlOrStorage();
+      } catch (e) {}
     }, 10);
   }, [pathname]); // Re-run effect when pathname changes
 

@@ -1,17 +1,21 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { logger } from "@/utils/devLogger";
+import { useRouter } from "next/navigation";
 import QuestionnaireNavbar from "../EdQuestionnaire/QuestionnaireNavbar";
 import { ProgressBar } from "../EdQuestionnaire/ProgressBar";
 import { WarningPopup } from "../EdQuestionnaire/WarningPopup";
+import { mhFlowAddToCart } from "@/utils/flowCartHandler";
 import Image from "next/image";
-import DOBInput from "@/components/DOBInput";
+import DOBInput from "../shared/DOBInput";
 
 const MHPreConsultation = () => {
+  const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
+  const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
   const [showExitPopup, setShowExitPopup] = useState(false);
   const [dateOfBirth, setDateOfBirth] = useState("");
-  const [selectedDate, setSelectedDate] = useState("");
   const [province, setProvince] = useState("");
   const [hearSeeOption, setHearSeeOption] = useState(null);
   const [watchingHurtOption, setWatchingHurtOption] = useState(null);
@@ -129,11 +133,8 @@ const MHPreConsultation = () => {
   const determineRejectionReason = (questionType, option) => {
     if (questionType === "age" && getAge(dateOfBirth) < 18) {
       return "Sorry, but we are not able to service you as this service is for adults only.";
-    } else if (
-      questionType === "province" &&
-      (province === "None of the above" || province === "none")
-    ) {
-      return "Sorry, we are currently unable to service your province. As we continue to expand, we will notify you once we are available in your province.";
+    } else if (questionType === "province" && !province) {
+      return "Please select your province to continue.";
     } else {
       return "Thank you for answering these questions. Based on your responses we do not think virtual care would provide you with the best possible care. We encourage you to speak with your doctor or visit your local walk-in clinic for further assistance. If this is an emergency, please visit your local ER.";
     }
@@ -170,8 +171,7 @@ const MHPreConsultation = () => {
   const handleContinue = () => {
     if (currentPage === 1) {
       const age = getAge(dateOfBirth);
-      const isValidProvince =
-        province && !["None of the above", "none"].includes(province);
+      const isValidProvince = province && province.trim() !== "";
 
       if (age < 18) {
         setRejectionReason(determineRejectionReason("age"));
@@ -264,22 +264,22 @@ const MHPreConsultation = () => {
     );
   };
 
-  const HandleDatePickerChange = (newValue) => {
-    setSelectedDate(newValue);
-    // Convert YYYY-MM-DD to MM/DD/YYYY if needed for getAge function
-    let formattedDate = newValue;
-    if (typeof newValue === "string" && newValue.includes("-")) {
-      const parts = newValue.split("-");
-      if (parts.length === 3) {
-        const [year, month, day] = parts;
-        formattedDate = `${month.padStart(2, "0")}/${day.padStart(
-          2,
-          "0"
-        )}/${year}`;
-      }
-    }
-    setDateOfBirth(formattedDate);
+  const handleDateChange = (value) => {
+    setDateOfBirth(value);
   };
+
+  // Loading overlay
+  if (isCheckoutLoading) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[9999]">
+        <div className="bg-white p-8 rounded-lg text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
+          <p className="text-lg font-medium">Adding to Cart...</p>
+          <p className="text-sm text-gray-600">Please wait</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-white subheaders-font font-medium">
@@ -310,46 +310,40 @@ const MHPreConsultation = () => {
                 /> */}
 
                 <DOBInput
-                  value={selectedDate}
-                  onChange={(newValue) => HandleDatePickerChange(newValue)}
-                  required
+                  value={dateOfBirth}
+                  onChange={handleDateChange}
                   className="w-full p-3 border border-gray-200 rounded-lg text-center bg-white"
+                  placeholder="MM/DD/YYYY"
+                  minAge={18}
+                  required
                 />
               </div>
 
               <div className="mb-8">
                 <label className="block md:text-center text-[#C19A6B] text-sm mb-2">
-                  2. We currently provide our Mental Health Service in Ontario,
-                  British Columbia, and Alberta. Please select your province
+                  2. We currently provide our Mental Health Service in Alberta,
+                  British Columbia, Manitoba, Ontario, Quebec, and Saskatchewan.
+                  Please select your province
                 </label>
-                {[
-                  "Ontario",
-                  "British Columbia",
-                  "Alberta",
-                  "None of the above",
-                ].map((loc, index) => (
-                  <div key={index} className="relative w-full mb-3">
-                    <input
-                      id={`location${index + 1}`}
-                      type="radio"
-                      name="location"
-                      value={loc}
-                      onChange={(e) => setProvince(e.target.value)}
-                      className="absolute opacity-0 w-full h-full cursor-pointer"
-                    />
-                    <label
-                      htmlFor={`location${index + 1}`}
-                      className={`block w-full p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors
-                                ${
-                                  province === loc
-                                    ? "border-[#814B00] bg-gray-50"
-                                    : ""
-                                }`}
-                    >
+                <select
+                  value={province}
+                  onChange={(e) => setProvince(e.target.value)}
+                  className="w-full p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors focus:border-[#814B00] focus:outline-none"
+                >
+                  <option value="">Select your province</option>
+                  {[
+                    "Alberta",
+                    "British Columbia",
+                    "Manitoba",
+                    "Ontario",
+                    "Quebec",
+                    "Saskatchewan",
+                  ].map((loc, index) => (
+                    <option key={index} value={loc}>
                       {loc}
-                    </label>
-                  </div>
-                ))}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
             {showAgePopup && (
@@ -688,14 +682,57 @@ const MHPreConsultation = () => {
               <div className="pb-8 px-4">
                 <div className="w-full md:w-[520px] mx-auto">
                   <button
-                    onClick={() =>
-                      (window.location.href = isRejected
-                        ? "/"
-                        : "/checkout?mh-flow=1&onboarding=1&view=account&viewshow=register&onboarding-add-to-cart=103808")
-                    }
+                    onClick={async () => {
+                      if (isRejected) {
+                        router.push("/");
+                        return;
+                      }
+
+                      try {
+                        setIsCheckoutLoading(true);
+
+                        // MH consultation product (ID: 103808)
+                        const mainProduct = {
+                          id: "103808",
+                          name: "Mental Health Consultation",
+                          price: 0, // Consultation is typically free
+                          quantity: 1,
+                          isSubscription: false,
+                        };
+
+                        logger.log("MH main product:", mainProduct);
+
+                        // Use the new direct cart handler
+                        const result = await mhFlowAddToCart(mainProduct, [], {
+                          requireConsultation: true,
+                        });
+
+                        if (result.success) {
+                          setIsCheckoutLoading(false);
+                          router.push(result.redirectUrl);
+                        } else {
+                          logger.error("MH checkout failed:", result.error);
+                          setIsCheckoutLoading(false);
+                          alert(
+                            "There was an issue processing your checkout. Please try again."
+                          );
+                        }
+                      } catch (error) {
+                        logger.error("Error in MH checkout process:", error);
+                        setIsCheckoutLoading(false);
+                        alert(
+                          "There was an issue processing your checkout. Please try again."
+                        );
+                      }
+                    }}
                     className="w-full py-3 px-4 rounded-full font-medium bg-white text-black hover:bg-gray-100"
+                    disabled={isCheckoutLoading}
                   >
-                    {isRejected ? "Go Back Home" : "Proceed To Checkout"}
+                    {isCheckoutLoading
+                      ? "Processing..."
+                      : isRejected
+                      ? "Go Back Home"
+                      : "Proceed To Checkout"}
                   </button>
                 </div>
               </div>

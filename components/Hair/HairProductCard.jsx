@@ -1,12 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { logger } from "@/utils/devLogger";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { FaCheck } from "react-icons/fa6";
 import CustomImage from "../utils/CustomImage";
 import { IoInformationCircle } from "react-icons/io5";
 import { HairCrossSellPopupWrapper } from "../HairPreConsultationQuiz/popups/CrossSellPopups";
-import { addToCartAndRedirect } from "../../utils/crossSellCheckout";
+import {
+  addToCartEarly,
+  finalizeFlowCheckout,
+} from "../../utils/flowCartHandler";
 
 const HairProductCard = ({
   label,
@@ -22,13 +27,22 @@ const HairProductCard = ({
   addToCartLink,
   regularPrice, // Add support for regularPrice to show sale pricing
   id, // Added product ID for cross-sell
+  variationId, // Added variation ID for subscription products
+  isSubscription, // Added subscription flag
+  subscriptionPeriod, // Added subscription period
+  pageType, // Add pageType prop for conditional rendering
 }) => {
   // Check if there's a sale price (when regularPrice is provided and higher than price)
   const isOnSale = regularPrice && Number(regularPrice) > Number(price);
 
+  // Next.js router for navigation
+  const router = useRouter();
+
   // State for cross-sell popup
   const [showCrossSellPopup, setShowCrossSellPopup] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
+  const [initialCartData, setInitialCartData] = useState(null);
 
   // Extract the product ID from addToCartLink if not provided directly
   const extractProductId = () => {
@@ -48,34 +62,87 @@ const HairProductCard = ({
   const formatProductForPopup = () => {
     return {
       id: extractProductId(),
+      variationId: variationId, // Pass variation ID if available
+      name: title, // Cart handler expects 'name' field
       title,
       description,
-      price,
+      price: parseFloat(price) || 0,
+      quantity: 1, // Explicit quantity for cart
       image,
       regularPrice,
       supply,
-      isSubscription: supply?.toLowerCase().includes("month"),
+      isSubscription: isSubscription || supply?.toLowerCase().includes("month"),
+      subscriptionPeriod: subscriptionPeriod || "1_month", // Default to 1_month if not specified
+      // Add variation data for display
+      variation: [
+        {
+          attribute: "Subscription Type",
+          value: supply || frequency || "Monthly Supply",
+        },
+      ],
     };
   };
 
-  // Handle the add to cart button click
-  const handleAddToCart = (e) => {
+  // Handle the add to cart button click - add to cart before showing popup
+  const handleAddToCart = async (e) => {
     e.preventDefault();
-    setShowCrossSellPopup(true);
-  };
-
-  // Handle checkout from cross-sell popup
-  const handleCheckout = (addons) => {
     setIsProcessing(true);
 
-    // Use the cross-sell checkout utility to handle the checkout process
-    const mainProduct = formatProductForPopup();
+    try {
+      const mainProduct = formatProductForPopup();
 
-    addToCartAndRedirect(mainProduct, addons, "hair").catch((error) => {
-      console.error("Error during checkout:", error);
+      logger.log("🛒 Hair Flow - Adding product to cart early:", mainProduct);
+
+      // Add product to cart early (before cross-sell popup)
+      const result = await addToCartEarly(mainProduct, "hair", {
+        requireConsultation: true,
+        subscriptionPeriod: mainProduct.subscriptionPeriod,
+      });
+
+      if (result.success) {
+        logger.log("✅ Product added to cart, opening cross-sell popup");
+        // Store the cart data to pass to the modal
+        if (result.cartData) {
+          setInitialCartData(result.cartData);
+        }
+        setShowCrossSellPopup(true);
+      } else {
+        logger.error("❌ Failed to add product to cart:", result.error);
+        alert(
+          result.error || "Failed to add product to cart. Please try again."
+        );
+      }
+    } catch (error) {
+      logger.error("Error adding product to cart:", error);
+      alert("There was an issue adding the product to cart. Please try again.");
+    } finally {
       setIsProcessing(false);
-      alert("There was an issue processing your checkout. Please try again.");
-    });
+    }
+  };
+
+  // Handle checkout from cross-sell popup - Product already in cart, just redirect
+  const handleCheckout = async () => {
+    setIsCheckoutLoading(true);
+
+    try {
+      logger.log(
+        "🎯 Hair Flow - Proceeding to checkout (cart already populated)"
+      );
+
+      // Product and any addons are already in cart
+      // Just generate checkout URL and redirect
+      const checkoutUrl = finalizeFlowCheckout("hair", true);
+
+      logger.log("Redirecting to:", checkoutUrl);
+
+      // Close popup and navigate
+      setShowCrossSellPopup(false);
+      router.push(checkoutUrl);
+    } catch (error) {
+      logger.error("Error redirecting to checkout:", error);
+      alert("There was an issue redirecting to checkout. Please try again.");
+      setIsCheckoutLoading(false);
+    }
   };
 
   return (
@@ -86,17 +153,27 @@ const HairProductCard = ({
         </span>
       )}
 
-      <span className="text-[12px] font-[400] leading-[18px]">Best For</span>
-      <div className="flex items-center justify-center gap-[8px] mt-[8px] mb-[16px]">
-        {bestFor.map((item, index) => (
-          <p
-            key={index}
-            className="py-[1.5px] px-[6px] text-[12px] md:text-[14px] bg-[#F5F4EF] rounded-[4px] w-fit h-[24px]"
-          >
-            {item}
-          </p>
-        ))}
-      </div>
+      {pageType === "products" ? (
+        <h2 className="text-[20px] md:text-[24px] leading-[24px] md:leading-[28.8px] font-[450] mb-[16px]">
+          {title}
+        </h2>
+      ) : (
+        <>
+          <span className="text-[12px] font-[400] leading-[18px]">
+            Best For
+          </span>
+          <div className="flex items-center justify-center gap-[8px] mt-[8px] mb-[16px]">
+            {bestFor.map((item, index) => (
+              <p
+                key={index}
+                className="py-[1.5px] px-[6px] text-[12px] md:text-[14px] bg-[#F5F4EF] rounded-[4px] w-fit h-[24px]"
+              >
+                {item}
+              </p>
+            ))}
+          </div>
+        </>
+      )}
 
       <div className="relative mx-auto mb-[16px]">
         <div className="relative overflow-hidden mx-auto rounded-[16px] h-[140px] w-[200px]">
@@ -115,9 +192,12 @@ const HairProductCard = ({
         )}
       </div>
 
-      <h2 className="text-[20px] md:text-[24px] leading-[24px] md:leading-[28.8px] font-[450] mb-[8px] md:mb-[4px]">
-        {title}
-      </h2>
+      {pageType !== "products" && (
+        <h2 className="text-[20px] md:text-[24px] leading-[24px] md:leading-[28.8px] font-[450] mb-[8px] md:mb-[4px]">
+          {title}
+        </h2>
+      )}
+
       <div className="relative flex items-start justify-center gap-[8px] md:gap-[6px] border-b border-[#E2E2E1]">
         <p className="text-[14px] leading-[21px] tracking-[-0.02em] text-[#212121] h-[42px] ">
           {description}
@@ -136,17 +216,19 @@ const HairProductCard = ({
         )}
       </div>
 
-      <ul className="flex flex-col items-start gap-[8px] py-[16px] h-[195px] md:h-[154.1px] border-b border-[#E2E2E1]">
-        {benefits.map((benefit, index) => (
-          <li
-            key={index}
-            className="flex items-start text-left gap-[8px] text-[14px] leading-[21px] font-[400]"
-          >
-            <FaCheck className="text-[#814b00] text-base min-w-[16px] max-w-[16px]" />
-            {benefit}
-          </li>
-        ))}
-      </ul>
+      {pageType !== "products" && (
+        <ul className="flex flex-col items-start gap-[8px] py-[16px] h-[195px] md:h-[154.1px] border-b border-[#E2E2E1]">
+          {benefits.map((benefit, index) => (
+            <li
+              key={index}
+              className="flex items-start text-left gap-[8px] text-[14px] leading-[21px] font-[400]"
+            >
+              <FaCheck className="text-[#814b00] text-base min-w-[16px] max-w-[16px]" />
+              {benefit}
+            </li>
+          ))}
+        </ul>
+      )}
 
       <p className="text-[#AE7E56] text-center py-[16px] text-[14px]">
         {supply}
@@ -154,11 +236,14 @@ const HairProductCard = ({
 
       <button
         onClick={handleAddToCart}
-        className="w-full block bg-black text-[#FFFFFF] font-[500] text-center py-[12px] rounded-[64px] cursor-pointer"
+        className="w-full flex items-center justify-center bg-black text-[#FFFFFF] font-[500] text-center py-[12px] rounded-[64px] cursor-pointer disabled:bg-gray-400 gap-2"
         disabled={isProcessing}
       >
         {isProcessing ? (
-          "Processing..."
+          <>
+            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+            <span>Adding to cart...</span>
+          </>
         ) : isOnSale ? (
           <>
             Add To Cart - ${price}{" "}
@@ -177,7 +262,8 @@ const HairProductCard = ({
         onClose={() => setShowCrossSellPopup(false)}
         selectedProduct={formatProductForPopup()}
         onCheckout={handleCheckout}
-        isLoading={isProcessing}
+        isLoading={isCheckoutLoading}
+        initialCartData={initialCartData}
       />
     </div>
   );

@@ -1,0 +1,71 @@
+export default function TermsIntro() {
+  return (
+    <>
+      <div className="mb-10 md:mb-14">
+        <h1 className="text-[40px] md:text-[60px] leading-[115%] font-[550] tracking-[-0.01em] md:tracking-[-0.02em] mb-3 md:mb-4 headers-font">
+          Terms & Conditions
+        </h1>
+        <p className="text-[18px] opacity-85 md:text-[18px] leading-[140%] font-[400]">
+          Last updated: January 14, 2022
+        </p>
+      </div>
+      <div className="text-[22px] md:text-[30px] leading-[115%] tracking-[-0.01em] md:tracking-[-0.02em] mb-4 md:mb-6 headers-font">
+        Professional Disclosure:
+      </div>
+      <div className="text-[18px] md:text-[18px] text-[#000000D9] leading-[160%] mb-10 md:mb-14">
+        <p className="mb-6">
+          THE USER HEREBY ACKNOWLEDGES DOCTORS UNDER ROCKY HEALTH INC. MAY BE
+          DIRECTORS AND/OR SHAREHOLDERS IN ROCKY HEALTH INC. AND THEREFORE MAY
+          HAVE AN INDIRECT FINANCIAL INTEREST THROUGH YOUR USE OF THE SERVICES
+          OFFERED ON THIS PLATFORM. BY YOUR CONTINUED USE OF THIS PLATFORM, YOU
+          ACCEPT AND ACKNOWLEDGE THE FOREGOING.
+        </p>
+        <br className="md:hidden" />
+        <p className="mb-6">
+          AMONG OTHER ACTIVITIES, ROCKY’S SERVICES ENABLE COORDINATION AND
+          COMMUNICATION WITH A HEALTH CARE PROVIDER. IT DOES NOT REPLACE YOUR
+          RELATIONSHIP WITH ANY PHYSICIAN. THESE SERVICES MIGHT NOT BE
+          APPROPRIATE FOR ALL MEDICAL CONDITIONS OR CONCERNS. IF YOU HAVE A
+          MEDICAL EMERGENCY, IMMEDIATELY CALL YOUR DOCTOR OR DIAL 911.
+        </p>
+        <br className="md:hidden" />
+        <p className="mb-6">
+          PLEASE READ THESE TERMS AND CONDITIONS CAREFULLY BECAUSE THEY SET
+          FORTH THE IMPORTANT TERMS YOU WILL NEED TO KNOW ABOUT THE SERVICES.{" "}
+        </p>
+        <p className="mb-6">
+          YOU UNDERSTAND THAT BY ACCESSING OR USING THE SITES OR SERVICES, YOU
+          ACKNOWLEDGE THAT YOU HAVE READ, UNDERSTOOD, AND AGREED TO BE LEGALLY
+          BOUND BY AND COMPLY WITH THESE TERMS OF USE. IF YOU DO NOT OR CANNOT
+          AGREE WITH ANY PART OF THESE TERMS OF USE, YOU MAY NOT USE THE SITES
+          OR ANY SERVICES PROVIDED ON OR THROUGH THE SITES.{" "}
+        </p>
+        <p className="mb-6">
+          YOU UNDERSTAND THAT BY ACCESSING OR USING THE SITES OR SERVICES, YOU
+          ACKNOWLEDGE THAT YOU HAVE READ, UNDERSTOOD, AND AGREED TO BE LEGALLY
+          BOUND BY AND COMPLY WITH THESE TERMS OF USE. IF YOU DO NOT OR CANNOT
+          AGREE WITH ANY PART OF THESE TERMS OF USE, YOU MAY NOT USE THE SITES
+          OR ANY SERVICES PROVIDED ON OR THROUGH THE SITES.
+        </p>
+        <p className="mb-6">
+          ARBITRATION NOTICE: YOU AGREE THAT DISPUTES BETWEEN YOU AND US OR YOU
+          AND THE MEDICAL GROUPS OR PROVIDERS ARISING OUT OF OR RELATED TO THESE
+          TERMS AND CONDITIONS OR THE SERVICE WILL BE RESOLVED BY BINDING,
+          INDIVIDUAL ARBITRATION AND YOU WAIVE YOUR RIGHTS TO A JURY TRIAL AND
+          TO PARTICIPATE IN A CLASS ACTION LAWSUIT OR CLASS-WIDE ARBITRATION, AS
+          FURTHER SET FORTH BELOW. WE EXPLAIN SOME EXCEPTIONS AND HOW YOU CAN
+          OPT OUT OF ARBITRATION BELOW.
+        </p>
+        <p className="mb-6">
+          IF YOU HAVE A MEDICAL EMERGENCY, SEEK IN-PERSON EMERGENCY CARE
+          IMMEDIATELY OR DIAL 911. THE SERVICE IS NOT APPROPRIATE FOR ALL
+          MEDICAL CONDITIONS OR CONCERNS. THIS AGREEMENT IS SUBJECT TO CHANGE AS
+          PROVIDED HEREIN.
+        </p>
+        <p className="mb-6">
+          THE TERMS OF USE ARE SUBJECT TO CHANGE AS PROVIDED HEREIN.{" "}
+        </p>
+      </div>
+    </>
+  );
+}

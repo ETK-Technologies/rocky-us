@@ -18,7 +18,7 @@ const WLModal = (modalOpen = false) => {
     <>
       {modalView && (
         <>
-          <div className="bg-black bg-opacity-50 fixed inset-0 z-40"></div>
+          <div id="Model_v1" className="bg-black bg-opacity-50 fixed inset-0 z-40"></div>
           <div
             aria-hidden="true"
             className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50"
@@ -88,7 +88,7 @@ const WLModal = (modalOpen = false) => {
                   <hr className="mb-[16px] lg:mb-[24px]" />
                   <p className="mb-[12px] text-center font-[POPPINS] font-medium text-black opacity-85 text-[12px] md:text-[14px] tracking-[0%] leading-[114.99999999999999%]">
                     Rocky is trusted by{" "}
-                    <span className="font-semibold">350,000+</span> Users
+                    <span className="font-semibold">350,000+</span> Canadians
                   </p>
                   <Link
                     href="/wl-pre-consultation"

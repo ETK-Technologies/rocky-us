@@ -58,7 +58,7 @@ const faqs = [
       "How do ZONNIC pouches compare to other Nicotine Replacement Therapy (NRT) options like lozenges, gums, or sprays?",
     answer: `
       <div class="pb-4 text-gray-700">
-        <p>Among the various Nicotine Replacement Therapy (NRT) products available in U.S., ZONNIC is unique as the only pouch format approved by  FDA. Similar to lozenges and gums, ZONNIC provides nicotine via oral absorption, offering temporary relief from cravings and withdrawal symptoms.</p>
+        <p>Among the various Nicotine Replacement Therapy (NRT) products available in Canada, ZONNIC is unique as the only pouch format approved by Health Canada. Similar to lozenges and gums, ZONNIC provides nicotine via oral absorption, offering temporary relief from cravings and withdrawal symptoms.</p>
       </div>
     `,
   },
@@ -66,9 +66,20 @@ const faqs = [
     question: "What ingredients are in ZONNIC pouches?",
     answer: `
       <div class="pb-4 text-gray-700">
-        <p class="font-[400] mb-5"><span class="font-[600]">Medicinal:</span> 4mg nicotine per pouch</p>
-        <p class="font-[400] mb-5"><span class="font-[600]">Non-medicinal:</span> Contains mint flavoring with spearmint oil in a base of microcrystalline cellulose, sodium chloride, xylitol, propylene glycol, sodium bicarbonate, sodium alginate, sucralose, and water.</p>
-        <p>All ingredients meet pharmaceutical standards for safety and quality.</p>
+        <p class="font-400"> Mint Flavour (grey)</p>
+        <p class="font-[400]"><span class="font-[600]">Medicinal:</span> 4mg nicotine per pouch</p>
+        <p class="font-[400] mb-5"><span class="font-[600]">Non-medicinal:</span> nicotine, mint flavour, microcrystalline cellulose, propylene glycol, sodium alginate, sodium bicarbonate, sodium chloride, sucralose, water, xylitol.</p>
+      
+        <p class="font-400"> Spearmint Flavour (green)</p>
+        <p class="font-[400]"><span class="font-[600]">Medicinal:</span> 4mg nicotine per pouch</p>
+        <p class="font-[400] mb-5"><span class="font-[600]">Non-medicinal:</span> nicotine, spearmint flavour, microcrystalline cellulose, propylene glycol, sodium alginate, sodium bicarbonate, sodium chloride, sucralose, water, xylitol.</p>
+      
+        <p class="font-400">Peppermint Flavour (blue)</p>
+        <p class="font-[400]"><span class="font-[600]">Medicinal:</span> 4mg nicotine per pouch</p>
+        <p class="font-[400] mb-5"><span class="font-[600]">Non-medicinal:</span> nicotine, peppermint flavour, microcrystalline cellulose, propylene glycol, sodium alginate, sodium bicarbonate, sodium chloride, sucralose, water, xylitol.</p>
+      
+
+        
       </div>
     `,
   },
@@ -76,7 +87,7 @@ const faqs = [
     question: "Is ZONNIC similar to smokeless tobacco?",
     answer: `
       <div class="pb-4 text-gray-700">
-        <p>No, ZONNIC does not contain tobacco. Unlike smokeless tobacco products available in U.S., ZONNIC is approved by  FDA as a recognized Nicotine Replacement Therapy.</p>
+        <p>No, ZONNIC does not contain tobacco. Unlike smokeless tobacco products available in Canada, ZONNIC is approved by Health Canada as a recognized Nicotine Replacement Therapy.</p>
       </div>
     `,
   },

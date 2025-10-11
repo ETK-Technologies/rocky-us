@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { logger } from "@/utils/devLogger";
 
 export async function POST(req) {
   try {
@@ -24,7 +25,7 @@ export async function POST(req) {
     // Return success without redirect
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error(
+    logger.error(
       "Error during patient portal logout:",
       error.response?.data || error.message
     );

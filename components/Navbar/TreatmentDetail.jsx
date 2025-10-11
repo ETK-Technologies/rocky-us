@@ -15,19 +15,21 @@ const TreatmentDetail = ({ treatment, onBack, onClose }) => (
         <CustomImage src={treatment.image} alt={treatment.category} fill />
       </div>
 
-      <div className="absolute inset-0 flex flex-col justify-between p-10 z-30 ">
-        <p className="text-white text-[20px] md:text-2xl align-middle capitalize headers-font max-w-[159px]  leading-[115%]">
-          {treatment.assessmentText}
-        </p>
-        <Link
-          prefetch={true}
-          onClick={onClose}
-          href={treatment.treatments[0]?.quizLink}
-          className="z-20 bg-white rounded-full w-[24px] h-[24px] flex items-center justify-center "
-        >
-          <FaArrowRight className="text-black " />
-        </Link>
-      </div>
+      {treatment.assessmentText && (
+        <div className="absolute inset-0 flex flex-col justify-between p-10 z-30 ">
+          <p className="text-white text-[20px] md:text-2xl align-middle capitalize headers-font max-w-[159px]  leading-[115%]">
+            {treatment.assessmentText}
+          </p>
+          <Link
+            prefetch={true}
+            onClick={onClose}
+            href={treatment.treatments[0]?.quizLink}
+            className="z-20 bg-white rounded-full w-[24px] h-[24px] flex items-center justify-center "
+          >
+            <FaArrowRight className="text-black " />
+          </Link>
+        </div>
+      )}
     </div>
 
     <div className="flex-1 pb-10">

@@ -7,10 +7,16 @@ import PropTypes from "prop-types";
 const ProductDisplay = ({ product, productSlug }) => {
   const productImageSrc = product?.images?.[0]?.src || product?.image;
   const productName = product?.name || "";
-  const productPrice = product?.price || "$299";
-  const productDescription =
-    product?.short_description ||
-    "A weekly semaglutide shot to improve insulin sensitivity, reduce appetite, and regulate blood sugar.*";
+  const productPrice = product?.price || "$395";
+  const isRybelsus = productSlug?.toLowerCase().includes("rybelsus");
+  // const productDescription =
+  //   product?.short_description ||
+  //   "A weekly semaglutide shot to improve insulin sensitivity, reduce appetite, and regulate blood sugar.*";
+  const productDescription = isRybelsus
+    ? "A once-daily tablet designed to support weight loss by helping reduce appetite and increase feelings of fullness. Rybelsus® contains semaglutide, a clinically proven ingredient that can aid in long-term weight management when combined with a healthy diet and lifestyle."
+    : product?.short_description ||
+      "A weekly semaglutide shot to improve insulin sensitivity, reduce appetite, and regulate blood sugar.*";
+
   const getActiveIngredient = (slug) => {
     if (!slug) return "";
 
@@ -39,8 +45,11 @@ const ProductDisplay = ({ product, productSlug }) => {
               <h1 className="text-5xl text-[#000000] font-[450] mb-2 headers-font">
                 {productName}
               </h1>
-              <p className="text-sm text-[#000000] mb-4">
+              {/* <p className="text-sm text-[#000000] mb-4">
                 ({activeIngredient}) injection
+              </p> */}
+              <p className="text-sm text-[#000000] mb-4">
+                ({activeIngredient}) {isRybelsus ? "tablets" : "injection"}
               </p>
 
               <p className="text-lg font-medium mb-4">${productPrice}</p>
@@ -48,30 +57,31 @@ const ProductDisplay = ({ product, productSlug }) => {
               <p className="text-base mb-6 text-[#212121]">
                 {productDescription}
               </p>
-
-              <ul className="flex flex-col gap-2">
-                <li className="flex items-start gap-2">
-                  <Image
-                    src="/body-optimization-products/checkmark.svg"
-                    alt="Info Icon"
-                    width={20}
-                    height={20}
-                  />
-                  <span>
-                    {productName} is the brand name medication for the active
-                    ingredient {activeIngredient}
-                  </span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Image
-                    src="/body-optimization-products/checkmark.svg"
-                    alt="Info Icon"
-                    width={20}
-                    height={20}
-                  />
-                  <span>{productName} is taken as a weekly injection</span>
-                </li>
-              </ul>
+              {!isRybelsus && (
+                <ul className="flex flex-col gap-2">
+                  <li className="flex items-start gap-2">
+                    <Image
+                      src="/body-optimization-products/checkmark.svg"
+                      alt="Info Icon"
+                      width={20}
+                      height={20}
+                    />
+                    <span>
+                      {productName} is the brand name medication for the active
+                      ingredient {activeIngredient}
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Image
+                      src="/body-optimization-products/checkmark.svg"
+                      alt="Info Icon"
+                      width={20}
+                      height={20}
+                    />
+                    <span>{productName} is taken as a weekly injection</span>
+                  </li>
+                </ul>
+              )}
               <div className="mt-6 md:mt-8">
                 <Link
                   href="/wl-pre-consultation"

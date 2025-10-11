@@ -1,4 +1,4 @@
-import Image from "next/image";
+
 import CustomImage from "../../utils/CustomImage";
 import Section from "../../utils/Section";
 import WLProgramItem from "../../WL/WLProgramItem";

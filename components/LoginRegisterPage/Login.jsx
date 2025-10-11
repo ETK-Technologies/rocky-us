@@ -1,24 +1,28 @@
 "use client";
 
 import { useState, Suspense } from "react";
+import { logger } from "@/utils/devLogger";
 import { useSearchParams, useRouter } from "next/navigation";
 import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import Loader from "@/components/Loader";
-import { GrGoogle } from "react-icons/gr";
 import { MdOutlineRemoveRedEye, MdOutlineVisibilityOff } from "react-icons/md";
 import {
   getSavedProducts,
   clearSavedProducts,
 } from "../../utils/crossSellCheckout";
-import { createCartUrl } from "../../utils/urlCartHandler";
+import { processSavedFlowProducts } from "../../utils/flowCartHandler";
 import Link from "next/link";
 import { migrateLocalCartToServer } from "@/lib/cart/cartService";
+import GoogleSignInButton from "./GoogleSignInButton";
+import CartMigrationOverlay from "@/components/CartMigrationOverlay";
 
 const LoginContent = ({ setActiveTab, loginRef }) => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isMigratingCart, setIsMigratingCart] = useState(false);
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -55,12 +59,22 @@ const LoginContent = ({ setActiveTab, loginRef }) => {
   // Handle adding saved cross-sell products to cart after login
   const handleCrossSellProducts = async () => {
     try {
-      // Check if there are saved products from cross-sell
+      // Use direct cart approach for flow products
+      const flowProductsResult = await processSavedFlowProducts();
+      if (flowProductsResult.success) {
+        logger.log(
+          "Processed saved flow products after login:",
+          flowProductsResult
+        );
+        return flowProductsResult.redirectUrl;
+      }
+
+      // Check for legacy saved products and convert them to direct cart approach
       const savedProducts = getSavedProducts();
 
       if (savedProducts) {
-        console.log(
-          "Processing saved cross-sell products after login:",
+        logger.log(
+          "Converting legacy saved products to direct cart approach:",
           savedProducts
         );
 
@@ -69,31 +83,45 @@ const LoginContent = ({ setActiveTab, loginRef }) => {
           searchParams.get("ed-flow") === "1"
             ? "ed"
             : searchParams.get("wl-flow") === "1"
-              ? "wl"
-              : searchParams.get("hair-flow") === "1"
-                ? "hair"
-                : searchParams.get("mh-flow") === "1"
-                  ? "mh"
-                  : savedProducts.flowType || "ed"; // Use saved flow type or default to "ed"
+            ? "wl"
+            : searchParams.get("hair-flow") === "1"
+            ? "hair"
+            : searchParams.get("mh-flow") === "1"
+            ? "mh"
+            : searchParams.get("skincare-flow") === "1"
+            ? "skincare"
+            : savedProducts.flowType || "ed"; // Use saved flow type or default to "ed"
 
-        console.log("Using flow type for redirect after login:", flowType);
+        logger.log(
+          "Using flow type for direct cart addition after login:",
+          flowType
+        );
 
-        // Use the centralized URL cart utility to create the redirect URL
-        const redirectUrl = createCartUrl(
+        // Import the appropriate flow function dynamically
+        const { addToCartDirectly } = await import(
+          "../../utils/flowCartHandler"
+        );
+
+        // Convert legacy saved products to direct cart addition
+        const result = await addToCartDirectly(
           savedProducts.mainProduct,
-          savedProducts.addons,
-          flowType, // Pass the correctly determined flow type
-          true // User is now authenticated after login
+          savedProducts.addons || [],
+          flowType,
+          { requireConsultation: true }
         );
 
         // Clear saved products
         clearSavedProducts();
 
-        console.log("Redirecting to:", redirectUrl);
-        return redirectUrl;
+        if (result.success) {
+          logger.log("Legacy products converted and added to cart:", result);
+          return result.redirectUrl;
+        } else {
+          logger.error("Failed to convert legacy products:", result.error);
+        }
       }
     } catch (error) {
-      console.error("Error handling cross-sell products:", error);
+      logger.error("Error handling cross-sell products:", error);
     }
 
     return null;
@@ -123,6 +151,109 @@ const LoginContent = ({ setActiveTab, loginRef }) => {
     return valid;
   };
 
+  // Handle Google Sign-In
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setSubmitting(true);
+
+    try {
+      const id_token = credentialResponse.credential;
+
+      const res = await fetch("/api/google-login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id_token }),
+      });
+
+      const data = await res.json();
+
+      logger.log("Google login response:", {
+        status: res.status,
+        data: data || "No data",
+      });
+
+      if (res.ok) {
+        toast.success(
+          data.message ||
+            `Welcome back${
+              data.userDisplayName ? ", " + data.userDisplayName : ""
+            }!`
+        );
+
+        // Migrate any localStorage cart items to the server cart
+        try {
+          logger.log("Starting cart migration process after Google login...");
+          setIsMigratingCart(true);
+          await migrateLocalCartToServer();
+          logger.log("Cart migration completed successfully");
+
+          // Refresh the cart display
+          document.getElementById("cart-refresher")?.click();
+          logger.log("Cart display refreshed after migration");
+
+          // Dispatch a custom event to ensure cart is updated throughout the app
+          const cartUpdatedEvent = new CustomEvent("cart-updated");
+          document.dispatchEvent(cartUpdatedEvent);
+        } catch (migrateError) {
+          logger.error("Error migrating cart items:", migrateError);
+          // Don't block login flow if migration fails
+          setIsMigratingCart(false);
+        }
+        // Note: We don't hide the overlay here for successful migrations
+        // It will stay visible during the redirect delays and disappear when page navigates
+
+        // Handle cross-sell products
+        const redirectPath = await handleCrossSellProducts();
+
+        // Determine final redirect
+        let finalRedirectPath = redirectPath;
+        if (!finalRedirectPath) {
+          if (redirectTo) {
+            try {
+              finalRedirectPath = decodeURIComponent(redirectTo);
+            } catch (e) {
+              logger.error("Error decoding redirectTo URL:", e);
+              finalRedirectPath = redirectTo;
+            }
+          } else {
+            finalRedirectPath = "/";
+          }
+        }
+
+        logger.log(
+          "Final redirect path after Google login:",
+          finalRedirectPath
+        );
+
+        // Add a small delay to ensure the success toast is visible before navigation
+        setTimeout(() => {
+          router.push(finalRedirectPath);
+          setTimeout(() => {
+            router.refresh();
+          }, 300);
+        }, 1500);
+      } else {
+        // Handle error responses
+        let errorMessage =
+          data.error || "Google sign-in failed. Please try again.";
+        toast.error(errorMessage);
+        logger.error("Google login error:", data);
+      }
+    } catch (err) {
+      logger.error("Google login exception:", err);
+      toast.error(
+        "An error occurred during Google sign-in. Please try again later."
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleGoogleError = () => {
+    toast.error("Google sign-in was unsuccessful. Please try again.");
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -147,49 +278,55 @@ const LoginContent = ({ setActiveTab, loginRef }) => {
       try {
         data = await res.json();
       } catch (parseError) {
-        console.error("Error parsing response:", parseError);
+        logger.error("Error parsing response:", parseError);
         toast.error("Unable to connect to the server. Please try again later.");
         setSubmitting(false);
         return;
       }
 
       // Log the response for debugging (without causing errors if data is null)
-      console.log("Login response:", {
+      logger.log("Login response:", {
         status: res.status,
         data: data || "No data",
       });
 
       if (res.ok) {
         // We'll trigger the cart refresh AFTER migration, not here
+        logger.log("🎉 LOGIN SUCCESS - About to show toast");
         if (data?.data?.name) {
           toast.success("You logged in successfully, " + data.data.name);
         } else {
           toast.success("You logged in successfully");
         }
+        logger.log("🎉 LOGIN SUCCESS - Toast should be visible now");
 
         // Migrate any localStorage cart items to the server cart
         let migrateSuccess = false;
         try {
-          console.log("Starting cart migration process...");
+          logger.log("Starting cart migration process...");
+          setIsMigratingCart(true);
           await migrateLocalCartToServer();
           migrateSuccess = true;
-          console.log("Cart migration completed successfully");
+          logger.log("Cart migration completed successfully");
 
           // Now that migration is complete, refresh the cart display
           document.getElementById("cart-refresher")?.click();
-          console.log("Cart display refreshed after migration");
+          logger.log("Cart display refreshed after migration");
 
           // Dispatch a custom event to ensure cart is updated throughout the app
           const cartUpdatedEvent = new CustomEvent("cart-updated");
           document.dispatchEvent(cartUpdatedEvent);
         } catch (migrateError) {
-          console.error("Error migrating cart items:", migrateError);
+          logger.error("Error migrating cart items:", migrateError);
           // Don't block login flow if migration fails
+          setIsMigratingCart(false);
         }
+        // Note: We don't hide the overlay here for successful migrations
+        // It will stay visible during the redirect delays and disappear when page navigates
 
         // Small delay to ensure cart migration has time to complete server-side
         if (migrateSuccess && redirectTo && redirectTo.includes("/checkout")) {
-          console.log(
+          logger.log(
             "Waiting for cart migration to complete before checkout redirect..."
           );
           await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -207,9 +344,9 @@ const LoginContent = ({ setActiveTab, loginRef }) => {
             try {
               // Decode the redirectTo URL if it's encoded
               redirectPath = decodeURIComponent(redirectTo);
-              console.log("Decoded redirectTo:", redirectPath);
+              logger.log("Decoded redirectTo:", redirectPath);
             } catch (e) {
-              console.error("Error decoding redirectTo URL:", e);
+              logger.error("Error decoding redirectTo URL:", e);
               redirectPath = redirectTo; // Use as-is if decoding fails
             }
           } else {
@@ -218,7 +355,8 @@ const LoginContent = ({ setActiveTab, loginRef }) => {
               searchParams.get("ed-flow") === "1" ||
               searchParams.get("wl-flow") === "1" ||
               searchParams.get("hair-flow") === "1" ||
-              searchParams.get("mh-flow") === "1";
+              searchParams.get("mh-flow") === "1" ||
+              searchParams.get("skincare-flow") === "1";
 
             if (isFlow) {
               // For flow-specific logins without a redirect_to parameter,
@@ -237,7 +375,8 @@ const LoginContent = ({ setActiveTab, loginRef }) => {
                   key.includes("ed-flow") ||
                   key.includes("wl-flow") ||
                   key.includes("hair-flow") ||
-                  key.includes("mh-flow")
+                  key.includes("mh-flow") ||
+                  key.includes("skincare-flow")
               );
 
               // Create a new URLSearchParams for checkout
@@ -247,7 +386,7 @@ const LoginContent = ({ setActiveTab, loginRef }) => {
               });
 
               redirectPath = `/checkout?${checkoutParams.toString()}`;
-              console.log(
+              logger.log(
                 "Created checkout URL with flow parameters:",
                 redirectPath
               );
@@ -258,31 +397,17 @@ const LoginContent = ({ setActiveTab, loginRef }) => {
           }
         }
 
-        console.log("Final redirect path:", redirectPath);
+        logger.log("Final redirect path:", redirectPath);
 
+        // Add a small delay to ensure the success toast is visible before navigation
+        setTimeout(() => {
+          // Use Next.js navigation for consistent behavior across all environments
+          router.push(redirectPath);
 
-        if (redirectPath.includes("/checkout")) {
-          console.log("[Login] Using checkout redirect with delay:", redirectPath);
-
-          setTimeout(() => {
-            console.log("[Login] Redirecting to checkout after delay:", redirectPath);
-            window.location.href = redirectPath;
-          }, 300);
-        } else {
-
-          if (process.env.NODE_ENV === "production") {
-            window.location.href = redirectPath;
-          } else {
-            router.push(redirectPath);
-          }
-        }
-
-
-        if (!redirectPath.includes("/checkout")) {
           setTimeout(() => {
             router.refresh();
           }, 300);
-        }
+        }, 1500); // 1.5 second delay to show the success toast
       } else {
         // Handle error responses - display error in toast notification
         let errorMessage =
@@ -290,14 +415,21 @@ const LoginContent = ({ setActiveTab, loginRef }) => {
 
         // Safely extract error message from response
         if (data) {
-          // Handle specific error structure from API
-          if (data.message) {
-            errorMessage = data.message;
-          } else if (data.code === "invalid_email") {
-            errorMessage = "Unknown email address. Please check and try again.";
-          } else if (data.code === "incorrect_password") {
+          // Handle specific error codes from WordPress API
+          if (data.code === "incorrect_password") {
             errorMessage =
               "The password you entered is incorrect. Please try again.";
+          } else if (
+            data.code === "invalid_email" ||
+            data.code === "invalid_username"
+          ) {
+            errorMessage = "Unknown email address. Please check and try again.";
+          } else if (data.error) {
+            // Use the error message from backend (strip HTML tags if present)
+            errorMessage = data.error.replace(/<[^>]*>/g, "");
+          } else if (data.message) {
+            // Fallback to message field (strip HTML tags if present)
+            errorMessage = data.message.replace(/<[^>]*>/g, "");
           }
         }
 
@@ -305,11 +437,11 @@ const LoginContent = ({ setActiveTab, loginRef }) => {
         toast.error(errorMessage);
 
         // Safely log error data
-        //console.error("Login error:", data || "No error data available");
+        //logger.error("Login error:", data || "No error data available");
       }
     } catch (err) {
       // Handle any unexpected errors during the fetch operation
-      console.error("Login exception:", err);
+      logger.error("Login exception:", err);
       toast.error("An error occurred during login. Please try again later.");
     } finally {
       setSubmitting(false);
@@ -318,6 +450,7 @@ const LoginContent = ({ setActiveTab, loginRef }) => {
 
   return (
     <>
+      <CartMigrationOverlay show={isMigratingCart} />
       <div className="px-3 mx-auto pt-5 text-center">
         <h2 className="text-[#251f20] text-[32px] headers-font font-[450] leading-[44.80px]">
           Sign in to your account
@@ -417,8 +550,9 @@ const LoginContent = ({ setActiveTab, loginRef }) => {
             </div>
             <div className="basis-1/2">
               <Link
-                href={`/forgot-password${redirectTo ? "?redirect_to=" + redirectTo : ""
-                  }${isEdFlow ? (redirectTo ? "&" : "?") + "ed-flow=1" : ""}`}
+                href={`/forgot-password${
+                  redirectTo ? "?redirect_to=" + redirectTo : ""
+                }${isEdFlow ? (redirectTo ? "&" : "?") + "ed-flow=1" : ""}`}
                 className="text-[#AE7E56] text-sm font-normal block text-right underline"
               >
                 Forgot Password?
@@ -433,6 +567,23 @@ const LoginContent = ({ setActiveTab, loginRef }) => {
             >
               {submitting ? "Signing in..." : "Sign in"}
             </button>
+          </div>
+
+          {/* Divider */}
+          <div className="w-full flex items-center justify-center gap-4 my-4">
+            <div className="h-[1px] bg-gray-300 flex-1"></div>
+            <span className="text-gray-500 text-sm">OR</span>
+            <div className="h-[1px] bg-gray-300 flex-1"></div>
+          </div>
+
+          {/* Google Sign-In Button */}
+          <div className="w-full flex justify-center items-center">
+            <GoogleSignInButton
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+              disabled={submitting}
+              isLoading={submitting}
+            />
           </div>
         </div>
       </form>

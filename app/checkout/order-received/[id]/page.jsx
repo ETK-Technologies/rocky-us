@@ -1,17 +1,25 @@
 import OrderReceivedPageContent from "@/components/OrderReceived/OrderReceivedPageContent";
-import { ThankYouScript } from "@/components/VisiOpt";
 import { Suspense } from "react";
 import { cookies } from "next/headers";
 
-const OrderReceivedPage = async () => {
+const OrderReceivedPage = async ({ params }) => {
   const cookieStore = await cookies();
   const userId = cookieStore.get("userId")?.value;
+  const orderId = params?.id || "";
 
   return (
     <Suspense fallback={<></>}>
       <OrderReceivedPageContent userId={userId} />
-      {/* Add thank you page VisiOpt script */}
-      <ThankYouScript />
+      {/* AWIN noscript fallback: use order_id when available so server computes values */}
+      <noscript>
+        <img
+          src={`/api/awin/track-order?order_id=${orderId}`}
+          width="1"
+          height="1"
+          style={{ display: "none" }}
+          alt=""
+        />
+      </noscript>
     </Suspense>
   );
 };

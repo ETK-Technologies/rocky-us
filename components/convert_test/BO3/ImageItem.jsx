@@ -29,6 +29,7 @@ const ImageItem = ({
               alt={title}
               width="500"
               height="500"
+              className={showBg ? `md:w-[472px] md:h-[620px]` : `md:relative md:right-[45px]`}
             ></CustomImage>
           </div>
         </div>

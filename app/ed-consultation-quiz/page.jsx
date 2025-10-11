@@ -1,5 +1,6 @@
 import EDConsultationQuiz from "@/components/EdQuestionnaire/EDConsultationQuiz";
 import { cookies } from "next/headers";
+import { logger } from "@/utils/devLogger";
 
 export default function EDConsultationQuizPage() {
   const cookieStore = cookies();
@@ -19,7 +20,7 @@ export default function EDConsultationQuizPage() {
         dosage = dosageObj;
       }
     } catch (error) {
-      console.error("Error parsing dosage cookie:", error);
+      logger.error("Error parsing dosage cookie:", error);
       dosage = null;
     }
   }

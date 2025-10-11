@@ -190,10 +190,10 @@ export const useWarningPopups = (
     showHighDepressionWarning,
   ]);
   useEffect(() => {
-    if (currentPage === 36 && formData.calendly_booking_completed) {
+    if (currentPage === 37) {
       setShowCompletionWarning(true);
     }
-  }, [currentPage, formData.calendly_booking_completed]);
+  }, [currentPage]);
 
   const handleAcknowledge = () => {
     setIsAcknowledged(!isAcknowledged);

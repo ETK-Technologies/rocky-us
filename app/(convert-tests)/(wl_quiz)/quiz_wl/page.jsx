@@ -1,5 +1,6 @@
 "use client";
 
+import { logger } from "@/utils/devLogger";
 import BO3MoneyBack from "@/components/convert_test/BO3/BO3MoneyBack";
 import LossStartsHere from "@/components/convert_test/BO3/LossStartsHere";
 import RockyDifference from "@/components/convert_test/BO3/RockyDifference";
@@ -36,9 +37,12 @@ const Questions = [
     id: 3,
     title: "Which weight loss medications are you interested in?",
     options: [
-      { id: "Compounded", label: "Compounded semaglutide injection" },
-      { id: "GLP-1", label: "GLP-1 injections (Ozempic®, Wegovy®)" },
-      { id: "I", label: "I want a provider recommendation" },
+      { id: "glp-1", label: "GLP-1 injections" },
+      { id: "oral", label: "Oral Medication, no injections" },
+      {
+        id: "provide_recommendation",
+        label: "I want a provider recommendation",
+      },
     ],
   },
   {
@@ -62,11 +66,9 @@ export default function QuizWL() {
       [questionId]: optionId,
     }));
 
-   
-
     const nextQuestionId = parseInt(questionId) + 1;
 
-    console.log("Next Question ID:", nextQuestionId);
+    logger.log("Next Question ID:", nextQuestionId);
     if (nextQuestionId <= Questions.length) {
       const nextQuestion = document.getElementById(
         `question-${nextQuestionId}`
@@ -89,6 +91,8 @@ export default function QuizWL() {
         total_questions={Questions.length}
         answers={answers}
         onOptionSelect={handleOptionSelect}
+        hero_title="Lose Weight Smarter, Not Harder"
+        hero_description="Personalized weight loss plans that fit your goals and busy routine."
       />
       {Questions.slice(1).map((question, index) => (
         <Section key={question.id}>
@@ -105,7 +109,7 @@ export default function QuizWL() {
 
       <Section>
         <GoodNews></GoodNews>
-         <HolisticSection></HolisticSection>
+        <HolisticSection></HolisticSection>
       </Section>
       <Section>
         <ReviewsSection />

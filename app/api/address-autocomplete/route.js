@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logger } from "@/utils/devLogger";
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -14,12 +15,12 @@ export async function GET(request) {
   }
 
   try {
-    // Use the provided API key (same service, different country)
+    // Use the provided Canada Post API key
     const apiKey = process.env.CANADA_POST_API_KEY;
 
-    // Call the Addressy Find API for USA addresses
+    // Call the Canada Post Find API
     const response = await fetch(
-      `https://api.addressy.com/Capture/Interactive/Find/v1.1/json3.ws?Key=${apiKey}&Country=USA&text=${encodeURIComponent(
+      `https://api.addressy.com/Capture/Interactive/Find/v1.1/json3.ws?Key=${apiKey}&Country=CAN&text=${encodeURIComponent(
         query
       )}&LanguagePreference=en&LastId=&SearchFor=Everything&OrderBy=UserLocation&$block=true&$cache=true`,
       {
@@ -30,13 +31,15 @@ export async function GET(request) {
     );
 
     if (!response.ok) {
-      throw new Error(`Address API responded with status: ${response.status}`);
+      throw new Error(
+        `Canada Post API responded with status: ${response.status}`
+      );
     }
 
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error("Error fetching address suggestions:", error);
+    logger.error("Error fetching address suggestions:", error);
     return NextResponse.json(
       {
         error: "Failed to fetch address suggestions",
@@ -60,10 +63,10 @@ export async function POST(request) {
       );
     }
 
-    // Use the provided API key
+    // Use the provided Canada Post API key
     const apiKey = process.env.CANADA_POST_API_KEY || "ebfe36937452667d";
 
-    // Call the Addressy Retrieve API to get address details
+    // Call the Canada Post Retrieve API to get address details
     const response = await fetch(
       `https://api.addressy.com/Capture/Interactive/Retrieve/v1.1/json3.ws?Key=${apiKey}&Id=${id}&$cache=true`,
       {
@@ -74,13 +77,15 @@ export async function POST(request) {
     );
 
     if (!response.ok) {
-      throw new Error(`Address API responded with status: ${response.status}`);
+      throw new Error(
+        `Canada Post API responded with status: ${response.status}`
+      );
     }
 
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error("Error retrieving address details:", error);
+    logger.error("Error retrieving address details:", error);
     return NextResponse.json(
       {
         error: "Failed to retrieve address details",

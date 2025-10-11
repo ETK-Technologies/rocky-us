@@ -11,7 +11,7 @@ const WLProgramItem = ({ Item , className='lg:w-3/4'}) => {
   };
 
   return (
-    <div key={Item.id} className={`relative ` + className}>
+    <div onClick={toggleItem} key={Item.id} className={`relative cursor-pointer ` + className}>
       <span className="text-[#814B00] font-[14px]">{Item?.time}</span>
       <div className="flex content-center">
         <p className="w-[90%] lg:text-[24px] font-[450] leading-[140%] text-[16px]">{Item?.title}</p>
@@ -37,7 +37,7 @@ const WLProgramItem = ({ Item , className='lg:w-3/4'}) => {
         }`}
       >
         <div className="overflow-hidden">
-          <p className="text-base text-[14px] lg:text-[20px] mt-2 pb-2">{Item?.description}</p>
+          <p className="text-base text-[14px] lg:text-[16px] mt-2 pb-2">{Item?.description}</p>
         </div>
       </div>
 

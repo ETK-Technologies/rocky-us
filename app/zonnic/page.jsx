@@ -8,12 +8,10 @@ import EasySection from "@/components/Zonnic/EasySection";
 import ZonnicIngredients from "@/components/Zonnic/ZonnicIngredients";
 import ZonnicFaqsSection from "@/components/Zonnic/ZonnicFaqsSection";
 import HighestRated from "@/components/Zonnic/HighestRated";
-import { ZonnicProductScript } from "@/components/VisiOpt";
 
 export default function Zonnic() {
   return (
     <main>
-      <ZonnicProductScript />
       <CoverSection>
         <ZonnivCover />
       </CoverSection>

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { wooApiGet } from "@/lib/woocommerce";
+import { logger } from "@/utils/devLogger";
 
 /**
  * Product mapping API endpoint
@@ -68,7 +69,7 @@ export async function GET() {
       products: productMappings,
     });
   } catch (error) {
-    console.error("Error fetching product mappings:", error);
+    logger.error("Error fetching product mappings:", error);
 
     return NextResponse.json(
       {

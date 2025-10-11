@@ -10,9 +10,7 @@ import HealthSolutions from "@/components/BodyOptimization/HealthSolutions";
 import PersonalizedTreatment from "@/components/BodyOptimization/PersonalizedTreatment";
 import MoneyBack from "@/components/MoneyBack";
 import WlFaqsSection from "@/components/BodyOptimization/WlFaqsSection";
-import WlProducts from "@/components/BodyOptimization/WlProducts";
 import ResultSection from "@/components/BodyOptimization/ResultSection";
-import { BodyOptimizationScript } from "@/components/VisiOpt";
 
 export default function BodyOptimization() {
   return (
@@ -21,9 +19,6 @@ export default function BodyOptimization() {
         <WlCover />
       </CoverSection>
       <RockyFeatures />
-      <Section bg={"bg-gradient-to-t from-[#F6F8FB] to-transparent"}>
-        <WlProducts />
-      </Section>
 
       <Section>
         <ResultSection />
@@ -49,7 +44,6 @@ export default function BodyOptimization() {
       <Section>
         <WlFaqsSection />
       </Section>
-      <BodyOptimizationScript />
     </main>
   );
 }

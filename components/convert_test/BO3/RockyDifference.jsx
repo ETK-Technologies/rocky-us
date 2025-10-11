@@ -79,7 +79,7 @@ const RockyDifference = () => {
                 key={index}
                 className="lg:h-20 h-[110px]  border-b border-black flex items-center lg:px-4"
               >
-                <div className="text-black text-base text-[14px] lg:text-[16px]  font-semibold">{item}</div>
+                <div className="text-black  text-[13px] lg:text-[16px]  font-semibold">{item}</div>
               </div>
             ))}
             <div className="lg:h-20 h-[110px] "></div>
@@ -101,7 +101,7 @@ const RockyDifference = () => {
               "Evidence-backed",
               "Personali zed",
               "Backed by lab data",
-              "$40/month",
+              "$60/month",
             ].map((item, index) => (
               <div
                 key={index}
@@ -109,7 +109,7 @@ const RockyDifference = () => {
               >
                 <div className="flex flex-col w-full lg:w-auto lg:flex-row items-center justify-center  lg:gap-3 gap-1 lg:px-6">
                   <FaCheckCircle className="text-[#AE7E56] text-xl md:text-2xl" />
-                  <span className="text-black text-base leading-[140%] tracking-[0px] text-[13px] lg:text-[16px] font-medium text-center">
+                  <span className="text-black  leading-[140%] tracking-[0px] text-[11px] lg:text-[16px] font-medium text-center">
                     {item}
                   </span>
                 </div>
@@ -122,7 +122,7 @@ const RockyDifference = () => {
               >
                 <div className="flex flex-col w-full lg:w-auto lg:flex-row items-center justify-center  lg:gap-3 gap-1 lg:px-6">
                   <FaCheckCircle className="text-[#AE7E56] text-xl md:text-2xl" />
-                  <span className="text-black text-base leading-[140%] tracking-[0px] text-[13px] lg:text-[16px] font-medium text-center">
+                  <span className="text-black  leading-[140%] tracking-[0px] text-[11px] lg:text-[16px] font-medium text-center">
                     6 months <span className="underline cursor-pointer">(See Terms)</span> 
                   </span>
                 </div>
@@ -141,7 +141,7 @@ const RockyDifference = () => {
             {[
               "Dosage only",
               "When issues arise",
-              "Prescripti ons only",
+              "Prescriptions only",
               "Either none or only",
               "None at all",
               "> $90 / month",
@@ -154,7 +154,7 @@ const RockyDifference = () => {
                 <div className="flex flex-col w-full lg:w-auto lg:flex-row items-center justify-start  lg:gap-3 gap-1 lg:px-6">
                   <FaRegTimesCircle className="text-black text-xl md:text-2xl" />
 
-                  <span className="text-black text-base leading-[140%] tracking-[0px] text-[13px] lg:text-[16px] font-medium text-center">
+                  <span className="text-black  leading-[140%] tracking-[0px] text-[11px] lg:text-[16px] font-medium text-center">
                     {item}
                   </span>
                 </div>

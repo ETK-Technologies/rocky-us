@@ -1,23 +1,24 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { logger } from "@/utils/devLogger";
 
 export async function GET(req) {
   try {
-    console.log("API: Starting portal URL fetch process");
+    logger.log("API: Starting portal URL fetch process");
 
     // Check if user is logged in
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const userId = cookieStore.get("userId")?.value;
 
     if (!userId) {
-      console.log("API: User not logged in, no userId found in cookies");
+      logger.log("API: User not logged in, no userId found in cookies");
       return NextResponse.json(
         { success: false, error: "User not logged in" },
         { status: 401 }
       );
     }
 
-    console.log("API: User is logged in with ID:", userId);
+    logger.log("API: User is logged in with ID:", userId);
 
     // CRM and Portal URLs from environment variables
     const crmHostUrl = process.env.CRM_HOST;
@@ -26,7 +27,7 @@ export async function GET(req) {
     const apiPasswordEncoded = process.env.CRM_API_PASSWORD;
 
     // Debug: Print environment variables (without exposing the full password)
-    console.log("API: Environment variables check:", {
+    logger.log("API: Environment variables check:", {
       crmHostUrl: crmHostUrl ? "✓ Set" : "✗ Missing",
       portalHostUrl: portalHostUrl ? "✓ Set" : "✗ Missing",
       apiUsername: apiUsername ? "✓ Set" : "✗ Missing",
@@ -44,7 +45,7 @@ export async function GET(req) {
       const errorMsg = `Missing required environment variables: ${missingVars.join(
         ", "
       )}`;
-      console.error("API:", errorMsg);
+      logger.error("API:", errorMsg);
       return NextResponse.json(
         { success: false, error: errorMsg },
         { status: 500 }
@@ -55,9 +56,9 @@ export async function GET(req) {
     let apiPassword;
     try {
       apiPassword = Buffer.from(apiPasswordEncoded, "base64").toString();
-      console.log("API: Successfully decoded the base64 password");
+      logger.log("API: Successfully decoded the base64 password");
     } catch (decodeError) {
-      console.error("API: Failed to decode base64 password:", decodeError);
+      logger.error("API: Failed to decode base64 password:", decodeError);
       return NextResponse.json(
         { success: false, error: "Failed to decode API password" },
         { status: 500 }
@@ -67,10 +68,10 @@ export async function GET(req) {
     // Extract query parameters
     const url = new URL(req.url);
     const redirectPage = url.searchParams.get("redirectPage") || "dashboard";
-    console.log("API: Redirect page set to:", redirectPage);
+    logger.log("API: Redirect page set to:", redirectPage);
 
-    console.log("API: Attempting CRM authentication");
-    console.log(`API: CRM endpoint: ${crmHostUrl}/api/login`);
+    logger.log("API: Attempting CRM authentication");
+    logger.log(`API: CRM endpoint: ${crmHostUrl}/api/login`);
 
     // Step 1: Authenticate with CRM API
     let loginResponse;
@@ -86,11 +87,11 @@ export async function GET(req) {
         }),
       });
 
-      console.log("API: CRM auth response status:", loginResponse.status);
+      logger.log("API: CRM auth response status:", loginResponse.status);
 
       if (!loginResponse.ok) {
         const errorText = await loginResponse.text();
-        console.error("API: CRM authentication failed:", errorText);
+        logger.error("API: CRM authentication failed:", errorText);
         return NextResponse.json(
           {
             success: false,
@@ -101,7 +102,7 @@ export async function GET(req) {
         );
       }
     } catch (fetchError) {
-      console.error("API: CRM fetch error:", fetchError.message);
+      logger.error("API: CRM fetch error:", fetchError.message);
       return NextResponse.json(
         {
           success: false,
@@ -114,12 +115,12 @@ export async function GET(req) {
     let loginData;
     try {
       loginData = await loginResponse.json();
-      console.log(
+      logger.log(
         "API: CRM authentication response received",
         loginData.success ? "successfully" : "with errors"
       );
     } catch (jsonError) {
-      console.error("API: Failed to parse CRM response:", jsonError);
+      logger.error("API: Failed to parse CRM response:", jsonError);
       return NextResponse.json(
         {
           success: false,
@@ -130,7 +131,7 @@ export async function GET(req) {
     }
 
     if (!loginData.success || !loginData.data?.token) {
-      console.error("API: CRM authentication token not found", loginData);
+      logger.error("API: CRM authentication token not found", loginData);
       return NextResponse.json(
         {
           success: false,
@@ -142,11 +143,11 @@ export async function GET(req) {
     }
 
     const token = loginData.data.token;
-    console.log("API: Successfully obtained CRM auth token");
+    logger.log("API: Successfully obtained CRM auth token");
 
     // Step 2: Get auto-login link for the portal
-    console.log("API: Requesting portal auto-login link");
-    console.log(
+    logger.log("API: Requesting portal auto-login link");
+    logger.log(
       `API: Portal endpoint: ${portalHostUrl}/api/user/auto-login-link`
     );
 
@@ -170,11 +171,11 @@ export async function GET(req) {
         }
       );
 
-      console.log("API: Portal auth response status:", portalResponse.status);
+      logger.log("API: Portal auth response status:", portalResponse.status);
 
       if (!portalResponse.ok) {
         const errorText = await portalResponse.text();
-        console.error("API: Portal auto-login failed:", errorText);
+        logger.error("API: Portal auto-login failed:", errorText);
         return NextResponse.json(
           {
             success: false,
@@ -185,7 +186,7 @@ export async function GET(req) {
         );
       }
     } catch (fetchError) {
-      console.error("API: Portal fetch error:", fetchError.message);
+      logger.error("API: Portal fetch error:", fetchError.message);
       return NextResponse.json(
         {
           success: false,
@@ -198,12 +199,12 @@ export async function GET(req) {
     let portalData;
     try {
       portalData = await portalResponse.json();
-      console.log(
+      logger.log(
         "API: Portal auto-login response received",
         portalData.success ? "successfully" : "with errors"
       );
     } catch (jsonError) {
-      console.error("API: Failed to parse portal response:", jsonError);
+      logger.error("API: Failed to parse portal response:", jsonError);
       return NextResponse.json(
         {
           success: false,
@@ -214,7 +215,7 @@ export async function GET(req) {
     }
 
     if (!portalData.success || !portalData.data?.link) {
-      console.error("API: Portal auto-login link not found", portalData);
+      logger.error("API: Portal auto-login link not found", portalData);
       return NextResponse.json(
         {
           success: false,
@@ -230,7 +231,7 @@ export async function GET(req) {
       portalData.data.wp_user_id &&
       portalData.data.wp_user_id.toString() !== userId
     ) {
-      console.error("API: User ID mismatch", {
+      logger.error("API: User ID mismatch", {
         expected: userId,
         received: portalData.data.wp_user_id,
       });
@@ -247,7 +248,7 @@ export async function GET(req) {
       );
     }
 
-    console.log("API: Successfully obtained portal auto-login URL");
+    logger.log("API: Successfully obtained portal auto-login URL");
 
     // Return the auto-login URL
     return NextResponse.json({
@@ -255,7 +256,7 @@ export async function GET(req) {
       url: portalData.data.link,
     });
   } catch (error) {
-    console.error("API: Error in portal login API:", error);
+    logger.error("API: Error in portal login API:", error);
     return NextResponse.json(
       {
         success: false,

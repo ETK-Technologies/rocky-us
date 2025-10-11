@@ -2,6 +2,7 @@ import React from "react";
 import Image from "next/image";
 
 const ZonnicIngredients = () => {
+ 
   const ingredients = [
     { name: "Plant-based fibres", iconSrc: "/zonic/planet.svg" },
     { name: "Water", iconSrc: "/zonic/rain-drop.svg" },
@@ -9,7 +10,6 @@ const ZonnicIngredients = () => {
     { name: "Nicotine", iconSrc: "/zonic/Nicotine.svg" },
     { name: "Flavouring", iconSrc: "/zonic/eyedropper.svg" },
   ];
-
   return (
     <div className="w-full bg-gradient-to-b from-[#C5F5C9] to-[#91D787] md:bg-gradient-to-r md:from-[#C5F5C9] md:to-[#91D787] md rounded-2xl overflow-hidden">
       <div className="flex flex-col md:flex-row justify-between">
@@ -23,7 +23,6 @@ const ZonnicIngredients = () => {
             <strong>ZONNIC</strong> only uses high-quality ingredients: Water,
             plant-based fibres, flavouring, sweetener and nicotine.
           </p>
-
           <div className="grid grid-cols-2 gap-4 mt-6">
             {ingredients.map((ingredient, index) => (
               <div

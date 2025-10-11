@@ -1,13 +1,13 @@
 "use client";
 
-import MemberCard from "@/components/AboutUS/MemberCard";
-import TeamCard from "@/components/AboutUS/TeamCard";
+import Goal from "@/components/AboutUS/Goal";
+import MemberContainer from "@/components/AboutUS/MemberContainer";
+import Mission from "@/components/AboutUS/Mission";
+import OurTeamBrief from "@/components/AboutUS/OurTeamBrief";
+import TeamContainer from "@/components/AboutUS/TeamContainer";
 import HomeFaqsSection from "@/components/HomePage/HomeFaqsSection";
-import CustomImage from "@/components/utils/CustomImage";
 import Section from "@/components/utils/Section";
 import { useRef, useState, useEffect } from "react";
-
-import { FaPlay, FaPause } from "react-icons/fa6";
 
 const leadershipTeam = [
   {
@@ -124,23 +124,9 @@ const pharmaceuticalTeam = [
 ];
 
 export default function AboutUs() {
-  const [isPlaying, setIsPlaying] = useState(true);
   const videoRef = useRef(null);
-
-  const togglePlay = () => {
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
-      } else {
-        videoRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
-    }
-  };
-
   const scrollRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
-
   useEffect(() => {
     const container = scrollRef.current;
 
@@ -166,166 +152,30 @@ export default function AboutUs() {
 
   return (
     <>
-      <section className="max-w-[1184px] mx-auto">
-        <div className="px-5 sectionWidth:px-0 py-6 md:pt-16 md:pb-14 ">
-          <div className="text-[#AE7E56] text-[12px] md:text-[14px] font-[500] uppercase mb-1 md:mb-2">
-            Mission
-          </div>
-          <div className="text-[32px] md:text-[48px] tracking-[-0.01em] md:tracking-[-0.02em] leading-[115%] md:leading-[100%] max-w-[684px] capitalize headers-font mb-3 md:mb-4">
-            We’re on a mission to redefine men's healthcare
-          </div>
-          <div className="text-[16px] md:text-[18px] font-[400] leading-[140%] md:max-w-[591px] ">
-            By normalizing it; making it personalized and seamless—without the
-            wait times and stigma surrounding it. Making it as should be.
-          </div>
-        </div>
-        <div className="relative overflow-hidden md:rounded-[16px] w-full h-[214px] md:h-[665px] md:pb-24 ">
-          <video
-            ref={videoRef}
-            loop
-            muted
-            autoPlay
-            playsInline
-            className="w-full h-full object-cover md:rounded-[16px]"
-          >
-            <source
-              src="https://rockywp.s3.ca-central-1.amazonaws.com/wp-content/uploads/video/Rockyhealth-Ad-V1.mp4"
-              type="video/mp4"
-            />
-          </video>
-          {/* <button
-            onClick={togglePlay}
-            className="absolute left-2 bottom-2 md:bottom-[110px] text-white p-3 rounded-full transition-colors"
-            aria-label={isPlaying ? "Pause video" : "Play video"}
-          >
-            {isPlaying ? <FaPause size={30} /> : <FaPlay size={30} />}
-          </button> */}
-        </div>
-      </section>
+      <Mission videoRef={videoRef} />
       <Section bg="bg-[#F8F7F5]">
-        <div className="flex flex-col md:flex-row items-center gap-8 md:gap-20 ">
-          <div className="max-w-[552px]">
-            <div className="text-[#AE7E56] text-[12px] md:text-[14px] font-[500] uppercase mb-1 md:mb-2">
-              Goal
-            </div>
-            <div className="text-[32px] md:text-[48px] tracking-[-0.01em] md:tracking-[-0.02em] leading-[115%] md:leading-[100%] max-w-[684px] capitalize headers-font mb-4">
-              A patient-centered approach.
-            </div>
-            <div className="text-[16px] md:text-[18px] font-[400] leading-[140%] md:max-w-[591px] ">
-              rocky™ builds a relationship around trust, privacy, and discretion
-              with men of various ages facing similar hurdles. Together, we
-              provide a range of options that will ensure men are taking care of
-              themselves.
-            </div>
-          </div>
-          <div className="relative rounded-2xl overflow-hidden w-full h-[335px] md:w-[552px] md:h-[640px]">
-            <CustomImage
-              fill
-              src="https://myrocky.b-cdn.net/WP%20Images/Global%20Images/under-cover-about-us.jpeg"
-            />
-          </div>
-        </div>
+        <Goal />
       </Section>
       <Section>
-        <div className="flex-col justify-start items-center gap-4 flex">
-          <div className="text-center mb-10 md:mb-14">
-            <div className="text-[#AE7E56] text-[12px] md:text-[14px] font-[500] uppercase mb-1 md:mb-2">
-              Focus
-            </div>
-            <div className="text-[32px] md:text-[48px] tracking-[-0.01em] md:tracking-[-0.02em] leading-[115%] md:leading-[100%] max-w-[684px] capitalize headers-font mb-3 md:mb-4">
-              Our Team <br className="md:hidden" /> Has You Covered
-            </div>
-            <div className="text-[16px] font-[400] leading-[140%] w-[307px] md:hidden">
-              The rocky™ brand name portrays a triumphant and conquering man who
-              is confident in everything he does. By providing solutions for
-              prevalent matters, we help enhance the image of the male persona.
-            </div>
-            <div className="text-[18px] font-[400] leading-[140%] max-w-[632px] hidden md:block ">
-              The rocky™ brand name portrays a triumphant and conquering man who
-              is confident in everything he does. By providing effective
-              treatments that works with his schedule, not the other way around
-              it.
-            </div>
-          </div>
-        </div>
-        <div className="text-center text-black text-[22px] md:text-[30px] headers-font capitalize leading-[33px]  ">
-          Leadership Team
-        </div>
-        <div
-          ref={scrollRef}
-          className="w-full md:items-center md:gap-4 overflow-x-auto overflow-y-hidden mt-[-70px] md:mt-[-40px] no-scrollbar"
-        >
-          {/* <div className="flex text-center gap-[-20px] md:gap-4 mt-[24px] px-5 sectionWidth:px-0">
-            {leadershipTeam.map((member, index) => (
-              <TeamCard
-                key={index}
-                name={member.name}
-                title={member.title}
-                subtitle={member.subtitle}
-                description={member.description}
-                imageSrc={member.imageSrc}
-                CoverImage={member.CoverImage}
-              />
-            ))}
-          </div> */}
-          <div className="flex text-center mt-[24px] px-6 sectionWidth:px-0">
-            {leadershipTeam.map((member, index) => (
-              <div key={index} className={index !== 0 ? "-ml-16 md:ml-0" : ""}>
-                <TeamCard {...member} index={index} />
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="flex justify-center gap-1 mt-8 md:hidden">
-          {leadershipTeam.map((_, index) => (
-            <span
-              key={index}
-              className={`w-[6px] h-[6px] rounded-full transition-colors ${
-                index === activeIndex ? "bg-black" : "bg-[#00000033]"
-              }`}
-            />
-          ))}
-        </div>
+        <OurTeamBrief />
+        <TeamContainer
+          scrollRef={scrollRef}
+          teamMembers={leadershipTeam}
+          title="Leadership Team"
+        />
       </Section>
       <Section>
-        <div className=" flex-col justify-start items-center gap-8 md:gap-14 flex">
-          <div className="text-center text-black text-[22px] md:text-3xl headers-font capitalize leading-[33px]">
-            Medical advisory team
-          </div>
-          <div className="w-full">
-            <div className="mx-auto grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 flex-wrap">
-              {medicalTeam.map((member, index) => (
-                <MemberCard
-                  key={index}
-                  name={member.name}
-                  title={member.title}
-                  image={member.image}
-                  description={member.description}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
+        <MemberContainer
+          teamMembers={medicalTeam}
+          title="Medical advisory team"
+        />
       </Section>
+
       <Section>
-        <div className="flex-col justify-start items-center gap-8 md:gap-14 flex">
-          <div className="text-center text-black text-[22px] md:text-3xl headers-font capitalize leading-[33px]">
-            Pharmaceutical Advisory Team
-          </div>
-          <div className="w-full">
-            <div className="mx-auto grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 flex-wrap">
-              {pharmaceuticalTeam.map((member, index) => (
-                <MemberCard
-                  key={index}
-                  name={member.name}
-                  title={member.title}
-                  image={member.image}
-                  description={member.description}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
+        <MemberContainer
+          teamMembers={pharmaceuticalTeam}
+          title="Pharmaceutical Advisory Team"
+        />
       </Section>
       <Section bg="bg-[#F8F7F5]">
         <HomeFaqsSection />

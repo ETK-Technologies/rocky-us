@@ -1,8 +1,10 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { logger } from "@/utils/devLogger";
+
 import { IoClose } from "react-icons/io5";
 import { GiHamburgerMenu } from "react-icons/gi";
+import SearchIcon from "./SearchIcon";
 import MenuContainer from "./MenuContainer";
 import NavHeader from "./NavHeader";
 

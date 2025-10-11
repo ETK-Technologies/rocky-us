@@ -1,27 +1,34 @@
 "use client";
 
 import { useState } from "react";
+import { logger } from "@/utils/devLogger";
+import { useRouter } from "next/navigation";
+import CustomImage from "../utils/CustomImage";
 import CustomContainImage from "../utils/CustomContainImage";
 import DosageSelectionModal from "./DosageSelectionModal";
 import BrandGenericModal from "./BrandGenericModal";
 import CrossSellModal from "./CrossSellModal";
 import { getDosageSelection } from "@/utils/dosageCookieManager";
-import { addToCartAndRedirect } from "@/utils/crossSellCheckout";
+import { addToCartEarly, finalizeFlowCheckout } from "@/utils/flowCartHandler";
 
 const EdProductCard = ({ product }) => {
+  const router = useRouter();
+
   // State management for user selections
   const [activePreference, setActivePreference] = useState(
     product.preferences[0]
   );
   const [activeFrequency, setActiveFrequency] = useState("monthly-supply");
   const [selectedPillOption, setSelectedPillOption] = useState(
-    product.pillOptions["monthly-supply"][1]
+    product.pillOptions["monthly-supply"][0]
   );
 
   // State for modals
   const [brandModalOpen, setBrandModalOpen] = useState(false);
   const [dosageModalOpen, setDosageModalOpen] = useState(false);
   const [crossSellModalOpen, setCrossSellModalOpen] = useState(false);
+  const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
+  const [initialCartData, setInitialCartData] = useState(null);
 
   // Initialize selectedDose from cookie if available
   const [selectedDose, setSelectedDose] = useState(() => {
@@ -46,8 +53,8 @@ const EdProductCard = ({ product }) => {
   // Handle frequency change
   const handleFrequencyChange = (frequency) => {
     setActiveFrequency(frequency);
-    // Select default pill option for new frequency (middle option)
-    setSelectedPillOption(product.pillOptions[frequency][1]);
+    // Select default pill option for new frequency (first option)
+    setSelectedPillOption(product.pillOptions[frequency][0]);
   };
 
   // Handle pill option selection
@@ -77,25 +84,31 @@ const EdProductCard = ({ product }) => {
     return variationId;
   };
 
-  // Get the checkout URL with proper product IDs
-  const getCheckoutUrl = () => {
-    // Check if we have an authToken in cookies - indicating user is logged in
-    // Only access document on the client side
-    const hasAuthToken =
-      typeof window !== "undefined"
-        ? document.cookie.includes("authToken=")
-        : false;
+  // Handle direct checkout for quick buy (without cross-sell)
+  const handleDirectCheckout = async () => {
+    try {
+      const mainProduct = {
+        id: getProductIDs(),
+        name: product.name,
+        price: currentPrice,
+        isSubscription: selectedFrequency === "monthly-supply",
+        variationId: getProductIDs(),
+      };
 
-    // Get the proper product ID(s)
-    const productIds = getProductIDs();
+      const result = await edFlowAddToCart(mainProduct, [], {
+        requireConsultation: true,
+      });
 
-    // If user is logged in, send directly to checkout with the product
-    if (hasAuthToken) {
-      return `/checkout?ed-flow=1&onboarding-add-to-cart=${productIds}`;
+      if (result.success) {
+        router.push(result.redirectUrl);
+      } else {
+        logger.error("Direct checkout failed:", result.error);
+        alert("There was an issue processing your checkout. Please try again.");
+      }
+    } catch (error) {
+      logger.error("Error in direct checkout:", error);
+      alert("There was an issue processing your checkout. Please try again.");
     }
-
-    // Otherwise, use the login-register flow
-    return `/checkout/?ed-flow=1&onboarding=1&view=account&viewshow=login&onboarding-add-to-cart=${productIds}&redirect_to=/checkout`;
   };
 
   // Handle product selection
@@ -121,10 +134,91 @@ const EdProductCard = ({ product }) => {
     setDosageModalOpen(true);
   };
 
-  // Handle dosage selection
-  const handleDosageContinue = () => {
-    setDosageModalOpen(false);
-    setCrossSellModalOpen(true);
+  // Handle dosage selection - add product to cart before showing cross-sell popup
+  const handleDosageContinue = async () => {
+    // Set loading state to show spinner in button
+    setIsCheckoutLoading(true);
+
+    // Small delay to ensure UI updates
+    await new Promise((resolve) => setTimeout(resolve, 150));
+
+    try {
+      // Check if this is a variety pack product (has comma-separated variation IDs)
+      const productIds = getProductIDs();
+      const isVarietyPack = productIds.includes(",");
+      let varietyPackId = null;
+
+      if (isVarietyPack) {
+        // Generate a unique variety pack ID for this specific pack
+        varietyPackId = `variety_pack_${Date.now()}_${Math.random()
+          .toString(36)
+          .substr(2, 9)}`;
+        logger.log(`Detected variety pack product with ID: ${varietyPackId}`);
+      }
+
+      // Create main product data
+      const mainProduct = {
+        id: productIds,
+        name: selectedProductData.name,
+        price: selectedProductData.price,
+        image: selectedProductData.image || product.image,
+        isSubscription: selectedProductData.frequency === "monthly-supply",
+        variationId: productIds,
+        isVarietyPack: isVarietyPack,
+        varietyPackId: varietyPackId,
+        // Add variation data for display
+        variation: [
+          {
+            attribute: "Subscription Type",
+            value:
+              product.frequencies[selectedProductData.frequency] ||
+              "Monthly Supply",
+          },
+          {
+            attribute: "Tabs frequency",
+            value: `${selectedProductData.pills} ${
+              selectedProductData.preference === "brand"
+                ? "(Brand)"
+                : "(Generic)"
+            }`,
+          },
+        ],
+      };
+
+      logger.log("🛒 ED Flow - Adding product to cart early:", mainProduct);
+
+      // Add product to cart early (before cross-sell popup)
+      const result = await addToCartEarly(mainProduct, "ed", {
+        requireConsultation: true,
+        varietyPackId: varietyPackId,
+      });
+
+      if (result.success) {
+        logger.log("✅ Product added to cart, opening cross-sell popup");
+        // Store the cart data to pass to the modal
+        if (result.cartData) {
+          setInitialCartData(result.cartData);
+        }
+
+        // Close dosage modal
+        setDosageModalOpen(false);
+
+        // Small delay before opening cross-sell modal
+        await new Promise((resolve) => setTimeout(resolve, 300));
+
+        setCrossSellModalOpen(true);
+      } else {
+        logger.error("❌ Failed to add product to cart:", result.error);
+        alert(
+          result.error || "Failed to add product to cart. Please try again."
+        );
+      }
+    } catch (error) {
+      logger.error("Error adding product to cart:", error);
+      alert("There was an issue adding the product to cart. Please try again.");
+    } finally {
+      setIsCheckoutLoading(false);
+    }
   };
 
   // Prepare selected product data for checkout
@@ -137,30 +231,29 @@ const EdProductCard = ({ product }) => {
     price: currentPrice,
     image: product.image,
     dosage: selectedDose,
-    checkoutUrl: getCheckoutUrl(),
     productIds: getProductIDs(),
   };
 
-  // Handle checkout
-  const handleCheckout = (addons = []) => {
-    console.log("ED checkout with addons:", addons);
+  // Handle checkout - Product already in cart, just redirect
+  const handleCheckout = async () => {
+    try {
+      logger.log(
+        "🎯 ED Flow - Proceeding to checkout (cart already populated)"
+      );
 
-    // Create main product data
-    const mainProduct = {
-      id: selectedProductData.productIds,
-      name: selectedProductData.name,
-      price: selectedProductData.price,
-      isSubscription: selectedProductData.frequency === "monthly-supply",
-    };
+      // Product and any addons are already in cart
+      // Just generate checkout URL and redirect
+      const checkoutUrl = finalizeFlowCheckout("ed", true);
 
-    console.log("ED main product:", mainProduct);
-    console.log("ED addons:", addons);
+      logger.log("Redirecting to:", checkoutUrl);
 
-    // Close the modal
-    setCrossSellModalOpen(false);
-
-    // Use the centralized addToCartAndRedirect function
-    addToCartAndRedirect(mainProduct, addons, "ed");
+      // Close modal and navigate
+      setCrossSellModalOpen(false);
+      router.push(checkoutUrl);
+    } catch (error) {
+      logger.error("Error redirecting to checkout:", error);
+      alert("There was an issue redirecting to checkout. Please try again.");
+    }
   };
 
   return (
@@ -173,7 +266,7 @@ const EdProductCard = ({ product }) => {
           {product.tagline}
         </p>
 
-        <div className="relative overflow-hidden rounded-[16px] w-[248px] h-[140px] md:h-[130px] mx-auto ">
+        <div className="relative overflow-hidden rounded-[16px] w-[248px] h-[112px] md:h-[130px] mx-auto ">
           <CustomContainImage
             src={product.image}
             fill
@@ -262,12 +355,17 @@ const EdProductCard = ({ product }) => {
         <p className="mt-[12px] md:mt-[16px] mb-[8px] text-[14px] leading-[140%] font-[500] text-left">
           How many pills?
         </p>
+        {/* we have add class names to use in convert_test please do not remove it */}
         <div className="flex gap-2">
           {product.pillOptions[activeFrequency].map((option, index) => (
             <button
               key={index}
               onClick={() => handlePillOptionSelect(option)}
-              className={`border-2 border-solid ${
+              className={`${index === 0 ? "ct-opt-1" : ""} ${
+                index === product.pillOptions[activeFrequency].length - 1
+                  ? "ct-opt-last relative"
+                  : ""
+              } relative border-2 border-solid ${
                 selectedPillOption.count === option.count
                   ? "border-[#A55255]"
                   : "border-[#CECECE]"
@@ -311,6 +409,7 @@ const EdProductCard = ({ product }) => {
         selectedDose={selectedDose}
         setSelectedDose={setSelectedDose}
         onContinue={handleDosageContinue}
+        isLoading={isCheckoutLoading}
       />
 
       <CrossSellModal
@@ -318,7 +417,27 @@ const EdProductCard = ({ product }) => {
         onClose={() => setCrossSellModalOpen(false)}
         selectedProduct={selectedProductData}
         onCheckout={handleCheckout}
+        isLoading={isCheckoutLoading}
+        initialCartData={initialCartData}
       />
+
+      {/* Loading overlay during transition between dosage modal and cross-sell */}
+      {isCheckoutLoading && !dosageModalOpen && !crossSellModalOpen && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-8 shadow-2xl flex flex-col items-center space-y-4 max-w-sm mx-4">
+            <div className="relative w-16 h-16">
+              <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
+              <div className="absolute inset-0 border-4 border-t-[#704e37] rounded-full animate-spin"></div>
+            </div>
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Preparing your order...
+              </h3>
+              <p className="text-sm text-gray-600">Just a moment</p>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

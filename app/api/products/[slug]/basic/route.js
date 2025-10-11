@@ -1,4 +1,5 @@
 import { fetchProductBySlug } from "@/lib/woocommerce";
+import { logger } from "@/utils/devLogger";
 
 export async function GET(request, { params }) {
   try {
@@ -29,7 +30,7 @@ export async function GET(request, { params }) {
 
     return Response.json(basicProductInfo);
   } catch (error) {
-    console.error("Error fetching basic product info:", error);
+    logger.error("Error fetching basic product info:", error);
     return Response.json(
       { error: "Failed to fetch basic product info" },
       { status: 500 }

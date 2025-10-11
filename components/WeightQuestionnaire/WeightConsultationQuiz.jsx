@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { logger } from "@/utils/devLogger";
 import { useRouter, useSearchParams } from "next/navigation";
 import { WarningPopup } from "../EdQuestionnaire/WarningPopup";
 import { QuestionLayout } from "../EdQuestionnaire/QuestionLayout";
@@ -12,6 +13,8 @@ import { ProgressBar } from "../EdQuestionnaire/ProgressBar";
 import Logo from "../Navbar/Logo";
 import Link from "next/link";
 import BMICalculatorStep from "../WLPreConsultationQuiz/steps/BMICalculatorStep";
+
+const SINGLE_CHOICE_PAGES = [1, 2, 3, 7, 10, 11, 12, 14];
 
 export default function WeightLossConsultationQuiz({
   pn,
@@ -32,7 +35,7 @@ export default function WeightLossConsultationQuiz({
           }
         }
       } catch (e) {
-        console.error("Error loading form data from localStorage:", e);
+        logger.error("Error loading form data from localStorage:", e);
       }
     }
     const nameParts = userName ? userName.split(" ") : [];
@@ -70,6 +73,10 @@ export default function WeightLossConsultationQuiz({
       "l-604_6-textarea": "",
       617: "",
       "l-617_1-textarea": "",
+      618_1: "",
+      618_2: "",
+      618_3: "",
+      619: "",
       605: "",
       "605-textarea": "",
       606: "",
@@ -132,12 +139,12 @@ export default function WeightLossConsultationQuiz({
       "615_2": "",
       "615_3": "",
       "615_4": "",
-      "615_5": "",      
+      "615_5": "",
       "l-615_2-textarea": "",
       "l-615_3-textarea": "",
       616: "",
-      "616-textarea": "",      
-      620: "",      
+      "616-textarea": "",
+      620: "",
       197: "",
       198: "",
       wp_order_id: "",
@@ -164,6 +171,11 @@ export default function WeightLossConsultationQuiz({
   const [frontPhotoFile, setFrontPhotoFile] = useState(null);
   const [sidePhotoFile, setSidePhotoFile] = useState(null);
   const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({
+    front: 0,
+    side: 0,
+    id: 0,
+  });
   const frontPhotoInputRef = useRef(null);
   const sidePhotoInputRef = useRef(null);
   const [photoIdFile, setPhotoIdFile] = useState(null);
@@ -172,13 +184,21 @@ export default function WeightLossConsultationQuiz({
   const [progress, setProgress] = useState(0);
   const [photoIdAcknowledged, setPhotoIdAcknowledged] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [frontUploadProgress, setFrontUploadProgress] = useState(0);
+  const [sideUploadProgress, setSideUploadProgress] = useState(0);
+  const [idUploadProgress, setIdUploadProgress] = useState(0);
   const [validationAttempted, setValidationAttempted] = useState(false);
   const fileInputRef = useRef(null);
   const [showHighBpWarning, setShowHighBpWarning] = useState(false);
   const [showVeryHighBpWarning, setShowVeryHighBpWarning] = useState(false);
   const [showUnknownBpWarning, setShowUnknownBpWarning] = useState(false);
   const [bpWarningAcknowledged, setBpWarningAcknowledged] = useState(false);
-  const [continueButtonVisible, setContinueButtonVisible] = useState(true);
+  const [buttonState, setButtonState] = useState({
+    visible: false,
+    disabled: false,
+    opacity: 1,
+  });
+  const [question1ButtonVisible, setQuestion1ButtonVisible] = useState(true);
   const [showPopup, setShowPopup] = useState(false);
   const [isHandlingPopState, setIsHandlingPopState] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
@@ -191,9 +211,18 @@ export default function WeightLossConsultationQuiz({
   const [bmiValidationState, setBmiValidationState] = useState({
     bmiContinueEnabled: false,
   });
+  const [
+    showNoAppointmentAcknowledgement,
+    setShowNoAppointmentAcknowledgement,
+  ] = useState(false);
+  const [noAppointmentAcknowledged, setNoAppointmentAcknowledged] =
+    useState(false);
   const [formData, setFormData] = useState(getInitialFormData());
+  const [isClient, setIsClient] = useState(false);
 
-  const singleChoicePages = [1, 2, 3, 7, 10, 11, 12, 14];
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const slideVariants = {
     hiddenRight: { x: "100%", opacity: 0 },
@@ -249,7 +278,7 @@ export default function WeightLossConsultationQuiz({
 
         setPendingSubmissions((prev) => prev.slice(1));
       } catch (error) {
-        console.error("Background sync error:", error);
+        logger.error("Background sync error:", error);
         setPendingSubmissions((prev) => prev.slice(1));
       } finally {
         setIsSyncing(false);
@@ -296,7 +325,7 @@ export default function WeightLossConsultationQuiz({
         );
       }
     } catch (error) {
-      console.error("Error checking stored BMI data:", error);
+      logger.error("Error checking stored BMI data:", error);
     }
 
     return hasFormDataBMI || hasStoredBMI;
@@ -316,7 +345,7 @@ export default function WeightLossConsultationQuiz({
       const existingData = JSON.parse(
         localStorage.getItem("wl_pre_quiz_data") || "{}"
       );
-      
+
       const quizData = {
         ...existingData,
         weightPounds: bmiData.weight,
@@ -326,34 +355,28 @@ export default function WeightLossConsultationQuiz({
       };
       localStorage.setItem("wl_pre_quiz_data", JSON.stringify(quizData));
     } catch (error) {
-      console.error("Error storing BMI data:", error);
+      logger.error("Error storing BMI data:", error);
     }
 
     setShowBMICalculator(false);
     setCurrentPage(1);
   };
 
-  useEffect(() => {
-    const storedData = readLocalStorage();
-    if (!storedData) return;
-
-    try {
-      const quizFormData = JSON.parse(storedData);
-      setFormData(quizFormData);
-
-      if (!quizFormData.page_step) return;
-      const storedPage = parseInt(quizFormData.page_step);
-      setCurrentPage(storedPage);
-
-      const calculatedProgress = Math.max(
-        0,
-        Math.ceil(((storedPage - 1) / 22) * 100)
-      );
-      setProgress(calculatedProgress);
-    } catch (error) {
-      console.error("Error parsing stored quiz data:", error);
+  const updateContinueButtonState = (show = true) => {
+    const continueButton = formRef.current?.querySelector(
+      ".quiz-continue-button"
+    );
+    if (continueButton) {
+      if (show) {
+        continueButton.style.display = "block";
+        continueButton.style.visibility = "visible";
+        continueButton.disabled = false;
+      } else {
+        continueButton.style.visibility = "hidden";
+        continueButton.disabled = true;
+      }
     }
-  }, []);
+  };
 
   useEffect(() => {
     const initializeForm = async () => {
@@ -365,8 +388,9 @@ export default function WeightLossConsultationQuiz({
           try {
             storedQuizData = JSON.parse(storedData);
           } catch (error) {
-            console.error("Error parsing stored quiz data:", error);
+            logger.error("Error parsing stored quiz data:", error);
           }
+        } else {
         }
 
         const response = await fetch("/api/wl");
@@ -381,6 +405,18 @@ export default function WeightLossConsultationQuiz({
 
           setFormData(updatedFormData);
 
+          if (updatedFormData._ui) {
+            setButtonState((state) => ({
+              ...state,
+              visible: true,
+              disabled: false,
+              opacity: 1,
+            }));
+            if (updatedFormData._ui.currentPage) {
+              setCurrentPage(updatedFormData._ui.currentPage);
+            }
+          }
+
           if (updatedFormData.page_step) {
             const storedPage = parseInt(updatedFormData.page_step);
 
@@ -389,9 +425,65 @@ export default function WeightLossConsultationQuiz({
               return;
             }
 
-            setCurrentPage(storedPage);
-            const calculatedProgress = Math.ceil(((storedPage - 1) / 22) * 100);
-            setProgress(Math.max(0, calculatedProgress));
+            if (updatedFormData.completion_state === "Full") {
+              const hasFrontPhoto =
+                updatedFormData["197"] && updatedFormData["197"].trim() !== "";
+              const hasSidePhoto =
+                updatedFormData["198"] && updatedFormData["198"].trim() !== "";
+              const hasPhotoId =
+                updatedFormData["196"] && updatedFormData["196"].trim() !== "";
+
+              if (hasFrontPhoto && hasSidePhoto && hasPhotoId) {
+                setCurrentPage(23);
+                setProgress(100);
+                setFormData((prev) => ({
+                  ...prev,
+                  page_step: 23,
+                }));
+              } else {
+                setCurrentPage(21);
+                const newProgress = Math.ceil((21 / 22) * 100);
+                setProgress(newProgress);
+                setFormData((prev) => ({
+                  ...prev,
+                  page_step: 21,
+                }));
+              }
+            } else {
+              setCurrentPage(storedPage);
+              const calculatedProgress = Math.max(
+                0,
+                Math.ceil((storedPage / 22) * 100)
+              );
+              setProgress(calculatedProgress);
+            }
+
+            const singleChoicePages = [1, 2, 3, 7, 10, 11, 12, 14];
+            if (singleChoicePages.includes(storedPage)) {
+              const hasAnswer = (() => {
+                switch (storedPage) {
+                  case 1:
+                    return !!updatedFormData["601"];
+                  case 2:
+                    return !!updatedFormData["602"];
+                  case 3:
+                    return !!updatedFormData["603"];
+                  case 7:
+                    return !!updatedFormData["606"];
+                  case 10:
+                    return !!updatedFormData["609"];
+                  case 11:
+                    return !!updatedFormData["610"];
+                  case 12:
+                    return !!updatedFormData["611"];
+                  case 14:
+                    return !!updatedFormData["620"];
+                  default:
+                    return false;
+                }
+              })();
+              setTimeout(() => updateContinueButtonState(hasAnswer), 100);
+            }
           }
         } else {
           if (serverEntrykey) {
@@ -407,7 +499,7 @@ export default function WeightLossConsultationQuiz({
           }
         }
       } catch (error) {
-        console.error("Error initializing form:", error);
+        logger.error("Error initializing form:", error);
 
         if (!checkBMIDataExists()) {
           setShowBMICalculator(true);
@@ -424,12 +516,40 @@ export default function WeightLossConsultationQuiz({
           if (!quizFormData.page_step) return;
 
           const storedPage = parseInt(quizFormData.page_step);
-          setCurrentPage(storedPage);
+          if (quizFormData.completion_state === "Full") {
+            const hasFrontPhoto =
+              quizFormData["197"] && quizFormData["197"].trim() !== "";
+            const hasSidePhoto =
+              quizFormData["198"] && quizFormData["198"].trim() !== "";
+            const hasPhotoId =
+              quizFormData["196"] && quizFormData["196"].trim() !== "";
 
-          const calculatedProgress = Math.ceil(((storedPage - 1) / 22) * 100);
-          setProgress(Math.max(0, calculatedProgress));
+            if (hasFrontPhoto && hasSidePhoto && hasPhotoId) {
+              setCurrentPage(23);
+              setProgress(100);
+              setFormData((prev) => ({
+                ...prev,
+                page_step: 23,
+              }));
+            } else {
+              setCurrentPage(21);
+              const newProgress = Math.ceil((21 / 22) * 100);
+              setProgress(newProgress);
+              setFormData((prev) => ({
+                ...prev,
+                page_step: 21,
+              }));
+            }
+          } else {
+            setCurrentPage(storedPage);
+            const calculatedProgress = Math.max(
+              0,
+              Math.ceil((storedPage / 22) * 100)
+            );
+            setProgress(calculatedProgress);
+          }
         } catch (error) {
-          console.error("Error parsing stored quiz data:", error);
+          logger.error("Error parsing stored quiz data:", error);
         }
       }
     };
@@ -506,7 +626,7 @@ export default function WeightLossConsultationQuiz({
         }
       }
     } catch (error) {
-      console.error("Error loading weight data:", error);
+      logger.error("Error loading weight data:", error);
     }
   }, []);
 
@@ -517,7 +637,7 @@ export default function WeightLossConsultationQuiz({
       return e.returnValue;
     };
 
-    if (currentPage >= 1 && currentPage <= 21) {
+    if (currentPage >= 1 && currentPage <= 22) {
       window.addEventListener("beforeunload", handleBeforeUnload);
     }
 
@@ -589,7 +709,7 @@ export default function WeightLossConsultationQuiz({
         }
       }
     } catch (error) {
-      console.error("Error loading weight data:", error);
+      logger.error("Error loading weight data:", error);
     }
   }, []);
 
@@ -599,16 +719,16 @@ export default function WeightLossConsultationQuiz({
       if (!storedData) {
         const initialData = getInitialFormData();
         updateLocalStorage(initialData);
-        console.log("Weight quiz: Initial form data saved to localStorage");
+        logger.log("Weight quiz: Initial form data saved to localStorage");
       }
     }
   }, []);
-  
+
   const sanitizeProductName = (productName) => {
-    if (!productName) return '';
-    
+    if (!productName) return "";
+
     return productName
-      .replace(/[^\w\s-]/g, '')
+      .replace(/[^\w\s-]/g, "")
       .toLowerCase()
       .trim();
   };
@@ -616,35 +736,38 @@ export default function WeightLossConsultationQuiz({
   useEffect(() => {
     if (!searchParams) return;
 
-    const orderId = searchParams.get('order-id');
-    const purchasedProduct = searchParams.get('purchased_product');
+    const orderId = searchParams.get("order-id");
+    const purchasedProduct = searchParams.get("purchased_product");
 
     if (orderId || purchasedProduct) {
-      console.log('Extracted URL parameters:', { orderId, purchasedProduct });
-      
+      logger.log("Extracted URL parameters:", { orderId, purchasedProduct });
+
       const urlParamUpdates = {};
-      
+
       if (orderId) {
         urlParamUpdates.wp_order_id = orderId;
       }
-      
+
       if (purchasedProduct) {
         const decodedProduct = decodeURIComponent(purchasedProduct);
         urlParamUpdates.product_name = sanitizeProductName(decodedProduct);
-        console.log('Sanitized product name:', { original: decodedProduct, sanitized: urlParamUpdates.product_name });
+        logger.log("Sanitized product name:", {
+          original: decodedProduct,
+          sanitized: urlParamUpdates.product_name,
+        });
       }
 
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        ...urlParamUpdates
+        ...urlParamUpdates,
       }));
 
       updateLocalStorage({
         ...formData,
-        ...urlParamUpdates
+        ...urlParamUpdates,
       });
 
-      console.log('Updated form data with URL parameters:', urlParamUpdates);
+      logger.log("Updated form data with URL parameters:", urlParamUpdates);
     }
   }, [searchParams]);
 
@@ -683,8 +806,8 @@ export default function WeightLossConsultationQuiz({
         case 11:
           return !!formData["610"];
         case 12:
-          return !!formData["611"];        
-          case 14:
+          return !!formData["611"];
+        case 14:
           return !!formData["620"];
         default:
           return false;
@@ -695,7 +818,11 @@ export default function WeightLossConsultationQuiz({
 
     if (isRadioPage) {
       const hasAnswer = isRadioAnswered();
-      continueButton.style.visibility = hasAnswer ? "visible" : "hidden";
+      if (currentPage === 1) {
+        setQuestion1ButtonVisible(hasAnswer);
+      } else {
+        continueButton.style.visibility = hasAnswer ? "visible" : "hidden";
+      }
     } else {
       const showButton = () => {
         switch (currentPage) {
@@ -718,19 +845,16 @@ export default function WeightLossConsultationQuiz({
       };
 
       continueButton.style.visibility = showButton() ? "visible" : "hidden";
-    }    
+    }
 
-    if (currentPage === 18) {
+    if (currentPage === 20) {
       continueButton.disabled = !photoIdAcknowledged;
       continueButton.style.opacity = photoIdAcknowledged ? "1" : "0.5";
-    } else if (currentPage === 19) {
-      continueButton.disabled = !photoIdAcknowledged;
-      continueButton.style.opacity = photoIdAcknowledged ? "1" : "0.5";
-    } else if (currentPage === 20) {
+    } else if (currentPage === 21) {
       const isReady = (photoIdFile && !isUploading) || !!formData["196"];
       continueButton.disabled = !isReady;
-      continueButton.style.opacity = isReady ? "1" : "0.5";    
-    } else if (currentPage === 21) {
+      continueButton.style.opacity = isReady ? "1" : "0.5";
+    } else if (currentPage === 22) {
       if (frontPhotoFile && sidePhotoFile) {
         const uploadButton = document.querySelector(".upload-button");
         if (uploadButton) {
@@ -773,7 +897,7 @@ export default function WeightLossConsultationQuiz({
       updateLocalStorage(updatedFormData);
       return updatedFormData;
     });
-    const newProgress = Math.ceil(((nextPage - 1) / 22) * 100);
+    const newProgress = Math.ceil((nextPage / 22) * 100);
     setProgress(Math.max(0, newProgress));
 
     setCurrentPage(nextPage);
@@ -795,7 +919,7 @@ export default function WeightLossConsultationQuiz({
   };
 
   useEffect(() => {
-    if (currentPage === 19) {
+    if (currentPage === 20) {
       const continueButton = document.querySelector(".quiz-continue-button");
       if (continueButton) {
         continueButton.style.visibility = "hidden";
@@ -817,20 +941,25 @@ export default function WeightLossConsultationQuiz({
     clearError();
 
     const fileType = file.type;
-    if (fileType !== "image/jpeg" && fileType !== "image/png") {
+    const fileName = file.name.toLowerCase();
+    const fileExtension = fileName.split(".").pop();
+
+    const supportedTypes = ["image/jpeg", "image/jpg", "image/png"];
+
+    if (!supportedTypes.includes(fileType)) {
       const errorBox = formRef.current?.querySelector(".error-box");
       if (errorBox) {
         errorBox.classList.remove("hidden");
-        errorBox.textContent = "Only JPEG and PNG images are supported";
+        errorBox.textContent = "Only JPG, JPEG, and PNG images are supported";
       }
       e.target.value = "";
       return;
     }
-    if (file.size > 10 * 1024 * 1024) {
+    if (file.size > 20 * 1024 * 1024) {
       const errorBox = formRef.current?.querySelector(".error-box");
       if (errorBox) {
         errorBox.classList.remove("hidden");
-        errorBox.textContent = "Maximum file size is 10MB";
+        errorBox.textContent = "Maximum file size is 20MB";
       }
       e.target.value = "";
       document.getElementById("frontPhotoPreview").src =
@@ -842,47 +971,47 @@ export default function WeightLossConsultationQuiz({
 
     setFrontPhotoFile(file);
 
+    const updateUI = (previewSrc) => {
+      document.querySelector("label[for=front_photo_upload]").innerHTML = `
+        <div class="flex w-full flex-col">
+          <div class="flex items-center mb-2">
+            <img
+              class="w-16 h-16 object-contain mr-4 flex-shrink-0"
+              src="${previewSrc}"
+              id="frontPhotoPreview"
+              alt="Upload icon"
+            />
+            <div class="flex-1 min-w-0">
+              <div class="break-words text-[#C19A6B]">
+                ${file.name}
+                <span class="text-xs block font-light text-gray-400 mt-1">Tap again to change</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    };
+
     const reader = new FileReader();
     reader.onload = function (e) {
+      const previewSrc = e.target?.result;
+      updateUI(previewSrc);
       const preview = document.getElementById("frontPhotoPreview");
       if (preview) {
-        preview.src = e.target?.result;
+        preview.src = previewSrc;
       }
     };
     reader.readAsDataURL(file);
-
-    document.querySelector("label[for=front_photo_upload]").innerHTML = `
-    <div class="flex w-full flex-col">
-      <div class="flex items-center mb-2">
-        <img
-          class="w-16 h-16 object-contain mr-4 flex-shrink-0"
-          src="${
-            e.target?.result ||
-            "https://myrocky.ca/wp-content/themes/salient-child/img/photo_upload_icon.png"
-          }"
-          id="frontPhotoPreview"
-          alt="Upload icon"
-        />
-        <div class="flex-1 min-w-0">
-          <div class="break-words text-[#C19A6B]">
-            ${file.name}
-            <span class="text-xs block font-light text-gray-400 mt-1">Tap again to change</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
 
     if (file && sidePhotoFile) {
       const uploadButton = document.querySelector(".upload-button");
       if (uploadButton) {
         uploadButton.classList.remove("hidden");
       }
-
-      const continueButton = document.querySelector(".quiz-continue-button");
-      if (continueButton) {
-        continueButton.style.visibility = "hidden";
-      }
+      setButtonState((state) => ({
+        ...state,
+        visible: true,
+      }));
     }
   };
 
@@ -907,20 +1036,25 @@ export default function WeightLossConsultationQuiz({
     clearError();
 
     const fileType = file.type;
-    if (fileType !== "image/jpeg" && fileType !== "image/png") {
+    const fileName = file.name.toLowerCase();
+    const fileExtension = fileName.split(".").pop();
+
+    const supportedTypes = ["image/jpeg", "image/jpg", "image/png"];
+
+    if (!supportedTypes.includes(fileType)) {
       const errorBox = formRef.current?.querySelector(".error-box");
       if (errorBox) {
         errorBox.classList.remove("hidden");
-        errorBox.textContent = "Only JPEG and PNG images are supported";
+        errorBox.textContent = "Only JPG, JPEG, and PNG images are supported";
       }
       e.target.value = "";
       return;
     }
-    if (file.size > 10 * 1024 * 1024) {
+    if (file.size > 20 * 1024 * 1024) {
       const errorBox = formRef.current?.querySelector(".error-box");
       if (errorBox) {
         errorBox.classList.remove("hidden");
-        errorBox.textContent = "Maximum file size is 10MB";
+        errorBox.textContent = "Maximum file size is 20MB";
       }
       e.target.value = "";
       document.getElementById("sidePhotoPreview").src =
@@ -932,36 +1066,37 @@ export default function WeightLossConsultationQuiz({
 
     setSidePhotoFile(file);
 
+    const updateUI = (previewSrc) => {
+      document.querySelector("label[for=side_photo_upload]").innerHTML = `
+        <div class="flex w-full flex-col">
+          <div class="flex items-center mb-2">
+            <img
+              class="w-16 h-16 object-contain mr-4 flex-shrink-0"
+              src="${previewSrc}"
+              id="sidePhotoPreview"
+              alt="Upload icon"
+            />
+            <div class="flex-1 min-w-0">
+              <div class="break-words text-[#C19A6B]">
+                ${file.name}
+                <span class="text-xs block font-light text-gray-400 mt-1">Tap again to change</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    };
+
     const reader = new FileReader();
     reader.onload = function (e) {
+      const previewSrc = e.target?.result;
+      updateUI(previewSrc);
       const preview = document.getElementById("sidePhotoPreview");
       if (preview) {
-        preview.src = e.target?.result;
+        preview.src = previewSrc;
       }
     };
     reader.readAsDataURL(file);
-
-    document.querySelector("label[for=side_photo_upload]").innerHTML = `
-    <div class="flex w-full flex-col">
-      <div class="flex items-center mb-2">
-        <img
-          class="w-16 h-16 object-contain mr-4 flex-shrink-0"
-          src="${
-            e.target?.result ||
-            "https://myrocky.ca/wp-content/themes/salient-child/img/photo_upload_icon.png"
-          }"
-          id="sidePhotoPreview"
-          alt="Upload icon"
-        />
-        <div class="flex-1 min-w-0">
-          <div class="break-words text-[#C19A6B]">
-            ${file.name}
-            <span class="text-xs block font-light text-gray-400 mt-1">Tap again to change</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
 
     if (file && frontPhotoFile) {
       const uploadButton = document.querySelector(".upload-button");
@@ -969,22 +1104,32 @@ export default function WeightLossConsultationQuiz({
         uploadButton.classList.remove("hidden");
       }
 
-      const continueButton = document.querySelector(".quiz-continue-button");
-      if (continueButton) {
-        continueButton.style.visibility = "hidden";
-      }
+      setButtonState((state) => ({
+        ...state,
+        visible: true,
+      }));
     }
   };
 
   const toggleUploadButton = () => {
+    const uploadButton = document.querySelector(".upload-button");
+
     if (frontPhotoFile && sidePhotoFile) {
-      document.querySelector(".upload-button").classList.remove("hidden");
-      if (document.querySelector(".quiz-continue-button")) {
-        document.querySelector(".quiz-continue-button").style.visibility =
-          "hidden";
+      if (uploadButton) {
+        uploadButton.classList.remove("hidden");
       }
+      setButtonState((state) => ({
+        ...state,
+        visible: true,
+      }));
     } else {
-      document.querySelector(".upload-button").classList.add("hidden");
+      if (uploadButton) {
+        uploadButton.classList.add("hidden");
+      }
+      setButtonState((state) => ({
+        ...state,
+        visible: true,
+      }));
     }
   };
 
@@ -994,6 +1139,7 @@ export default function WeightLossConsultationQuiz({
     }
 
     setIsUploadingPhotos(true);
+    setUploadProgress({ front: 0, side: 0, id: 0 });
 
     try {
       showLoader();
@@ -1007,7 +1153,7 @@ export default function WeightLossConsultationQuiz({
         "questionnaire/weight-loss-body-photos",
         "wl",
         (progress) => {
-          console.log(`Front photo upload progress: ${progress}%`);
+          setUploadProgress((prev) => ({ ...prev, front: progress }));
         }
       );
 
@@ -1016,11 +1162,11 @@ export default function WeightLossConsultationQuiz({
         "questionnaire/weight-loss-body-photos",
         "wl",
         (progress) => {
-          console.log(`Side photo upload progress: ${progress}%`);
+          setUploadProgress((prev) => ({ ...prev, side: progress }));
         }
       );
 
-      const submissionData = {
+      const updatedData = {
         ...formData,
         197: frontS3Url,
         198: sideS3Url,
@@ -1029,49 +1175,26 @@ export default function WeightLossConsultationQuiz({
         stage: "body-photos-upload",
       };
 
-      const { front_photo_upload, side_photo_upload, ...cleanSubmissionData } =
-        submissionData;
-
-      const response = await fetch("/api/wl", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(cleanSubmissionData),
-      });
-
-      const data = await response.json();
-
-      if (data.error) {
-        throw new Error(data.msg || "Failed to submit questionnaire data");
-      }
-
-      const finalData = {
-        ...formData,
-        197: frontS3Url,
-        198: sideS3Url,
-        completion_percentage: 100,
-        completion_state: "Full",
-        stage: "body-photos-upload",
-        id: data.id || formData.id,
-        token: data.token || formData.token,
-      };
-
-      setFormData(finalData);
-      updateLocalStorage(finalData);
+      setFormData(updatedData);
+      updateLocalStorage(updatedData);
+      queueFormSubmission(updatedData);
 
       document.querySelector(
         "label[for=front_photo_upload]"
       ).style.borderColor = "green";
       document.querySelector("label[for=side_photo_upload]").style.borderColor =
-        "green";      
-        document.querySelector(".upload-button").classList.add("hidden");
+        "green";
+      document.querySelector(".upload-button").classList.add("hidden");
 
-      setCurrentPage(22);
+      setCurrentPage(23);
       setProgress(100);
+      setFormData((prev) => ({
+        ...prev,
+        page_step: 23,
+      }));
       setUploadSuccess(true);
     } catch (error) {
-      console.error("Error uploading photos:", error);
+      logger.error("Error uploading photos:", error);
 
       const errorBox = formRef.current?.querySelector(".error-box");
       if (errorBox) {
@@ -1082,10 +1205,10 @@ export default function WeightLossConsultationQuiz({
             "One or more files exceed the maximum size of 5MB. Please select smaller images.";
         } else if (
           error.message &&
-          error.message.includes("Only JPEG and PNG")
+          error.message.includes("Only JPG, JPEG, PNG, HEIF, and HEIC")
         ) {
           errorBox.textContent =
-            "Only JPEG and PNG images are supported. Please select different images.";
+            "Only JPG, JPEG, PNG, HEIF, and HEIC images are supported. Please select different images.";
         } else if (error.message && error.message.includes("presigned")) {
           errorBox.textContent =
             "Failed to get upload permission. Please try again or contact support.";
@@ -1101,9 +1224,65 @@ export default function WeightLossConsultationQuiz({
         "red";
     } finally {
       setIsUploadingPhotos(false);
+      setUploadProgress({ front: 0, side: 0, id: 0 });
       hideLoader();
     }
   };
+
+  useEffect(() => {
+    if (currentPage === 13) {
+      const hasSelection = Object.keys(formData).some(
+        (key) => key.startsWith("612_") && formData[key]
+      );
+      setButtonState((state) => ({
+        ...state,
+        visible: hasSelection,
+        disabled: false,
+        opacity: 1,
+      }));
+    } else {
+      const shouldShowButton = determineButtonVisibility(formData, currentPage);
+      setButtonState((state) => ({
+        ...state,
+        visible: shouldShowButton,
+        disabled: false,
+        opacity: 1,
+      }));
+    }
+  }, [formData, currentPage]);
+
+  const determineButtonVisibility = (data, page) => {
+    if (!data) return false;
+
+    switch (page) {
+      case 6:
+        return Object.keys(data).some(
+          (key) => key.startsWith("605_") && data[key]
+        );
+      case 7:
+        return !!data[606];
+      case 13:
+        return Object.keys(data).some(
+          (key) => key.startsWith("613_") && data[key]
+        );
+      case 8:
+        return Object.keys(data).some(
+          (key) => (key.startsWith("608_") && data[key]) || key === "608_11"
+        );
+      default:
+        return true;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      const continueButton = document.querySelector(".quiz-continue-button");
+      if (continueButton) {
+        continueButton.style.visibility = "";
+        continueButton.style.display = "";
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (formData.wl_weight && formData.wl_height && formData.wl_BMI) {
@@ -1138,6 +1317,7 @@ export default function WeightLossConsultationQuiz({
       moveToNextSlideWithoutValidation();
     }, 100);
   };
+
   const handlePhotoIdUpload = async () => {
     if (!photoIdFile) {
       throw new Error("No photo file selected");
@@ -1145,6 +1325,7 @@ export default function WeightLossConsultationQuiz({
 
     try {
       setIsUploading(true);
+      setUploadProgress((prev) => ({ ...prev, id: 0 }));
       showLoader();
 
       const { uploadFileToS3WithProgress } = await import(
@@ -1156,44 +1337,22 @@ export default function WeightLossConsultationQuiz({
         "questionnaire/wl-photo-ids",
         "wl",
         (progress) => {
-          console.log(`Upload progress: ${progress}%`);
+          setUploadProgress((prev) => ({ ...prev, id: progress }));
         }
       );
 
-      const submissionData = {
+      const updatedData = {
         ...formData,
         196: s3Url,
         completion_state: "Partial",
         stage: "photo-id-upload",
       };
 
-      const { photo_id_upload, ...cleanSubmissionData } = submissionData;
+      setFormData(updatedData);
+      updateLocalStorage(updatedData);
 
-      const response = await fetch("/api/wl", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(cleanSubmissionData),
-      });
-
-      const data = await response.json();
-
-      if (data.error) {
-        throw new Error(data.msg || "Failed to submit questionnaire data");
-      }
-
-      const updatedData = {
-        ...formData,
-        196: s3Url,
-        id: data.id || formData.id,
-        token: data.token || formData.token,
-        entrykey: data.entrykey || formData.entrykey,
-      };     
-
-      setFormData(updatedData);      
       setCurrentPage(21);
-      const newProgress = Math.ceil(((21 - 1) / 22) * 100);
+      const newProgress = Math.ceil((21 / 22) * 100);
       setProgress(Math.max(0, newProgress));
 
       setIsUploading(false);
@@ -1202,9 +1361,9 @@ export default function WeightLossConsultationQuiz({
         hideLoader();
       }, 100);
 
-      return true;
+      return s3Url;
     } catch (error) {
-      console.error("Error uploading photo:", error);
+      logger.error("Error uploading photo:", error);
       setIsUploading(false);
       hideLoader();
       throw error;
@@ -1237,16 +1396,144 @@ export default function WeightLossConsultationQuiz({
         ...updates,
       }));
       updateFormDataAndStorage(updates);
-
-      const continueButton = formRef.current?.querySelector(
-        ".quiz-continue-button"
-      );
-      if (continueButton) {
-        continueButton.style.display = "block";
-        continueButton.style.visibility =
-          existingTextarea.trim() !== "" ? "" : "hidden";
-      }
+      updateContinueButtonState(existingTextarea.trim() !== "");
     }
+  };
+
+  const handleBookAppointmentSelect = (option) => {
+    clearError();
+
+    if (option === "Clinician") {
+      option = "Doctor";
+    }
+
+    let updates = {
+      619: option,
+    };
+    if (option === "Pharmacist" || option === "Doctor") {
+      updates["618_1"] = "";
+      updates["618_2"] = "";
+      updates["618_3"] = "";
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      ...updates,
+    }));
+
+    updateFormDataAndStorage(updates);
+    queueFormSubmission({ ...formData, ...updates });
+
+    if (option === "Doctor" || option === "Pharmacist") {
+      setTimeout(() => {
+        moveToNextSlideWithoutValidation();
+      }, 10);
+    } else if (option === "No") {
+      setShowNoAppointmentAcknowledgement(true);
+      setNoAppointmentAcknowledged(false);
+    }
+  };
+
+  const handleNoAppointmentAcknowledgement = (e) => {
+    const isChecked = e.target.checked;
+    setNoAppointmentAcknowledged(isChecked);
+
+    const updates = {
+      "618_1": isChecked ? "1" : "",
+      "618_2": isChecked
+        ? "I hereby understand and consent to the above waiver"
+        : "",
+      "618_3": isChecked ? "33" : "",
+    };
+
+    const updatedData = {
+      ...formData,
+      ...updates,
+    };
+
+    setFormData((prev) => ({ ...prev, ...updates }));
+    updateFormDataAndStorage(updatedData);
+
+    queueFormSubmission(updates);
+  };
+
+  const handleRequestAppointmentInstead = () => {
+    setShowNoAppointmentAcknowledgement(false);
+
+    const updates = {
+      619: "Clinician",
+      "618_1": "",
+      "618_2": "",
+      "618_3": "",
+    };
+
+    setFormData((prev) => ({
+      ...prev,
+      ...updates,
+    }));
+
+    updateFormDataAndStorage({
+      ...formData,
+      ...updates,
+    });
+
+    queueFormSubmission(updates);
+
+    setTimeout(() => {
+      moveToNextSlideWithoutValidation();
+    }, 10);
+  };
+
+  const handleNoAppointmentContinue = (proceed = true) => {
+    if (!proceed) {
+      setShowNoAppointmentAcknowledgement(false);
+      setNoAppointmentAcknowledged(false);
+
+      const updates = {
+        619: "",
+        "618_1": "",
+        "618_2": "",
+        "618_3": "",
+      };
+
+      setFormData((prev) => ({
+        ...prev,
+        ...updates,
+      }));
+
+      updateFormDataAndStorage({
+        ...formData,
+        ...updates,
+      });
+
+      queueFormSubmission(updates);
+      return;
+    }
+
+    if (!noAppointmentAcknowledged) return;
+    setShowNoAppointmentAcknowledgement(false);
+
+    const updates = {
+      "l-617_1": "1",
+      "l-617_2": "I hereby understand and consent to the above waiver",
+      "l-617_3": "33",
+    };
+
+    setFormData((prev) => ({
+      ...prev,
+      ...updates,
+    }));
+
+    updateFormDataAndStorage({
+      ...formData,
+      ...updates,
+    });
+
+    queueFormSubmission(updates);
+
+    setTimeout(() => {
+      moveToNextSlideWithoutValidation();
+    }, 10);
   };
 
   const updateLocalStorage = (dataToStore = formData) => {
@@ -1260,13 +1547,17 @@ export default function WeightLossConsultationQuiz({
           id: dataToStore.id || formData.id || "",
           token: dataToStore.token || formData.token || "",
           entrykey: dataToStore.entrykey || formData.entrykey || "",
+          _ui: {
+            buttonState,
+            currentPage: currentPage,
+          },
         };
 
         localStorage.setItem("wl-quiz-form", JSON.stringify(dataToSave));
         localStorage.setItem("wl-quiz-form-expiry", ttl.toString());
         return true;
       } catch (error) {
-        console.error("Error storing data in local storage:", error);
+        logger.error("Error storing data in local storage:", error);
         return false;
       }
     }
@@ -1296,8 +1587,12 @@ export default function WeightLossConsultationQuiz({
           ...specificData,
           ...textareaFields,
         };
+        delete dataToSubmit._ui;
+        delete dataToSubmit[".ui"];
       } else {
         dataToSubmit = collectCumulativeData();
+        delete dataToSubmit._ui;
+        delete dataToSubmit[".ui"];
       }
       const logTextareaFields = (data) => {
         const textareaFields = Object.entries(data)
@@ -1308,7 +1603,7 @@ export default function WeightLossConsultationQuiz({
           }, {});
 
         if (Object.keys(textareaFields).length > 0) {
-          console.log("Submitting textarea fields:", textareaFields);
+          logger.log("Submitting textarea fields:", textareaFields);
         }
       };
       const completeData = {
@@ -1355,7 +1650,7 @@ export default function WeightLossConsultationQuiz({
 
       return data;
     } catch (error) {
-      console.error("Error submitting form:", error);
+      logger.error("Error submitting form:", error);
       return null;
     }
   };
@@ -1367,20 +1662,25 @@ export default function WeightLossConsultationQuiz({
     clearError();
 
     const fileType = file.type;
-    if (fileType !== "image/jpeg" && fileType !== "image/png") {
+    const fileName = file.name.toLowerCase();
+    const fileExtension = fileName.split(".").pop();
+
+    const supportedTypes = ["image/jpeg", "image/jpg", "image/png"];
+
+    if (!supportedTypes.includes(fileType)) {
       const errorBox = formRef.current?.querySelector(".error-box");
       if (errorBox) {
         errorBox.classList.remove("hidden");
-        errorBox.textContent = "Only JPEG and PNG images are supported";
+        errorBox.textContent = "Only JPG, JPEG, and PNG images are supported";
       }
       e.target.value = "";
       return;
     }
-    if (file.size > 10 * 1024 * 1024) {
+    if (file.size > 20 * 1024 * 1024) {
       const errorBox = formRef.current?.querySelector(".error-box");
       if (errorBox) {
         errorBox.classList.remove("hidden");
-        errorBox.textContent = "Maximum file size is 10MB";
+        errorBox.textContent = "Maximum file size is 20MB";
       }
       e.target.value = "";
       const preview = document.getElementById("photo-id-preview");
@@ -1437,17 +1737,12 @@ export default function WeightLossConsultationQuiz({
     const updatedData = updateFormDataAndStorage(updates);
 
     queueFormSubmission(updatedData);
-    const continueButton = formRef.current?.querySelector(
-      ".quiz-continue-button"
-    );
-    if (continueButton) {
-      continueButton.style.visibility = "visible";
-    }
+    updateContinueButtonState(true);
 
     if (option === "Yes") {
       setTimeout(() => {
         setIsMovingForward(true);
-        setCurrentPage(4);        
+        setCurrentPage(4);
         setFormData((prev) => {
           const updatedFormData = {
             ...prev,
@@ -1458,7 +1753,7 @@ export default function WeightLossConsultationQuiz({
           return updatedFormData;
         });
 
-        const newProgress = Math.ceil(((4 - 1) / 22) * 100);
+        const newProgress = Math.ceil((4 / 22) * 100);
         setProgress(Math.max(0, newProgress));
       }, 10);
     } else {
@@ -1479,12 +1774,7 @@ export default function WeightLossConsultationQuiz({
     });
 
     queueFormSubmission(updatedData);
-    const continueButton = formRef.current?.querySelector(
-      ".quiz-continue-button"
-    );
-    if (continueButton) {
-      continueButton.style.visibility = "visible";
-    }
+    updateContinueButtonState(true);
 
     setTimeout(() => {
       moveToNextSlideWithoutValidation();
@@ -1539,12 +1829,12 @@ export default function WeightLossConsultationQuiz({
     };
     setFormData(updatedFormData);
     updateLocalStorage(updatedFormData);
-    const continueButton = formRef.current?.querySelector(
-      ".quiz-continue-button"
-    );
-    if (continueButton) {
-      continueButton.style.visibility = "visible";
-    }
+    setButtonState((state) => ({
+      ...state,
+      visible: true,
+      disabled: false,
+      opacity: 1,
+    }));
 
     if (option === "141/91 to 179/99 (High)") {
       setShowHighBpWarning(true);
@@ -1586,33 +1876,39 @@ export default function WeightLossConsultationQuiz({
   const handleWeightLossGoalsSelect = (optionId) => {
     clearError();
 
-    const newFormData = { ...formData };
-    const optionValueMap = {
+    const weightLossGoalsMap = {
       "612_1": "Have more energy",
       "612_2": "Feel healthier",
       "612_3": "See changes in my body",
       "612_4": "Other",
     };
 
-    const actualValue = optionValueMap[optionId] || "";
+    const actualValue = weightLossGoalsMap[optionId] || "";
 
-    if (newFormData[optionId]) {
-      newFormData[optionId] = "";
-      if (optionId === "612_4") {
-        newFormData["l-612_4-textarea"] = "";
-      }
-    } else {
-      newFormData[optionId] = actualValue;
+    const isSelected = !!formData[optionId];
+    const updates = { [optionId]: isSelected ? "" : actualValue };
+
+    if (isSelected) {
+      updates[`l-${optionId}-textarea`] = "";
     }
+
+    const newFormData = { ...formData, ...updates };
+
+    const hasAnySelection = Object.keys(newFormData).some(
+      (key) => key.startsWith("612_") && newFormData[key]
+    );
 
     setFormData(newFormData);
     updateLocalStorage(newFormData);
+    queueFormSubmission(newFormData);
 
-    const continueButton = formRef.current?.querySelector(
-      ".quiz-continue-button"
-    );
-    if (continueButton) {
-      continueButton.style.visibility = "";
+    if (hasAnySelection || Object.keys(updates).length > 0) {
+      setButtonState((state) => ({
+        ...state,
+        visible: hasAnySelection,
+        disabled: false,
+        opacity: 1,
+      }));
     }
   };
 
@@ -1779,12 +2075,10 @@ export default function WeightLossConsultationQuiz({
       ...relatedFields,
     };
 
-    const continueButton = formRef.current?.querySelector(
-      ".quiz-continue-button"
-    );
-    if (continueButton) {
-      continueButton.style.visibility = value.trim() !== "" ? "" : "hidden";
-    }
+    setButtonState((state) => ({
+      ...state,
+      visible: value.trim() !== "",
+    }));
   };
 
   const handleWeightLossMethodSelect = (optionId) => {
@@ -1826,12 +2120,10 @@ export default function WeightLossConsultationQuiz({
     setFormData(newFormData);
     updateLocalStorage(newFormData);
 
-    const continueButton = formRef.current?.querySelector(
-      ".quiz-continue-button"
-    );
-    if (continueButton) {
-      continueButton.style.visibility = "";
-    }
+    setButtonState((state) => ({
+      ...state,
+      visible: true,
+    }));
   };
 
   const handleWeightConcernSelect = (option) => {
@@ -1846,12 +2138,10 @@ export default function WeightLossConsultationQuiz({
       609: option,
     });
     queueFormSubmission(formData);
-    const continueButton = formRef.current?.querySelector(
-      ".quiz-continue-button"
-    );
-    if (continueButton) {
-      continueButton.style.visibility = "visible";
-    }
+    setButtonState((state) => ({
+      ...state,
+      visible: true,
+    }));
 
     setTimeout(() => {
       moveToNextSlideWithoutValidation();
@@ -2005,43 +2295,40 @@ export default function WeightLossConsultationQuiz({
       setIsUploading(true);
       showLoader();
 
-      try {
-        await fetch("/api/s3/configure-cors");
-      } catch (corsError) {
-        console.log(
-          "CORS configuration check failed, continuing with upload:",
-          corsError
-        );
-      }
+      const uploadedS3Url = await handlePhotoIdUpload();
 
-      await handlePhotoIdUpload();
+      const cumulativeData = collectCumulativeData();
 
-      setFormData((prev) => ({
-        ...prev,
+      const completeSubmissionData = {
+        ...cumulativeData,
+        196: uploadedS3Url,
         completion_state: "Partial",
-      }));
+        stage: "photo-id-upload",
+      };
 
-      submitFormData({
-        completion_state: "Partial",
-        196: formData["196"],
-      }).catch((error) => {
-        console.error("Error submitting form data:", error);
+      await submitFormData(completeSubmissionData).catch((error) => {
+        logger.error("Error submitting form data:", error);
       });
+
+      // Navigate to next page after successful upload and submission
+      setTimeout(() => {
+        moveToNextSlideWithoutValidation();
+      }, 100);
     } catch (error) {
-      console.error("Photo upload error:", error);
+      logger.error("Photo upload error:", error);
       const errorBox = formRef.current?.querySelector(".error-box");
       if (errorBox) {
         errorBox.classList.remove("hidden");
 
         if (error.message && error.message.includes("File size exceeds")) {
           errorBox.textContent =
-            "The file size exceeds the maximum allowed size of 10MB. Please select a smaller image.";
+            "The file size exceeds the maximum allowed size of 20MB. Please select a smaller image.";
         } else if (
           error.message &&
-          error.message.includes("Only JPEG and PNG")
+          error.message.includes("Only JPG, JPEG, PNG, HEIF, and HEIC")
         ) {
           errorBox.textContent =
-            "Only JPEG and PNG images are supported. Please select a different image.";
+            "Only JPG, JPEG, PNG, HEIF, and HEIC images are supported. Please select a different image.";
         } else if (error.message && error.message.includes("presigned")) {
           errorBox.textContent =
             "Failed to get upload permission. Please try again or contact support.";
@@ -2065,11 +2352,6 @@ export default function WeightLossConsultationQuiz({
       setValidationAttempted(false);
 
       if (currentPage === 18) {
-        handlePhotoIdAcknowledgeContinue();
-        return;
-      }
-
-      if (currentPage === 19) {
         const currentPageData = collectCurrentPageData();
         const updates = {
           ...currentPageData,
@@ -2084,6 +2366,20 @@ export default function WeightLossConsultationQuiz({
       }
 
       if (currentPage === 20) {
+        const currentPageData = collectCurrentPageData();
+        const updates = {
+          ...currentPageData,
+          page_step: currentPage + 1,
+        };
+        updateFormDataAndStorage(updates);
+        queueFormSubmission(updates);
+        setTimeout(() => {
+          moveToNextSlideWithoutValidation();
+        }, 100);
+        return;
+      }
+
+      if (currentPage === 21) {
         if (photoIdFile || formData["196"]) {
           verifyCustomerAndProceed();
           return;
@@ -2097,7 +2393,7 @@ export default function WeightLossConsultationQuiz({
         }
       }
 
-      if (currentPage === 21) {
+      if (currentPage === 22) {
         handleBodyPhotosUpload();
         return;
       }
@@ -2132,9 +2428,9 @@ export default function WeightLossConsultationQuiz({
             page_step: 4,
           };
           updateLocalStorage(updatedFormData);
-          return updatedFormData;        
+          return updatedFormData;
         });
-        const newProgress = Math.ceil(((4 - 1) / 22) * 100);
+        const newProgress = Math.ceil((4 / 22) * 100);
         setProgress(Math.max(0, newProgress));
       } else if (currentPage === 2 && formData["602"] === "Yes") {
         setIsMovingForward(true);
@@ -2145,9 +2441,9 @@ export default function WeightLossConsultationQuiz({
             page_step: 4,
           };
           updateLocalStorage(updatedFormData);
-          return updatedFormData;        
+          return updatedFormData;
         });
-        const newProgress = Math.ceil(((4 - 1) / 22) * 100);
+        const newProgress = Math.ceil((4 / 22) * 100);
         setProgress(Math.max(0, newProgress));
       } else {
         moveToNextSlide();
@@ -2194,12 +2490,14 @@ export default function WeightLossConsultationQuiz({
     setFormData(newFormData);
     updateLocalStorage(newFormData);
 
-    const continueButton = formRef.current?.querySelector(
-      ".quiz-continue-button"
-    );
-    if (continueButton) {
-      continueButton.style.visibility = "";
-    }
+    setButtonState((state) => ({
+      ...state,
+      visible: Object.keys(newFormData).some(
+        (key) => key.startsWith("605_") && newFormData[key]
+      ),
+      disabled: false,
+      opacity: 1,
+    }));
   };
 
   const handleWeightGainTextChange = (option, e) => {
@@ -2224,7 +2522,7 @@ export default function WeightLossConsultationQuiz({
       if (formData["605_6"] && !newFormData["l-605_6-textarea"])
         isVisible = false;
 
-      continueButton.style.visibility = isVisible ? "" : "hidden";
+      updateContinueButtonState(isVisible);
     }
   };
 
@@ -2353,9 +2651,15 @@ export default function WeightLossConsultationQuiz({
         "l-616_1-textarea": formData["l-616_1-textarea"],
       },
       19: {
-        photo_id_acknowledged: formData["photo_id_acknowledged"],
+        619: formData["619"],
+        618_1: formData["618_1"],
+        618_2: formData["618_2"],
+        618_3: formData["618_3"],
       },
       20: {
+        photo_id_acknowledged: formData["photo_id_acknowledged"],
+      },
+      21: {
         197: formData["197"],
         198: formData["198"],
       },
@@ -2369,10 +2673,23 @@ export default function WeightLossConsultationQuiz({
     }
     const filteredData = {};
     Object.entries(cumulativeData).forEach(([key, value]) => {
+      if (key === "_ui" || key === ".ui") {
+        return;
+      }
       if (value !== undefined && value !== null && value !== "") {
         filteredData[key] = value;
       }
     });
+
+    if (formData.wl_weight) {
+      filteredData.wl_weight = formData.wl_weight;
+    }
+    if (formData.wl_height) {
+      filteredData.wl_height = formData.wl_height;
+    }
+    if (formData.wl_BMI) {
+      filteredData.wl_BMI = formData.wl_BMI;
+    }
 
     return filteredData;
   };
@@ -2488,16 +2805,33 @@ export default function WeightLossConsultationQuiz({
         "l-616_1-textarea": formData["l-616_1-textarea"],
       },
       19: {
-        photo_id_acknowledged: formData["photo_id_acknowledged"],
+        619: formData["619"],
+        618_1: formData["618_1"],
+        618_2: formData["618_2"],
+        618_3: formData["618_3"],
       },
       20: {
+        photo_id_acknowledged: formData["photo_id_acknowledged"],
+      },
+      21: {
         197: formData["197"],
         198: formData["198"],
       },
     };
 
     const pageData = pageDataMap[currentPage] || {};
-    return pageData;
+    const dataWithBMI = { ...pageData };
+    if (formData.wl_weight) {
+      dataWithBMI.wl_weight = formData.wl_weight;
+    }
+    if (formData.wl_height) {
+      dataWithBMI.wl_height = formData.wl_height;
+    }
+    if (formData.wl_BMI) {
+      dataWithBMI.wl_BMI = formData.wl_BMI;
+    }
+
+    return dataWithBMI;
   };
 
   const handleBackClick = () => {
@@ -2530,15 +2864,15 @@ export default function WeightLossConsultationQuiz({
         navigation_type: navigationType,
       };
 
-    updateLocalStorage(updatedFormData);
+      updateLocalStorage(updatedFormData);
       return updatedFormData;
     });
-    const newProgress = Math.ceil(((nextPage - 1) / 22) * 100);
+    const newProgress = Math.ceil((nextPage / 22) * 100);
     setProgress(Math.max(0, newProgress));
   };
 
   const HandleChangeBpWarningAcknowledged = (option) => {
-    console.log(option);
+    logger.log(option);
     if (option === true) {
       setBpWarningAcknowledged(option);
 
@@ -2595,13 +2929,17 @@ export default function WeightLossConsultationQuiz({
       }
 
       setCurrentPage(prevPage);
-      setFormData((prev) => ({      
+      setFormData((prev) => ({
         ...prev,
         page_step: prevPage,
       }));
 
-      const newProgress = Math.ceil(((prevPage - 1) / 22) * 100);
+      const newProgress = Math.ceil((prevPage / 22) * 100);
       setProgress(Math.max(0, newProgress));
+
+      if (prevPage === 1 && formData["601"]) {
+        setQuestion1ButtonVisible(true);
+      }
 
       updateLocalStorage();
     }
@@ -2610,9 +2948,12 @@ export default function WeightLossConsultationQuiz({
   const handleCurrentMedicationSelect = async (option) => {
     clearError();
 
+    setQuestion1ButtonVisible(false);
+
     const hasBackendSession =
       formData.entrykey && formData.token && formData.id;
-    const shouldShowLoader = !hasBackendSession;
+    const isFirstSelection = !formData["601"];
+    const shouldShowLoader = !hasBackendSession && isFirstSelection;
 
     if (shouldShowLoader) {
       showLoader();
@@ -2646,13 +2987,12 @@ export default function WeightLossConsultationQuiz({
       }));
       const updatedData = updateFormDataAndStorage(updates);
 
-      await submitFormData({ ...formData, ...updates });
-
-      const continueButton = formRef.current?.querySelector(
-        ".quiz-continue-button"
-      );
-      if (continueButton) {
-        continueButton.style.visibility = "visible";
+      if (isFirstSelection) {
+        await submitFormData({ ...formData, ...updates });
+      } else {
+        submitFormData({ ...formData, ...updates }).catch((error) => {
+          logger.error("Error submitting form data:", error);
+        });
       }
 
       if (option === "Yes") {
@@ -2668,7 +3008,7 @@ export default function WeightLossConsultationQuiz({
           return updatedFormData;
         });
 
-        const newProgress = Math.ceil(((4 - 1) / 22) * 100);
+        const newProgress = Math.ceil((4 / 22) * 100);
         setProgress(Math.max(0, newProgress));
       } else if (option === "No") {
         setIsMovingForward(true);
@@ -2680,13 +3020,13 @@ export default function WeightLossConsultationQuiz({
             navigation_type: "",
           };
           updateLocalStorage(updatedFormData);
-          return updatedFormData;        
+          return updatedFormData;
         });
-        const newProgress = Math.ceil(((2 - 1) / 22) * 100);
+        const newProgress = Math.ceil((2 / 22) * 100);
         setProgress(Math.max(0, newProgress));
       }
     } catch (error) {
-      console.error("Error submitting form:", error);
+      logger.error("Error submitting form:", error);
     } finally {
       if (shouldShowLoader) {
         hideLoader();
@@ -2755,11 +3095,11 @@ export default function WeightLossConsultationQuiz({
       [option]: value,
     });
 
-    await submitFormData();   
+    await submitFormData();
 
     setIsMovingForward(true);
     setCurrentPage(targetPage);
-    const newProgress = Math.ceil(((targetPage - 1) / 22) * 100);
+    const newProgress = Math.ceil((targetPage / 22) * 100);
     setProgress(Math.max(0, newProgress));
   };
 
@@ -2992,7 +3332,7 @@ export default function WeightLossConsultationQuiz({
 
           return true;
         },
-      },      
+      },
       {
         page: 14,
         validate: () => {
@@ -3090,6 +3430,19 @@ export default function WeightLossConsultationQuiz({
       {
         page: 19,
         validate: () => {
+          if (!formData["619"]) {
+            return showError("Please make a selection");
+          }
+          if (formData["619"] === "No" && !formData["618_1"]) {
+            setShowNoAppointmentAcknowledgement(true);
+            return false;
+          }
+          return true;
+        },
+      },
+      {
+        page: 20,
+        validate: () => {
           if (!photoIdAcknowledged) {
             return showError("Please acknowledge the message");
           }
@@ -3097,7 +3450,7 @@ export default function WeightLossConsultationQuiz({
         },
       },
       {
-        page: 20,
+        page: 21,
         validate: () => {
           if (!photoIdFile && !formData["196"]) {
             return showError("Please upload your photo ID to continue");
@@ -3106,7 +3459,7 @@ export default function WeightLossConsultationQuiz({
         },
       },
       {
-        page: 21,
+        page: 22,
         validate: () => {
           if (!frontPhotoFile && !formData["197"]) {
             return showError("Please upload a front view photo");
@@ -3143,7 +3496,7 @@ export default function WeightLossConsultationQuiz({
           newFormData[key] = "";
           setFormData(newFormData);
           updateLocalStorage(newFormData);
-          console.log(`Corrected form field format: ${key} -> ${correctKey}`);
+          logger.log(`Corrected form field format: ${key} -> ${correctKey}`);
         }
       }
     });
@@ -3166,9 +3519,9 @@ export default function WeightLossConsultationQuiz({
           />
         </div>
       )}
-      {!showBMICalculator && (        
+      {!showBMICalculator && (
         <>
-          {currentPage <= 21 && (
+          {currentPage <= 22 && (
             <>
               <QuestionnaireNavbar
                 onBackClick={handleBackClick}
@@ -3179,7 +3532,7 @@ export default function WeightLossConsultationQuiz({
             </>
           )}
 
-          {currentPage <= 21 && (
+          {currentPage <= 22 && (
             <div className="flex-1">
               <div
                 className="quiz-page-wrapper relative md:container md:w-[768px] mx-auto bg-[#FFFFFF]"
@@ -3339,7 +3692,6 @@ export default function WeightLossConsultationQuiz({
                             ))}
                           </QuestionLayout>
                         )}
-
                         {/* Question 3: How can we help today */}
                         {currentPage === 3 && (
                           <QuestionLayout
@@ -3409,7 +3761,6 @@ export default function WeightLossConsultationQuiz({
                             )}
                           </QuestionLayout>
                         )}
-
                         {/* Question 5: How much weight are you hoping to lose */}
                         {currentPage === 5 && (
                           <QuestionLayout
@@ -3433,7 +3784,6 @@ export default function WeightLossConsultationQuiz({
                             />
                           </QuestionLayout>
                         )}
-
                         {/* Question 6: Weight gain contributors */}
                         {currentPage === 6 && (
                           <QuestionLayout
@@ -3456,7 +3806,8 @@ export default function WeightLossConsultationQuiz({
                                   id: "605_2",
                                   value: "Illness or injury",
                                   addsTextArea: true,
-                                  placeholder: "Please state the illness or injury",
+                                  placeholder:
+                                    "Please state the illness or injury",
                                 },
                                 { id: "605_3", value: "Unhealthy diet" },
                                 {
@@ -3469,7 +3820,8 @@ export default function WeightLossConsultationQuiz({
                                   id: "605_5",
                                   value: "Surgery",
                                   addsTextArea: true,
-                                  placeholder: "Please state the procedure you had",
+                                  placeholder:
+                                    "Please state the procedure you had",
                                 },
                                 {
                                   id: "605_6",
@@ -3483,14 +3835,19 @@ export default function WeightLossConsultationQuiz({
                                   isNoneOption: true,
                                 },
                               ].map((option) => (
-                                <div key={option.id} className="option-container">
+                                <div
+                                  key={option.id}
+                                  className="option-container"
+                                >
                                   <QuestionOption
                                     id={option.id}
                                     name={option.id}
                                     value={option.value}
                                     checked={!!formData[option.id]}
                                     onChange={() =>
-                                      handleWeightGainContributorsSelect(option.id)
+                                      handleWeightGainContributorsSelect(
+                                        option.id
+                                      )
                                     }
                                     type="checkbox"
                                     isNoneOption={option.isNoneOption}
@@ -3518,7 +3875,6 @@ export default function WeightLossConsultationQuiz({
                             </div>
                           </QuestionLayout>
                         )}
-
                         {/* Question 7: Blood pressure */}
                         {currentPage === 7 && (
                           <QuestionLayout
@@ -3564,7 +3920,6 @@ export default function WeightLossConsultationQuiz({
                             ))}
                           </QuestionLayout>
                         )}
-
                         {/* Question 8: Weight loss surgery */}
                         {currentPage === 8 && (
                           <QuestionLayout
@@ -3632,7 +3987,6 @@ export default function WeightLossConsultationQuiz({
                             </div>
                           </QuestionLayout>
                         )}
-
                         {currentPage === 9 && (
                           <QuestionLayout
                             title="How have you tried to lose weight in the past?"
@@ -3749,7 +4103,6 @@ export default function WeightLossConsultationQuiz({
                             </div>
                           </QuestionLayout>
                         )}
-
                         {currentPage === 10 && (
                           <QuestionLayout
                             title="How long have you had concerns about your body weight?"
@@ -3784,7 +4137,6 @@ export default function WeightLossConsultationQuiz({
                             </div>
                           </QuestionLayout>
                         )}
-
                         {currentPage === 11 && (
                           <QuestionLayout
                             title="How would you describe your diet in the past week?"
@@ -3818,7 +4170,6 @@ export default function WeightLossConsultationQuiz({
                             </div>
                           </QuestionLayout>
                         )}
-
                         {currentPage === 12 && (
                           <QuestionLayout
                             title="How many days per week do you exercise 30 minutes or more?"
@@ -3858,7 +4209,6 @@ export default function WeightLossConsultationQuiz({
                             </div>
                           </QuestionLayout>
                         )}
-
                         {currentPage === 13 && (
                           <QuestionLayout
                             title="What do you hope to achieve by losing weight?"
@@ -3916,11 +4266,10 @@ export default function WeightLossConsultationQuiz({
                             </div>
                           </QuestionLayout>
                         )}
-
                         {currentPage === 14 && (
                           <QuestionLayout
                             title="Would you prefer a version of this medication that's less likely to cause side effects like nausea, stomach discomfort, or diarrhea?"
-                            currentPage={currentPage}                            
+                            currentPage={currentPage}
                             pageNo={14}
                             questionId="620"
                           >
@@ -4040,7 +4389,6 @@ export default function WeightLossConsultationQuiz({
                             </div>
                           </QuestionLayout>
                         )}{" "}
-
                         {currentPage === 16 && (
                           <QuestionLayout
                             title="Do you have any known allergies?"
@@ -4090,7 +4438,6 @@ export default function WeightLossConsultationQuiz({
                             </div>
                           </QuestionLayout>
                         )}{" "}
-
                         {currentPage === 17 && (
                           <QuestionLayout
                             title="Tell us about your lifestyle."
@@ -4162,10 +4509,9 @@ export default function WeightLossConsultationQuiz({
                                     )}
                                 </div>
                               ))}
-                            </div>                          
-                            </QuestionLayout>
+                            </div>
+                          </QuestionLayout>
                         )}
-
                         {currentPage === 18 && (
                           <QuestionLayout
                             title="Do you have any questions for the healthcare team?"
@@ -4217,12 +4563,38 @@ export default function WeightLossConsultationQuiz({
                             </div>
                           </QuestionLayout>
                         )}{" "}
-
                         {currentPage === 19 && (
+                          <QuestionLayout
+                            title="Would you like to book an appointment with our health care team?"
+                            currentPage={currentPage}
+                            pageNo={19}
+                            questionId="619"
+                          >
+                            {[
+                              { id: "617_2", value: "Clinician" },
+                              { id: "617_3", value: "Pharmacist" },
+                              { id: "617_1", value: "No", label: "No" },
+                            ].map((option) => (
+                              <QuestionOption
+                                key={option.id}
+                                id={option.id}
+                                name="619"
+                                value={option.value}
+                                label={option.label || option.value}
+                                checked={formData["619"] === option.value}
+                                onChange={() =>
+                                  handleBookAppointmentSelect(option.value)
+                                }
+                                type="radio"
+                              />
+                            ))}
+                          </QuestionLayout>
+                        )}{" "}
+                        {currentPage === 20 && (
                           <QuestionLayout
                             title="Upload Photo ID"
                             currentPage={currentPage}
-                            pageNo={19}
+                            pageNo={20}
                             questionId="photo_id_acknowledgment"
                             inputType="checkbox"
                           >
@@ -4269,8 +4641,7 @@ export default function WeightLossConsultationQuiz({
                             </div>
                           </QuestionLayout>
                         )}
-
-                        {currentPage === 20 && (
+                        {currentPage === 21 && (
                           <motion.div
                             key={currentPage}
                             variants={slideVariants}
@@ -4294,7 +4665,7 @@ export default function WeightLossConsultationQuiz({
                                   type="file"
                                   ref={fileInputRef}
                                   id="photo-id-file"
-                                  accept="image/jpeg,image/png"
+                                  accept="image/jpeg,image/jpg,image/png,image/heif,image/heic"
                                   className="hidden"
                                   onChange={handlePhotoIdFileSelect}
                                 />
@@ -4340,9 +4711,10 @@ export default function WeightLossConsultationQuiz({
                                       holding your ID
                                     </p>{" "}
                                     <p className="text-center text-sm text-gray-500 mb-8">
-                                      Only JPEG and PNG images are supported.
+                                      Only JPG, JPEG, PNG, HEIF, and HEIC images
+                                      are supported.
                                       <br />
-                                      Maximum file size per image is 10MB
+                                      Maximum file size per image is 20MB
                                     </p>
                                   </div>
                                 )}
@@ -4356,13 +4728,12 @@ export default function WeightLossConsultationQuiz({
                             </div>
                           </motion.div>
                         )}{" "}
-
-                        {currentPage === 21 && (
+                        {currentPage === 22 && (
                           <QuestionLayout
                             title="Provide images from the waist up: Front and Side Views"
                             subtitle="Your body should be clearly visible"
                             currentPage={currentPage}
-                            pageNo={21}
+                            pageNo={22}
                             questionId="body_photos"
                             inputType="upload"
                           >
@@ -4447,14 +4818,17 @@ export default function WeightLossConsultationQuiz({
                                 </p>
                               </div>{" "}
                               <div className="text-center text-xs text-gray-400 mt-6">
-                                <p>Only JPEG and PNG images are supported.</p>
-                                <p>Max allowed file size per image is 10MB</p>
+                                <p>
+                                  Only JPG, JPEG, PNG, HEIF, and HEIC images are
+                                  supported.
+                                </p>
+                                <p>Max allowed file size per image is 20MB</p>
                               </div>
                               <div className="text-center mt-6 hidden">
                                 <button
                                   type="button"
                                   onClick={handleBodyPhotosUpload}
-                                  className="upload-button hidden bg-gray-300 hover:bg-gray-400 text-black font-medium py-3 px-6 rounded-full w-full max-w-md"
+                                  className="upload-button bg-gray-300 hover:bg-gray-400 text-black font-medium py-3 px-6 rounded-full w-full max-w-md"
                                   disabled={isUploadingPhotos}
                                 >
                                   {isUploadingPhotos ? (
@@ -4479,7 +4853,11 @@ export default function WeightLossConsultationQuiz({
                                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                                         ></path>
                                       </svg>
-                                      Uploading...
+                                      {`Uploading... ${Math.round(
+                                        (uploadProgress.front +
+                                          uploadProgress.side) /
+                                          2
+                                      )}%`}
                                     </span>
                                   ) : (
                                     "Upload and Continue"
@@ -4489,7 +4867,6 @@ export default function WeightLossConsultationQuiz({
                             </div>
                           </QuestionLayout>
                         )}
-
                         {/* Warning Popups */}
                         <WarningPopup
                           isOpen={showPhotoIdPopup}
@@ -4546,7 +4923,6 @@ export default function WeightLossConsultationQuiz({
                           }
                           currentPage={currentPage}
                         />
-
                         <WarningPopup
                           isOpen={showVeryHighBpWarning}
                           onClose={() => setShowVeryHighBpWarning(false)}
@@ -4556,7 +4932,6 @@ export default function WeightLossConsultationQuiz({
                           backgroundColor="bg-[#F5F4EF]"
                           currentPage={currentPage}
                         />
-                        
                         <WarningPopup
                           isOpen={showUnknownBpWarning}
                           onClose={() => setShowUnknownBpWarning(false)}
@@ -4565,6 +4940,29 @@ export default function WeightLossConsultationQuiz({
                           showCheckbox={false}
                           backgroundColor="bg-[#F5F4EF]"
                           currentPage={currentPage}
+                        />
+                        {/* No Appointment Acknowledgement Popup */}
+                        <WarningPopup
+                          isOpen={showNoAppointmentAcknowledgement}
+                          onClose={handleNoAppointmentContinue}
+                          title="Acknowledgement"
+                          message="I hereby acknowledge that by foregoing an appointment with a licensed physician or pharmacist, it is my sole responsibility to ensure I am aware of how to appropriately use the medication requested, furthermore I hereby confirm that I am aware of any potential side effects that may occur through the use of the aforementioned medication and hereby confirm that I do not have any medical questions to ask. I will ensure I have read the relevant product page and FAQ prior to use of the prescribed medication. Should I have any questions to ask, I am aware of how to contact the clinical team at Rocky or get a hold of my primary care provider."
+                          isAcknowledged={noAppointmentAcknowledged}
+                          onAcknowledge={handleNoAppointmentAcknowledgement}
+                          backgroundColor="bg-[#F5F4EF]"
+                          additionalContent={null}
+                          buttonText="OK"
+                          currentPage={currentPage}
+                          afterButtonContent={
+                            <p className="mt-4 text-center font-medium text-md text-[#000000]">
+                              <button
+                                onClick={handleRequestAppointmentInstead}
+                                className="underline hover:text-gray-900"
+                              >
+                                I would like to request the appointment instead
+                              </button>
+                            </p>
+                          }
                         />
                       </motion.div>
                     </AnimatePresence>
@@ -4577,36 +4975,17 @@ export default function WeightLossConsultationQuiz({
                   <button
                     type="button"
                     onClick={handleContinueClick}
-                    className="bg-black text-white w-full max-w-md py-4 px-4 rounded-full font-medium text-lg"
-                    style={{
-                      display: "block",
-                      visibility: (() => {
-                        const singleChoicePages = [1, 2, 3, 7, 10, 11, 12, 14];
-                        if (singleChoicePages.includes(currentPage)) {
-                          switch (currentPage) {
-                            case 1:
-                              return formData["601"] ? "visible" : "hidden";
-                            case 2:
-                              return formData["602"] ? "visible" : "hidden";
-                            case 3:
-                              return formData["603"] ? "visible" : "hidden";
-                            case 7:
-                              return formData["606"] ? "visible" : "hidden";                            
-                              case 10:
-                              return formData["609"] ? "visible" : "hidden";
-                            case 11:
-                              return formData["610"] ? "visible" : "hidden";
-                            case 12:
-                              return formData["611"] ? "visible" : "hidden";
-                            case 14:
-                              return formData["620"] ? "visible" : "hidden";
-                            default:
-                              return "hidden";
-                          }
-                        }
-                        return continueButtonVisible ? "visible" : "hidden";
-                      })(),
-                    }}
+                    className={`bg-black text-white w-full max-w-md py-4 px-4 rounded-full font-medium text-lg ${
+                      !isClient ||
+                      (currentPage === 1
+                        ? !question1ButtonVisible
+                        : !buttonState.visible)
+                        ? "invisible"
+                        : "visible"
+                    }`}
+                    disabled={buttonState.disabled}
+                    style={{ opacity: buttonState.opacity }}
+                    suppressHydrationWarning={true}
                   >
                     Continue
                   </button>
@@ -4624,27 +5003,49 @@ export default function WeightLossConsultationQuiz({
                     background: "rgba(255,255,255,0.9)",
                   }}
                 >
-                  <p
+                  <div
                     className="text-center p-5 pb-[100px]"
                     style={{ position: "relative", top: "25%" }}
                   >
+                    <div className="mb-4">
+                      {uploadProgress.id > 0 && (
+                        <div className="text-lg font-medium text-gray-700">
+                          Uploading... {Math.round(uploadProgress.id)}%
+                        </div>
+                      )}
+                      {uploadProgress.front > 0 && (
+                        <div className="text-lg font-medium text-gray-700">
+                          Uploading front photo...{" "}
+                          {Math.round(uploadProgress.front)}%
+                        </div>
+                      )}
+                      {uploadProgress.side > 0 && (
+                        <div className="text-lg font-medium text-gray-700">
+                          Uploading side photo...{" "}
+                          {Math.round(uploadProgress.side)}%
+                        </div>
+                      )}
+                      {!uploadProgress.id &&
+                        !uploadProgress.front &&
+                        !uploadProgress.side && (
+                          <div className="text-lg font-medium text-gray-700">
+                            Processing... <br />
+                            Please do not refresh or close the page
+                          </div>
+                        )}
+                    </div>
                     <img
-                      src="https://myrocky.ca/wp-content/themes/salient-child/img/preloader-wheel.svg"
-                      className="block w-[100px] h-auto m-auto pt-6"
-                      style={{ marginBottom: "10px" }}
-                      alt="Preloader Wheel"
+                      src="https://myrocky.ca/wp-content/themes/salient-child/img/please_wait_animation.gif"
+                      alt=""
+                      style={{ margin: "0 auto" }}
                     />
-                    Syncing. Please wait ... <br />
-                    <small style={{ color: "#999", letterSpacing: 0 }}>
-                      If this takes longer than 20 seconds, refresh the page.
-                    </small>
-                  </p>
+                  </div>
                 </div>
               </div>
-            </div>          
+            </div>
           )}
 
-          {currentPage === 22 && formData.completion_state === "Full" && (
+          {currentPage === 23 && formData.completion_state === "Full" && (
             <div className="relative min-h-screen w-full bg-[#F5F4EF] overflow-hidden flex flex-col">
               <div className="absolute inset-0 hidden md:block">
                 <img
@@ -4705,7 +5106,7 @@ export default function WeightLossConsultationQuiz({
                         </svg>
                       </a>
                       <a
-                        href="https://www.instagram.com/myrocky.ca/"
+                        href="https://www.instagram.com/myrocky/"
                         className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-200 flex items-center justify-center"
                       >
                         <svg
@@ -4741,7 +5142,7 @@ export default function WeightLossConsultationQuiz({
               <div className="relative w-full px-6 z-10 pb-6 md:pb-8 mt-4 md:mt-auto">
                 <div className="max-w-md md:max-w-lg mx-auto">
                   <button
-                    onClick={() => router.push("/")}
+                    onClick={() => (window.location.href = "/")}
                     className="w-full bg-white text-black py-4 md:py-5 px-6 rounded-full text-base md:text-xl font-medium shadow-md hover:bg-gray-100 transition-colors"
                   >
                     Go back home

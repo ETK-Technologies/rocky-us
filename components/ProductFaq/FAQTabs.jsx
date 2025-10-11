@@ -30,16 +30,16 @@ const FAQTabs = ({
         >
           Hair Loss
         </button>
-          {/* <button
-            className={`text-left inline-block w-fit ${
-              activeTab === "hairCare"
-                ? "font-bold text-black border-b-2 border-black"
-                : "text-[#000000A6]"
-            }`}
-            onClick={() => scrollToSection(hairCareRef, "hairCare")}
-          >
-            Hair Care
-          </button> */}
+        <button
+          className={`text-left inline-block w-fit ${
+            activeTab === "hairCare"
+              ? "font-bold text-black border-b-2 border-black"
+              : "text-[#000000A6]"
+          }`}
+          onClick={() => scrollToSection(hairCareRef, "hairCare")}
+        >
+          Hair Care
+        </button>
       </div>
     </div>
   );

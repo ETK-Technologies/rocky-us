@@ -1,12 +1,21 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { logger } from "@/utils/devLogger";
 import QuestionnaireNavbar from "../EdQuestionnaire/QuestionnaireNavbar";
 import { ProgressBar } from "../EdQuestionnaire/ProgressBar";
 import { useProductsWithAvailability } from "./productData";
 import { stepConfig, determineRecommendedProduct } from "./utils/stepUtils";
+import { addToCartEarly } from "@/utils/flowCartHandler";
 
 // Import Step Components
+import WeightConcerns from "./steps/WeightConcerns";
+import DescribeDiet from "./steps/DescribeDeit";
+import WeightLossGoalStep from "./steps/WeightLossGoalStep";
+import WeightLossMotivationStep from "./steps/WeightLossMotivationStep";
+import WeightLossResultsStep from "./steps/WeightLossResultsStep";
+import ProvinceSelectionStep from "./steps/ProvinceSelectionStep";
+import AgeVerificationStep from "./steps/AgeVerificationStep";
 import BMICalculatorStep from "./steps/BMICalculatorStep";
 import MedicalConditionsStep from "./steps/MedicalConditionsStep";
 import MedicationsStep from "./steps/MedicationsStep";
@@ -38,8 +47,10 @@ const WeightQuestionnaire = () => {
     province: "",
     dateOfBirth: "",
     selectedWeightGoalText: "16-50 lbs",
-    gender: "male",
+    gender: null, // ✅ Start with null, wait for API response
     needlePreference: "",
+    weightConcernsDuration: "",
+    dietDescription: "",
   });
 
   // Product selection state
@@ -70,6 +81,8 @@ const WeightQuestionnaire = () => {
 
   // For cross-sell popup
   const [showCrossSellPopup, setShowCrossSellPopup] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [initialCartData, setInitialCartData] = useState(null);
 
   useEffect(() => {
     checkFinalStep();
@@ -79,27 +92,42 @@ const WeightQuestionnaire = () => {
   // Fetch user gender from API
   const fetchUserGender = async () => {
     try {
-      // before we fetch user meta data we have to check if user Authenticate or not .. it shows error
-
-      // Fetch user data from API
-      const response = await fetch("/api/user-meta");
+      // Fetch user profile data from API (same endpoint as Checkout uses)
+      const response = await fetch("/api/profile");
 
       if (!response.ok) {
-        console.error("Failed to fetch user metadata");
+        logger.error("Failed to fetch user profile", response.status);
+        // Fallback to male for WL when no login is made (show normal popup instead of women's addons)
+        setUserData((prevData) => ({
+          ...prevData,
+          gender: "male",
+        }));
         return;
       }
 
-      const userData = await response.json();
+      const profileData = await response.json();
 
-      // Update gender from user metadata
-      if (userData && userData.gender) {
+      if (profileData.success && profileData.gender) {
+        logger.log("✅ Successfully fetched gender:", profileData.gender);
         setUserData((prevData) => ({
           ...prevData,
-          gender: userData.gender.toLowerCase(),
+          gender: profileData.gender.toLowerCase(),
+        }));
+      } else {
+        logger.warn("⚠️ No gender found in profile response, using default");
+        // Fallback to male for WL when no login is made (show normal popup instead of women's addons)
+        setUserData((prevData) => ({
+          ...prevData,
+          gender: "male",
         }));
       }
     } catch (error) {
-      console.error("Error fetching user gender:", error);
+      logger.error("❌ Error fetching user profile:", error);
+      // Fallback to male if API call fails (show normal popup instead of women's addons)
+      setUserData((prevData) => ({
+        ...prevData,
+        gender: "male",
+      }));
     }
   };
 
@@ -107,7 +135,7 @@ const WeightQuestionnaire = () => {
   const checkFinalStep = () => {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has("step") && urlParams.get("step") === "final") {
-      setCurrentPage(7);
+      setCurrentPage(13);
       urlParams.delete("step");
       const newUrl =
         window.location.pathname +
@@ -133,6 +161,37 @@ const WeightQuestionnaire = () => {
     goToStep(prevStep);
   };
 
+  // Weight Concerns Step Handler
+  const handleWeightConcernsSelect = (option) => {
+    setUserData((prev) => ({ ...prev, weightConcernsDuration: option }));
+
+    // Check if localStorage data exists, update it or create new
+    const existingData = localStorage.getItem("wl_pre_quiz_data");
+    const updatedData = existingData
+      ? { ...JSON.parse(existingData), weightConcernsDuration: option }
+      : { weightConcernsDuration: option };
+
+    localStorage.setItem("wl_pre_quiz_data", JSON.stringify(updatedData));
+
+    goToStep(2);
+  };
+
+  // Diet Description Step Handler
+  const handleDietDescriptionSelect = (option) => {
+    setUserData((prev) => ({ ...prev, dietDescription: option }));
+
+    const existingData = JSON.parse(
+      localStorage.getItem("wl_pre_quiz_data") || "{}"
+    );
+    const updatedData = {
+      ...existingData,
+      dietDescription: option,
+    };
+    localStorage.setItem("wl_pre_quiz_data", JSON.stringify(updatedData));
+
+    goToStep(3);
+  };
+
   // BMI Step Handlers
   const handleBMIContinue = () => {
     if (userData.bmi >= 27) {
@@ -142,11 +201,76 @@ const WeightQuestionnaire = () => {
         inchesValue: userData.height.inches,
         bmi_result: userData.bmi,
       };
-      localStorage.setItem("wl_pre_quiz_data", JSON.stringify(quizData));
-      goToStep(2);
+
+      // Check if localStorage data exists, update it or create new
+      const existingData = localStorage.getItem("wl_pre_quiz_data");
+      const updatedData = existingData
+        ? { ...JSON.parse(existingData), ...quizData }
+        : quizData;
+
+      localStorage.setItem("wl_pre_quiz_data", JSON.stringify(updatedData));
+      goToStep(4);
     } else {
       setPopups((prev) => ({ ...prev, bmi: true }));
     }
+  };
+
+  // Weight Loss Goal Step Handler
+  const handleWeightLossGoalSelect = (option) => {
+    setUserData((prev) => ({ ...prev, weightGoal: option }));
+
+    const existingData = JSON.parse(
+      localStorage.getItem("wl_pre_quiz_data") || "{}"
+    );
+    const updatedData = {
+      ...existingData,
+      weightGoal: option,
+    };
+    localStorage.setItem("wl_pre_quiz_data", JSON.stringify(updatedData));
+
+    goToStep(5);
+  };
+
+  // Weight Loss Motivation Step Handler
+  const handleWeightLossMotivationContinue = () => {
+    goToStep(6);
+  };
+
+  // Weight Loss Results Step Handler
+  const handleWeightLossResultsContinue = () => {
+    goToStep(7);
+  };
+
+  // Province Selection Step Handler
+  const handleProvinceSelect = (province) => {
+    setUserData((prev) => ({ ...prev, province }));
+
+    const existingData = JSON.parse(
+      localStorage.getItem("wl_pre_quiz_data") || "{}"
+    );
+    const updatedData = {
+      ...existingData,
+      province: province,
+    };
+    localStorage.setItem("wl_pre_quiz_data", JSON.stringify(updatedData));
+
+    goToStep(8);
+  };
+
+  // Age Verification Step Handler
+  const handleAgeVerificationSelect = (dateOfBirth) => {
+    setUserData((prev) => ({ ...prev, dateOfBirth }));
+
+    const existingData = JSON.parse(
+      localStorage.getItem("wl_pre_quiz_data") || "{}"
+    );
+    const updatedData = {
+      ...existingData,
+      dateOfBirth: dateOfBirth,
+    };
+    localStorage.setItem("wl_pre_quiz_data", JSON.stringify(updatedData));
+
+    goToStep(9);
   };
 
   // Medical Conditions Step Handler
@@ -161,7 +285,7 @@ const WeightQuestionnaire = () => {
     localStorage.setItem("wl_pre_quiz_data", JSON.stringify(updatedData));
 
     if (condition === "None of these apply to me") {
-      goToStep(3);
+      goToStep(10);
     } else {
       setPopups((prev) => ({ ...prev, medicalCondition: true }));
     }
@@ -179,7 +303,7 @@ const WeightQuestionnaire = () => {
     localStorage.setItem("wl_pre_quiz_data", JSON.stringify(updatedData));
 
     if (medication === "None of the above") {
-      goToStep(4);
+      goToStep(11);
     } else {
       setPopups((prev) => ({ ...prev, medication: true }));
     }
@@ -197,7 +321,7 @@ const WeightQuestionnaire = () => {
     localStorage.setItem("wl_pre_quiz_data", JSON.stringify(updatedData));
 
     if (option === "No") {
-      goToStep(5);
+      goToStep(12);
     } else {
       setPopups((prev) => ({ ...prev, eatingDisorder: true }));
     }
@@ -215,12 +339,12 @@ const WeightQuestionnaire = () => {
     localStorage.setItem("wl_pre_quiz_data", JSON.stringify(updatedData));
 
     if (option === "None of the above") {
-      goToStep(6);
+      goToStep(13);
     } else {
       setPopups((prev) => ({ ...prev, pregnancy: true }));
     }
   };
-    
+
   const handleNeedlePreferenceSelect = (option) => {
     setUserData((prev) => ({ ...prev, needlePreference: option }));
 
@@ -234,7 +358,7 @@ const WeightQuestionnaire = () => {
     };
     localStorage.setItem("wl_pre_quiz_data", JSON.stringify(updatedData));
 
-    goToStep(7);
+    goToStep(14);
   };
 
   // Product Selection Handlers
@@ -242,12 +366,74 @@ const WeightQuestionnaire = () => {
     setProductState((prev) => ({ ...prev, selected: product }));
   };
 
-  const handleContinueClick = () => {
+  const handleContinueClick = async () => {
     if (productState.selected?.name === "Rybelsus") {
       setPopups((prev) => ({ ...prev, rybelsus: true }));
     } else {
-      // Show cross-sell popup instead of going directly to the next step
-      setShowCrossSellPopup(true);
+      // Add product to cart before showing cross-sell popup
+      setIsAddingToCart(true);
+      try {
+        const mainProduct = {
+          id: productState.selected.id,
+          name: productState.selected.name,
+          price: productState.selected.price,
+          image: productState.selected.image || productState.selected.url, // WL products use 'url' field
+          quantity: 1,
+          isSubscription: productState.selected.isSubscription || false,
+          // Add variation data for display
+          variation: [
+            {
+              attribute: "Subscription Type",
+              value:
+                productState.selected.supply ||
+                productState.selected.frequency ||
+                "Monthly Supply",
+            },
+          ],
+        };
+
+        logger.log("🛒 WL Flow - Adding product to cart early:", mainProduct);
+
+        // Add product to cart early (includes Body Optimization Program)
+        const result = await addToCartEarly(mainProduct, "wl", {
+          requireConsultation: true,
+        });
+
+        if (result.success) {
+          logger.log("✅ Product added to cart, opening cross-sell popup");
+
+          // Store the cart data to pass to the modal
+          if (result.cartData) {
+            setInitialCartData(result.cartData);
+          }
+
+          // If gender is still null, try fetching it again before showing popup
+          if (!userData.gender) {
+            await fetchUserGender();
+            // Add a small delay to ensure state updates
+            setTimeout(() => {
+              setShowCrossSellPopup(true);
+              setIsAddingToCart(false);
+            }, 100);
+          } else {
+            // Show cross-sell popup
+            setShowCrossSellPopup(true);
+            setIsAddingToCart(false);
+          }
+        } else {
+          logger.error("❌ Failed to add product to cart:", result.error);
+          setIsAddingToCart(false);
+          alert(
+            result.error || "Failed to add product to cart. Please try again."
+          );
+        }
+      } catch (error) {
+        logger.error("Error adding product to cart:", error);
+        setIsAddingToCart(false);
+        alert(
+          "There was an issue adding the product to cart. Please try again."
+        );
+      }
     }
   };
 
@@ -270,15 +456,19 @@ const WeightQuestionnaire = () => {
       setShowCrossSellPopup(true);
     }
   };
-  
+
   // Calculate progress for progress bar
-  const maxPage = 7;
+  const maxPage = 14;
   const progress = Math.max(10, Math.ceil((currentPage / maxPage) * 100));
 
   // Render current step based on currentPage
   const renderCurrentStep = () => {
     switch (currentPage) {
       case 1:
+        return <WeightConcerns onOptionSelect={handleWeightConcernsSelect} />;
+      case 2:
+        return <DescribeDiet onOptionSelect={handleDietDescriptionSelect} />;
+      case 3:
         return (
           <BMICalculatorStep
             userData={userData}
@@ -288,25 +478,44 @@ const WeightQuestionnaire = () => {
             onContinue={handleBMIContinue}
           />
         );
-      case 2:
+      case 4:
+        return (
+          <WeightLossGoalStep onOptionSelect={handleWeightLossGoalSelect} />
+        );
+      case 5:
+        return (
+          <WeightLossMotivationStep
+            weightGoal={userData.weightGoal}
+            onContinue={handleWeightLossMotivationContinue}
+          />
+        );
+      case 6:
+        return (
+          <WeightLossResultsStep onContinue={handleWeightLossResultsContinue} />
+        );
+      case 7:
+        return (
+          <ProvinceSelectionStep onProvinceSelect={handleProvinceSelect} />
+        );
+      case 8:
+        return (
+          <AgeVerificationStep onDateSelect={handleAgeVerificationSelect} />
+        );
+      case 9:
         return (
           <MedicalConditionsStep
             onConditionSelect={handleMedicalConditionSelect}
           />
         );
-      case 3:
+      case 10:
         return <MedicationsStep onMedicationSelect={handleMedicationSelect} />;
-      case 4:
+      case 11:
         return (
           <EatingDisorderStep onOptionSelect={handleEatingDisorderSelect} />
         );
-      case 5:
+      case 12:
         return <PregnancyStep onOptionSelect={handlePregnancySelect} />;
-      case 6:
-        return (
-          <NeedlePreferenceStep onOptionSelect={handleNeedlePreferenceSelect} />
-        );
-      case 7:
+      case 13:
         return (
           <ProductRecommendationsStep
             products={PRODUCTS}
@@ -317,6 +526,7 @@ const WeightQuestionnaire = () => {
               setProductState((prev) => ({ ...prev, showMoreOptions: value }))
             }
             onContinue={handleContinueClick}
+            isLoading={isAddingToCart}
           />
         );
       default:
@@ -337,13 +547,13 @@ const WeightQuestionnaire = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-white subheaders-font font-medium">
+    <div className="flex flex-col h-screen bg-white subheaders-font font-medium">
       <QuestionnaireNavbar
         onBackClick={handleBackClick}
         currentPage={currentPage}
       />
-      {currentPage !== 7 && <ProgressBar progress={progress} />}
-      <div className="quiz-page-wrapper relative w-full md:w-[520px] mx-auto bg-[#FFFFFF] !min-h-fit">
+      {currentPage !== 13 && <ProgressBar progress={progress} />}
+      <div className="quiz-page-wrapper relative w-full md:w-[520px] mx-auto bg-[#FFFFFF] flex-1">
         {renderCurrentStep()}
       </div>
 
@@ -365,6 +575,7 @@ const WeightQuestionnaire = () => {
           selectedProduct={formatProductForPopup(productState.selected)}
           onCheckout={handleCheckout}
           onClose={() => setShowCrossSellPopup(false)}
+          initialCartData={initialCartData}
         />
       )}
 
@@ -469,9 +680,7 @@ const WeightQuestionnaire = () => {
         .quiz-page-wrapper {
           display: flex;
           flex-direction: column;
-          min-height: calc(
-            100vh - 64px
-          ); /* Adjust based on your navbar height */
+          height: 100%;
         }
 
         .sticky {

@@ -32,7 +32,7 @@ const BrandGenericModal = ({
           </li>
           <li className="flex items-center">
             <strong className="min-w-[40%]">Interchangeable:</strong>
-            <span> FDA Approved</span>
+            <span>Health Canada Approved</span>
           </li>
         </ul>
 

@@ -2,11 +2,9 @@
 // Add any routes that should not show the default header and footer
 
 export const layoutExemptRoutes = [
-  "/ed-flow", // ED flow pages
   "/ed-prelander",
   "/ed-prelander2",
   "/ed-prelander5",
-  "/hair-flow", // Hair flow pages
   "/checkout",
   "/ed-pre-consultation-quiz",
   "/wl-pre-consultation",
@@ -32,6 +30,22 @@ export const layoutExemptRoutes = [
   "/quiz_wl",
   "/quiz_wl2",
   "/quiz_wl3",
+  "/quiz-ed1",
+  "/quiz-ed2",
+  "/wl-checkout-flow1",
+  "/wl-checkout-flow2",
+  "/hyperpigmentation-consultation-quiz",
+  "/anti-aging-consultation-quiz",
+  "/acne-consultation-quiz",
+  "/listicle",
+  "/ed-checkout-flow1",
+  "/ed-checkout-flow2",
+  "/almost",
+  "/payment",
+  "/checkoutFlow",
+  "/ed-simple-quiz1",
+  "/ed-simple-quiz2",
+  "/checkout2",
 ];
 
 /**

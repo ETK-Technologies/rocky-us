@@ -42,7 +42,7 @@ const products = [
   },
 ];
 
-const WlProducts = ({CardBtnColor = null}) => {
+const WlProducts = ({ CardBtnColor = null, productsVisible = true }) => {
   const scrollContainerRef = useRef(null);
 
   return (
@@ -50,7 +50,11 @@ const WlProducts = ({CardBtnColor = null}) => {
       <h2 className="text-2xl lg:text-[48px]  lg:leading-[48px] mb-4 headers-font max-w-[650px]">
         Breakthrough medications, made simple.
       </h2>
-      <ul className="ml-3 lg:ml-0 text-base mb-[40px]">
+      <ul
+        className={`ml-3 lg:ml-0 text-base ${
+          productsVisible ? "mb-[40px]" : ""
+        }`}
+      >
         <li className="flex items-center gap-3">
           <span className="w-2 h-2 rounded-full bg-black"></span>
           <p>Helps you feel fuller, for longer</p>
@@ -64,21 +68,27 @@ const WlProducts = ({CardBtnColor = null}) => {
           <p>Prescribed 100% online</p>
         </li>
       </ul>
-      <div className="overflow-x-auto !no-scrollbar relative">
-        <div className=" mx-auto ">
-          <div className="relative">
-            <ScrollArrows scrollContainerRef={scrollContainerRef} />
-            <div
-              ref={scrollContainerRef}
-              className="flex gap-2 md:gap-4 items-start overflow-x-auto snap-x snap-mandatory no-scrollbar"
-            >
-              {products.map((product, index) => (
-                <ProductCard key={index} product={product} btnColor={CardBtnColor} />
-              ))}
+      {productsVisible && (
+        <div className="overflow-x-auto !no-scrollbar relative">
+          <div className=" mx-auto ">
+            <div className="relative">
+              <ScrollArrows scrollContainerRef={scrollContainerRef} />
+              <div
+                ref={scrollContainerRef}
+                className="flex gap-2 md:gap-4 items-start overflow-x-auto snap-x snap-mandatory no-scrollbar"
+              >
+                {products.map((product, index) => (
+                  <ProductCard
+                    key={index}
+                    product={product}
+                    btnColor={CardBtnColor}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

@@ -18,7 +18,7 @@ const SuccessMessage = memo(() => (
         <div className="w-full md:w-1/2">
           <div className="space-y-4">
             <BenefitItem text="Free online assessment by a licensed provider" />
-            <BenefitItem text=" FDA Approved medications" />
+            <BenefitItem text="Health Canada Approved medications" />
             <BenefitItem text="Free, discreet shipping if treatment is approved" />
           </div>
 

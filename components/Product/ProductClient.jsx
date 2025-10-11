@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { logger } from "@/utils/devLogger";
 import Image from "next/image";
 import ProductInfo from "./ProductInfo";
 import ProductVariations from "./ProductVariations";
@@ -8,7 +9,7 @@ import ProductActions from "./ProductActions";
 import { VARIATION_TYPES, PRODUCT_TYPES } from "@/lib/constants/productTypes";
 
 const ProductClient = ({ product, productType, variationType, variations }) => {
-  console.log(product);
+  logger.log(product);
   // Initialize with the first variation price if available
   const initialVariation =
     Array.isArray(variations) && variations.length > 0 ? variations[0] : null;

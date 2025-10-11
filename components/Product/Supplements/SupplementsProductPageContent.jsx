@@ -1,6 +1,7 @@
 "use client";
 
 import Section from "@/components/utils/Section";
+import { logger } from "@/utils/devLogger";
 import dynamic from "next/dynamic";
 import SupplementsProductDetails from "./SupplementsProductDetails";
 import ImagesSection from "@/components/Supplements/ImagesSection";
@@ -38,6 +39,7 @@ const SupplementsProductPageContent = memo(({ clientProps, faqs }) => {
     "essential-gut-relief",
     "essential-mood-balance",
     "essential-night-boost",
+    "hair-growth-support",
   ];
 
   // Fetch recommended products based on related_ids
@@ -63,15 +65,15 @@ const SupplementsProductPageContent = memo(({ clientProps, faqs }) => {
           if (data.success && data.products) {
             setRecommendedProducts(data.products);
           } else {
-            console.error("Failed to fetch recommended products:", data.error);
+            logger.error("Failed to fetch recommended products:", data.error);
             setRecommendedProducts([]);
           }
         } else {
-          console.error("API request failed:", response.statusText);
+          logger.error("API request failed:", response.statusText);
           setRecommendedProducts([]);
         }
       } catch (error) {
-        console.error("Error fetching recommended products:", error);
+        logger.error("Error fetching recommended products:", error);
         setRecommendedProducts([]);
       } finally {
         setLoadingRecommended(false);
@@ -94,35 +96,35 @@ const SupplementsProductPageContent = memo(({ clientProps, faqs }) => {
     ) {
       return [
         {
-          question: "How do I take Hair Support?",
+          question: "How do I take Essential Follicle Support?",
           answer:
             "Simply take 1 capsule twice daily with water. With 60 veggie capsules per bottle, you're set for a one-month journey to healthier hair.",
         },
         {
-          question: "Is Hair Support suitable for vegetarians?",
+          question: "Is Essential Follicle Support suitable for vegetarians?",
           answer:
-            "Absolutely! Andropecia Hair Support is formulated with veggie capsules and plant based ingredients, making it perfect for vegetarians.",
+            "Absolutely! Essential Follicle Support is formulated with veggie capsules and plant based ingredients, making it perfect for vegetarians.",
         },
         {
-          question: "Can women use Hair Support?",
+          question: "Can women use Essential Follicle Support?",
           answer:
-            "Hair Support is designed specifically for men's hair health and is not intended for use by women.",
+            "Essential Follicle Support is designed specifically for men's hair health and is not intended for use by women.",
         },
         {
           question: "Are there any side effects?",
           answer:
-            "Hair Support is generally well-tolerated. However, it's best to consult a healthcare professional before starting any new supplement.",
+            "Essential Follicle Support is generally well-tolerated. However, it's best to consult a healthcare professional before starting any new supplement.",
         },
         {
-          question: "Will Hair Support regrow my hair?",
+          question: "Will Essential Follicle Support regrow my hair?",
           answer:
-            "Hair Support is designed to support hair health and growth. Results may vary, but it can contribute to fuller, healthier hair.",
+            "Essential Follicle Support is designed to support hair health and growth. Results may vary, but it can contribute to fuller, healthier hair.",
         },
         {
           question:
-            "Can I use Hair Support with other medications or supplements?",
+            "Can I use Essential Follicle Support with other medications or supplements?",
           answer:
-            "If you're taking other medications or supplements, consult your healthcare professional before combining them with Hair Support.",
+            "If you're taking other medications or supplements, consult your healthcare professional before combining them with Essential Follicle Support.",
         },
         {
           question: "How long until I see results?",
@@ -130,9 +132,9 @@ const SupplementsProductPageContent = memo(({ clientProps, faqs }) => {
             "Results may vary, but many start noticing positive changes within three months of consistent use.",
         },
         {
-          question: "Do I have to take Hair Support with food?",
+          question: "Do I have to take Essential Follicle Support with food?",
           answer:
-            "Hair Support can be taken with or without food, based on your preference.",
+            "Essential Follicle Support can be taken with or without food, based on your preference.",
         },
       ];
     }
@@ -195,6 +197,151 @@ const SupplementsProductPageContent = memo(({ clientProps, faqs }) => {
           question:
             "Does Essential T-Boost have a Natural Product Number (NPN)?",
           answer: "Yes- the NPN for Essential T-Boost is 80059283.",
+        },
+      ];
+    }
+    if (
+      productName.toLowerCase().includes("gut relief") ||
+      productName.toLowerCase().includes("gut-relief") ||
+      slug.includes("essential-gut-relief")
+    ) {
+      return [
+        {
+          question:
+            "1.⁠ ⁠What quality standards and certifications does Gut Relief meet?",
+          answer:
+            "Gut Relief is produced in GMP-certified facilities and undergoes third-party testing in GLP-certified labs to ensure purity and potency. Every batch is screened for heavy metals, pesticides, micro-contaminants, and ingredient accuracy, following standards set by Health Canada and the Canadian Food Inspection Agency. It's also non-GMO, gluten-free, caffeine-free, vegan, and contains no preservatives, artificial colors, flavors, or sweeteners.",
+        },
+        {
+          question:
+            "2.⁠ ⁠What ingredients are in Gut Relief and what do they do?",
+          answer:
+            "Gut Relief features a powerful herbal blend of Sweet Fennel extract (to help reduce gas and bloating), Turmeric (to support digestion and reduce inflammation), and Milk Thistle (to support liver and gallbladder health).",
+        },
+        {
+          question:
+            "3.⁠ ⁠How and when should I take Gut Relief, and how soon might I feel a difference?",
+          answer:
+            "Adults (19+) should take 1 capsule twice daily with water. Many users begin to feel relief from bloating and digestive discomfort within a few hours, while others may experience noticeable improvement after several days of consistent use.",
+        },
+        {
+          question:
+            "4.⁠ ⁠Can I take Gut Relief with other supplements or probiotics?",
+          answer:
+            "Yes! Gut Relief is safe to use alongside probiotics and most other supplements. If you're on medication or managing a chronic condition, it's best to consult your healthcare provider first.",
+        },
+        {
+          question:
+            "5.⁠ ⁠Are there any precautions or side effects I should know about?",
+          answer:
+            "Gut Relief is generally well-tolerated. Avoid combining it with alcohol or strong sedatives. If you're pregnant or breastfeeding, check with your doctor first. Stop use if you notice any adverse reactions.",
+        },
+        {
+          question:
+            "6.⁠ ⁠Is Gut Relief suitable for people with dietary restrictions?",
+          answer:
+            "Absolutely—it's vegan, gluten-free, caffeine-free, non-GMO, and has no preservatives, artificial colors, flavors, or sweeteners.",
+        },
+        {
+          question:
+            "7.⁠ ⁠What form are the ingredients in, and why does it matter?",
+          answer:
+            "Gut Relief uses potent herbal extracts, which are more concentrated than raw powders. This helps ensure you're getting a consistent amount of each ingredient to support digestive comfort and reduce bloating.",
+        },
+      ];
+    }
+    if (
+      productName.toLowerCase().includes("mood balance") ||
+      productName.toLowerCase().includes("mood-balance") ||
+      slug.includes("essential-mood-balance")
+    ) {
+      return [
+        {
+          question:
+            "1.⁠ ⁠What quality standards and certifications does Mood Balance meet?",
+          answer:
+            "Mood Balance is made in GMP-certified (Good Manufacturing Practices) facilities and tested in GLP-certified labs to ensure purity, potency, and safety. Every batch is screened for heavy metals, pesticides, micro-contaminants, and ingredient accuracy, in line with standards set by Health Canada and the Canadian Food Inspection Agency. It's also non-GMO and free from dairy, eggs, artificial preservatives, colors, sweeteners, yeast, and corn.",
+        },
+        {
+          question: "2.⁠ ⁠What are the main benefits of taking Mood Balance?",
+          answer:
+            "Each 500 mg capsule of Mood Balance (Ashwagandha root) helps balance mood, reduce stress, support a healthy cortisol response, benefit thyroid function, assist in blood sugar regulation, and may help control weight and food cravings.",
+        },
+        {
+          question:
+            "3.⁠ ⁠How and when should I take Mood Balance, and how long until I see results?",
+          answer:
+            "Adults (19+) should take 1 capsule twice daily with a glass of water. Many users report feeling calmer and more balanced within a few days, with fuller benefits becoming noticeable after a few weeks of consistent use.",
+        },
+        {
+          question:
+            "4.⁠ ⁠Is Mood Balance safe for people with dietary restrictions?",
+          answer:
+            "Yes! It's vegan, gluten-free, dairy-free, soy-free, and made with non-GMO ingredients. It also contains no artificial sweeteners, colors, or preservatives.",
+        },
+        {
+          question:
+            "5.⁠ ⁠Can I take Mood Balance with other supplements or medications?",
+          answer:
+            "Generally safe, as Ashwagandha has no widespread contraindications. However, if you're taking medications—especially for thyroid, anxiety, or sleep—or managing a health condition, it's best to check with your healthcare provider first.",
+        },
+        {
+          question: "6.⁠ ⁠Are there any precautions or side effects?",
+          answer:
+            "Avoid combining Mood Balance with alcohol, sedatives, or other calming supplements. If you're pregnant or breastfeeding, consult your doctor first. Discontinue use if you experience unusual symptoms.",
+        },
+        {
+          question:
+            "7.⁠ ⁠Where is the Ashwagandha sourced from, and what part of the plant is used?",
+          answer:
+            "We source Ashwagandha root from its native region in India, using only the dried root—the part traditionally recognized in Ayurveda for its mood-balancing, adaptogenic benefits.",
+        },
+      ];
+    }
+    if (
+      productName.toLowerCase().includes("night boost") ||
+      productName.toLowerCase().includes("night-boost") ||
+      slug.includes("essential-night-boost")
+    ) {
+      return [
+        {
+          question:
+            "1.⁠ ⁠What quality standards and certifications does Night Boost meet?",
+          answer:
+            "Night Boost is crafted with clinically researched, clean ingredients and undergoes third-party testing to verify purity and potency. Each batch is tested in GLP-certified labs for heavy metals, micro-contaminants, and ingredient integrity, following guidelines set by Health Canada and the Canadian Food Inspection Agency. It also features IGEN-certified non-GMO ingredients and is made in facilities that follow GMP and ISO 17025 standards.",
+        },
+        {
+          question: "2.⁠ ⁠What are the key ingredients and what do they do?",
+          answer:
+            "Night Boost combines L‑Theanine, Magnesium Bisglycinate, Myo‑Inositol, Glycine, and GABA—a blend of amino acids and minerals that help reduce stress and anxiety, support relaxation, improve focus, and ease muscle tension.",
+        },
+        {
+          question:
+            "3.⁠ ⁠How and when should I take Night Boost, and how long until I feel a difference?",
+          answer:
+            "Adults (19+) should take 2 capsules in the evening or before bedtime. Some people notice a calming effect within 30–60 minutes, while others may see the full benefits after a few days to a couple of weeks of consistent use.",
+        },
+        {
+          question: "4.⁠ ⁠Will it make me feel sleepy or drowsy?",
+          answer:
+            "No—Night Boost is designed to help you feel calm yet alert. It promotes relaxation without causing drowsiness, making it suitable for use in the evening or as part of a wind-down routine.",
+        },
+        {
+          question:
+            "5.⁠ ⁠Is Night Boost suitable for people with allergies or dietary restrictions?",
+          answer:
+            "Yes. It's vegan-friendly, gluten-free, dairy-free, soy-free, non-GMO, and contains no artificial colors, flavors, sweeteners, preservatives, or eggs.",
+        },
+        {
+          question:
+            "6.⁠ ⁠Can I take it alongside other supplements or medications?",
+          answer:
+            "Generally, yes—Night Boost doesn't contain any known contraindicated ingredients. That said, if you're taking medications or managing a health condition, it's always best to check with your healthcare provider.",
+        },
+        {
+          question: "7.⁠ ⁠Is it safe to use while pregnant or breastfeeding?",
+          answer:
+            "If you're pregnant or breastfeeding, please consult your healthcare provider before using Night Boost, as with any supplement.",
         },
       ];
     }
@@ -298,7 +445,7 @@ const SupplementsProductPageContent = memo(({ clientProps, faqs }) => {
     // Essential Mood Balance content
     if (
       productName.toLowerCase().includes("mood balance") ||
-      productName.toLowerCase().includes("mood boost") ||
+      productName.toLowerCase().includes("mood-balance") ||
       slug.includes("essential-mood-balance")
     ) {
       return {
@@ -379,8 +526,16 @@ const SupplementsProductPageContent = memo(({ clientProps, faqs }) => {
           img: "/supplements/rel_image.jpg",
           bullets: [
             {
-              title: "Premium Digestive Blend",
-              desc: "A carefully crafted combination of natural ingredients designed to support healthy digestion, reduce bloating, and promote gut comfort. Our formula works gently to restore digestive balance and improve overall gastrointestinal health.",
+              title: "Sweet Fennel",
+              desc: "Helps relax the digestive muscles to reduce bloating and gas",
+            },
+            {
+              title: "Turmeric",
+              desc: "Reduces gut inflammation and stimulates bile flow",
+            },
+            {
+              title: "Milk Thistle",
+              desc: "Supports liver function and helps detoxify the body.",
             },
           ],
         },
@@ -430,9 +585,8 @@ const SupplementsProductPageContent = memo(({ clientProps, faqs }) => {
           },
         ],
         ingredients: {
-          title: "Essential Hair Growth Support Ingredients Explained.",
-          description:
-            "Essential Hair Growth Support uses premium ingredients.",
+          title: "Essential Follicle Support Ingredients Explained.",
+          description: "Essential Follicle Support uses premium ingredients.",
           img: "/supplements/hair_img.jpg",
           bullets: [
             {
@@ -611,10 +765,8 @@ const SupplementsProductPageContent = memo(({ clientProps, faqs }) => {
         variations={variations}
         isLoading={isLoading}
       />
-
       {/* Images Section */}
       <ImagesSection images={productContent.imageSlider} />
-
       {/* Ingredients Section */}
       <NightBoost
         title={productContent.ingredients.title}
@@ -622,32 +774,30 @@ const SupplementsProductPageContent = memo(({ clientProps, faqs }) => {
         img={productContent.ingredients.img}
         bullets={productContent.ingredients.bullets}
       />
-
       {/* Comparison Table */}
-      <Section>
-        <ComparingTable
-          img={product?.images?.[0]?.src || "/supplements/product.png"}
-          title={productContent.comparison.title}
-          sec_title={productContent.comparison.secTitle}
-          third_title={productContent.comparison.thirdTitle}
-          f_col={productContent.comparison.features}
-          sec_col={productContent.comparison.productCol}
-          third_col={productContent.comparison.competitorCol1}
-          fourth_col={productContent.comparison.competitorCol2}
-        />
-      </Section>
-
+      {!product?.slug?.includes("hair-growth-support") && (
+        <Section>
+          <ComparingTable
+            img={product?.images?.[0]?.src || "/supplements/product.png"}
+            title={productContent.comparison.title}
+            sec_title={productContent.comparison.secTitle}
+            third_title={productContent.comparison.thirdTitle}
+            f_col={productContent.comparison.features}
+            sec_col={productContent.comparison.productCol}
+            third_col={productContent.comparison.competitorCol1}
+            fourth_col={productContent.comparison.competitorCol2}
+          />
+        </Section>
+      )}
       {/* Recommended Products - Always show this section */}
       <Recommended
         products={recommendedProducts}
         isLoading={loadingRecommended}
       />
-
       {/* Reviews Section */}
       <Section bg="bg-[#F5F4EF]">
         <DynamicReviewsSection />
       </Section>
-
       {/* FAQs Section */}
       <Section>
         <DynamicHomeFaqsSection faqs={productFAQs} />

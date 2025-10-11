@@ -1,7 +1,7 @@
 import { fetchProductBySlug } from "@/lib/woocommerce";
 import ErrorPage from "@/components/Product/ErrorPage";
 import ProductClientWrapper from "@/components/Product/ProductClientWrapper";
-import logger from "@/lib/logger";
+import { logger } from "@/utils/devLogger";
 import { wooApiGet } from "@/lib/woocommerce";
 import {
   ProductFactory,

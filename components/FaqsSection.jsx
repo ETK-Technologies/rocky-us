@@ -1,8 +1,40 @@
+import { useMemo } from "react";
 import FaqItem from "@/components/FaqItem";
 
-const FaqsSection = ({ title, subtitle, faqs, name, isFirstCardOpen }) => {
+const FaqsSection = ({
+  title,
+  subtitle,
+  faqs,
+  name,
+  nameWithLineBreak,
+  isFirstCardOpen,
+}) => {
+  const groupedFaqs = useMemo(() => {
+    if (!faqs || faqs.length === 0) return [];
+
+    const hasSections = faqs.some((faq) => faq.section);
+
+    if (!hasSections) {
+      return [{ title: null, faqs }];
+    }
+
+    const sections = {};
+    faqs.forEach((faq) => {
+      const sectionTitle = faq.section || "Other";
+      if (!sections[sectionTitle]) {
+        sections[sectionTitle] = [];
+      }
+      sections[sectionTitle].push(faq);
+    });
+
+    return Object.entries(sections).map(([title, sectionFaqs]) => ({
+      title,
+      faqs: sectionFaqs,
+    }));
+  }, [faqs]);
+
   return (
-    <div className="max-w-[1184px] mx-auto md:px-0 py-14 md:py-24 md:pb-0">
+    <div className="max-w-[1184px] mx-auto px-5 md:px-0 py-7 md:py-12">
       <h2 className="text-[32px] md:text-[48px] leading-[36.8px] md:leading-[55.2px] max-w-xs lg:max-w-full tracking-[-0.01em] md:tracking-[-0.02em] font-[550] mb-3 md:mb-4 headers-font">
         {title}
       </h2>
@@ -12,29 +44,65 @@ const FaqsSection = ({ title, subtitle, faqs, name, isFirstCardOpen }) => {
 
       <div
         className={`mx-auto grid ${
-          name ? "md:grid-cols-2 lg:grid-cols-3 gap-[24px] lg:gap-[174px]" : ""
+          name && !groupedFaqs.some((section) => section.title)
+            ? "md:grid-cols-2 lg:grid-cols-3 gap-[24px] lg:gap-[174px]"
+            : ""
         } items-start`}
       >
-        {name && (
+        {name && !groupedFaqs.some((section) => section.title) && (
           <div>
             <h3 className="text-[20px] md:text-[24px] leading-[23px] md:leading-[27.6px] font-[450] md:pt-4 headers-font">
-              {name}
+              {nameWithLineBreak ? (
+                <>
+                  {nameWithLineBreak.firstLine}
+                  <br />
+                  {nameWithLineBreak.secondLine}
+                </>
+              ) : (
+                name
+              )}
             </h3>
           </div>
         )}
         <div
           className={`${
-            name ? "self-start lg:col-span-2" : "mx-auto md:w-3/4"
+            name && !groupedFaqs.some((section) => section.title)
+              ? "self-start lg:col-span-2"
+              : "mx-auto md:w-3/4"
           }`}
         >
-          {faqs.map((faq, index) => (
-            <FaqItem
-              key={index}
-              question={faq.question}
-              answer={faq.answer}
-              isFirstCardOpen={isFirstCardOpen}
-              index={index}
-            />
+          {groupedFaqs.map((section, sectionIndex) => (
+            <div
+              key={sectionIndex}
+              className={`mb-8 last:mb-0 ${
+                section.title
+                  ? "grid md:grid-cols-2 lg:grid-cols-3 gap-[24px] lg:gap-[174px] items-start"
+                  : ""
+              }`}
+            >
+              {section.title && (
+                <div>
+                  <h3 className="text-[20px] md:text-[24px] leading-[23px] md:leading-[27.6px] font-[450] md:pt-4 headers-font text-[#8B6F47]">
+                    {section.title}
+                  </h3>
+                </div>
+              )}
+              <div
+                className={`${section.title ? "self-start lg:col-span-2" : ""}`}
+              >
+                {section.faqs.map((faq, index) => (
+                  <FaqItem
+                    key={`${sectionIndex}-${index}`}
+                    question={faq.question}
+                    answer={faq.answer}
+                    isFirstCardOpen={
+                      isFirstCardOpen && sectionIndex === 0 && index === 0
+                    }
+                    index={index}
+                  />
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       </div>

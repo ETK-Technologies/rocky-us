@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import axios from "axios";
+import { logger } from "@/utils/devLogger";
 import { cookies } from "next/headers";
 
 const BASE_URL = process.env.BASE_URL;
@@ -44,7 +45,7 @@ export async function GET(req) {
       total: response.data.total,
     });
   } catch (error) {
-    console.error(
+    logger.error(
       "Error checking order status:",
       error.response?.data || error.message
     );

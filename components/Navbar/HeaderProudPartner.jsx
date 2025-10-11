@@ -36,6 +36,21 @@ const HeaderProudPartner = () => {
           Toronto Blue Jays
         </span>
       </div>
+
+      <div className="w-0 h-8 origin-top-left  outline outline-1 outline-offset-[-0.50px] outline-white/50"></div>
+
+      <div className="flex items-center gap-2 md:mx-2">
+        <div className="relative overflow-hidden w-[35px] h-[25px] md:w-[46px] md:h-[40px] md:mx-1">
+          <CustomContainImage
+            src="/proud-logo/partner-2.png"
+            alt="Toronto Argonauts"
+            fill
+          />
+        </div>
+        <span className="hidden md:inline font-[500] text-[12px] md:text-[18px]">
+          Toronto Argonauts
+        </span>
+      </div>
     </div>
   );
 };

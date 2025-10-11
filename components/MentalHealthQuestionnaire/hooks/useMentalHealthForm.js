@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from "@/utils/devLogger";
 import { MENTAL_HEALTH_SCORES } from "../constants";
 
 const INITIAL_FORM_STATE = {
@@ -14,9 +15,6 @@ const INITIAL_FORM_STATE = {
   source_site: "https://myrocky.ca",
   email: "",
   phone: "",
-  calendly_booking_completed: false,
-  calendly_booking_date: "",
-  calendly_booking_event_type: "",
   "130_3": "",
   "130_6": "",
   131: "",
@@ -138,6 +136,9 @@ const INITIAL_FORM_STATE = {
   "533_4": "",
   "533_5": "",
   "533_6": "",
+  // Health care team questions
+  538: "",
+  539: "",
   // ID Upload
   photoIdAcknowledged: false,
   photo_id: "",
@@ -200,7 +201,7 @@ export const useMentalHealthForm = ({
           }));
         }
       } catch (error) {
-        console.error("Error fetching user data:", error);
+        logger.error("Error fetching user data:", error);
       }
       const loadedData = loadFromStorage();
       if (loadedData) {
@@ -274,7 +275,7 @@ export const useMentalHealthForm = ({
           loadFromStorage(storedData, false);
         }
       } catch (error) {
-        console.error("Error syncing with storage:", error);
+        logger.error("Error syncing with storage:", error);
       }
     }
   };
@@ -290,6 +291,13 @@ export const useMentalHealthForm = ({
       }
 
       const quizFormData = JSON.parse(storedData);
+      if (!quizFormData || typeof quizFormData !== 'object') {
+        logger.warn("Invalid mental health form data structure, clearing localStorage");
+        localStorage.removeItem("mh-quiz-form-data");
+        localStorage.removeItem("mh-quiz-form-data-expiry");
+        return null;
+      }
+      
       let updatedData = null;
 
       setFormData((prev) => {
@@ -318,6 +326,14 @@ export const useMentalHealthForm = ({
       if (updateNavigation) {
         if (quizFormData["last-question-index"]) {
           const storedPage = parseInt(quizFormData["last-question-index"]);
+          
+          if (isNaN(storedPage) || storedPage < 1 || storedPage > 35) {
+            logger.warn(`Invalid page number ${storedPage} for mental health, resetting to page 1`);
+            setCurrentPage(1);
+            setProgress(0);
+            return updatedData;
+          }
+          
           setCurrentPage(storedPage);
 
           const calculatedProgress = calculateProgress(storedPage);
@@ -338,7 +354,7 @@ export const useMentalHealthForm = ({
 
       return updatedData;
     } catch (error) {
-      console.error("Error parsing stored quiz data:", error);
+      logger.error("Error parsing stored quiz data:", error);
     }
   };
 
@@ -374,7 +390,7 @@ export const useMentalHealthForm = ({
         localStorage.setItem("mh-quiz-form-data-expiry", ttl.toString());
         return true;
       } catch (error) {
-        console.error("Error storing data in storage:", error);
+        logger.error("Error storing data in storage:", error);
         return false;
       }
     }
@@ -382,7 +398,7 @@ export const useMentalHealthForm = ({
   };
 
   const calculateProgress = (questionIndex) => {
-    const totalQuestions = 36;
+    const totalQuestions = 37;
     if (questionIndex <= 5) {
       const initialProgress = 10 + (questionIndex - 1) * 1;
       return initialProgress;
@@ -392,8 +408,6 @@ export const useMentalHealthForm = ({
   };
 
   const handleFormChange = (field, value) => {
-    console.log(`handleFormChange: field=${field}, value=${value}`);
-
     setFormData((prev) => {
       const updatedData = {
         ...prev,
@@ -411,25 +425,6 @@ export const useMentalHealthForm = ({
 
       if (field.includes("_") && !field.startsWith("l-")) {
         const [questionId, optionId] = field.split("_");
-        if (questionId === "533") {
-          console.log(`Updated drug selection: ${field}=${value}`);
-        }
-      }
-      if (field === "calendly_booking_completed" && value === true) {
-        console.log(
-          "Calendly booking completed - setting completion status to Full"
-        );
-        updatedData.completion_percentage = 100;
-        updatedData.completion_state = "Full";
-
-        setProgress(100);
-        setTimeout(() => {
-          submitFormData({
-            calendly_booking_completed: true,
-            completion_percentage: 100,
-            completion_state: "Full",
-          });
-        }, 100);
       }
 
       if (field >= "511" && field <= "526") {
@@ -550,7 +545,7 @@ export const useMentalHealthForm = ({
       }
 
       if (data.error) {
-        console.error("Form submission error:", data.msg || data.error_message);
+        logger.error("Form submission error:", data.msg || data.error_message);
         return null;
       }
 
@@ -589,7 +584,7 @@ export const useMentalHealthForm = ({
 
       return data;
     } catch (error) {
-      console.error("Error submitting form:", error);
+      logger.error("Error submitting form:", error);
       return null;
     }
   };

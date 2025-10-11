@@ -1,31 +1,38 @@
 "use client";
 
 import Loader from "@/components/Loader";
+import { logger } from "@/utils/devLogger";
 import CheckoutSkeleton from "@/components/ui/skeletons/CheckoutSkeleton";
 import { useEffect, useState } from "react";
 import BillingAndShipping from "./BillingAndShipping";
 import CartAndPayment from "./CartAndPayment";
 import { toast } from "react-toastify";
 import { useRouter, useSearchParams } from "next/navigation";
-import { loadStripe } from "@stripe/stripe-js";
-import { Elements } from "@stripe/react-stripe-js";
 import {
   processUrlCartParameters,
   cleanupCartUrlParameters,
 } from "@/utils/urlCartHandler";
-import QuestionnaireNavbar from "../EdQuestionnaire/QuestionnaireNavbar";
 import {
-  log,
-  logPayment,
-  logOrder,
-  logError,
-  logDebug,
-} from "@/lib/utils/logger";
-
-// Initialize Stripe
-const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-  ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
-  : null;
+  transformPaymentError,
+  isWordPressCriticalError,
+  handlePaymentResponse,
+  isSuccessfulOrderStatus,
+} from "@/utils/paymentErrorHandler";
+import {
+  isPaymentMethodValid,
+  getPaymentValidationMessage,
+} from "@/utils/cardValidation";
+import QuestionnaireNavbar from "../EdQuestionnaire/QuestionnaireNavbar";
+import { getRequiredConsultations } from "@/utils/requiredConsultation";
+import {
+  checkQuebecZonnicRestriction,
+  getQuebecRestrictionMessage,
+} from "@/utils/zonnicQuebecValidation";
+import useCheckoutValidation from "@/lib/hooks/useCheckoutValidation";
+import { checkAgeRestriction } from "@/utils/ageValidation";
+import QuebecRestrictionPopup from "../Popups/QuebecRestrictionPopup";
+import AgeRestrictionPopup from "../Popups/AgeRestrictionPopup";
+import { getAwinFromUrlOrStorage } from "@/utils/awin";
 
 const CheckoutPageContent = () => {
   const router = useRouter();
@@ -41,6 +48,7 @@ const CheckoutPageContent = () => {
     "hair-flow": searchParams.get("hair-flow"),
     "mh-flow": searchParams.get("mh-flow"),
     "smoking-flow": searchParams.get("smoking-flow"),
+    "skincare-flow": searchParams.get("skincare-flow"),
   };
 
   // Build flow query string to append to redirects
@@ -51,7 +59,6 @@ const CheckoutPageContent = () => {
         params.push(`${key}=${value}`);
       }
     });
-    console.log("FLOW BUILDED -> ->", params);
     return params.length > 0 ? `&${params.join("&")}` : "";
   };
 
@@ -61,10 +68,16 @@ const CheckoutPageContent = () => {
   const [savedCards, setSavedCards] = useState([]);
   const [selectedCard, setSelectedCard] = useState(null);
   const [isLoadingSavedCards, setIsLoadingSavedCards] = useState(false);
-  const [clientSecret, setClientSecret] = useState(null);
-  const [stripeElements, setStripeElements] = useState(null);
-  const [isInitialLoadingComplete, setIsInitialLoadingComplete] =
-    useState(false);
+
+  // Initialize checkout validation hook
+  const {
+    validationErrors,
+    isValidating,
+    validateForm,
+    clearErrors,
+    hasErrors,
+    getFieldError,
+  } = useCheckoutValidation();
   const [formData, setFormData] = useState({
     additional_fields: [],
     shipping_address: {},
@@ -75,22 +88,27 @@ const CheckoutPageContent = () => {
         _meta_mail_box: true,
       },
     },
-    payment_method: "stripe",
+    payment_method: "bambora_credit_card",
     payment_data: [
       {
-        key: "wc-stripe-new-payment-method",
-        value: "true",
-      },
-    ],
-    customer_note: "",
-    meta_data: [
-      {
-        key: "_meta_discreet",
-        value: "0",
+        key: "wc-bambora-credit-card-js-token",
+        value: "",
       },
       {
-        key: "_meta_mail_box",
-        value: "0",
+        key: "wc-bambora-credit-card-account-number",
+        value: "",
+      },
+      {
+        key: "wc-bambora-credit-card-card-type",
+        value: "",
+      },
+      {
+        key: "wc-bambora-credit-card-exp-month",
+        value: "",
+      },
+      {
+        key: "wc-bambora-credit-card-exp-year",
+        value: "",
       },
     ],
   });
@@ -99,12 +117,234 @@ const CheckoutPageContent = () => {
   const [expiry, setExpiry] = useState("");
   const [cvc, setCvc] = useState("");
   const [cardType, setCardType] = useState("");
-  const [saveCard, setSaveCard] = useState(true);
+
+  // Payment validation state
+  const [isPaymentValid, setIsPaymentValid] = useState(false);
+  const [paymentValidationMessage, setPaymentValidationMessage] = useState("");
 
   // Retry mechanism state for saved card payments
   const [shouldUseDirectPayment, setShouldUseDirectPayment] = useState(false);
   const [savedOrderId, setSavedOrderId] = useState("");
   const [savedOrderKey, setSavedOrderKey] = useState("");
+
+  // Validate payment method whenever payment state changes
+  useEffect(() => {
+    const paymentState = {
+      selectedCard,
+      cardNumber,
+      expiry,
+      cvc,
+    };
+
+    const isValid = isPaymentMethodValid(paymentState);
+    const message = getPaymentValidationMessage(paymentState);
+
+    setIsPaymentValid(isValid);
+    setPaymentValidationMessage(message);
+  }, [selectedCard, cardNumber, expiry, cvc]);
+  const [showQuebecPopup, setShowQuebecPopup] = useState(false);
+  const [showAgePopup, setShowAgePopup] = useState(false);
+  const [ageValidationFailed, setAgeValidationFailed] = useState(false);
+  const [isUpdatingShipping, setIsUpdatingShipping] = useState(false);
+
+  // Handle province change for real-time Quebec validation and shipping updates
+  const handleProvinceChange = async (
+    newProvince,
+    addressType = "billing",
+    shouldClearFields = true
+  ) => {
+    if (cartItems && cartItems.items) {
+      const restriction = checkQuebecZonnicRestriction(
+        cartItems.items,
+        newProvince,
+        newProvince
+      );
+
+      if (restriction.blocked) {
+        setShowQuebecPopup(true);
+        return;
+      }
+
+      // Check age restriction for Zonnic products
+      if (hasZonnicProducts(cartItems.items)) {
+        // First check form data (user might have changed date of birth)
+        let dateOfBirthToCheck = formData.billing_address.date_of_birth;
+
+        // If no form data, fall back to profile API
+        if (!dateOfBirthToCheck) {
+          try {
+            const response = await fetch("/api/profile");
+            if (response.ok) {
+              const profileData = await response.json();
+              logger.log(
+                "Profile data for age validation (province change):",
+                profileData
+              );
+              if (profileData.success && profileData.date_of_birth) {
+                dateOfBirthToCheck = profileData.date_of_birth;
+              }
+            }
+          } catch (error) {
+            logger.log(
+              "Could not fetch user profile for age validation (province change):",
+              error
+            );
+          }
+        }
+
+        // Now validate the date of birth
+        if (dateOfBirthToCheck) {
+          logger.log(
+            "Checking age validation for date (province change):",
+            dateOfBirthToCheck
+          );
+          const ageCheck = checkAgeRestriction(dateOfBirthToCheck, 19);
+          logger.log("Age validation result (province change):", ageCheck);
+          if (ageCheck.blocked) {
+            logger.log(
+              "User is too young, showing age popup (province change)"
+            );
+            setAgeValidationFailed(true);
+            setShowAgePopup(true);
+            return;
+          } else {
+            logger.log(
+              "User meets age requirement (province change):",
+              ageCheck.age
+            );
+            setAgeValidationFailed(false);
+          }
+        } else {
+          logger.log(
+            "No date of birth found in form or profile data (province change)"
+          );
+        }
+      }
+    }
+
+    // Update shipping rates when province changes
+    try {
+      setIsUpdatingShipping(true);
+
+      // Prepare address data based on whether we should clear fields
+      let addressData;
+
+      if (shouldClearFields) {
+        // Create a basic address with province and country to trigger shipping calculation
+        addressData = {
+          first_name:
+            formData.shipping_address.first_name ||
+            formData.billing_address.first_name ||
+            "",
+          last_name:
+            formData.shipping_address.last_name ||
+            formData.billing_address.last_name ||
+            "",
+          company: "",
+          address_1: "",
+          address_2: "",
+          city: "",
+          state: newProvince,
+          postcode: "",
+          country: "CA",
+        };
+      } else {
+        // Keep existing address data when province changes due to address selection
+        addressData = {
+          first_name:
+            formData.shipping_address.first_name ||
+            formData.billing_address.first_name ||
+            "",
+          last_name:
+            formData.shipping_address.last_name ||
+            formData.billing_address.last_name ||
+            "",
+          company: formData.shipping_address.company || "",
+          address_1: formData.shipping_address.address_1 || "",
+          address_2: formData.shipping_address.address_2 || "",
+          city: formData.shipping_address.city || "",
+          state: newProvince,
+          postcode: formData.shipping_address.postcode || "",
+          country: "CA",
+        };
+      }
+
+      // Prepare customer data for API call
+      const customerData = {
+        billing_address: {
+          ...formData.billing_address,
+          ...(addressType === "billing" && shouldClearFields
+            ? {
+                address_1: "",
+                address_2: "",
+                city: "",
+                postcode: "",
+                country: "CA",
+              }
+            : {}),
+          state:
+            addressType === "billing"
+              ? newProvince
+              : formData.billing_address.state || newProvince,
+        },
+        shipping_address: addressData,
+      };
+
+      // Also update form data to sync UI only if we should clear fields
+      if (shouldClearFields) {
+        setFormData((prev) => ({
+          ...prev,
+          billing_address: {
+            ...prev.billing_address,
+            ...(addressType === "billing"
+              ? {
+                  address_1: "",
+                  address_2: "",
+                  city: "",
+                  postcode: "",
+                  country: "CA",
+                }
+              : {}),
+            state:
+              addressType === "billing"
+                ? newProvince
+                : prev.billing_address.state || newProvince,
+          },
+          shipping_address: addressData,
+        }));
+      }
+
+      // Log the customer data being sent
+      logger.log(
+        "Sending customer data to update-customer API:",
+        JSON.stringify(customerData, null, 2)
+      );
+
+      // Call the update customer API
+      const response = await fetch("/api/cart/update-customer", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(customerData),
+      });
+
+      const updatedCart = await response.json();
+
+      if (response.ok && !updatedCart.error) {
+        // Update cart state with new shipping rates
+        setCartItems(updatedCart);
+      } else {
+        logger.error("Error updating shipping rates:", updatedCart.error);
+        toast.error("Failed to update shipping rates. Please try again.");
+      }
+    } catch (error) {
+      logger.error("Error updating shipping rates:", error);
+      toast.error("Failed to update shipping rates. Please try again.");
+    } finally {
+      setIsUpdatingShipping(false);
+    }
+  };
 
   // Function to check if cart contains Zonnic products
   const hasZonnicProducts = (cartItems) => {
@@ -118,7 +358,7 @@ const CheckoutPageContent = () => {
         item &&
         item.name &&
         typeof item.name === "string" &&
-        item.name.toLowerCase().includes("zonnic")
+        item.name.toString().toLowerCase().includes("zonnic")
       );
     });
   };
@@ -141,21 +381,25 @@ const CheckoutPageContent = () => {
   };
 
   // Function to fetch cart items
-  const fetchCartItems = async () => {
+  // updateFormData: whether to update billing/shipping addresses in form (default: true)
+  const fetchCartItems = async (updateFormData = true) => {
     try {
       const res = await fetch("/api/cart");
       const data = await res.json();
+
+      // Log cart items to debug what products are actually being added
+      logger.log("Cart items received from API:", data.items);
 
       // If we're coming from ED flow with specific products, verify the products are correct
       if (onboardingAddToCart) {
         const expectedProducts = onboardingAddToCart
           .split("%2C")
           .map((id) => id.trim());
-        console.log("Expected product IDs from URL:", expectedProducts);
+        logger.log("Expected product IDs from URL:", expectedProducts);
 
         // Check if products match what we expect
         if (data.items && data.items.length > 0) {
-          console.log("First product in cart:", {
+          logger.log("First product in cart:", {
             id: data.items[0].id,
             name: data.items[0].name,
             product_id: data.items[0].product_id,
@@ -166,103 +410,65 @@ const CheckoutPageContent = () => {
       // Update cart items
       setCartItems(data);
 
-      // Check for Zonnic products and update URL if necessary
-      if (hasZonnicProducts(data)) {
-        updateUrlWithSmokingFlow();
+      // --- FLOW CHECKING LOGIC BASED ON LOCALSTORAGE ---
+      if (typeof window !== "undefined") {
+        const requiredConsultation = getRequiredConsultations();
+        if (
+          Array.isArray(requiredConsultation) &&
+          requiredConsultation.length > 0 &&
+          data.items &&
+          Array.isArray(data.items)
+        ) {
+          logger.log("required consultation", requiredConsultation);
+          // For each cart item, check if it matches a required consultation
+          for (const item of data.items) {
+            logger.log("item", item);
+            const match = requiredConsultation.find(
+              (rc) =>
+                String(rc.productId) === String(item.id) ||
+                String(rc.productId) === String(item.product_id)
+            );
+            if (match && match.flowType && !searchParams.get(match.flowType)) {
+              // Add the flowType=1 to the URL if not present
+              const newParams = new URLSearchParams(window.location.search);
+              newParams.set(match.flowType, "1");
+              const newUrl = `${
+                window.location.pathname
+              }?${newParams.toString()}`;
+              window.history.replaceState({ path: newUrl }, "", newUrl);
+              // Only add the first found flow, break
+              break;
+            }
+          }
+        }
       }
+      // --- END FLOW CHECKING LOGIC ---
 
-      // Update form data with shipping and billing addresses
-      setFormData((prev) => {
-        return {
-          ...prev,
-          billing_address: data.billing_address || prev.billing_address,
-          shipping_address: data.shipping_address || prev.shipping_address,
-        };
-      });
+      // Update form data with shipping and billing addresses from cart only if requested
+      // This serves as a fallback for guest checkout on initial load
+      // For logged-in users, fetchUserProfile will override this with fresh data
+      // When refreshing cart (e.g., after adding products), we don't want to overwrite profile data
+      if (updateFormData) {
+        logger.log("=== SETTING FORM DATA FROM CART ===", {
+          billing_address_1: data.billing_address?.address_1,
+          billing_city: data.billing_address?.city,
+          billing_state: data.billing_address?.state,
+        });
+        setFormData((prev) => {
+          return {
+            ...prev,
+            billing_address: data.billing_address || prev.billing_address,
+            shipping_address: data.shipping_address || prev.shipping_address,
+          };
+        });
+      } else {
+        logger.log("=== SKIPPING FORM DATA UPDATE FROM CART ===");
+      }
 
       return data;
     } catch (error) {
-      logError("Error fetching cart items:", error);
+      logger.error("Error fetching cart items:", error);
       return null;
-    }
-  };
-
-  // Function to create Payment Intent for new cards
-  const createPaymentIntent = async () => {
-    if (!cartItems?.totals || selectedCard) {
-      console.log("Skipping Payment Intent creation:", {
-        hasCartTotals: !!cartItems?.totals,
-        hasSelectedCard: !!selectedCard,
-      });
-      return;
-    }
-
-    try {
-      const totalAmount = cartItems.totals.total_price
-        ? parseFloat(cartItems.totals.total_price) / 100
-        : cartItems.totals.total
-        ? parseFloat(cartItems.totals.total.replace(/[^0-9.]/g, ""))
-        : 0;
-
-      if (totalAmount <= 0) {
-        console.log("Skipping Payment Intent creation for free order");
-        return; // Skip for free orders
-      }
-
-      // Create a basic billing address if not available
-      const billingAddress = formData.billing_address?.email
-        ? {
-            ...formData.billing_address,
-            country: "US", // Always use USA
-          }
-        : {
-            first_name: "Customer",
-            last_name: "Name",
-            email: "customer@example.com",
-            address_1: "123 Main St",
-            city: "City",
-            state: "State",
-            postcode: "12345",
-            country: "US",
-          };
-
-      console.log("Creating Payment Intent with:", {
-        amount: totalAmount,
-        hasBillingAddress: !!formData.billing_address?.email,
-        cartItemsCount: cartItems?.items?.length || 0,
-        billingAddress: billingAddress,
-      });
-
-      const response = await fetch("/api/stripe/create-payment-intent", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          amount: totalAmount,
-          currency: "USD",
-          billingAddress: billingAddress,
-          description: `Order payment for ${billingAddress.email}`,
-          saveCard: saveCard,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        setClientSecret(result.data.paymentIntent.client_secret);
-        console.log(
-          "✅ Payment Intent created successfully:",
-          result.data.paymentIntent.id
-        );
-      } else {
-        console.error("❌ Failed to create Payment Intent:", result.error);
-        // Set a fallback message
-        setClientSecret("error");
-      }
-    } catch (error) {
-      console.error("❌ Error creating Payment Intent:", error);
-      setClientSecret("error");
     }
   };
 
@@ -270,10 +476,10 @@ const CheckoutPageContent = () => {
   const fetchSavedCards = async () => {
     try {
       setIsLoadingSavedCards(true);
-      console.log("Fetching saved cards from API...");
+      logger.log("Fetching saved cards from API...");
 
-      // Fetch saved cards from Stripe API
-      const res = await fetch("/api/stripe/payment-methods", {
+      // Explicitly wait for the fetch to complete
+      const res = await fetch("/api/payment-methods", {
         method: "GET",
         headers: {
           "Cache-Control": "no-cache",
@@ -282,17 +488,17 @@ const CheckoutPageContent = () => {
       });
 
       if (!res.ok) {
-        logError("API returned error status:", res.status);
+        logger.error("API returned error status:", res.status);
         throw new Error(`API error: ${res.status}`);
       }
 
       // Log the raw response
-      console.log("API response status:", res.status);
+      logger.log("API response status:", res.status);
 
       // Parse the response
       const data = await res.json();
 
-      console.log("Saved cards API full response:", data);
+      logger.log("Saved cards API full response:", data);
 
       if (
         data.success &&
@@ -300,22 +506,22 @@ const CheckoutPageContent = () => {
         Array.isArray(data.cards) &&
         data.cards.length > 0
       ) {
-        console.log("Setting saved cards in state:", data.cards);
+        logger.log("Setting saved cards in state:", data.cards);
         setSavedCards(data.cards);
 
         // Set the default card as selected if available
         const defaultCard = data.cards.find((card) => card.is_default);
         if (defaultCard) {
-          console.log("Setting default card as selected:", defaultCard);
+          logger.log("Setting default card as selected:", defaultCard);
           // Store the card object to have access to both id and token
           setSelectedCard(defaultCard);
         }
       } else {
-        console.log("No saved cards found in API response or invalid format");
+        logger.log("No saved cards found in API response or invalid format");
         setSavedCards([]);
       }
     } catch (error) {
-      logError("Error fetching saved cards:", error);
+      logger.error("Error fetching saved cards:", error);
       setSavedCards([]);
     } finally {
       setIsLoadingSavedCards(false);
@@ -325,107 +531,89 @@ const CheckoutPageContent = () => {
   // Function to fetch user profile data
   const fetchUserProfile = async () => {
     try {
-      // Check localStorage first for cached profile data
-      const cachedProfileData = localStorage.getItem("userProfileData");
-      let profileData = null;
+      // Always fetch fresh data from API for checkout to ensure latest billing info
+      // Get user name from cookies if available
+      const cookies = document.cookie.split(";").reduce((cookies, cookie) => {
+        const [name, value] = cookie.trim().split("=");
+        cookies[name] = value;
+        return cookies;
+      }, {});
 
-      if (cachedProfileData) {
-        try {
-          profileData = JSON.parse(cachedProfileData);
-          console.log(
-            "Using cached profile data from localStorage:",
-            profileData
-          );
-        } catch (e) {
-          console.error("Error parsing cached profile data:", e);
-        }
-      }
+      // Decode cookie values to prevent URL encoding issues
+      const storedFirstName = decodeURIComponent(cookies.displayName || "");
+      const storedUserName = decodeURIComponent(cookies.userName || "");
 
-      // If no cached data or it's older than 24 hours, fetch from API
-      const shouldFetchFromApi =
-        !profileData ||
-        (profileData._cachedAt &&
-          Date.now() - profileData._cachedAt > 24 * 60 * 60 * 1000);
+      // Fetch fresh profile data without caching - add timestamp to prevent any caching
+      const timestamp = new Date().getTime();
+      const res = await fetch(`/api/profile?t=${timestamp}`, {
+        // Prevent browser caching
+        cache: "no-store",
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      });
+      const data = await res.json();
 
-      if (shouldFetchFromApi) {
-        // Get user name from cookies if available
-        const cookies = document.cookie.split(";").reduce((cookies, cookie) => {
-          const [name, value] = cookie.trim().split("=");
-          cookies[name] = value;
-          return cookies;
-        }, {});
+      logger.log("=== PROFILE DATA FETCHED ===", {
+        timestamp: new Date().toISOString(),
+        billing_address_1: data.billing_address_1,
+        billing_city: data.billing_city,
+        billing_state: data.billing_state,
+        billing_postcode: data.billing_postcode,
+      });
 
-        // Decode cookie values to prevent URL encoding issues
-        const storedFirstName = decodeURIComponent(cookies.displayName || "");
-        const storedUserName = decodeURIComponent(cookies.userName || "");
+      if (data.success) {
+        logger.log("User profile data fetched successfully from API:", data);
 
-        // Fetch fresh profile data
-        const res = await fetch("/api/profile");
-        const data = await res.json();
-
-        if (data.success) {
-          console.log("User profile data fetched successfully from API:", data);
-
-          // Add timestamp and save to localStorage
-          data._cachedAt = Date.now();
-          localStorage.setItem("userProfileData", JSON.stringify(data));
-
-          profileData = data;
-        } else {
-          console.log("No user profile data available or user not logged in");
-          return;
-        }
-      }
-
-      if (profileData) {
-        // Get user name from cookies if available (even if using cached data)
-        const cookies = document.cookie.split(";").reduce((cookies, cookie) => {
-          const [name, value] = cookie.trim().split("=");
-          cookies[name] = value;
-          return cookies;
-        }, {});
-
-        // Decode cookie values to prevent URL encoding issues
-        const storedFirstName = decodeURIComponent(cookies.displayName || "");
-        const storedUserName = decodeURIComponent(cookies.userName || "");
+        const profileData = data;
 
         // Update form data with user profile information
+        // BUT: Only override cart data if profile has data and cart doesn't (priority to cart)
+        logger.log("=== SETTING FORM DATA FROM PROFILE ===");
         setFormData((prev) => {
           // Create updated billing address with user data
+          // IMPORTANT: Use prev data (from cart) if it exists, profile as fallback
           const updatedBillingAddress = {
             ...prev.billing_address,
-            // Use cookie data first, then fall back to API data - with decoding for URL encoded values
+            // Prioritize existing form data (from cart), then cookies, then profile
             first_name:
+              prev.billing_address.first_name ||
               storedFirstName ||
               profileData.first_name ||
-              prev.billing_address.first_name ||
               "",
-            last_name: storedUserName
-              ? decodeURIComponent(storedUserName)
-                  .replace(storedFirstName, "")
-                  .trim()
-              : profileData.last_name || prev.billing_address.last_name || "",
-            email: profileData.email || prev.billing_address.email || "",
-            phone: profileData.phone || prev.billing_address.phone || "",
+            last_name:
+              prev.billing_address.last_name ||
+              (storedUserName
+                ? decodeURIComponent(storedUserName)
+                    .replace(storedFirstName, "")
+                    .trim()
+                : profileData.last_name || ""),
+            email: prev.billing_address.email || profileData.email || "",
+            phone: prev.billing_address.phone || profileData.phone || "",
             address_1:
-              profileData.billing_address_1 ||
               prev.billing_address.address_1 ||
+              profileData.billing_address_1 ||
               "",
             address_2:
-              profileData.billing_address_2 ||
               prev.billing_address.address_2 ||
+              profileData.billing_address_2 ||
               "",
-            city: profileData.billing_city || prev.billing_address.city || "",
+            city: prev.billing_address.city || profileData.billing_city || "",
             state:
+              prev.billing_address.state ||
               profileData.billing_state ||
               profileData.province ||
-              prev.billing_address.state ||
               "",
             postcode:
-              profileData.billing_postcode ||
               prev.billing_address.postcode ||
+              profileData.billing_postcode ||
               "",
-            country: profileData.billing_country || "CA",
+            country:
+              prev.billing_address.country ||
+              profileData.billing_country ||
+              "CA",
             // Add the date of birth field to billing address
             date_of_birth:
               profileData.date_of_birth ||
@@ -434,47 +622,53 @@ const CheckoutPageContent = () => {
           };
 
           // Create updated shipping address with user data
+          // IMPORTANT: Prioritize existing form data (from cart), then profile
           const updatedShippingAddress = {
             ...prev.shipping_address,
-            // Use cookie data first, then fall back to API data
+            // Prioritize existing form data (from cart), then cookies, then profile
             first_name:
+              prev.shipping_address.first_name ||
               storedFirstName ||
               profileData.first_name ||
-              prev.shipping_address.first_name ||
               "",
-            last_name: storedUserName
-              ? decodeURIComponent(storedUserName)
-                  .replace(storedFirstName, "")
-                  .trim()
-              : profileData.last_name || prev.shipping_address.last_name || "",
-            phone: profileData.phone || prev.shipping_address.phone || "",
+            last_name:
+              prev.shipping_address.last_name ||
+              (storedUserName
+                ? decodeURIComponent(storedUserName)
+                    .replace(storedFirstName, "")
+                    .trim()
+                : profileData.last_name || ""),
+            phone: prev.shipping_address.phone || profileData.phone || "",
             address_1:
+              prev.shipping_address.address_1 ||
               profileData.shipping_address_1 ||
               profileData.billing_address_1 ||
-              prev.shipping_address.address_1 ||
               "",
             address_2:
+              prev.shipping_address.address_2 ||
               profileData.shipping_address_2 ||
               profileData.billing_address_2 ||
-              prev.shipping_address.address_2 ||
               "",
             city:
+              prev.shipping_address.city ||
               profileData.shipping_city ||
               profileData.billing_city ||
-              prev.shipping_address.city ||
               "",
             state:
+              prev.shipping_address.state ||
               profileData.shipping_state ||
               profileData.billing_state ||
               profileData.province ||
-              prev.shipping_address.state ||
               "",
             postcode:
+              prev.shipping_address.postcode ||
               profileData.shipping_postcode ||
               profileData.billing_postcode ||
-              prev.shipping_address.postcode ||
               "",
-            country: profileData.shipping_country || "CA",
+            country:
+              prev.shipping_address.country ||
+              profileData.shipping_country ||
+              "CA",
             // Add the date of birth field to shipping address
             date_of_birth:
               profileData.date_of_birth ||
@@ -482,10 +676,19 @@ const CheckoutPageContent = () => {
               "",
           };
 
-          console.log(
-            "Updated billing address with DOB:",
+          logger.log(
+            "Updated billing address (prioritizing cart data):",
             updatedBillingAddress
           );
+          logger.log(
+            "Previous billing address (from cart):",
+            prev.billing_address
+          );
+          logger.log("Profile billing address:", {
+            address_1: profileData.billing_address_1,
+            city: profileData.billing_city,
+            state: profileData.billing_state,
+          });
 
           return {
             ...prev,
@@ -498,9 +701,11 @@ const CheckoutPageContent = () => {
               "",
           };
         });
+      } else {
+        logger.log("No user profile data available or user not logged in");
       }
     } catch (error) {
-      console.error("Error fetching user profile:", error);
+      logger.error("Error fetching user profile:", error);
     }
   };
 
@@ -514,83 +719,60 @@ const CheckoutPageContent = () => {
     // Initialize loading
     const loadCheckoutData = async () => {
       try {
-        // Start all data loading operations in parallel
-        const cartPromise = fetchCartItems();
+        logger.log("=== STARTING CHECKOUT DATA LOAD ===");
 
-        let finalCartData = null;
+        // STEP 1: Load cart first and WAIT for it to complete
+        const cartData = await fetchCartItems(true); // true = update form data with cart data
+        setCartItems(cartData);
+        logger.log("=== CART LOADED ===");
 
         // Process URL parameters if needed
         if (onboardingAddToCart) {
           setIsProcessingUrlParams(true);
-          const urlParamsPromise = processUrlCartParameters(searchParams);
 
-          // Wait for cart to load first as we need it for proper display
-          const cartData = await cartPromise;
-          setCartItems(cartData);
-          finalCartData = cartData;
+          try {
+            const result = await processUrlCartParameters(searchParams);
 
-          // Process URL parameters and wait for completion
-          const urlResult = await urlParamsPromise;
+            if (result.status === "success") {
+              // Refresh cart after adding products
+              // Don't update form data to avoid overwriting profile data
+              const updatedCart = await fetchCartItems(false); // false = don't update form
+              setCartItems(updatedCart);
+              toast.success("Products added to your cart!");
 
-          if (urlResult.status === "success") {
-            // Refresh cart after adding products
-            const updatedCart = await fetchCartItems();
-            setCartItems(updatedCart);
-            finalCartData = updatedCart; // Use the updated cart data
-            toast.success("Products added to your cart!");
-
-            // Clean up URL parameters - use the detected flow type from result
-            cleanupCartUrlParameters(
-              urlResult.flowType ||
-                (isEdFlow
-                  ? "ed"
-                  : flowParams["hair-flow"]
-                  ? "hair"
-                  : flowParams["wl-flow"]
-                  ? "wl"
-                  : flowParams["mh-flow"]
-                  ? "mh"
-                  : "general")
-            );
-          } else if (urlResult.status === "error") {
-            toast.error(urlResult.message || "Failed to add products to cart.");
+              // Clean up URL parameters - use the detected flow type from result
+              cleanupCartUrlParameters(
+                result.flowType ||
+                  (isEdFlow
+                    ? "ed"
+                    : flowParams["hair-flow"]
+                    ? "hair"
+                    : flowParams["wl-flow"]
+                    ? "wl"
+                    : flowParams["mh-flow"]
+                    ? "mh"
+                    : flowParams["skincare-flow"]
+                    ? "skincare"
+                    : "general")
+              );
+            } else if (result.status === "error") {
+              toast.error(result.message || "Failed to add products to cart.");
+            }
+          } finally {
+            setIsProcessingUrlParams(false);
           }
-
-          setIsProcessingUrlParams(false);
-        } else {
-          // If no URL parameters to process, just set the cart items
-          const cartData = await cartPromise;
-          setCartItems(cartData);
-          finalCartData = cartData;
         }
 
-        // Start other data loading operations in parallel
-        // These don't depend on the cart or URL processing
-        await Promise.all([fetchSavedCards(), fetchUserProfile()]);
+        // STEP 2: Load profile data AFTER cart completes to override cart data
+        // This ensures logged-in users always see their latest profile data
+        logger.log("=== LOADING PROFILE DATA ===");
+        await fetchUserProfile();
+        logger.log("=== PROFILE DATA LOADED ===");
 
-        // Mark initial loading as complete
-        setIsInitialLoadingComplete(true);
-
-        // Create Payment Intent after ALL loading operations are complete
-        // This ensures cart is fully loaded and URL parameters are processed
-        console.log("All loading operations complete, initializing payment...");
-        console.log(
-          "Final cart items count:",
-          finalCartData?.items?.length || 0
-        );
-        console.log("Final cart totals:", finalCartData?.totals);
-
-        // Only create payment intent if we have items in cart
-        if (finalCartData?.items && finalCartData.items.length > 0) {
-          console.log("Cart has items, initializing payment...");
-          setTimeout(() => {
-            createPaymentIntent();
-          }, 500); // Small delay to ensure all state is properly set
-        } else {
-          console.log("No items in cart, skipping payment initialization");
-        }
+        // STEP 3: Load saved cards (doesn't affect form data)
+        await fetchSavedCards();
       } catch (error) {
-        console.error("Error loading checkout data:", error);
+        logger.error("Error loading checkout data:", error);
         toast.error(
           "There was an issue loading your checkout data. Please refresh the page."
         );
@@ -600,40 +782,253 @@ const CheckoutPageContent = () => {
     loadCheckoutData();
   }, []);
 
-  // Recreate Payment Intent when billing address is updated
-  useEffect(() => {
-    if (cartItems?.totals && !selectedCard && formData.billing_address?.email) {
-      createPaymentIntent();
-    }
-  }, [formData.billing_address?.email]);
-
-  // Initialize payment when cart items are added after initial load
-  useEffect(() => {
-    if (
-      isInitialLoadingComplete &&
-      cartItems?.items &&
-      cartItems.items.length > 0 &&
-      !clientSecret &&
-      !selectedCard
-    ) {
-      console.log(
-        "Cart items detected after initial load, initializing payment..."
-      );
-      setTimeout(() => {
-        createPaymentIntent();
-      }, 300);
-    }
-  }, [cartItems?.items, isInitialLoadingComplete, clientSecret, selectedCard]);
-
   const handleSubmit = async () => {
     try {
       setSubmitting(true);
+
+      // Validate form data before processing
+      const validationResult = validateForm({
+        billing_address: formData.billing_address,
+        shipping_address: formData.shipping_address,
+        cardNumber: cardNumber,
+        cardExpMonth: expiry?.split("/")[0],
+        cardExpYear: expiry?.split("/")[1],
+        cardCVD: cvc,
+        useSavedCard: !!selectedCard,
+      });
+
+      if (!validationResult.isValid) {
+        logger.log("Form validation failed:", validationResult.errors);
+        toast.error(
+          validationResult.formattedMessage ||
+            "Please check your form data and try again."
+        );
+        setSubmitting(false);
+        return;
+      }
+
+      logger.log("Form validation passed, proceeding with checkout");
+
+      // Check if age validation has previously failed and prevent order
+      if (ageValidationFailed) {
+        logger.log("Age validation previously failed, preventing order");
+        setSubmitting(false);
+        return;
+      }
+
+      // Check Quebec restriction for Zonnic products
+      if (cartItems && cartItems.items) {
+        const shippingProvince = formData.shipping_address.state;
+        const billingProvince = formData.billing_address.state;
+
+        const restriction = checkQuebecZonnicRestriction(
+          cartItems.items,
+          shippingProvince,
+          billingProvince
+        );
+
+        if (restriction.blocked) {
+          setShowQuebecPopup(true);
+          setSubmitting(false);
+          return;
+        }
+
+        // Check age restriction for Zonnic products
+        if (hasZonnicProducts(cartItems.items)) {
+          // First check form data (user might have changed date of birth)
+          let dateOfBirthToCheck = formData.billing_address.date_of_birth;
+
+          // If no form data, fall back to profile API
+          if (!dateOfBirthToCheck) {
+            try {
+              const response = await fetch("/api/profile");
+              if (response.ok) {
+                const profileData = await response.json();
+                logger.log("Profile data for age validation:", profileData);
+                if (profileData.success && profileData.date_of_birth) {
+                  dateOfBirthToCheck = profileData.date_of_birth;
+                }
+              }
+            } catch (error) {
+              logger.log(
+                "Could not fetch user profile for age validation:",
+                error
+              );
+            }
+          }
+
+          // Now validate the date of birth
+          if (dateOfBirthToCheck) {
+            logger.log("Checking age validation for date:", dateOfBirthToCheck);
+            const ageCheck = checkAgeRestriction(dateOfBirthToCheck, 19);
+            logger.log("Age validation result:", ageCheck);
+            if (ageCheck.blocked) {
+              logger.log("User is too young, showing age popup");
+              setAgeValidationFailed(true);
+              setShowAgePopup(true);
+              setSubmitting(false);
+              return;
+            } else {
+              logger.log("User meets age requirement:", ageCheck.age);
+              setAgeValidationFailed(false);
+            }
+          } else {
+            logger.log("No date of birth found in form or profile data");
+          }
+        }
+      }
+
+      // Update customer data on server before checkout to ensure latest info is saved
+      try {
+        logger.log("Updating customer data before checkout...");
+        const useShippingAddress =
+          formData.shipping_address.ship_to_different_address;
+
+        const customerUpdateData = {
+          billing_address: {
+            first_name: formData.billing_address.first_name || "",
+            last_name: formData.billing_address.last_name || "",
+            company: formData.billing_address.company || "",
+            address_1: formData.billing_address.address_1 || "",
+            address_2: formData.billing_address.address_2 || "",
+            city: formData.billing_address.city || "",
+            state: formData.billing_address.state || "",
+            postcode: formData.billing_address.postcode || "",
+            country: formData.billing_address.country || "CA",
+            email: formData.billing_address.email || "",
+            phone: formData.billing_address.phone || "",
+          },
+          shipping_address: useShippingAddress
+            ? {
+                first_name: formData.shipping_address.first_name || "",
+                last_name: formData.shipping_address.last_name || "",
+                company: formData.shipping_address.company || "",
+                address_1: formData.shipping_address.address_1 || "",
+                address_2: formData.shipping_address.address_2 || "",
+                city: formData.shipping_address.city || "",
+                state: formData.shipping_address.state || "",
+                postcode: formData.shipping_address.postcode || "",
+                country: formData.shipping_address.country || "CA",
+                phone: formData.shipping_address.phone || "",
+              }
+            : {
+                first_name: formData.billing_address.first_name || "",
+                last_name: formData.billing_address.last_name || "",
+                company: formData.billing_address.company || "",
+                address_1: formData.billing_address.address_1 || "",
+                address_2: formData.billing_address.address_2 || "",
+                city: formData.billing_address.city || "",
+                state: formData.billing_address.state || "",
+                postcode: formData.billing_address.postcode || "",
+                country: formData.billing_address.country || "CA",
+                phone: formData.billing_address.phone || "",
+              },
+        };
+
+        const updateResponse = await fetch("/api/cart/update-customer", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(customerUpdateData),
+        });
+
+        const updateResult = await updateResponse.json();
+
+        if (updateResponse.ok && !updateResult.error) {
+          logger.log("Customer cart data updated successfully before checkout");
+
+          // Also update the customer's permanent profile in WooCommerce
+          try {
+            logger.log("Updating customer profile permanently...");
+
+            // Include date_of_birth in the profile update
+            const profileData = {
+              ...customerUpdateData,
+              date_of_birth:
+                formData.billing_address.date_of_birth ||
+                formData.date_of_birth ||
+                "",
+            };
+
+            logger.log("Profile data with DOB:", {
+              date_of_birth: profileData.date_of_birth,
+              phone: profileData.billing_address?.phone,
+            });
+
+            const profileUpdateResponse = await fetch(
+              "/api/update-customer-profile",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(profileData),
+              }
+            );
+
+            const profileUpdateResult = await profileUpdateResponse.json();
+
+            logger.log("=== PROFILE UPDATE API RESPONSE ===", {
+              status: profileUpdateResponse.status,
+              ok: profileUpdateResponse.ok,
+              response: profileUpdateResult,
+            });
+
+            if (profileUpdateResponse.ok && profileUpdateResult.success) {
+              logger.log("Customer profile updated permanently ✓");
+              logger.log("Updated customer data:", profileUpdateResult.data);
+
+              // Check metadata update status
+              if (profileUpdateResult.metadata_update) {
+                logger.log(
+                  "=== METADATA UPDATE STATUS ===",
+                  profileUpdateResult.metadata_update
+                );
+
+                if (profileUpdateResult.metadata_update.attempted) {
+                  if (profileUpdateResult.metadata_update.success) {
+                    logger.log(
+                      "✓ User metadata (DOB, phone) updated successfully"
+                    );
+                  } else {
+                    logger.error(
+                      "✗ User metadata update FAILED:",
+                      profileUpdateResult.metadata_update.error
+                    );
+                  }
+                } else {
+                  logger.warn(
+                    "⚠ Metadata update was not attempted (no DOB or phone provided)"
+                  );
+                }
+              }
+            } else {
+              logger.warn(
+                "Failed to update customer profile:",
+                profileUpdateResult.error
+              );
+            }
+          } catch (profileError) {
+            logger.error("Error updating customer profile:", profileError);
+            // Continue with checkout even if profile update fails
+          }
+        } else {
+          logger.warn("Failed to update customer data:", updateResult.error);
+          // Continue with checkout even if update fails
+        }
+      } catch (error) {
+        logger.error("Error updating customer data before checkout:", error);
+        // Continue with checkout even if update fails
+      }
 
       // Check if shipping address fields are empty, if so, use billing address
       const useShippingAddress =
         formData.shipping_address.ship_to_different_address;
 
       // Create the data object to send
+      const { awc: awinAwc, channel: awinChannel } = getAwinFromUrlOrStorage();
+
       const dataToSend = {
         // Billing Details
         firstName: formData.billing_address.first_name,
@@ -686,7 +1081,11 @@ const CheckoutPageContent = () => {
 
         // Payment Details
         cardNumber: selectedCard ? "" : cardNumber,
-        cardType: selectedCard ? "" : cardType,
+        cardType: selectedCard
+          ? ""
+          : formData.payment_data.find(
+              (d) => d.key === "wc-bambora-credit-card-card-type"
+            )?.value,
         cardExpMonth: selectedCard ? "" : expiry.slice(0, 2),
         cardExpYear: selectedCard ? "" : expiry.slice(3),
         cardCVD: selectedCard ? "" : cvc,
@@ -697,188 +1096,63 @@ const CheckoutPageContent = () => {
         useSavedCard: !!selectedCard,
 
         // Add total amount for saved card payments
-        totalAmount: cartItems?.totals?.total_price
-          ? parseFloat(cartItems.totals.total_price) / 100
-          : cartItems?.totals?.total
-          ? parseFloat(cartItems.totals.total.replace(/[^0-9.]/g, ""))
-          : 0,
+        totalAmount:
+          cartItems.totals && cartItems.totals.total_price
+            ? parseFloat(cartItems.totals.total_price) / 100
+            : cartItems.totals && cartItems.totals.total
+            ? parseFloat(cartItems.totals.total.replace(/[^0-9.]/g, ""))
+            : 0,
 
         // ED Flow parameter
         isEdFlow: isEdFlow,
 
-        // Payment Method
-        paymentMethod: "stripe_cc", // Use Stripe credit card payment method
-
-        // Stripe payment data array - will be populated with actual client_secret
-        payment_data: [],
+        // AWIN affiliate metadata (frontend-sourced)
+        awin_awc: awinAwc || "",
+        awin_channel: awinChannel || "other",
       };
 
       // Enhanced client-side logging
-      console.log("Client-side checkout data:", {
+      logger.log("Client-side checkout data:", {
         ...dataToSend,
         cardNumber: dataToSend.cardNumber ? "[REDACTED]" : "",
         cardCVD: dataToSend.cardCVD ? "[REDACTED]" : "",
-        cartTotals: cartItems?.totals,
+        cartTotals: cartItems.totals,
         selectedCardId: selectedCard,
         totalAmount: dataToSend.totalAmount,
       });
 
-      // Check for zero-amount orders (100% coupon discount)
-      const isFreeOrder = dataToSend.totalAmount === 0;
-
-      if (isFreeOrder) {
-        console.log("Processing free order with 100% coupon discount");
-
-        try {
-          // Create order directly in WooCommerce with free payment method
-          const freeOrderResponse = await fetch("/api/checkout", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              ...dataToSend,
-              // Clear card details for free orders
-              cardNumber: "",
-              cardExpMonth: "",
-              cardExpYear: "",
-              cardCVD: "",
-              useSavedCard: false,
-              savedCardToken: null,
-              savedCardId: null,
-              // Flag to indicate this is a free order
-              isFreeOrder: true,
-              paymentMethod: "coupon_100_percent",
-              // Add origin for headless checkout (free orders don't have payment_intent_id)
-              origin: "headless",
-            }),
-          });
-
-          const freeOrderData = await freeOrderResponse.json();
-
-          if (freeOrderData.error) {
-            toast.error(freeOrderData.error);
-            setSubmitting(false);
-            return;
-          }
-
-          const order_id = freeOrderData.data.id || freeOrderData.data.order_id;
-          const order_key = freeOrderData.data.order_key || "";
-
-          console.log("✅ Free order created successfully:", {
-            order_id,
-            order_key,
-            totalAmount: dataToSend.totalAmount,
-          });
-
-          toast.success(
-            "Order created successfully with 100% coupon discount!"
-          );
-
-          // Empty the cart after successful payment
-          try {
-            const emptyCartResponse = await fetch("/api/cart/empty", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-            });
-
-            if (emptyCartResponse.ok) {
-              console.log("Cart emptied successfully after free order");
-              // Update local cart state to reflect empty cart
-              setCartItems({
-                items: [],
-                total_items: 0,
-                total_price: "0.00",
-                needs_shipping: false,
-                coupons: [],
-                shipping_rates: [],
-              });
-            } else {
-              console.error("Failed to empty cart after free order");
-            }
-          } catch (cartError) {
-            console.error("Error emptying cart after free order:", cartError);
-            // Don't fail the redirect if cart emptying fails
-          }
-
-          // Redirect to order received page
-          router.push(
-            `/checkout/order-received/${order_id}?key=${order_key}${buildFlowQueryString()}`
-          );
-          return;
-        } catch (error) {
-          console.error("Error processing free order:", error);
-          toast.error("Unable to process free order. Please try again.");
-          setSubmitting(false);
-          return;
-        }
-      }
-
       // For saved cards, we'll use a two-step approach but check for duplicate payments
-      if (selectedCard && cartItems?.totals) {
+      if (selectedCard && cartItems.totals) {
         try {
-          console.log(
-            `Processing checkout with saved card: ${selectedCard.id}`
-          );
+          logger.log(`Processing checkout with saved card: ${selectedCard.id}`);
 
           let orderId = savedOrderId;
           let orderKey = savedOrderKey;
 
           // Check if we should use direct payment (retry scenario)
           if (shouldUseDirectPayment && savedOrderId) {
-            console.log(
+            logger.log(
               `Using direct payment for existing order: ${savedOrderId}`
             );
           } else {
-            // Step 1: Call standard checkout to create the order
-            const checkoutResponse = await fetch("/api/checkout", {
+            // Step 1: Create order without payment processing
+            const checkoutResponse = await fetch("/api/create-pending-order", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
               },
-              body: JSON.stringify({
-                ...dataToSend,
-                // Add origin for headless checkout (saved card flow doesn't have payment_intent_id yet)
-                origin: "headless",
-              }),
+              body: JSON.stringify(dataToSend),
             });
 
             const checkoutResult = await checkoutResponse.json();
-            console.log("Initial checkout result:", checkoutResult);
+            logger.log("Order creation result:", checkoutResult);
 
-            // Check if payment was already successful in the initial checkout
-            // This shouldn't happen but we'll check just in case
-            if (
-              checkoutResult.success &&
-              checkoutResult.data?.payment_result?.payment_status === "success"
-            ) {
-              logPayment("Payment already successful in initial checkout!");
-              toast.success(
-                "Order created and payment processed successfully!"
-              );
-
-              logOrder("🎉 SAVED CARD SUCCESS! Payment processed:", {
-                order_id: checkoutResult.data.id,
-                order_key: checkoutResult.data.order_key,
-                payment_result: checkoutResult.data.payment_result,
-              });
-
-              router.push(
-                `/checkout/order-received/${checkoutResult.data.id}?key=${
-                  checkoutResult.data.order_key || ""
-                }${buildFlowQueryString()}`
-              );
-              return;
-            }
-
-            // If we got an order ID and payment failed (expected for saved cards)
-            if (checkoutResult.details && checkoutResult.details.order_id) {
-              orderId = checkoutResult.details.order_id;
-              orderKey = checkoutResult.details.order_key || "";
-              console.log(
-                `Order created with ID: ${orderId}, now processing payment`
+            // Check if order was created successfully
+            if (checkoutResult.success && checkoutResult.data?.id) {
+              orderId = checkoutResult.data.id;
+              orderKey = checkoutResult.data.order_key || "";
+              logger.log(
+                `Order created successfully with ID: ${orderId}, now processing payment`
               );
 
               // Before processing payment, check the order status to avoid duplicate payments
@@ -889,12 +1163,10 @@ const CheckoutPageContent = () => {
                 const orderStatus = await orderCheckResponse.json();
 
                 if (
-                  orderStatus.status === "processing" ||
-                  orderStatus.status === "on-hold" ||
-                  orderStatus.status === "completed" ||
+                  isSuccessfulOrderStatus(orderStatus.status) ||
                   orderStatus.success === false
                 ) {
-                  console.log(
+                  logger.log(
                     "Order is already paid or being processed, skipping payment"
                   );
                   toast.success("Order is already being processed!");
@@ -904,9 +1176,12 @@ const CheckoutPageContent = () => {
                     `/checkout/order-received/${orderId}?key=${orderKey}${buildFlowQueryString()}`
                   );
                   return;
+                } else if (orderStatus.status === "failed") {
+                  logger.log("Order payment failed, allowing retry");
+                  // Continue with payment to retry
                 }
               } catch (orderCheckError) {
-                console.log("Error checking order status:", orderCheckError);
+                logger.log("Error checking order status:", orderCheckError);
                 // Continue with payment if we can't check the status
               }
             } else if (checkoutResult.error) {
@@ -947,8 +1222,13 @@ const CheckoutPageContent = () => {
             }
           );
 
-          const paymentResult = await paymentResponse.json();
-          logPayment("Payment result:", paymentResult);
+          // Use centralized payment response handler
+          const paymentResult = await handlePaymentResponse(
+            paymentResponse,
+            orderId,
+            orderKey
+          );
+          logger.log("Payment result:", paymentResult);
 
           if (!paymentResult.success) {
             // Store order details for retry mechanism
@@ -956,10 +1236,30 @@ const CheckoutPageContent = () => {
             setSavedOrderKey(orderKey);
             setShouldUseDirectPayment(true);
 
-            toast.error(
+            // Transform the error message if it's a WordPress critical error
+            const errorMessage =
               paymentResult.message ||
-                "Payment failed. Please try another payment method."
-            );
+              "Payment failed. Please try another payment method.";
+
+            // Extract meaningful error message from complex objects
+            let errorString;
+            if (typeof errorMessage === "string") {
+              errorString = errorMessage;
+            } else if (errorMessage && typeof errorMessage === "object") {
+              // Try to extract meaningful message from object
+              errorString =
+                errorMessage.message ||
+                errorMessage.error?.message ||
+                errorMessage.toString();
+            } else {
+              errorString = String(errorMessage || "Unknown error occurred");
+            }
+
+            const userFriendlyMessage = isWordPressCriticalError(errorString)
+              ? transformPaymentError(errorString)
+              : errorString;
+
+            toast.error(userFriendlyMessage);
             setSubmitting(false);
             return;
           }
@@ -976,587 +1276,218 @@ const CheckoutPageContent = () => {
           const paymentOrderId = paymentResult.order_id;
           const paymentOrderKey = paymentResult.order_key || "";
 
-          // Empty the cart after successful payment
+          // Empty the cart after successful checkout
           try {
-            const emptyCartResponse = await fetch("/api/cart/empty", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-            });
-
-            if (emptyCartResponse.ok) {
-              console.log("Cart emptied successfully after saved card payment");
-              // Update local cart state to reflect empty cart
-              setCartItems({
-                items: [],
-                total_items: 0,
-                total_price: "0.00",
-                needs_shipping: false,
-                coupons: [],
-                shipping_rates: [],
-              });
-            } else {
-              console.error("Failed to empty cart after saved card payment");
-            }
-          } catch (cartError) {
-            console.error(
-              "Error emptying cart after saved card payment:",
-              cartError
-            );
-            // Don't fail the redirect if cart emptying fails
+            logger.log("Emptying cart after successful checkout...");
+            const { emptyCart } = await import("@/lib/cart/cartService");
+            await emptyCart();
+            logger.log("Cart emptied successfully after checkout");
+          } catch (emptyError) {
+            logger.error("Error emptying cart after checkout:", emptyError);
+            // Don't block the redirect if cart emptying fails
           }
 
-          logOrder("🎉 SAVED CARD PAYMENT SUCCESS!", {
-            paymentOrderId,
-            paymentOrderKey,
-            paymentResult: paymentResult,
-          });
+          // Debugging logs
+          logger.log(
+            `Redirecting to order received page: /checkout/order-received/${paymentOrderId}?key=${paymentOrderKey}`
+          );
 
+          // Redirect to order received page with the correct order details
           router.push(
             `/checkout/order-received/${paymentOrderId}?key=${paymentOrderKey}${buildFlowQueryString()}`
           );
           return;
         } catch (error) {
-          console.error("Error processing order with saved card:", error);
-          toast.error(
-            "Unable to process payment with saved card. Please try another payment method."
-          );
+          logger.error("Error processing order with saved card:", error);
+          // Transform the error message if it's a WordPress critical error
+          const errorMessage =
+            error.message ||
+            "Unable to process payment with saved card. Please try another payment method.";
+
+          // Extract meaningful error message from complex objects
+          let errorString;
+          if (typeof errorMessage === "string") {
+            errorString = errorMessage;
+          } else if (errorMessage && typeof errorMessage === "object") {
+            // Try to extract meaningful message from object
+            errorString =
+              errorMessage.message ||
+              errorMessage.error?.message ||
+              errorMessage.toString();
+          } else {
+            errorString = String(errorMessage || "Unknown error occurred");
+          }
+
+          const userFriendlyMessage = isWordPressCriticalError(errorString)
+            ? transformPaymentError(errorString)
+            : errorString;
+
+          toast.error(userFriendlyMessage);
           setSubmitting(false);
           return;
         }
       }
 
-      // For new cards, use WooCommerce AJAX API approach (MD file method)
-      if (!selectedCard) {
+      // Continue with regular checkout for new cards
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        body: JSON.stringify(dataToSend),
+      });
+
+      // Use centralized payment response handler for regular checkout
+      // Note: For regular checkout, we don't have an orderId yet, so pass null
+      const data = await handlePaymentResponse(res, null);
+
+      if (data.error) {
+        // Extract meaningful error message from complex objects
+        let errorString;
+        if (typeof data.error === "string") {
+          errorString = data.error;
+        } else if (data.error && typeof data.error === "object") {
+          // Try to extract meaningful message from object
+          errorString =
+            data.error.message ||
+            data.error.error?.message ||
+            data.error.toString();
+        } else {
+          errorString = String(data.error || "Unknown error occurred");
+        }
+
+        // Transform the error message if it's a WordPress critical error
+        const userFriendlyMessage = isWordPressCriticalError(errorString)
+          ? transformPaymentError(errorString)
+          : errorString;
+
+        toast.error(userFriendlyMessage);
+        // Reload the page after showing error for new card payments
+        // setTimeout(() => {
+        //   window.location.reload();
+        // }, 2000); // Wait 2 seconds to show the error message
+        return;
+      }
+
+      if (data.success) {
+        toast.success("Order created successfully!");
+        const order_id = data.data.id || data.data.order_id;
+        const order_key = data.data.order_key || "";
+
+        // Empty the cart after successful checkout
         try {
-          console.log(
-            "Processing new card payment using WooCommerce AJAX API approach"
-          );
-
-          // Step 1: Create order WITHOUT payment processing
-          const orderPayload = {
-            ...dataToSend,
-            // Clear sensitive card details
-            cardNumber: "",
-            cardExpMonth: "",
-            cardExpYear: "",
-            cardCVD: "",
-            origin: "headless",
-            // NO payment_intent_id - we'll create it after order
-            payment_data: [], // Empty array - no payment processing
-            useSavedCard: false,
-          };
-
-          console.log("Creating order WITHOUT payment processing:", {
-            origin: "headless",
-            payment_data: "[] (empty)",
-            note: "Will create PaymentIntent via WooCommerce AJAX API after order creation",
-          });
-
-          const orderResponse = await fetch("/api/checkout", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(orderPayload),
-          });
-
-          const orderData = await orderResponse.json();
-
-          if (orderData.error) {
-            console.error("Order creation failed:", orderData.error);
-            toast.error(orderData.error || "Order creation failed");
-            return;
-          }
-
-          if (!orderData.success) {
-            console.error("Order creation failed:", orderData);
-            toast.error("Failed to create order");
-            return;
-          }
-
-          const order_id = orderData.data.id || orderData.data.order_id;
-          const order_key = orderData.data.order_key || "";
-
-          console.log("✅ Order created successfully:", {
-            order_id,
-            order_key,
-            note: "No PaymentIntent created yet - will create via AJAX API",
-          });
-
-          // Step 2: Process payment via WooCommerce AJAX API
-          console.log("Processing payment via WooCommerce AJAX API...");
-
-          const processPaymentResponse = await fetch(
-            "/api/woocommerce/stripe/process-payment",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                payment_request_type: "apple_pay", // Can be apple_pay, google_pay, payment_request_api
-                shipping_address: formData.shipping_address,
-                billing_address: formData.billing_address,
-              }),
-            }
-          );
-
-          const processPaymentData = await processPaymentResponse.json();
-
-          if (!processPaymentData.success) {
-            console.error(
-              "Payment processing failed:",
-              processPaymentData.error
-            );
-
-            // Provide specific error messages
-            let errorMessage = "Failed to process payment. Please try again.";
-            if (processPaymentData.error) {
-              if (processPaymentData.error.includes("nonce")) {
-                errorMessage =
-                  "Security verification failed. Please refresh the page and try again.";
-              } else if (processPaymentData.error.includes("cart")) {
-                errorMessage =
-                  "Cart is empty or invalid. Please add items and try again.";
-              } else if (processPaymentData.error.includes("payment")) {
-                errorMessage =
-                  "Payment method not available. Please try a different payment method.";
-              }
-            }
-
-            toast.error(errorMessage);
-            return;
-          }
-
-          console.log(
-            "✅ Payment processed via WooCommerce AJAX API:",
-            processPaymentData.data
-          );
-
-          // Extract order details from the response
-          const stripeOrderId = processPaymentData.data.order_id;
-          const stripeOrderKey = processPaymentData.data.order_key;
-          const clientSecret = processPaymentData.data.client_secret;
-          const paymentIntentId = processPaymentData.data.payment_intent_id;
-
-          console.log("✅ Stripe order details:", {
-            stripe_order_id: stripeOrderId,
-            stripe_order_key: stripeOrderKey,
-            payment_intent_id: paymentIntentId,
-            client_secret: clientSecret ? "***" : "none",
-          });
-
-          // Step 3: Confirm payment with Stripe Elements
-          const stripe = await stripePromise;
-          if (!stripe) {
-            toast.error("Stripe is not initialized. Please refresh the page.");
-            return;
-          }
-
-          if (!stripeElements) {
-            toast.error("Payment form not ready. Please try again.");
-            return;
-          }
-
-          console.log("Confirming payment with Stripe Elements...");
-
-          const { error, paymentIntent } = await stripe.confirmPayment({
-            elements: stripeElements,
-            confirmParams: {
-              return_url: `${window.location.origin}/checkout/confirmation`,
-              payment_method_data: {
-                billing_details: {
-                  name: `${formData.billing_address.first_name} ${formData.billing_address.last_name}`,
-                  email: formData.billing_address.email,
-                  phone: formData.billing_address.phone,
-                  address: {
-                    line1: formData.billing_address.address_1,
-                    line2: formData.billing_address.address_2 || undefined,
-                    city: formData.billing_address.city,
-                    state: formData.billing_address.state,
-                    postal_code: formData.billing_address.postcode,
-                    country: formData.billing_address.country || "US",
-                  },
-                },
-              },
-            },
-            redirect: "if_required",
-          });
-
-          if (error) {
-            console.error("Payment confirmation failed:", error);
-            toast.error(`Payment failed: ${error.message}`);
-            return;
-          }
-
-          if (
-            paymentIntent.status !== "succeeded" &&
-            paymentIntent.status !== "requires_capture"
-          ) {
-            console.error("Payment not in valid state:", paymentIntent.status);
-            toast.error("Payment confirmation failed. Please try again.");
-            return;
-          }
-
-          console.log("✅ Payment confirmed successfully:", {
-            payment_intent_id: paymentIntent.id,
-            status: paymentIntent.status,
-            amount: paymentIntent.amount,
-          });
-
-          // Step 4: Update order status via WooCommerce AJAX API
-          console.log("Updating order status via WooCommerce AJAX API...");
-
-          const updateResponse = await fetch(
-            "/api/woocommerce/stripe/update-order-status",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                order_id: stripeOrderId || order_id,
-                payment_intent_id: paymentIntent.id,
-                payment_status: paymentIntent.status,
-                payment_method_id: paymentIntent.payment_method,
-                customer_id: paymentIntent.customer,
-              }),
-            }
-          );
-
-          const updateData = await updateResponse.json();
-
-          if (!updateData.success) {
-            console.error("Order status update failed:", updateData.error);
-
-            // Provide more specific error messages for order status update
-            let errorMessage =
-              "Payment succeeded but failed to update order. Please contact support.";
-            if (updateData.error) {
-              if (updateData.error.includes("nonce")) {
-                errorMessage =
-                  "Payment succeeded but security verification failed. Please contact support.";
-              } else if (updateData.error.includes("order")) {
-                errorMessage =
-                  "Payment succeeded but order update failed. Please contact support.";
-              } else if (updateData.error.includes("payment_intent")) {
-                errorMessage =
-                  "Payment succeeded but payment verification failed. Please contact support.";
-              }
-            }
-
-            toast.error(errorMessage);
-
-            // Log the successful payment even if order update failed
-            logOrder("⚠️ PAYMENT SUCCESS BUT ORDER UPDATE FAILED:", {
-              order_id,
-              payment_intent_id: paymentIntent.id,
-              payment_status: paymentIntent.status,
-              update_error: updateData.error,
-            });
-
-            return;
-          }
-
-          console.log("✅ Order status updated successfully:", {
-            order_id,
-            payment_intent_id: paymentIntent.id,
-            payment_status: paymentIntent.status,
-            order_status: updateData.data?.status,
-          });
-
-          logOrder("🎉 PAYMENT SUCCESS WITH AJAX API!", {
-            order_id,
-            payment_intent_id: paymentIntent.id,
-            payment_status: paymentIntent.status,
-            method: "WooCommerce AJAX API",
-          });
-
-          // Step 5: Empty the cart after successful payment
-          try {
-            const emptyCartResponse = await fetch("/api/cart/empty", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-            });
-
-            if (emptyCartResponse.ok) {
-              console.log("Cart emptied successfully after payment");
-              setCartItems({
-                items: [],
-                total_items: 0,
-                total_price: "0.00",
-                needs_shipping: false,
-                coupons: [],
-                shipping_rates: [],
-              });
-            } else {
-              console.error("Failed to empty cart after payment");
-            }
-          } catch (cartError) {
-            console.error("Error emptying cart after payment:", cartError);
-          }
-
-          // Final success message
-          toast.success("Payment successful! Your order has been placed.");
-
-          // Redirect to order received page
-          router.push(
-            `/checkout/order-received/${stripeOrderId || order_id}?key=${
-              stripeOrderKey || order_key
-            }${buildFlowQueryString()}`
-          );
-          return;
-        } catch (error) {
-          console.error("Error processing payment handle checkout:", error);
-          toast.error("Payment processing failed. Please try again.");
-          return;
-        }
-      } else {
-        // Fallback to regular WooCommerce checkout for non-card payments
-        // Update payment_data to use proper WooCommerce Stripe plugin format
-        const fallbackData = {
-          ...dataToSend,
-          // Add origin for headless checkout (fallback flow doesn't have payment_intent_id)
-          origin: "headless",
-          payment_data: [
-            {
-              key: "wc-stripe-new-payment-method",
-              value: "true",
-            },
-            {
-              key: "wc-stripe-capture-method",
-              value: "manual",
-            },
-          ],
-        };
-
-        const res = await fetch("/api/checkout", {
-          method: "POST",
-          body: JSON.stringify(fallbackData),
-        });
-
-        const data = await res.json();
-
-        if (data.error) {
-          toast.error(data.error);
-          return;
+          logger.log("Emptying cart after successful checkout...");
+          const { emptyCart } = await import("@/lib/cart/cartService");
+          await emptyCart();
+          logger.log("Cart emptied successfully after checkout");
+        } catch (emptyError) {
+          logger.error("Error emptying cart after checkout:", emptyError);
+          // Don't block the redirect if cart emptying fails
         }
 
-        if (data.success) {
-          toast.success("Order created successfully!");
-          const order_id = data.data.id || data.data.order_id;
-          const order_key = data.data.order_key || "";
-
-          logOrder("🎉 SUCCESS! Order created:", {
-            order_id,
-            order_key,
-            full_response: data,
-          });
-
-          // Empty the cart after successful order creation
-          try {
-            const emptyCartResponse = await fetch("/api/cart/empty", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-            });
-
-            if (emptyCartResponse.ok) {
-              console.log(
-                "Cart emptied successfully after WooCommerce checkout"
-              );
-              // Update local cart state to reflect empty cart
-              setCartItems({
-                items: [],
-                total_items: 0,
-                total_price: "0.00",
-                needs_shipping: false,
-                coupons: [],
-                shipping_rates: [],
-              });
-            } else {
-              console.error("Failed to empty cart after WooCommerce checkout");
-            }
-          } catch (cartError) {
-            console.error(
-              "Error emptying cart after WooCommerce checkout:",
-              cartError
-            );
-            // Don't fail the redirect if cart emptying fails
-          }
-
-          router.push(
-            `/checkout/order-received/${order_id}?key=${order_key}${buildFlowQueryString()}`
-          );
-        }
+        router.push(
+          `/checkout/order-received/${order_id}?key=${order_key}${
+            buildFlowQueryString() ? buildFlowQueryString() : ""
+          }`
+        );
       }
     } catch (error) {
-      console.error("Checkout Error:", error);
-      toast.error(
-        "There was an error processing your order. Please try again."
-      );
+      logger.error("Checkout Error:", error);
+
+      // Transform the error message if it's a WordPress critical error
+      const errorMessage =
+        error.message ||
+        "There was an error processing your order. Please try again.";
+
+      // Extract meaningful error message from complex objects
+      let errorString;
+      if (typeof errorMessage === "string") {
+        errorString = errorMessage;
+      } else if (errorMessage && typeof errorMessage === "object") {
+        // Try to extract meaningful message from object
+        errorString =
+          errorMessage.message ||
+          errorMessage.error?.message ||
+          errorMessage.toString();
+      } else {
+        errorString = String(errorMessage || "Unknown error occurred");
+      }
+
+      const userFriendlyMessage = isWordPressCriticalError(errorString)
+        ? transformPaymentError(errorString)
+        : errorString; // Use the actual error message, not the generic fallback
+
+      toast.error(userFriendlyMessage);
     } finally {
       setSubmitting(false);
     }
   };
 
-  // Show loading indicator if cart is not yet loaded, URL parameters are being processed, or initial loading is not complete
-  if (!cartItems || isProcessingUrlParams || !isInitialLoadingComplete) {
+  // Show loading indicator if cart is not yet loaded or URL parameters are being processed
+  if (!cartItems || isProcessingUrlParams) {
     return <CheckoutSkeleton />;
-  }
-
-  // Check if cart is empty
-  if (!cartItems.items || cartItems.items.length === 0) {
-    return (
-      <>
-        <QuestionnaireNavbar />
-        <div className="min-h-[calc(100vh-100px)] flex items-center justify-center">
-          <div className="text-center max-w-md mx-auto px-4">
-            <div className="mb-6">
-              <svg
-                className="mx-auto h-16 w-16 text-gray-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1}
-                  d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01"
-                />
-              </svg>
-            </div>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-              Your cart is empty
-            </h2>
-            <p className="text-gray-600 mb-6">
-              You don't have any products in your cart yet. Browse our products
-              and add some items to get started.
-            </p>
-            <div className="space-y-3">
-              <button
-                onClick={() => router.push("/")}
-                className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-              >
-                Browse Products
-              </button>
-              <button
-                onClick={() => router.push("/ed")}
-                className="w-full bg-gray-100 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors"
-              >
-                ED Treatment
-              </button>
-            </div>
-          </div>
-        </div>
-      </>
-    );
   }
 
   return (
     <>
       <QuestionnaireNavbar />
-      <div className="grid lg:grid-cols-2 min-h-[calc(100vh-100px)] border-t">
+      <div className="grid lg:grid-cols-2 min-h-[calc(100vh-100px)] border-t overflow-hidden max-w-full">
         {submitting && <Loader />}
-        <BillingAndShipping setFormData={setFormData} formData={formData} />
-        {clientSecret && clientSecret !== "error" ? (
-          <Elements
-            stripe={stripePromise}
-            options={{
-              clientSecret: clientSecret,
-              appearance: {
-                theme: "stripe",
-              },
-              locale: "en",
-              country: "US",
-            }}
-          >
-            <CartAndPayment
-              items={cartItems.items}
-              cartItems={cartItems}
-              setCartItems={setCartItems}
-              setFormData={setFormData}
-              formData={formData}
-              handleSubmit={handleSubmit}
-              cardNumber={cardNumber}
-              setCardNumber={setCardNumber}
-              expiry={expiry}
-              setExpiry={setExpiry}
-              cvc={cvc}
-              setCvc={setCvc}
-              cardType={cardType}
-              setCardType={setCardType}
-              isEdFlow={isEdFlow}
-              savedCards={savedCards}
-              setSavedCards={setSavedCards}
-              selectedCard={selectedCard}
-              setSelectedCard={setSelectedCard}
-              isLoadingSavedCards={isLoadingSavedCards}
-              saveCard={saveCard}
-              setSaveCard={setSaveCard}
-              amount={
-                cartItems?.totals?.total_price
-                  ? parseFloat(cartItems.totals.total_price) / 100
-                  : cartItems?.total_price
-                  ? parseFloat(cartItems.total_price)
-                  : 0
-              }
-              billingAddress={formData.billing_address}
-              clientSecret={clientSecret}
-              onElementsReady={setStripeElements}
-            />
-          </Elements>
-        ) : (
-          <CartAndPayment
-            items={cartItems.items}
-            cartItems={cartItems}
-            setCartItems={setCartItems}
-            setFormData={setFormData}
-            formData={formData}
-            handleSubmit={handleSubmit}
-            cardNumber={cardNumber}
-            setCardNumber={setCardNumber}
-            expiry={expiry}
-            setExpiry={setExpiry}
-            cvc={cvc}
-            setCvc={setCvc}
-            cardType={cardType}
-            setCardType={setCardType}
-            isEdFlow={isEdFlow}
-            savedCards={savedCards}
-            setSavedCards={setSavedCards}
-            selectedCard={selectedCard}
-            setSelectedCard={setSelectedCard}
-            isLoadingSavedCards={isLoadingSavedCards}
-            saveCard={saveCard}
-            setSaveCard={setSaveCard}
-            amount={
-              cartItems?.totals?.total_price
-                ? parseFloat(cartItems.totals.total_price) / 100
-                : cartItems?.total_price
-                ? parseFloat(cartItems.total_price)
-                : 0
-            }
-            billingAddress={formData.billing_address}
-            clientSecret={clientSecret}
-            onElementsReady={setStripeElements}
-          />
-        )}
+        <BillingAndShipping
+          setFormData={setFormData}
+          formData={formData}
+          onProvinceChange={handleProvinceChange}
+          cartItems={cartItems}
+          isUpdatingShipping={isUpdatingShipping}
+          onAgeValidation={() => {
+            setShowAgePopup(true);
+            setAgeValidationFailed(true);
+          }}
+          onAgeValidationReset={() => setAgeValidationFailed(false)}
+        />
+        <CartAndPayment
+          items={cartItems.items}
+          cartItems={cartItems}
+          setCartItems={setCartItems}
+          setFormData={setFormData}
+          formData={formData}
+          handleSubmit={handleSubmit}
+          cardNumber={cardNumber}
+          isUpdatingShipping={isUpdatingShipping}
+          setCardNumber={setCardNumber}
+          expiry={expiry}
+          setExpiry={setExpiry}
+          cvc={cvc}
+          setCvc={setCvc}
+          cardType={cardType}
+          setCardType={setCardType}
+          isEdFlow={isEdFlow}
+          savedCards={savedCards}
+          setSavedCards={setSavedCards}
+          selectedCard={selectedCard}
+          setSelectedCard={setSelectedCard}
+          isLoadingSavedCards={isLoadingSavedCards}
+          ageValidationFailed={ageValidationFailed}
+          isPaymentValid={isPaymentValid}
+          paymentValidationMessage={paymentValidationMessage}
+        />
       </div>
+
+      {/* Quebec Restriction Popup */}
+      <QuebecRestrictionPopup
+        isOpen={showQuebecPopup}
+        onClose={() => setShowQuebecPopup(false)}
+        message={getQuebecRestrictionMessage()}
+      />
+
+      {/* Age Restriction Popup */}
+      <AgeRestrictionPopup
+        isOpen={showAgePopup}
+        onClose={() => {
+          setShowAgePopup(false);
+          // Don't reset ageValidationFailed here - it should only reset when user enters valid age
+        }}
+        message="Sorry, you must be at least 19 years old to purchase this product."
+      />
     </>
   );
 };
 
-// Wrap the checkout component with Stripe Elements provider
-const CheckoutWithElements = () => {
-  return <CheckoutPageContent />;
-};
-
-export default CheckoutWithElements;
+export default CheckoutPageContent;
