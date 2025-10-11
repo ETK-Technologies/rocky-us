@@ -145,14 +145,14 @@ const cialisProduct = {
     "monthly-supply": [
       {
         count: 8,
-        genericPrice: 138,
+        genericPrice: 84,
         brandPrice: 195,
         variationId: "259",
         brandVariationId: "1422",
       },
       {
         count: 12,
-        genericPrice: 204,
+        genericPrice: 126,
         brandPrice: 285,
         variationId: "1960",
         brandVariationId: "1962",
@@ -161,21 +161,21 @@ const cialisProduct = {
     "quarterly-supply": [
       {
         count: 12,
-        genericPrice: 204,
+        genericPrice: 126,
         brandPrice: 285,
         variationId: "260",
         brandVariationId: "1423",
       },
       {
         count: 24,
-        genericPrice: 399,
+        genericPrice: 252,
         brandPrice: 555,
         variationId: "261",
         brandVariationId: "1424",
       },
       {
         count: 36,
-        genericPrice: 595,
+        genericPrice: 378,
         brandPrice: 829,
         variationId: "1961",
         brandVariationId: "1420",
@@ -200,14 +200,14 @@ const viagraProduct = {
     "monthly-supply": [
       {
         count: 8,
-        genericPrice: 108,
+        genericPrice: 64,
         brandPrice: 136,
         variationId: "233",
         brandVariationId: "1428",
       },
       {
         count: 12,
-        genericPrice: 159,
+        genericPrice: 96,
         brandPrice: 199,
         variationId: "234",
         brandVariationId: "1429",
@@ -216,21 +216,21 @@ const viagraProduct = {
     "quarterly-supply": [
       {
         count: 12,
-        genericPrice: 159,
+        genericPrice: 96,
         brandPrice: 199,
         variationId: "235",
         brandVariationId: "1430",
       },
       {
         count: 24,
-        genericPrice: 305,
+        genericPrice: 192,
         brandPrice: 388,
         variationId: "236",
         brandVariationId: "1431",
       },
       {
         count: 36,
-        genericPrice: 449,
+        genericPrice: 288,
         brandPrice: 577,
         variationId: "237",
         brandVariationId: "1432",
