@@ -119,7 +119,7 @@ const PhotoUploadStep = ({
             <div className="flex w-full items-center">
               <img
                 className="w-16 h-16 object-contain mr-4"
-                src={frontPreview || "https://myrocky.ca/wp-content/themes/salient-child/img/photo_upload_icon.png"}
+                src={frontPreview || "https://myrocky.com/wp-content/themes/salient-child/img/photo_upload_icon.png"}
                 alt="Upload icon"
               />
               <span className="text-[#C19A6B]">
@@ -148,7 +148,7 @@ const PhotoUploadStep = ({
             <div className="flex w-full items-center">
               <img
                 className="w-16 h-16 object-contain mr-4"
-                src={sidePreview || "https://myrocky.ca/wp-content/themes/salient-child/img/photo_upload_icon.png"}
+                src={sidePreview || "https://myrocky.com/wp-content/themes/salient-child/img/photo_upload_icon.png"}
                 alt="Upload icon"
               />
               <span className="text-[#C19A6B]">

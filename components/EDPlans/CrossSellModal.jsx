@@ -193,7 +193,7 @@ const CrossSellModal = ({
       quantity: "60 Capsules",
       frequency: "30-days supply",
       image:
-        "https://mycdn.myrocky.ca/wp-content/uploads/20250908134137/t-boost.png",
+        "https://mycdn.myrocky.com/wp-content/uploads/20250908134137/t-boost.png",
       description:
         "Helps improve overall testosterone levels, enhance libido, and promote a sense of well-being.",
       dataType: "simple",
@@ -222,7 +222,7 @@ const CrossSellModal = ({
       quantity: "(30 applications-30g)",
       frequency: "One time purchase",
       image:
-        "https://mycdn.myrocky.ca/wp-content/uploads/20250908133843/lidocaine.png",
+        "https://mycdn.myrocky.com/wp-content/uploads/20250908133843/lidocaine.png",
       description:
         "- Last 6-8x longer in bed\n- Works in 2-5 mins\n- Easy spray on\n- 20-30 uses",
       dataType: "subscription",
@@ -251,7 +251,7 @@ const CrossSellModal = ({
     //   quantity: "",
     //   frequency: "One time purchase",
     //   image:
-    //     "https://mycdn.myrocky.ca/wp-content/uploads/20241211132726/Copy-of-RockyHealth-15-scaled.webp",
+    //     "https://mycdn.myrocky.com/wp-content/uploads/20241211132726/Copy-of-RockyHealth-15-scaled.webp",
     //   description: "",
     //   dataType: "simple",
     //   dataVar: "",
@@ -309,7 +309,7 @@ const CrossSellModal = ({
     //   title: "Essential Follicle Support",
     //   price: "39.00",
     //   image:
-    //     "https://myrocky.ca/wp-content/uploads/RockyHealth-Proofs-HQ-111-Hair-1-500x500.jpg",
+    //     "https://myrocky.com/wp-content/uploads/RockyHealth-Proofs-HQ-111-Hair-1-500x500.jpg",
     //   description:
     //     "Essential Follicle Support is designed to support healthy growth, strengthen strands, and nourish follicles from within. Formulated with essential vitamins, minerals, and plant-based extracts, it helps improve hair resilience, scalp health, and overall vitality for stronger, fuller-looking hair.",
     //   dataType: "simple",

@@ -377,7 +377,7 @@ const Product = ({ product }) => {
         {/* Desktop View */}
         <div className="lg:flex hidden">
           <div className="w-1/2">
-            <ProductImage src="https://mycdn.myrocky.ca/wp-content/uploads/20240403135520/RockyHealth-HQ-88-scaled.jpg" />
+            <ProductImage src="https://mycdn.myrocky.com/wp-content/uploads/20240403135520/RockyHealth-HQ-88-scaled.jpg" />
           </div>
           <div className="w-1/2 pl-8 pt-10">
             <h2 className="text-4xl font-semibold text-gray-900 mb-5">
@@ -445,7 +445,7 @@ const Product = ({ product }) => {
               A power house combination of prescription and natural hair
               products.
             </p>
-            <ProductImage src="https://mycdn.myrocky.ca/wp-content/uploads/20240403135520/RockyHealth-HQ-88-scaled.jpg" />
+            <ProductImage src="https://mycdn.myrocky.com/wp-content/uploads/20240403135520/RockyHealth-HQ-88-scaled.jpg" />
           </div>
           <div className="mt-4">
             <p className="text-sm font-semibold mb-3">This kit includes:</p>

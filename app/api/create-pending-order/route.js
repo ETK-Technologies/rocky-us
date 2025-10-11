@@ -57,6 +57,7 @@ export async function POST(req) {
     } = requestData;
 
     // Validate checkout data before processing
+    // For Stripe payments, skip card validation (pass dummy values)
     const validationResult = validateCheckoutData({
       billing_address: {
         first_name: firstName,
@@ -82,11 +83,12 @@ export async function POST(req) {
         country: shippingCountry,
         phone: shippingPhone,
       },
-      cardNumber,
-      cardExpMonth,
-      cardExpYear,
-      cardCVD,
-      useSavedCard,
+      // Skip card validation for pending orders (Stripe handles it)
+      cardNumber: "dummy",
+      cardExpMonth: "12",
+      cardExpYear: "30",
+      cardCVD: "123",
+      useSavedCard: false,
     });
 
     if (!validationResult.isValid) {
@@ -477,6 +479,8 @@ export async function POST(req) {
         order_id: response.data.id, // For compatibility
         order_key: response.data.order_key,
         status: response.data.status,
+        total: response.data.total, // Add total for Stripe payment
+        currency: response.data.currency || "USD",
         payment_deferred: true,
         message:
           "Order created successfully. Payment will be processed separately.",

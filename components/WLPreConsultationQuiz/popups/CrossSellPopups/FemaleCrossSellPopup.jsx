@@ -8,7 +8,7 @@ const femaleAddOnProducts = [
     name: "Perimenopause Test Kit",
     price: "40.00",
     imageUrl:
-      "https://mycdn.myrocky.ca/wp-content/uploads/20240906110242/FSH-Box.png",
+      "https://mycdn.myrocky.com/wp-content/uploads/20240906110242/FSH-Box.png",
     bulletPoints: [
       "Helps identify if you are perimenopausal with 99% accuracy",
       "Urine test",
@@ -32,7 +32,7 @@ const femaleAddOnProducts = [
     name: "Ovulation Test Kit",
     price: "20.00",
     imageUrl:
-      "https://mycdn.myrocky.ca/wp-content/uploads/20240906110139/LH-Box.png",
+      "https://mycdn.myrocky.com/wp-content/uploads/20240906110139/LH-Box.png",
     bulletPoints: [
       "Helps identify most fertile period for pregnancy with 99% accuracy",
       "Urine test",
@@ -102,7 +102,7 @@ const femaleAddOnProducts = [
   //   name: "Vulval Moisturizer",
   //   price: "35.00",
   //   imageUrl:
-  //     "https://mycdn.myrocky.ca/wp-content/uploads/20250629080157/VM-front-scaled.jpg",
+  //     "https://mycdn.myrocky.com/wp-content/uploads/20250629080157/VM-front-scaled.jpg",
   //   description:
   //     "Comfort where it matters most — daily hydration for a confident, irritation-free you.",
   //   bulletPoints: [
@@ -125,7 +125,7 @@ const femaleAddOnProducts = [
   //   name: "Rocky Dad Hat",
   //   price: "29.99",
   //   imageUrl:
-  //     "https://mycdn.myrocky.ca/wp-content/uploads/20241211132726/Copy-of-RockyHealth-15-scaled.webp",
+  //     "https://mycdn.myrocky.com/wp-content/uploads/20241211132726/Copy-of-RockyHealth-15-scaled.webp",
   //   bulletPoints: ["One size fits all", "Adjustable strap", "Cotton twill"],
   // },
 ];

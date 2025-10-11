@@ -30,13 +30,13 @@ const HairCoverData = {
       ariaLabel: "Opt1",
       width: "w-full md:w-[170px]",
     },
-    {
-      text: "I know what I want",
-      href: "/hair-products",
-      primary: false,
-      ariaLabel: "Opt2",
-      width: "w-full md:w-[208px]",
-    },
+    // {
+    //   text: "I know what I want",
+    //   href: "/hair-products",
+    //   primary: false,
+    //   ariaLabel: "Opt2",
+    //   width: "w-full md:w-[208px]",
+    // },
   ],
 
   proudPartner: true,

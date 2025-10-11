@@ -33,8 +33,26 @@ import { checkAgeRestriction } from "@/utils/ageValidation";
 import QuebecRestrictionPopup from "../Popups/QuebecRestrictionPopup";
 import AgeRestrictionPopup from "../Popups/AgeRestrictionPopup";
 import { getAwinFromUrlOrStorage } from "@/utils/awin";
+import StripeElementsPayment from "./StripeElementsPayment";
+import { Elements, useStripe } from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
+
+// Load Stripe outside component to avoid recreating on every render
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+);
+
+// Wrapper component to provide Stripe context
+const CheckoutPageWrapper = () => {
+  return (
+    <Elements stripe={stripePromise}>
+      <CheckoutPageContent />
+    </Elements>
+  );
+};
 
 const CheckoutPageContent = () => {
+  const stripe = useStripe(); // Get the Stripe instance from context
   const router = useRouter();
   const searchParams = useSearchParams();
   const isEdFlow = searchParams.get("ed-flow") === "1";
@@ -68,6 +86,10 @@ const CheckoutPageContent = () => {
   const [savedCards, setSavedCards] = useState([]);
   const [selectedCard, setSelectedCard] = useState(null);
   const [isLoadingSavedCards, setIsLoadingSavedCards] = useState(false);
+
+  // Stripe Elements state (for embedded payment form)
+  const [stripeElements, setStripeElements] = useState(null);
+  const [stripeReady, setStripeReady] = useState(false);
 
   // Initialize checkout validation hook
   const {
@@ -129,6 +151,15 @@ const CheckoutPageContent = () => {
 
   // Validate payment method whenever payment state changes
   useEffect(() => {
+    // For NEW CARD payments with Stripe Elements, always consider valid
+    // (Stripe Elements handles validation internally on submit)
+    if (!selectedCard) {
+      setIsPaymentValid(true);
+      setPaymentValidationMessage("");
+      return;
+    }
+
+    // For SAVED CARD payments, validate normally
     const paymentState = {
       selectedCard,
       cardNumber,
@@ -246,7 +277,7 @@ const CheckoutPageContent = () => {
           city: "",
           state: newProvince,
           postcode: "",
-          country: "CA",
+          country: "US",
         };
       } else {
         // Keep existing address data when province changes due to address selection
@@ -265,7 +296,7 @@ const CheckoutPageContent = () => {
           city: formData.shipping_address.city || "",
           state: newProvince,
           postcode: formData.shipping_address.postcode || "",
-          country: "CA",
+          country: "US",
         };
       }
 
@@ -279,7 +310,7 @@ const CheckoutPageContent = () => {
                 address_2: "",
                 city: "",
                 postcode: "",
-                country: "CA",
+                country: "US",
               }
             : {}),
           state:
@@ -302,7 +333,7 @@ const CheckoutPageContent = () => {
                   address_2: "",
                   city: "",
                   postcode: "",
-                  country: "CA",
+                  country: "US",
                 }
               : {}),
             state:
@@ -613,7 +644,7 @@ const CheckoutPageContent = () => {
             country:
               prev.billing_address.country ||
               profileData.billing_country ||
-              "CA",
+              "US",
             // Add the date of birth field to billing address
             date_of_birth:
               profileData.date_of_birth ||
@@ -668,7 +699,7 @@ const CheckoutPageContent = () => {
             country:
               prev.shipping_address.country ||
               profileData.shipping_country ||
-              "CA",
+              "US",
             // Add the date of birth field to shipping address
             date_of_birth:
               profileData.date_of_birth ||
@@ -787,13 +818,15 @@ const CheckoutPageContent = () => {
       setSubmitting(true);
 
       // Validate form data before processing
+      // For NEW CARD payments with Stripe Elements, skip card validation
+      // (Stripe Elements handles card validation internally)
       const validationResult = validateForm({
         billing_address: formData.billing_address,
         shipping_address: formData.shipping_address,
-        cardNumber: cardNumber,
-        cardExpMonth: expiry?.split("/")[0],
-        cardExpYear: expiry?.split("/")[1],
-        cardCVD: cvc,
+        cardNumber: selectedCard ? cardNumber : "dummy", // Skip validation for Stripe Elements
+        cardExpMonth: selectedCard ? expiry?.split("/")[0] : "12", // Skip validation for Stripe Elements
+        cardExpYear: selectedCard ? expiry?.split("/")[1] : "30", // Skip validation for Stripe Elements
+        cardCVD: selectedCard ? cvc : "123", // Skip validation for Stripe Elements
         useSavedCard: !!selectedCard,
       });
 
@@ -894,7 +927,7 @@ const CheckoutPageContent = () => {
             city: formData.billing_address.city || "",
             state: formData.billing_address.state || "",
             postcode: formData.billing_address.postcode || "",
-            country: formData.billing_address.country || "CA",
+            country: formData.billing_address.country || "US",
             email: formData.billing_address.email || "",
             phone: formData.billing_address.phone || "",
           },
@@ -908,7 +941,7 @@ const CheckoutPageContent = () => {
                 city: formData.shipping_address.city || "",
                 state: formData.shipping_address.state || "",
                 postcode: formData.shipping_address.postcode || "",
-                country: formData.shipping_address.country || "CA",
+                country: formData.shipping_address.country || "US",
                 phone: formData.shipping_address.phone || "",
               }
             : {
@@ -920,7 +953,7 @@ const CheckoutPageContent = () => {
                 city: formData.billing_address.city || "",
                 state: formData.billing_address.state || "",
                 postcode: formData.billing_address.postcode || "",
-                country: formData.billing_address.country || "CA",
+                country: formData.billing_address.country || "US",
                 phone: formData.billing_address.phone || "",
               },
         };
@@ -1095,6 +1128,9 @@ const CheckoutPageContent = () => {
         savedCardId: selectedCard ? selectedCard.id : null,
         useSavedCard: !!selectedCard,
 
+        // NEW: Use Stripe for new card payments
+        useStripe: !selectedCard, // Use Stripe only when NOT using a saved card
+
         // Add total amount for saved card payments
         totalAmount:
           cartItems.totals && cartItems.totals.total_price
@@ -1111,7 +1147,20 @@ const CheckoutPageContent = () => {
         awin_channel: awinChannel || "other",
       };
 
+      // ========================================
+      // NOTE: Stripe tokenization happens on BACKEND
+      // Frontend Stripe.js doesn't allow raw card data even with API setting enabled
+      // Backend Stripe SDK respects the "Raw card data APIs" setting
+      // ========================================
+
       // Enhanced client-side logging
+      logger.log("=== PAYMENT METHOD DEBUG ===");
+      logger.log("selectedCard:", selectedCard);
+      logger.log("useStripe:", !selectedCard);
+      logger.log("useSavedCard:", !!selectedCard);
+      logger.log("willTokenizeOnBackend:", !selectedCard && !!cardNumber);
+      logger.log("===========================");
+
       logger.log("Client-side checkout data:", {
         ...dataToSend,
         cardNumber: dataToSend.cardNumber ? "[REDACTED]" : "",
@@ -1214,7 +1263,7 @@ const CheckoutPageContent = () => {
                   city: formData.billing_address.city,
                   state: formData.billing_address.state,
                   postcode: formData.billing_address.postcode,
-                  country: formData.billing_address.country || "CA",
+                  country: formData.billing_address.country || "US",
                   email: formData.billing_address.email,
                   phone: formData.billing_address.phone,
                 },
@@ -1328,7 +1377,152 @@ const CheckoutPageContent = () => {
         }
       }
 
-      // Continue with regular checkout for new cards
+      // For NEW CARD payments with Stripe Elements (embedded in form)
+      if (!selectedCard && dataToSend.useStripe) {
+        try {
+          logger.log("Processing Stripe Elements payment...");
+
+          // Validate Stripe Elements is ready
+          if (!stripeElements) {
+            throw new Error("Stripe payment form not ready. Please try again.");
+          }
+
+          // Validate Stripe instance is available
+          if (!stripe) {
+            throw new Error(
+              "Stripe is not loaded. Please refresh and try again."
+            );
+          }
+
+          // Step 1: Create PaymentMethod from Stripe Elements
+          logger.log("Creating PaymentMethod from Stripe Elements...");
+
+          const { error: pmError, paymentMethod } =
+            await stripe.createPaymentMethod({
+              type: "card",
+              card: stripeElements.getElement("card"),
+              billing_details: {
+                name: `${dataToSend.firstName} ${dataToSend.lastName}`,
+                email: dataToSend.email,
+                phone: dataToSend.phone,
+                address: {
+                  line1: dataToSend.addressOne,
+                  line2: dataToSend.addressTwo || "",
+                  city: dataToSend.city,
+                  state: dataToSend.state,
+                  postal_code: dataToSend.postcode,
+                  country: dataToSend.country,
+                },
+              },
+            });
+
+          if (pmError) {
+            throw new Error(pmError.message);
+          }
+
+          logger.log("✅ PaymentMethod created:", paymentMethod.id);
+
+          // Step 2: Create pending order
+          logger.log("Creating pending order...");
+          const orderResponse = await fetch("/api/create-pending-order", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(dataToSend),
+          });
+
+          const orderResult = await orderResponse.json();
+
+          if (!orderResult.success) {
+            throw new Error(orderResult.error || "Failed to create order");
+          }
+
+          const orderId = orderResult.data.id;
+          const orderKey = orderResult.data.order_key;
+          logger.log("✅ Pending order created:", orderId);
+
+          // Parse amount
+          let amountInCents = 0;
+          const orderTotal = orderResult.data.total;
+
+          if (typeof orderTotal === "string") {
+            const numericTotal = parseFloat(orderTotal.replace(/[^0-9.]/g, ""));
+            amountInCents = Math.round(numericTotal * 100);
+          } else if (typeof orderTotal === "number") {
+            amountInCents = Math.round(orderTotal * 100);
+          }
+
+          if (!amountInCents || amountInCents <= 0) {
+            throw new Error("Invalid order amount");
+          }
+
+          // Step 3: Process payment
+          logger.log("Processing payment...");
+          const paymentResponse = await fetch("/api/process-stripe-payment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              orderId,
+              paymentMethodId: paymentMethod.id,
+              amount: amountInCents,
+            }),
+          });
+
+          const paymentResult = await paymentResponse.json();
+
+          if (!paymentResult.success) {
+            throw new Error(paymentResult.error || "Payment failed");
+          }
+
+          logger.log("✅ Payment authorized:", paymentResult.paymentIntentId);
+
+          // Step 4: Update order status
+          logger.log("Updating order status...");
+          const updateResponse = await fetch("/api/update-order-status", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              orderId,
+              status: "on-hold",
+              paymentIntentId: paymentResult.paymentIntentId,
+              chargeId: paymentResult.chargeId,
+              paymentMethod: "stripe_cc",
+              cardBrand: paymentMethod.card?.brand,
+              cardLast4: paymentMethod.card?.last4,
+            }),
+          });
+
+          const updateResult = await updateResponse.json();
+
+          if (!updateResult.success) {
+            throw new Error("Failed to update order status");
+          }
+
+          logger.log("✅ Order updated successfully");
+          toast.success("Payment successful!");
+
+          // Empty cart
+          try {
+            const { emptyCart } = await import("@/lib/cart/cartService");
+            await emptyCart();
+            logger.log("Cart emptied successfully");
+          } catch (error) {
+            logger.error("Error emptying cart:", error);
+          }
+
+          // Redirect to success page
+          router.push(
+            `/checkout/order-received/${orderId}?key=${orderKey}${buildFlowQueryString()}`
+          );
+          return;
+        } catch (error) {
+          logger.error("❌ Stripe payment error:", error);
+          toast.error(error.message || "Payment failed. Please try again.");
+          setSubmitting(false);
+          return;
+        }
+      }
+
+      // Continue with WooCommerce Store API checkout (for Bambora or non-Stripe payments)
       const res = await fetch("/api/checkout", {
         method: "POST",
         body: JSON.stringify(dataToSend),
@@ -1467,6 +1661,7 @@ const CheckoutPageContent = () => {
           ageValidationFailed={ageValidationFailed}
           isPaymentValid={isPaymentValid}
           paymentValidationMessage={paymentValidationMessage}
+          onStripeReady={setStripeElements}
         />
       </div>
 
@@ -1490,4 +1685,4 @@ const CheckoutPageContent = () => {
   );
 };
 
-export default CheckoutPageContent;
+export default CheckoutPageWrapper;

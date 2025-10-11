@@ -100,7 +100,7 @@ const InterpretationAndDefinitions = () => {
             href="/"
             className="duration-300 hover:text-gray-800 underline "
           >
-            www.myrocky.ca
+            www.myrocky.com
           </Link>
         </div>
 

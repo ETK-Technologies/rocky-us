@@ -118,11 +118,11 @@ const BillingDetails = ({
         <FormInput
           title="Country / Region"
           name="country"
-          placeholder="Canada"
+          placeholder="United States"
           required
           readOnly
           disabled
-          value="CA"
+          value="US"
           hidden
           onChange={null}
         />
@@ -131,7 +131,7 @@ const BillingDetails = ({
           readOnly
           disabled
           className="w-full bg-white rounded-[8px] border border-solid border-[#E2E2E1] px-[16px] py-[12px] h-[44px] focus:outline-none focus:border-gray-500"
-          value={"Canada"}
+          value={"United States"}
           onChange={null}
         />
       </div>
@@ -145,6 +145,7 @@ const BillingDetails = ({
           disabled={isUpdatingShipping}
           onChange={handleBillingAddressChange}
           onAddressSelected={handleAddressSelected}
+          country="US"
         />
       </div>
       <div className="mb-4">
@@ -248,10 +249,10 @@ const BillingDetails = ({
         </div>
 
         <FormInput
-          title="Postal Code"
+          title="ZIP Code"
           name="postcode"
           value={formData.billing_address.postcode}
-          placeholder="Enter your postal code"
+          placeholder="Enter your ZIP code"
           required
           disabled={isUpdatingShipping}
           onChange={handleBillingAddressChange}

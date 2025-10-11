@@ -527,7 +527,7 @@ export const questions = [
     inputType: "checkbox",
     content: {
       mainNote:
-        "Please note this step is mandatory. If you are unable to complete at this time, email your ID to clinicadmin@myrocky.ca",
+        "Please note this step is mandatory. If you are unable to complete at this time, email your ID to clinicadmin@myrocky.com",
       secondaryNote:
         "Your questionnaire will not be reviewed without this. As per our T&C's a $45 cancellation fee will be charged if we are unable to verify you.",
     },

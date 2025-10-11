@@ -3,6 +3,7 @@ import axios from "axios";
 import { cookies } from "next/headers";
 import fs from "fs";
 import path from "path";
+import Stripe from "stripe";
 import { logger } from "@/utils/devLogger";
 import {
   transformPaymentError,
@@ -14,6 +15,7 @@ import {
 } from "@/utils/checkoutValidation";
 
 const BASE_URL = process.env.BASE_URL;
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
 
 export async function POST(req) {
   try {
@@ -54,7 +56,18 @@ export async function POST(req) {
       totalAmount, // Ensure it's passed from the frontend
       awin_awc,
       awin_channel,
+      useStripe = false, // Flag to use Stripe instead of Bambora
     } = requestData;
+
+    // ========================================
+    // DEBUG: Log payment method selection
+    // ========================================
+    logger.log("=== BACKEND PAYMENT METHOD DEBUG ===");
+    logger.log("useSavedCard:", useSavedCard);
+    logger.log("useStripe:", useStripe);
+    logger.log("savedCardToken:", savedCardToken ? "EXISTS" : "NULL");
+    logger.log("cardNumber:", cardNumber ? "EXISTS" : "NULL");
+    logger.log("===================================");
 
     // Validate checkout data before processing
     const validationResult = validateCheckoutData({
@@ -115,23 +128,30 @@ export async function POST(req) {
     }
 
     let token = "";
+    let stripePaymentMethodId = "";
     let cardNumberLastFourNumbers = "";
 
-    // Process payment token if using new card
+    // Process payment token/method based on payment processor
     if (!useSavedCard && cardNumber) {
       cardNumberLastFourNumbers = cardNumber.slice(-4);
-      try {
-        token = await generateToken({
-          cvd: cardCVD,
-          expiry_month: cardExpMonth,
-          expiry_year: cardExpYear,
-          number: cardNumber,
-        });
-      } catch (error) {
-        return NextResponse.json(
-          { error: "Failed to process card. Check your details." },
-          { status: 500 }
-        );
+
+      if (!useStripe) {
+        // ========================================
+        // EXISTING: Use Bambora tokenization
+        // ========================================
+        try {
+          token = await generateToken({
+            cvd: cardCVD,
+            expiry_month: cardExpMonth,
+            expiry_year: cardExpYear,
+            number: cardNumber,
+          });
+        } catch (error) {
+          return NextResponse.json(
+            { error: "Failed to process card. Check your details." },
+            { status: 500 }
+          );
+        }
       }
     }
 
@@ -183,7 +203,7 @@ export async function POST(req) {
             phone,
           },
       customer_note: customerNotes || "",
-      payment_method: "bambora_credit_card",
+      payment_method: useStripe ? "stripe_cc" : "bambora_credit_card", // Use stripe_cc for Stripe Credit Card
       payment_data: [],
       meta_data: [
         {
@@ -203,6 +223,10 @@ export async function POST(req) {
 
     // Add appropriate payment data based on payment method
     if (useSavedCard && savedCardToken) {
+      // ========================================
+      // EXISTING: Saved Card (Bambora)
+      // No changes - keep existing flow
+      // ========================================
       checkoutData.payment_data.push(
         {
           // The token parameter is for the customer profile code in Bambora
@@ -238,8 +262,79 @@ export async function POST(req) {
           value: cardCVD,
         });
       }
+    } else if (useStripe && cardNumber) {
+      // ========================================
+      // NEW: New Card (Stripe) - Create Source on backend
+      // WooCommerce Stripe plugin does NOT accept raw card data
+      // We must create a Source first and pass the Source ID
+      // ========================================
+      logger.log("Creating Stripe Source on backend...");
+
+      try {
+        const Stripe = require("stripe");
+        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+        // Create Source using Stripe SDK (requires "Raw card data APIs" enabled in Stripe Dashboard)
+        const source = await stripe.sources.create({
+          type: "card",
+          card: {
+            number: cardNumber.replace(/\s/g, ""),
+            exp_month: parseInt(cardExpMonth),
+            exp_year: parseInt(cardExpYear),
+            cvc: cardCVD,
+          },
+          owner: {
+            name: `${firstName} ${lastName}`,
+            email: email,
+            phone: phone,
+            address: {
+              line1: addressOne,
+              line2: addressTwo || undefined,
+              city: city,
+              state: state,
+              postal_code: postcode,
+              country: country,
+            },
+          },
+        });
+
+        logger.log("✅ Stripe Source created successfully:", source.id);
+        logger.log("Card details:", {
+          brand: source.card?.brand,
+          last4: source.card?.last4,
+        });
+
+        // Pass the Stripe Source ID to WooCommerce Stripe plugin
+        checkoutData.payment_data.push(
+          {
+            key: "stripe_source",
+            value: source.id, // src_xxxxx
+          },
+          {
+            key: "wc-stripe-new-payment-method",
+            value: true, // Save card for future use
+          }
+        );
+
+        // Store card details for reference
+        cardNumberLastFourNumbers = source.card?.last4 || cardNumber.slice(-4);
+      } catch (stripeError) {
+        logger.error("❌ Stripe Source creation failed:", stripeError.message);
+        logger.error("Error type:", stripeError.type);
+        logger.error("Error code:", stripeError.code);
+
+        return NextResponse.json(
+          {
+            error: "Failed to process card. Please try again.",
+            details: stripeError.message,
+          },
+          { status: 400 }
+        );
+      }
     } else {
-      // For new cards, continue with the existing implementation
+      // ========================================
+      // EXISTING: New Card (Bambora)
+      // ========================================
       checkoutData.payment_data.push(
         {
           key: "wc-bambora-credit-card-js-token",

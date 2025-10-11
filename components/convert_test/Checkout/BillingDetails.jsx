@@ -101,11 +101,11 @@ const BillingDetails = ({
         <FloatLabelInput
           label="Country"
           name="country"
-          placeholder="Canada"
+          placeholder="United States"
           required
           readOnly
           disabled
-          value={"Canada"}
+          value={"United States"}
           hidden
           className="!bg-[#E2E2E1]"
           onChange={null}
@@ -142,6 +142,7 @@ const BillingDetails = ({
           disabled={isUpdatingShipping}
           onChange={handleBillingAddressChange}
           onAddressSelected={handleAddressSelected}
+          country="US"
         />
       </div>
       <div className="mb-4">
@@ -244,10 +245,10 @@ const BillingDetails = ({
         </div>
 
         <FloatLabelInput
-          label="Postal Code"
+          label="ZIP Code"
           name="postcode"
           value={formData.billing_address.postcode}
-          placeholder="Enter your postal code"
+          placeholder="Enter your ZIP code"
           required
           disabled={isUpdatingShipping}
           onChange={handleBillingAddressChange}
@@ -264,7 +265,6 @@ const BillingDetails = ({
         />
       </div>
       <div className="mb-4">
-        
         <DOBInput
           value={formData.billing_address.date_of_birth}
           onChange={handleDateChange}

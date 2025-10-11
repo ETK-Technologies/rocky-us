@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { logger } from "@/utils/devLogger";
+import { toast } from "react-toastify";
 
 const PostCanadaAddressAutocomplete = ({
   title,
@@ -9,6 +10,7 @@ const PostCanadaAddressAutocomplete = ({
   required,
   onChange,
   onAddressSelected,
+  country = "US", // Default to USA
   ...props
 }) => {
   const [suggestions, setSuggestions] = useState([]);
@@ -37,7 +39,7 @@ const PostCanadaAddressAutocomplete = ({
     };
   }, []);
 
-  // Fetch address suggestions from Post Canada AddressComplete API
+  // Fetch address suggestions from AddressComplete API (Canada/USA)
   const fetchSuggestions = async (searchTerm) => {
     if (!searchTerm || searchTerm.length < 1) {
       setSuggestions([]);
@@ -48,13 +50,13 @@ const PostCanadaAddressAutocomplete = ({
     setError(null);
 
     try {
-      logger.log("Fetching suggestions for:", searchTerm);
+      logger.log("Fetching suggestions for:", searchTerm, "Country:", country);
       const response = await fetch("/api/postcanada/address-autocomplete", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ query: searchTerm }),
+        body: JSON.stringify({ query: searchTerm, country }),
       });
 
       logger.log("Response status:", response.status);
@@ -88,7 +90,7 @@ const PostCanadaAddressAutocomplete = ({
     }
   };
 
-  // Get full address details from Post Canada AddressComplete API
+  // Get full address details from AddressComplete API (Canada/USA)
   const getAddressDetails = async (addressId) => {
     setIsLoading(true);
     setError(null);
@@ -118,9 +120,47 @@ const PostCanadaAddressAutocomplete = ({
       logger.log("Parsed response data:", data);
 
       if (data.error) {
-        // Handle API errors (like URL restrictions)
+        // Handle API errors (unsupported states, URL restrictions, etc.)
         logger.error("API Error:", data);
-        setError(`${data.error}: ${data.details || "Unknown error"}`);
+        logger.log("Service Coverage URL:", data.serviceCoverageUrl);
+
+        const errorMessage = data.details || data.error || "Unknown error";
+        const serviceCoverageUrl =
+          data.serviceCoverageUrl || "/service-coverage/";
+
+        setError(errorMessage);
+
+        // Show user-friendly toast notification with link to service coverage
+        const ToastMessage = () => (
+          <div>
+            <span>{errorMessage}</span>
+            <br />
+            <a
+              href={serviceCoverageUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: "#fff",
+                textDecoration: "underline",
+                fontWeight: "bold",
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+            >
+              Check the states we currently support
+            </a>
+          </div>
+        );
+
+        toast.error(<ToastMessage />, {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: false,
+          draggable: true,
+        });
       } else if (data.address) {
         const address = data.address;
 
@@ -146,7 +186,69 @@ const PostCanadaAddressAutocomplete = ({
       }
     } catch (err) {
       logger.error("Error retrieving address details:", err);
-      setError("Failed to retrieve address details");
+
+      // Try to parse error message from API response
+      let errorMessage = "Failed to retrieve address details";
+      let serviceCoverageUrl = "/service-coverage/"; // Default fallback
+
+      try {
+        const errorText = err.message || err.toString();
+        // Check if error contains JSON response with details
+        const jsonMatch = errorText.match(/\{.*\}/);
+        if (jsonMatch) {
+          const errorData = JSON.parse(jsonMatch[0]);
+          logger.log("Parsed error data:", errorData);
+
+          if (errorData.details) {
+            errorMessage = errorData.details;
+          } else if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+          if (errorData.serviceCoverageUrl) {
+            serviceCoverageUrl = errorData.serviceCoverageUrl;
+          }
+        }
+      } catch (parseError) {
+        // If parsing fails, use default message
+        logger.error("Could not parse error:", parseError);
+      }
+
+      logger.log("Final error message:", errorMessage);
+      logger.log("Final service coverage URL:", serviceCoverageUrl);
+
+      setError(errorMessage);
+
+      // Show user-friendly toast notification with link
+      const ToastMessage = () => (
+        <div>
+          <span>{errorMessage}</span>
+          <br />
+          <a
+            href={serviceCoverageUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: "#fff",
+              textDecoration: "underline",
+              fontWeight: "bold",
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+          >
+            Check the states we currently support
+          </a>
+        </div>
+      );
+
+      toast.error(<ToastMessage />, {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: false,
+        draggable: true,
+      });
     } finally {
       setIsLoading(false);
       setShowSuggestions(false);

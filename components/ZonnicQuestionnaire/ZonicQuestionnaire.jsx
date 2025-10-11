@@ -86,7 +86,7 @@ export default function ZonnicConsultationQuiz({
     page_step: 0,
     completion_state: "Partial",
     completion_percentage: 0,
-    source_site: "https://myrocky.ca",
+    source_site: "https://myrocky.com",
     "130_3": processedProps.firstName,
     "130_6": processedProps.lastName,
     131: processedProps.userEmail,
@@ -841,7 +841,7 @@ export default function ZonnicConsultationQuiz({
         page_step: currentPage,
         completion_state: formData.completion_state || "Partial",
         completion_percentage: progress,
-        source_site: formData.source_site || "https://myrocky.ca",
+        source_site: formData.source_site || "https://myrocky.com",
       };
 
       const userInfo = {
@@ -1410,7 +1410,7 @@ export default function ZonnicConsultationQuiz({
                 <input
                   type="hidden"
                   name="source_site"
-                  value="https://myrocky.ca"
+                  value="https://myrocky.com"
                 />
                 <input
                   type="hidden"
@@ -1841,9 +1841,9 @@ export default function ZonnicConsultationQuiz({
                                   to{" "}
                                   <a
                                     className="text-gray-600 underline"
-                                    href="mailto:clinicadmin@myrocky.ca"
+                                    href="mailto:clinicadmin@myrocky.com"
                                   >
-                                    clinicadmin@myrocky.ca
+                                    clinicadmin@myrocky.com
                                   </a>
                                   .
                                 </p>
@@ -2154,9 +2154,9 @@ export default function ZonnicConsultationQuiz({
                   complete at this time, email your ID to{" "}
                   <a
                     className="text-gray-600 underline"
-                    href="mailto:clinicadmin@myrocky.ca"
+                    href="mailto:clinicadmin@myrocky.com"
                   >
-                    clinicadmin@myrocky.ca
+                    clinicadmin@myrocky.com
                   </a>
                   .
                 </p>
@@ -2196,7 +2196,7 @@ export default function ZonnicConsultationQuiz({
           style={{ position: "relative", top: "25%" }}
         >
           <img
-            src="https://myrocky.ca/wp-content/themes/salient-child/img/preloader-wheel.svg"
+            src="https://myrocky.com/wp-content/themes/salient-child/img/preloader-wheel.svg"
             className="block w-[100px] h-auto m-auto pt-6"
             style={{ marginBottom: "10px" }}
             alt="Preloader Wheel"

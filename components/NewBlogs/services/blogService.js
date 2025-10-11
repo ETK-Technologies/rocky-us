@@ -2,7 +2,7 @@ import { logger } from "@/utils/devLogger";
 
 function getBaseUrl() {
   if (typeof window === "undefined") {
-    return "https://www.myrocky.ca";
+    return "https://www.myrocky.com";
   }
   // Client-side: use relative URLs to proxy through Next.js API routes
   return "";
@@ -145,7 +145,7 @@ export const blogService = {
     try {
       // Direct WordPress API call instead of going through our API route
       const url = `${
-        process.env.BASE_URL || "https://www.myrocky.ca"
+        process.env.BASE_URL || "https://www.myrocky.com"
       }/wp-json/wp/v2/posts?slug=${slug}&_embed=true`;
       const res = await fetch(url, {
         cache: "no-store",

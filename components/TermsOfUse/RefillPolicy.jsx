@@ -10,7 +10,7 @@ export default function RefillPolicy() {
         renewal. This can be done at any time through your account. We strongly
         recommend pausing your subscription <b> before the renewal date</b> to
         prevent unwanted orders. For assistance, you can contact us at
-        <b className="text-blue-500 underline"> contact@myrocky.ca.</b>
+        <b className="text-blue-500 underline"> contact@myrocky.com.</b>
       </p>
     </div>
   );

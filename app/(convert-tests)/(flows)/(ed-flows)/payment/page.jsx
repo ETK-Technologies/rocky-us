@@ -221,6 +221,9 @@ export default function PaymentPage() {
       savedCardId: selectedCard ? selectedCard.id : null,
       useSavedCard: !!selectedCard,
 
+      // NEW: Use Stripe for new card payments
+      useStripe: !selectedCard, // Use Stripe only when NOT using a saved card
+
       // Add total amount for saved card payments
       totalAmount: productForModal.price,
 
@@ -324,7 +327,10 @@ export default function PaymentPage() {
       if (!order_id) {
         setLoading(false);
         const raw = JSON.stringify(orderData || data);
-        logger.error("Payment succeeded but missing order id in response:", raw);
+        logger.error(
+          "Payment succeeded but missing order id in response:",
+          raw
+        );
         toast.error(
           "Payment appears successful but we couldn't find your order ID. Please contact support or check your email for order confirmation."
         );
@@ -416,7 +422,6 @@ export default function PaymentPage() {
             setSelectedCard={setSelectedCard}
             isLoadingSavedCards={false}
           />
-          
         </div>
       </div>
     </>

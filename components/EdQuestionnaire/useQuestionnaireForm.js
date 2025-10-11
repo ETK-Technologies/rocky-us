@@ -131,7 +131,7 @@ export function useQuestionnaireForm({
         page_step: currentPage,
         completion_state: formData.completion_state || "Partial",
         completion_percentage: progress,
-        source_site: formData.source_site || "https://myrocky.ca",
+        source_site: formData.source_site || "https://myrocky.com",
       };
 
       const userInfo = {

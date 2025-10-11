@@ -56,7 +56,7 @@ const IdUploadStep = ({
         const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
         if (isHeifFile && !isSafari) {
-            setIdPreview("https://myrocky.ca/wp-content/themes/salient-child/img/photo_upload_icon.png");
+            setIdPreview("https://myrocky.com/wp-content/themes/salient-child/img/photo_upload_icon.png");
         } else {
             const reader = new FileReader();
             reader.onload = function (e) {
