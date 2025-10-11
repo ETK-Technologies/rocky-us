@@ -97,8 +97,8 @@
   },
   "consultationMapping": {
     "Regrowing my hair": "126208",
-    "Preventing future hair loss": "2838", 
+    "Preventing future hair loss": "126208", 
     "Both": "126208"
   },
-  "flowProducts": ["126208", "6288", "268", "2838"]
+  "flowProducts": ["126208"]
 }
