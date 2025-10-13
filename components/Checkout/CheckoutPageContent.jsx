@@ -45,7 +45,17 @@ const stripePromise = loadStripe(
 // Wrapper component to provide Stripe context
 const CheckoutPageWrapper = () => {
   return (
-    <Elements stripe={stripePromise}>
+    <Elements
+      stripe={stripePromise}
+      options={{
+        mode: "payment", // Setup mode for Payment Element
+        amount: 1000, // Default amount, will be updated
+        currency: "usd",
+        appearance: {
+          theme: "stripe",
+        },
+      }}
+    >
       <CheckoutPageContent />
     </Elements>
   );
@@ -173,6 +183,7 @@ const CheckoutPageContent = () => {
     setIsPaymentValid(isValid);
     setPaymentValidationMessage(message);
   }, [selectedCard, cardNumber, expiry, cvc]);
+
   const [showQuebecPopup, setShowQuebecPopup] = useState(false);
   const [showAgePopup, setShowAgePopup] = useState(false);
   const [ageValidationFailed, setAgeValidationFailed] = useState(false);
@@ -1201,7 +1212,69 @@ const CheckoutPageContent = () => {
               orderId = checkoutResult.data.id;
               orderKey = checkoutResult.data.order_key || "";
               logger.log(
-                `Order created successfully with ID: ${orderId}, now processing payment`
+                `Order created successfully with ID: ${orderId}, checking order amount...`
+              );
+
+              // Check if order is FREE (100% discount)
+              let orderAmountInCents = 0;
+              const orderTotal = checkoutResult.data.total;
+
+              if (typeof orderTotal === "string") {
+                const numericTotal = parseFloat(
+                  orderTotal.replace(/[^0-9.]/g, "")
+                );
+                orderAmountInCents = Math.round(numericTotal * 100);
+              } else if (typeof orderTotal === "number") {
+                orderAmountInCents = Math.round(orderTotal * 100);
+              }
+
+              // Handle FREE orders (100% discount, total is $0)
+              if (orderAmountInCents <= 0) {
+                logger.log(
+                  "✅ FREE ORDER detected (100% discount applied) - saved card flow"
+                );
+
+                // Update order status to processing (no payment needed)
+                const updateResponse = await fetch("/api/update-order-status", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    orderId,
+                    status: "processing",
+                    paymentMethod: "free_order",
+                    errorMessage: "Free order - 100% discount applied",
+                  }),
+                });
+
+                const updateResult = await updateResponse.json();
+
+                if (!updateResult.success) {
+                  logger.warn(
+                    "Failed to update free order status, but continuing..."
+                  );
+                }
+
+                logger.log("✅ Free order completed successfully");
+                toast.success("Order placed successfully!");
+
+                // Empty cart
+                try {
+                  const { emptyCart } = await import("@/lib/cart/cartService");
+                  await emptyCart();
+                  logger.log("Cart emptied successfully");
+                } catch (error) {
+                  logger.error("Error emptying cart:", error);
+                }
+
+                // Redirect to success page
+                router.push(
+                  `/checkout/order-received/${orderId}?key=${orderKey}${buildFlowQueryString()}`
+                );
+                return;
+              }
+
+              logger.log(
+                "Order has payment amount, proceeding with saved card payment..."
               );
 
               // Before processing payment, check the order status to avoid duplicate payments
@@ -1382,47 +1455,7 @@ const CheckoutPageContent = () => {
         try {
           logger.log("Processing Stripe Elements payment...");
 
-          // Validate Stripe Elements is ready
-          if (!stripeElements) {
-            throw new Error("Stripe payment form not ready. Please try again.");
-          }
-
-          // Validate Stripe instance is available
-          if (!stripe) {
-            throw new Error(
-              "Stripe is not loaded. Please refresh and try again."
-            );
-          }
-
-          // Step 1: Create PaymentMethod from Stripe Elements
-          logger.log("Creating PaymentMethod from Stripe Elements...");
-
-          const { error: pmError, paymentMethod } =
-            await stripe.createPaymentMethod({
-              type: "card",
-              card: stripeElements.getElement("card"),
-              billing_details: {
-                name: `${dataToSend.firstName} ${dataToSend.lastName}`,
-                email: dataToSend.email,
-                phone: dataToSend.phone,
-                address: {
-                  line1: dataToSend.addressOne,
-                  line2: dataToSend.addressTwo || "",
-                  city: dataToSend.city,
-                  state: dataToSend.state,
-                  postal_code: dataToSend.postcode,
-                  country: dataToSend.country,
-                },
-              },
-            });
-
-          if (pmError) {
-            throw new Error(pmError.message);
-          }
-
-          logger.log("✅ PaymentMethod created:", paymentMethod.id);
-
-          // Step 2: Create pending order
+          // Step 1: Create pending order first to check the amount
           logger.log("Creating pending order...");
           const orderResponse = await fetch("/api/create-pending-order", {
             method: "POST",
@@ -1451,31 +1484,147 @@ const CheckoutPageContent = () => {
             amountInCents = Math.round(orderTotal * 100);
           }
 
-          if (!amountInCents || amountInCents <= 0) {
-            throw new Error("Invalid order amount");
+          logger.log("Order amount in cents:", amountInCents);
+
+          // Handle FREE orders (100% discount, total is $0)
+          if (amountInCents <= 0) {
+            logger.log("✅ FREE ORDER detected (100% discount applied)");
+
+            // Update order status to processing (no payment needed)
+            const updateResponse = await fetch("/api/update-order-status", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                orderId,
+                status: "processing", // No payment needed, mark as processing
+                paymentMethod: "free_order",
+                errorMessage: "Free order - 100% discount applied",
+              }),
+            });
+
+            const updateResult = await updateResponse.json();
+
+            if (!updateResult.success) {
+              logger.warn(
+                "Failed to update free order status, but continuing..."
+              );
+            }
+
+            logger.log("✅ Free order completed successfully");
+            toast.success("Order placed successfully!");
+
+            // Empty cart
+            try {
+              const { emptyCart } = await import("@/lib/cart/cartService");
+              await emptyCart();
+              logger.log("Cart emptied successfully");
+            } catch (error) {
+              logger.error("Error emptying cart:", error);
+            }
+
+            // Redirect to success page
+            router.push(
+              `/checkout/order-received/${orderId}?key=${orderKey}${buildFlowQueryString()}`
+            );
+            return;
           }
 
-          // Step 3: Process payment
-          logger.log("Processing payment...");
-          const paymentResponse = await fetch("/api/process-stripe-payment", {
+          // Validate Stripe Elements is ready (only for paid orders)
+          if (!stripeElements) {
+            throw new Error("Stripe payment form not ready. Please try again.");
+          }
+
+          // Validate Stripe instance is available (only for paid orders)
+          if (!stripe) {
+            throw new Error(
+              "Stripe is not loaded. Please refresh and try again."
+            );
+          }
+
+          // Step 2: Submit Payment Element to collect payment method
+          logger.log("Submitting Payment Element...");
+          const { error: submitError } = await stripeElements.submit();
+
+          if (submitError) {
+            throw new Error(submitError.message);
+          }
+
+          // Step 3: Create PaymentIntent
+          logger.log("Creating PaymentIntent...");
+          const intentResponse = await fetch("/api/create-payment-intent", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               orderId,
-              paymentMethodId: paymentMethod.id,
               amount: amountInCents,
+              customerEmail: dataToSend.email,
+              customerName: `${dataToSend.firstName} ${dataToSend.lastName}`,
             }),
           });
 
-          const paymentResult = await paymentResponse.json();
+          const intentResult = await intentResponse.json();
 
-          if (!paymentResult.success) {
-            throw new Error(paymentResult.error || "Payment failed");
+          if (!intentResult.success) {
+            throw new Error(
+              intentResult.error || "Failed to create payment intent"
+            );
           }
 
-          logger.log("✅ Payment authorized:", paymentResult.paymentIntentId);
+          const paymentIntentSecret = intentResult.clientSecret;
+          logger.log("✅ PaymentIntent created");
 
-          // Step 4: Update order status
+          // Step 4: Confirm payment with the collected payment method
+          logger.log("Confirming payment...");
+          const { error: confirmError, paymentIntent } =
+            await stripe.confirmPayment({
+              elements: stripeElements,
+              clientSecret: paymentIntentSecret,
+              confirmParams: {
+                return_url: `${window.location.origin}/checkout/order-received/${orderId}?key=${orderKey}`,
+                payment_method_data: {
+                  billing_details: {
+                    name: `${dataToSend.firstName} ${dataToSend.lastName}`,
+                    email: dataToSend.email,
+                    phone: dataToSend.phone,
+                    address: {
+                      line1: dataToSend.addressOne,
+                      line2: dataToSend.addressTwo || "",
+                      city: dataToSend.city,
+                      state: dataToSend.state,
+                      postal_code: dataToSend.postcode,
+                      country: dataToSend.country,
+                    },
+                  },
+                },
+              },
+              redirect: "if_required", // Don't redirect if 3DS not needed
+            });
+
+          if (confirmError) {
+            throw new Error(confirmError.message);
+          }
+
+          logger.log("✅ Payment confirmed:", paymentIntent?.id);
+
+          // Extract payment details for WooCommerce metadata
+          const paymentMethodId = paymentIntent?.payment_method;
+          const chargeId = paymentIntent?.latest_charge;
+          const currency = paymentIntent?.currency?.toUpperCase() || "USD";
+
+          // Try to get card details if available
+          const cardBrand = paymentIntent?.payment_method_details?.card?.brand;
+          const cardLast4 = paymentIntent?.payment_method_details?.card?.last4;
+
+          logger.log("Payment details for WooCommerce:", {
+            paymentIntentId: paymentIntent?.id,
+            chargeId,
+            paymentMethodId,
+            currency,
+            cardBrand,
+            cardLast4,
+          });
+
+          // Step 5: Update order status with full Stripe metadata
           logger.log("Updating order status...");
           const updateResponse = await fetch("/api/update-order-status", {
             method: "POST",
@@ -1483,11 +1632,14 @@ const CheckoutPageContent = () => {
             body: JSON.stringify({
               orderId,
               status: "on-hold",
-              paymentIntentId: paymentResult.paymentIntentId,
-              chargeId: paymentResult.chargeId,
+              paymentIntentId:
+                paymentIntent?.id || intentResult.paymentIntentId,
+              chargeId: chargeId,
+              paymentMethodId: paymentMethodId, // Critical for WC to capture
               paymentMethod: "stripe_cc",
-              cardBrand: paymentMethod.card?.brand,
-              cardLast4: paymentMethod.card?.last4,
+              currency: currency,
+              cardBrand: cardBrand,
+              cardLast4: cardLast4,
             }),
           });
 

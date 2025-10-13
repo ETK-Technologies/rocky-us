@@ -505,7 +505,7 @@ const EDPreConsultationQuiz = () => {
               />
             )}
 
-            <div className="w-full md:w-[688px] mt-14 md:mt-16">
+            <div className="w-full md:w-[688px] mt-14 md:mt-16 mb-14 md:mb-10">
               <div className="mx-auto">
                 <FaqsSection faqs={faqs} title="FAQs" />
               </div>

@@ -15,7 +15,9 @@ export async function POST(req) {
       status,
       paymentIntentId,
       chargeId,
+      paymentMethodId, // Critical for WooCommerce to capture payment
       paymentMethod,
+      currency,
       cardBrand,
       cardLast4,
       errorMessage, // For failed status
@@ -33,25 +35,46 @@ export async function POST(req) {
     logger.log("Status:", status);
     logger.log("Payment Intent:", paymentIntentId);
     logger.log("Charge ID:", chargeId);
+    logger.log("Payment Method ID:", paymentMethodId);
     logger.log("==============================");
 
     const metaData = [];
 
-    // Add Stripe metadata
+    // Add Stripe metadata - CRITICAL for WooCommerce to capture payment
     if (paymentIntentId) {
       metaData.push({ key: "_stripe_intent_id", value: paymentIntentId });
     }
+
     if (chargeId) {
       metaData.push({ key: "_stripe_charge_id", value: chargeId });
       metaData.push({ key: "_transaction_id", value: chargeId });
     }
+
+    // CRITICAL: PaymentMethod ID is required for WooCommerce to capture
+    if (paymentMethodId) {
+      metaData.push({ key: "_stripe_source_id", value: paymentMethodId });
+      logger.log("✅ Added PaymentMethod ID for capture:", paymentMethodId);
+    }
+
+    // CRITICAL: Mark as uncaptured for manual capture
+    if (status === "on-hold") {
+      metaData.push({ key: "_stripe_charge_captured", value: "no" });
+      logger.log("✅ Marked payment as uncaptured (manual capture mode)");
+    }
+
     if (paymentMethod) {
       metaData.push({ key: "_payment_method", value: paymentMethod });
       metaData.push({ key: "_payment_method_title", value: "Stripe" });
     }
+
+    if (currency) {
+      metaData.push({ key: "_stripe_currency", value: currency });
+    }
+
     if (cardBrand) {
       metaData.push({ key: "_stripe_card_brand", value: cardBrand });
     }
+
     if (cardLast4) {
       metaData.push({ key: "_stripe_card_last4", value: cardLast4 });
     }
@@ -71,10 +94,21 @@ export async function POST(req) {
     let orderNote = "";
     if (status === "on-hold" && (chargeId || paymentIntentId)) {
       const reference = chargeId || paymentIntentId;
-      orderNote = `Payment authorized via Stripe (${reference}). Awaiting manual capture.`;
+      const pmNote = paymentMethodId
+        ? ` | Payment Method: ${paymentMethodId}`
+        : "";
+      orderNote = `Payment authorized via Stripe (${reference}${pmNote}). Awaiting manual capture.`;
     } else if (status === "processing" && (chargeId || paymentIntentId)) {
       const reference = chargeId || paymentIntentId;
-      orderNote = `Payment captured via Stripe (${reference}).`;
+      const pmNote = paymentMethodId
+        ? ` | Payment Method: ${paymentMethodId}`
+        : "";
+      orderNote = `Payment captured via Stripe (${reference}${pmNote}).`;
+    } else if (status === "processing" && paymentMethod === "free_order") {
+      // Free order (100% discount)
+      orderNote =
+        errorMessage ||
+        "Free order - 100% discount applied. No payment required.";
     } else if (status === "failed") {
       orderNote = `Payment failed: ${errorMessage || "Unknown error"}`;
     }

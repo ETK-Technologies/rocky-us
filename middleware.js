@@ -193,13 +193,40 @@ function shouldProtectRoute(pathname) {
 function isBlockedRoute(pathname) {
   // List of routes that are hashed/blocked in the navbar
   const blockedRoutes = [
+    // Mental Health routes
     "/mental-health",
-    "/product/dhm-blend",
+    "/mh-pre-quiz",
+    "/mh-quiz",
+
+    // Smoking Cessation routes
     "/zonnic",
     "/product/zonnic",
+    "/smoking-consultation",
+    "/chewalis",
+
+    // Recovery routes
+    "/product/dhm-blend",
+
+    // Merch
     "/merch",
-    // "/hair",
-    // Add other routes that are hashed in navbar
+
+    // Skincare routes
+    "/acne-cream",
+    "/anti-aging-cream",
+    "/hyper-pigmentation-cream",
+    "/skincare",
+
+    // Mental Health products
+    "/product/bupropion",
+    "/product/citalopram",
+    "/product/escitalopram",
+    "/product/fluoxetine",
+    "/product/paroxetine",
+    "/product/sertraline",
+    "/product/trazodone",
+    "/product/venlafaxine",
+    "/product/essential-mood-balance",
+    "/product/essential-night-boost",
   ];
 
   // Check if the current path should be blocked
