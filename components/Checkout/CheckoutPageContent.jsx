@@ -1503,7 +1503,25 @@ const CheckoutPageContent = () => {
 
           logger.log("✅ Payment confirmed:", paymentIntent?.id);
 
-          // Step 5: Update order status
+          // Extract payment details for WooCommerce metadata
+          const paymentMethodId = paymentIntent?.payment_method;
+          const chargeId = paymentIntent?.latest_charge;
+          const currency = paymentIntent?.currency?.toUpperCase() || "USD";
+
+          // Try to get card details if available
+          const cardBrand = paymentIntent?.payment_method_details?.card?.brand;
+          const cardLast4 = paymentIntent?.payment_method_details?.card?.last4;
+
+          logger.log("Payment details for WooCommerce:", {
+            paymentIntentId: paymentIntent?.id,
+            chargeId,
+            paymentMethodId,
+            currency,
+            cardBrand,
+            cardLast4,
+          });
+
+          // Step 5: Update order status with full Stripe metadata
           logger.log("Updating order status...");
           const updateResponse = await fetch("/api/update-order-status", {
             method: "POST",
@@ -1513,8 +1531,12 @@ const CheckoutPageContent = () => {
               status: "on-hold",
               paymentIntentId:
                 paymentIntent?.id || intentResult.paymentIntentId,
-              chargeId: paymentIntent?.latest_charge,
+              chargeId: chargeId,
+              paymentMethodId: paymentMethodId, // Critical for WC to capture
               paymentMethod: "stripe_cc",
+              currency: currency,
+              cardBrand: cardBrand,
+              cardLast4: cardLast4,
             }),
           });
 
