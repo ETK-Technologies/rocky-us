@@ -161,6 +161,7 @@ export default function RootLayout({ children }) {
           position="top-right"
           autoClose={5000}
           pauseOnHover={false}
+          pauseOnFocusLoss={false}
           style={{ zIndex: 999999 }}
         />
         {/* Global Quebec Popup - Shows after registration redirect */}
