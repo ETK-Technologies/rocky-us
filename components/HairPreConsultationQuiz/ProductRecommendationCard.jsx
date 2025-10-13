@@ -8,7 +8,6 @@ const ProductRecommendationCard = ({
   onCheckout, 
   isCheckoutLoading 
 }) => {
-
   return (
     <div className="w-full md:w-[335px] mx-auto md:mb-20 px-6 md:px-0">
       {/* Progress Indicator */}
@@ -22,7 +21,7 @@ const ProductRecommendationCard = ({
         ></div>
       </div>
 
-      <div className="product-recommendation-page py-4">
+      <div className="product-recommendation-page py-4 pb-32">
         <div className="quiz-heading-wrapper px-3 mx-auto pt-2 pb-0">
           <h2 className="quiz-heading text-[#AE7E56] text-base text-center">
             Time To Get Growing!
@@ -30,14 +29,14 @@ const ProductRecommendationCard = ({
         </div>
         <div className="text-center mt-4 pb-0 text-[32px] headers-font font-[450] leading-[115%] tracking-[-2%] mb-4">We recommend</div>
 
-        <div className="mx-auto w-[335px] mt-4 relative">
+        <div className="mx-auto w-[335px] mt-4 relative z-10">
           {/* Recommended Banner - positioned behind */}
-          <div className="bg-[#AE7E56] text-white text-center w-full py-[2px] px-[8px] rounded-t-2xl h-[35px] relative z-10 " >
-            <span className="text-xs font-normal">Recommended</span>
+          <div className="bg-[#AE7E56] text-white text-center w-full rounded-t-2xl h-[40px] relative z-10 px-2  text-xs font-normal leading-[140%] tracking-[0%] pt-[2px]" >
+            Recommended
           </div>
           
           {/* Main content area - positioned to overlap the banner */}
-          <div className="bg-white  shadow-lg p-6 h-[409px] w-[335px] flex flex-col items-center rounded-2xl relative -mt-[10px] z-20">
+          <div className="bg-white shadow-lg p-6 h-[409px] w-[335px] flex flex-col items-center rounded-2xl relative -mt-[20px] z-20">
             {/* Rating and Trustpilot */}
             <div className="flex justify-between items-center mb-4 w-[220px] h-[20px]">
               <div className="text-black text-[12px] font-medium">
@@ -65,14 +64,14 @@ const ProductRecommendationCard = ({
             {/* Product Information */}
             <div className="text-center">
               {/* Product Name */}
-              <h3 className="text-[16px] font-medium leading-[140%] tracking-[0%] text-black mb-[2px]">
+              <h3 className="text-[18px] font-medium leading-[140%] tracking-[0%] text-black mb-[2px]">
                 {product.pills}
               </h3>
               <p className="text-[12px] font-normal leading-[140%] tracking-[0%] text-[#212121] mb-2">
                 {product.name}
               </p>
-              <p className="text-[16px] font-medium leading-[140%] tracking-[0%] text-black mb-3">
-                ${product.price}
+              <p className="text-[18px] font-medium leading-[140%] tracking-[0%] text-black mb-3">
+                {product.price}
               </p>
               {/* Product Description */}
               <p className="text-[#212121] text-[14px] font-normal leading-[140%] tracking-[0%] mb-3">
@@ -89,8 +88,15 @@ const ProductRecommendationCard = ({
             We respect your privacy. All of your information is securely
             stored on our PIPEDA Compliant server.
           </p>
+          {/* Gradient div above button */}
+          <div className="fixed bottom-[88px] w-[335px] md:w-[520px] h-[48px] -translate-x-2/4 left-2/4 z-20"
+               style={{
+                 background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.00) 0%, #FFF 34.52%)'
+               }}>
+          </div>
+          
           {/* Checkout Button */}
-          <div className="fixed bottom-0 w-[335px] md:w-[520px] p-4 bg-white -translate-x-2/4 left-2/4">
+          <div className="fixed bottom-0 w-[335px] md:w-[520px] p-4 bg-white -translate-x-2/4 left-2/4 z-30">
             <button
               onClick={onCheckout}
               disabled={isCheckoutLoading}
