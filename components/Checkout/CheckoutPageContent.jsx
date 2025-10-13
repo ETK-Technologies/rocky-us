@@ -1212,7 +1212,69 @@ const CheckoutPageContent = () => {
               orderId = checkoutResult.data.id;
               orderKey = checkoutResult.data.order_key || "";
               logger.log(
-                `Order created successfully with ID: ${orderId}, now processing payment`
+                `Order created successfully with ID: ${orderId}, checking order amount...`
+              );
+
+              // Check if order is FREE (100% discount)
+              let orderAmountInCents = 0;
+              const orderTotal = checkoutResult.data.total;
+
+              if (typeof orderTotal === "string") {
+                const numericTotal = parseFloat(
+                  orderTotal.replace(/[^0-9.]/g, "")
+                );
+                orderAmountInCents = Math.round(numericTotal * 100);
+              } else if (typeof orderTotal === "number") {
+                orderAmountInCents = Math.round(orderTotal * 100);
+              }
+
+              // Handle FREE orders (100% discount, total is $0)
+              if (orderAmountInCents <= 0) {
+                logger.log(
+                  "✅ FREE ORDER detected (100% discount applied) - saved card flow"
+                );
+
+                // Update order status to processing (no payment needed)
+                const updateResponse = await fetch("/api/update-order-status", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    orderId,
+                    status: "processing",
+                    paymentMethod: "free_order",
+                    errorMessage: "Free order - 100% discount applied",
+                  }),
+                });
+
+                const updateResult = await updateResponse.json();
+
+                if (!updateResult.success) {
+                  logger.warn(
+                    "Failed to update free order status, but continuing..."
+                  );
+                }
+
+                logger.log("✅ Free order completed successfully");
+                toast.success("Order placed successfully!");
+
+                // Empty cart
+                try {
+                  const { emptyCart } = await import("@/lib/cart/cartService");
+                  await emptyCart();
+                  logger.log("Cart emptied successfully");
+                } catch (error) {
+                  logger.error("Error emptying cart:", error);
+                }
+
+                // Redirect to success page
+                router.push(
+                  `/checkout/order-received/${orderId}?key=${orderKey}${buildFlowQueryString()}`
+                );
+                return;
+              }
+
+              logger.log(
+                "Order has payment amount, proceeding with saved card payment..."
               );
 
               // Before processing payment, check the order status to avoid duplicate payments
@@ -1393,27 +1455,7 @@ const CheckoutPageContent = () => {
         try {
           logger.log("Processing Stripe Elements payment...");
 
-          // Validate Stripe Elements is ready
-          if (!stripeElements) {
-            throw new Error("Stripe payment form not ready. Please try again.");
-          }
-
-          // Validate Stripe instance is available
-          if (!stripe) {
-            throw new Error(
-              "Stripe is not loaded. Please refresh and try again."
-            );
-          }
-
-          // Step 1: Submit Payment Element to collect payment method
-          logger.log("Submitting Payment Element...");
-          const { error: submitError } = await stripeElements.submit();
-
-          if (submitError) {
-            throw new Error(submitError.message);
-          }
-
-          // Step 2: Create pending order
+          // Step 1: Create pending order first to check the amount
           logger.log("Creating pending order...");
           const orderResponse = await fetch("/api/create-pending-order", {
             method: "POST",
@@ -1442,8 +1484,69 @@ const CheckoutPageContent = () => {
             amountInCents = Math.round(orderTotal * 100);
           }
 
-          if (!amountInCents || amountInCents <= 0) {
-            throw new Error("Invalid order amount");
+          logger.log("Order amount in cents:", amountInCents);
+
+          // Handle FREE orders (100% discount, total is $0)
+          if (amountInCents <= 0) {
+            logger.log("✅ FREE ORDER detected (100% discount applied)");
+
+            // Update order status to processing (no payment needed)
+            const updateResponse = await fetch("/api/update-order-status", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                orderId,
+                status: "processing", // No payment needed, mark as processing
+                paymentMethod: "free_order",
+                errorMessage: "Free order - 100% discount applied",
+              }),
+            });
+
+            const updateResult = await updateResponse.json();
+
+            if (!updateResult.success) {
+              logger.warn(
+                "Failed to update free order status, but continuing..."
+              );
+            }
+
+            logger.log("✅ Free order completed successfully");
+            toast.success("Order placed successfully!");
+
+            // Empty cart
+            try {
+              const { emptyCart } = await import("@/lib/cart/cartService");
+              await emptyCart();
+              logger.log("Cart emptied successfully");
+            } catch (error) {
+              logger.error("Error emptying cart:", error);
+            }
+
+            // Redirect to success page
+            router.push(
+              `/checkout/order-received/${orderId}?key=${orderKey}${buildFlowQueryString()}`
+            );
+            return;
+          }
+
+          // Validate Stripe Elements is ready (only for paid orders)
+          if (!stripeElements) {
+            throw new Error("Stripe payment form not ready. Please try again.");
+          }
+
+          // Validate Stripe instance is available (only for paid orders)
+          if (!stripe) {
+            throw new Error(
+              "Stripe is not loaded. Please refresh and try again."
+            );
+          }
+
+          // Step 2: Submit Payment Element to collect payment method
+          logger.log("Submitting Payment Element...");
+          const { error: submitError } = await stripeElements.submit();
+
+          if (submitError) {
+            throw new Error(submitError.message);
           }
 
           // Step 3: Create PaymentIntent

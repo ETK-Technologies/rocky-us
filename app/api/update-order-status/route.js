@@ -104,6 +104,11 @@ export async function POST(req) {
         ? ` | Payment Method: ${paymentMethodId}`
         : "";
       orderNote = `Payment captured via Stripe (${reference}${pmNote}).`;
+    } else if (status === "processing" && paymentMethod === "free_order") {
+      // Free order (100% discount)
+      orderNote =
+        errorMessage ||
+        "Free order - 100% discount applied. No payment required.";
     } else if (status === "failed") {
       orderNote = `Payment failed: ${errorMessage || "Unknown error"}`;
     }
