@@ -12,6 +12,7 @@ import { WarningPopup } from "../EdQuestionnaire/WarningPopup";
 import DOBInput from "../shared/DOBInput";
 import { addToCartDirectly } from "../../utils/flowCartHandler";
 import { getConsultationProduct } from "../../utils/hairProductsConfig";
+import ProductRecommendationCard from "./ProductRecommendationCard";
 
 const HairPreConsultationQuiz = () => {
   // Next.js router for navigation
@@ -338,15 +339,13 @@ const HairPreConsultationQuiz = () => {
                 Time To Get Growing!
               </h2>
             </div>
+            <div className="text-center pt-3 pb-0 text-2xl header-fonts mb-4">We recommend</div>
 
-            <p className="text-center pt-3 pb-0 text-2xl">We recommend</p>
-            <p className="text-center w-full">
-              <img
-                className="recommended-product block w-full h-auto m-auto  pb-1 max-w-[500px]"
-                src={recommendedProduct.image}
-                alt={recommendedProduct.title}
+            <div className="pt-3 pb-0">
+              <ProductRecommendationCard
+                product={recommendedProduct}
               />
-            </p>
+            </div>
             <p className="text-left  mb-5 px-5 md:px-8  text-[12px] text-[#BCBCBC] mt-5 subheaders-font">
               We respect your privacy. All of your information is securely
               stored on our PIPEDA Compliant server.
@@ -380,6 +379,7 @@ const HairPreConsultationQuiz = () => {
                 <span>100% Money Back Guarantee</span>
               </div>
             </div>
+
           </div>
         </div>
 
