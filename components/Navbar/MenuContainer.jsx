@@ -212,7 +212,7 @@ const MenuContainer = ({
       {/* Tabs */}
       <div className="flex gap-[24px] pt-4 px-[24px] md:px-10 bg-white relative">
         <div className="absolute bottom-0 left-[24px] md:left-10 w-[calc(100%-48px)] md:w-[420px] h-[1px] bg-[#E2E2E1]"></div>
-        {["Treatments", "Medications", "Supplements"].map((tab) => (
+        {["Treatments", "Medications"].map((tab) => (
           <button
             key={tab}
             className={`py-4 transition-colors duration-150 font-medium text-xs md:text-sm tracking-normal align-middle z-10 uppercase ${
