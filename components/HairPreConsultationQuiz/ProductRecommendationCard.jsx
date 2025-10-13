@@ -28,7 +28,7 @@ const ProductRecommendationCard = ({
             Time To Get Growing!
           </h2>
         </div>
-        <div className="text-center mt-4 pb-0 text-[32px]  font-[450] leading-[115%] tracking-[-2%] mb-4">We recommend</div>
+        <div className="text-center mt-4 pb-0 text-[32px] headers-font font-[450] leading-[115%] tracking-[-2%] mb-4">We recommend</div>
 
         <div className="mx-auto w-[335px] mt-4 relative">
           {/* Recommended Banner - positioned behind */}
