@@ -18,7 +18,7 @@ const items = [
 ];
 const wlCoverData = {
   proudPartner: true,
-  title: "Trusted by 300,000+ Canadians",
+  title: "Trusted by 300,000+ Users",
   subtitle: "Your Health Journey Simplified with a Prescription",
   image: "https://myrocky.b-cdn.net/Other%20Images/bo2-tt.png",
   imageHeight: "md:h-[520px]",
