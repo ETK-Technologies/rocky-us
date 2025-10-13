@@ -16,7 +16,7 @@ export const QuestionLayout = ({
 
   return (
     <div
-      className={`quiz-page quiz-question-${pageNo} ${
+      className={`quiz-page quiz-question-${pageNo}  ${
         inputType === "radio" ? "hide-continue-button" : ""
       } quiz-page-${pageNo}`}
       data-pageno={pageNo}
@@ -25,9 +25,9 @@ export const QuestionLayout = ({
       data-input-type={inputType}
       suppressHydrationWarning={true}
     >
-      <div className="quiz-heading-wrapper pt-6">
+      <div className="quiz-heading-wrapper pt-6 ">
         <h2
-          className="quiz-heading text-[26px] md:text-[32px] subheaders-font font-medium mb-2 md:mb-4"
+          className="quiz-heading text-[26px] md:text-[32px] subheaders-font font-medium mb-2 md:mb-4 "
           style={headerStyle}
         >
           {title}

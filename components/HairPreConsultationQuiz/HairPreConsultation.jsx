@@ -343,7 +343,7 @@ const HairPreConsultationQuiz = () => {
       <ProgressBar progress={progress} />
 
       <div
-        className="quiz-page-wrapper relative w-full subheaders-font md:w-[520px] mx-auto bg-[#FFFFFF]"
+        className="quiz-page-wrapper relative w-full subheaders-font md:w-[520px] mx-auto bg-[#FFFFFF]  px-4 md:px-0 pt-2"
         suppressHydrationWarning={true}
       >
         <QuestionLayout
@@ -520,7 +520,7 @@ const HairPreConsultationQuiz = () => {
 
         {currentPage === 4 && (
           <div className="quiz-page">
-            <div className="quiz-content px-4 md:px-0 pt-2">
+            <div className="quiz-content ">
               <h2 className="text-2xl font-medium mb-6 mt-4">
                 Let's make sure you're eligible for treatment
               </h2>
@@ -575,7 +575,7 @@ const HairPreConsultationQuiz = () => {
 
         {currentPage === 5 && (
           <div className="quiz-page">
-            <div className="quiz-content px-4 md:px-0 pt-2">
+            <div className="quiz-content ">
               <h2 className="text-2xl font-medium mb-4 mt-4">
                 What was your biological sex at birth?
               </h2>
