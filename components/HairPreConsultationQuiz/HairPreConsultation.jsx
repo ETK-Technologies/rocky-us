@@ -322,77 +322,11 @@ const HairPreConsultationQuiz = () => {
           onBackClick={handleBackClick}
           currentPage={currentPage}
         />
-        <div className="w-full md:w-[520px] mx-auto md:mb-20 px-6 md:px-0 ">
-          <div className="progress-indicator mb-2 text-[#A7885A] font-medium">
-            <span className="text-sm">Here's what we recommended</span>
-          </div>
-          <div className="progress-bar-wrapper w-full block h-[8px] my-1 rounded-[10px] bg-gray-200">
-            <div
-              style={{ width: "100%" }}
-              className="progress-bar bg-[#A7885A] rounded-[10px] block float-left h-[8px]"
-            ></div>
-          </div>
-
-          <div className="product-recommendation-page py-4 ">
-            <div className="quiz-heading-wrapper px-3 mx-auto pt-2 pb-0">
-              <h2 className="quiz-heading text-[#AE7E56] text-sm text-center">
-                Time To Get Growing!
-              </h2>
-            </div>
-            <div className="text-center pt-3 pb-0 text-2xl header-fonts mb-4">We recommend</div>
-
-            <div className="pt-3 pb-0">
-              <ProductRecommendationCard
-                product={recommendedProduct}
-              />
-            </div>
-            <p className="text-left  mb-5 px-5 md:px-8  text-[12px] text-[#BCBCBC] mt-5 subheaders-font">
-              We respect your privacy. All of your information is securely
-              stored on our PIPEDA Compliant server.
-            </p>
-
-            <div className="fixed bottom-0 w-[335px] md:w-[520px] p-4 bg-white -translate-x-2/4 left-2/4">
-              <button
-                onClick={handleCheckout}
-                disabled={isCheckoutLoading}
-                className={`w-full py-3 px-6 rounded-full font-medium transition-colors block text-center ${
-                  isCheckoutLoading
-                    ? "bg-gray-400 cursor-not-allowed text-white"
-                    : "bg-black text-white hover:bg-gray-800"
-                }`}
-              >
-                {isCheckoutLoading ? (
-                  <>
-                    <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Adding to Cart...
-                  </>
-                ) : (
-                  "Get my growth plan now"
-                )}
-              </button>
-              <div className="flex items-center justify-center mt-2 text-sm">
-                <img
-                  src="https://myrocky.b-cdn.net/WP%20Images/Questionnaire/reset.png"
-                  alt="Guarantee icon"
-                  className="h-5 w-5 mr-1"
-                />
-                <span>100% Money Back Guarantee</span>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-        {/* Full-screen loading overlay */}
-        {isCheckoutLoading && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[99999]">
-            <div className="bg-white rounded-lg p-8 flex flex-col items-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mb-4"></div>
-              <p className="text-lg font-medium">Adding items to cart...</p>
-              <p className="text-sm text-gray-600 mt-2">Please wait</p>
-            </div>
-          </div>
-        )}
+        <ProductRecommendationCard
+          product={recommendedProduct}
+          onCheckout={handleCheckout}
+          isCheckoutLoading={isCheckoutLoading}
+        />
       </div>
     );
   }
