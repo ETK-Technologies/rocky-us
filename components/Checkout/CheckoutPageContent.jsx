@@ -54,6 +54,9 @@ const CheckoutPageWrapper = () => {
         appearance: {
           theme: "stripe",
         },
+        paymentMethodCreation: "manual", // Required for createPaymentMethod with PaymentElement
+        // Configure payment methods at the Elements level
+        paymentMethodTypes: ["card", "link"], // Allow card and link payments
       }}
     >
       <CheckoutPageContent />
@@ -1549,14 +1552,47 @@ const CheckoutPageContent = () => {
             throw new Error(submitError.message);
           }
 
-          // Step 3: Create PaymentIntent
-          logger.log("Creating PaymentIntent...");
+          // Step 3: Get the payment method from PaymentElement
+          logger.log("Getting payment method from PaymentElement...");
+          const { error: pmError, paymentMethod } =
+            await stripe.createPaymentMethod({
+              elements: stripeElements,
+              params: {
+                billing_details: {
+                  name: `${dataToSend.firstName} ${dataToSend.lastName}`,
+                  email: dataToSend.email,
+                  phone: dataToSend.phone,
+                  address: {
+                    line1: dataToSend.addressOne,
+                    line2: dataToSend.addressTwo || "",
+                    city: dataToSend.city,
+                    state: dataToSend.state,
+                    postal_code: dataToSend.postcode,
+                    country: dataToSend.country,
+                  },
+                },
+              },
+            });
+
+          if (pmError) {
+            throw new Error(pmError.message);
+          }
+
+          if (!paymentMethod) {
+            throw new Error("Failed to create payment method");
+          }
+
+          logger.log("✅ Payment method created:", paymentMethod.id);
+
+          // Step 4: Create PaymentIntent with manual capture using the payment method
+          logger.log("Creating PaymentIntent with manual capture...");
           const intentResponse = await fetch("/api/create-payment-intent", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               orderId,
               amount: amountInCents,
+              paymentMethodId: paymentMethod.id,
               customerEmail: dataToSend.email,
               customerName: `${dataToSend.firstName} ${dataToSend.lastName}`,
             }),
@@ -1570,41 +1606,11 @@ const CheckoutPageContent = () => {
             );
           }
 
-          const paymentIntentSecret = intentResult.clientSecret;
-          logger.log("✅ PaymentIntent created");
-
-          // Step 4: Confirm payment with the collected payment method
-          logger.log("Confirming payment...");
-          const { error: confirmError, paymentIntent } =
-            await stripe.confirmPayment({
-              elements: stripeElements,
-              clientSecret: paymentIntentSecret,
-              confirmParams: {
-                return_url: `${window.location.origin}/checkout/order-received/${orderId}?key=${orderKey}`,
-                payment_method_data: {
-                  billing_details: {
-                    name: `${dataToSend.firstName} ${dataToSend.lastName}`,
-                    email: dataToSend.email,
-                    phone: dataToSend.phone,
-                    address: {
-                      line1: dataToSend.addressOne,
-                      line2: dataToSend.addressTwo || "",
-                      city: dataToSend.city,
-                      state: dataToSend.state,
-                      postal_code: dataToSend.postcode,
-                      country: dataToSend.country,
-                    },
-                  },
-                },
-              },
-              redirect: "if_required", // Don't redirect if 3DS not needed
-            });
-
-          if (confirmError) {
-            throw new Error(confirmError.message);
-          }
-
-          logger.log("✅ Payment confirmed:", paymentIntent?.id);
+          const paymentIntent = intentResult.paymentIntent;
+          logger.log(
+            "✅ PaymentIntent created and confirmed:",
+            paymentIntent.id
+          );
 
           // Extract payment details for WooCommerce metadata
           const paymentMethodId = paymentIntent?.payment_method;

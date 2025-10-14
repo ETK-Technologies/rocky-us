@@ -46,7 +46,20 @@ const stripePromise = loadStripe(
 // Wrapper component to provide Stripe context
 const CheckoutPageWrapper = () => {
   return (
-    <Elements stripe={stripePromise}>
+    <Elements
+      stripe={stripePromise}
+      options={{
+        mode: "payment",
+        amount: 1000,
+        currency: "usd",
+        appearance: {
+          theme: "stripe",
+        },
+        paymentMethodCreation: "manual", // Required for createPaymentMethod with PaymentElement
+        // Configure payment methods at the Elements level
+        paymentMethodTypes: ["card", "link"], // Allow card and link payments
+      }}
+    >
       <CheckoutPageContent />
     </Elements>
   );

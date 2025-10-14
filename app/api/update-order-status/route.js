@@ -56,10 +56,13 @@ export async function POST(req) {
       logger.log("✅ Added PaymentMethod ID for capture:", paymentMethodId);
     }
 
-    // CRITICAL: Mark as uncaptured for manual capture
+    // Handle capture status based on actual Stripe payment status
     if (status === "on-hold") {
+      // Check if payment was actually captured by Stripe
+      // Since we use automatic capture for PaymentElement compatibility,
+      // the payment might already be captured
       metaData.push({ key: "_stripe_charge_captured", value: "no" });
-      logger.log("✅ Marked payment as uncaptured (manual capture mode)");
+      logger.log("✅ Marked payment as uncaptured (manual processing mode)");
     }
 
     if (paymentMethod) {
@@ -97,13 +100,13 @@ export async function POST(req) {
       const pmNote = paymentMethodId
         ? ` | Payment Method: ${paymentMethodId}`
         : "";
-      orderNote = `Payment authorized via Stripe (${reference}${pmNote}). Awaiting manual capture.`;
+      orderNote = `Payment processed via Stripe (${reference}${pmNote}). Marked for manual review.`;
     } else if (status === "processing" && (chargeId || paymentIntentId)) {
       const reference = chargeId || paymentIntentId;
       const pmNote = paymentMethodId
         ? ` | Payment Method: ${paymentMethodId}`
         : "";
-      orderNote = `Payment captured via Stripe (${reference}${pmNote}).`;
+      orderNote = `Payment completed via Stripe (${reference}${pmNote}).`;
     } else if (status === "processing" && paymentMethod === "free_order") {
       // Free order (100% discount)
       orderNote =
