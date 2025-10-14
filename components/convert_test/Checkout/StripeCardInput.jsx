@@ -17,8 +17,11 @@ const PAYMENT_ELEMENT_OPTIONS = {
     },
   },
   wallets: {
-    applePay: "auto", // Show Apple Pay if available
-    googlePay: "auto", // Show Google Pay if available
+    applePay: "auto", // Enable Apple Pay if available
+    googlePay: "auto", // Enable Google Pay if available
+    cashapp: "never", // Disable Cash App Pay
+    amazonPay: "never", // Disable Amazon Pay
+    link: "auto", // Enable Link payment method
   },
 };
 
