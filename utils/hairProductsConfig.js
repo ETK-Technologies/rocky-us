@@ -31,8 +31,9 @@ export const getHairFlowProducts = () => {
       regularPrice: product.regularPrice,
       isSubscription: product.isSubscription,
       subscriptionPeriod: product.subscriptionPeriod,
-      addToCartLink: `/login-register/?onboarding=1&view=account&viewshow=login&consultation-required=1&onboarding-add-to-cart=${product.baseProductId || product.id
-        }`,
+      addToCartLink: `/login-register/?onboarding=1&view=account&viewshow=login&consultation-required=1&onboarding-add-to-cart=${
+        product.baseProductId || product.id
+      }`,
     };
   });
 };
@@ -64,10 +65,10 @@ export const getConsultationProduct = (resultDesired) => {
     quantity: product.quantity,
     subscriptionPeriod: product.subscriptionPeriod,
     isSubscription: product.isSubscription,
-    description: product.description,
+    description: product.consultationDescription || product.description,
     productImage: product.image,
+    tooltip: product.tooltip,
     badge: product.badge,
-
   };
 };
 

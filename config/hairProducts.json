@@ -13,7 +13,6 @@
       "isSubscription": true,
       "subscriptionPeriod": "2_month",
       "image": "https://myrocky.b-cdn.net/WP%20Images/Hair%20Loss/2-in-1-Growth-Plan.png",
-      "consultationImage": "https://myrocky.b-cdn.net/WP%20Images/Questionnaire/FinistridenMinioxidalFoam.png",
       "badge": "https://myrocky.b-cdn.net/WP%20Images/Hair%20Loss/mask-group.png",
       "label": "Most Popular",
       "bestFor": ["Stopping Hair Loss", "Regrowing Hair"],
@@ -22,14 +21,14 @@
         "See results in 3 months.",
         "Easy-to-use foam ensures targeted treatment and fewer side effects than pills."
       ],
-      "tooltip": "A prescription hair loss treatment, our topical finasteride and minoxidil foam is a dual-action solution promoting hair regrowth while curbing hair loss.",
+      "tooltip": "A 2 in 1 topical foam combining FDA Approved ingredients to help prevent hair loss and regrow hair.",
       "quantity": 1,
       "consultationOptions": ["Regrowing my hair", "Both"]
     },
     "6288": {
       "id": "6288",
       "title": "The Growth Plan",
-      "name": "The Growth Plan", 
+      "name": "The Growth Plan",
       "description": "Propecia (finasteride) Tablets and Minoxidil Solution",
       "price": 180,
       "supply": "3 Months Supply",
@@ -52,7 +51,7 @@
       "baseProductId": "267",
       "title": "Back On Track",
       "name": "Back On Track",
-      "description": "Minoxidil 5% Topical Solution", 
+      "description": "Minoxidil 5% Topical Solution",
       "price": 101.25,
       "regularPrice": 135,
       "supply": "3 Months Supply",
@@ -75,14 +74,14 @@
       "title": "Not On My Watch",
       "name": "Finasteride (Propecia) Tablets",
       "description": "Finasteride (Propecia) Tablets",
+      "consultationDescription": "1 Mg Tablet(S)",
       "price": 123.75,
-      "supply": "3 Months Supply", 
+      "supply": "3 Months Supply",
       "frequency": "3 Months supply",
-      "pills": "",
+      "pills": "Finasteride (Propecia)",
       "isSubscription": true,
       "subscriptionPeriod": "3_month_24",
       "image": "https://myrocky.b-cdn.net/WP%20Images/Hair%20Loss/Not-on-my-watch.png",
-      "consultationImage": "https://myrocky.b-cdn.net/WP%20Images/Questionnaire/Finastride.png",
       "badge": "https://myrocky.b-cdn.net/WP%20Images/Hair%20Loss/mask-group.png",
       "bestFor": ["Stopping Hair Loss"],
       "benefits": [
@@ -97,7 +96,7 @@
   },
   "consultationMapping": {
     "Regrowing my hair": "126208",
-    "Preventing future hair loss": "126208", 
+    "Preventing future hair loss": "126208",
     "Both": "126208"
   },
   "flowProducts": ["126208"]

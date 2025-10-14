@@ -146,7 +146,7 @@ const HairProductCard = ({
   };
 
   return (
-    <div className="mt-[25px] relative min-w-[280px] md:min-w-[384px] rounded-[16px] px-4 py-6 p-[24px] text-center h-full border-[0.5px] border-solid border-[#E2E2E1] shadow-[0px 1px 1px 0px #E2E2E1]">
+    <div className="mt-[25px] relative min-w-[280px] mx-auto md:max-w-[384px] rounded-[16px] px-4 py-6 p-[24px] text-center h-full border-[0.5px] border-solid border-[#E2E2E1] shadow-[0px 1px 1px 0px #E2E2E1]">
       {label && (
         <span className="absolute top-[-24px] left-[24px] bg-[#AE7E56] w-[103px] h-[24px] py-[3px] px-[12px] flex items-center justify-center text-[12px] leading-[18px] text-white">
           {label}
