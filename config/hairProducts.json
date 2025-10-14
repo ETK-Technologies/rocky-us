@@ -4,9 +4,9 @@
       "id": "126208",
       "baseProductId": "96913",
       "title": "2 in 1 Growth Plan",
-      "name": "Finasteride 0.5% & Minoxidil 5% ",
-      "description": " A 2 in 1 topical foam combining Health FDA Approved ingredients to help prevent hair loss and regrow hair.",
-      "price": "$185.00",
+      "name": "2 in 1 Growth Plan",
+      "description": "Finasteride 0.5% & Minoxidil 5% Foam",
+      "price": 185,
       "supply": "2 Months Supply",
       "frequency": "2 Months Supply",
       "pills": "Finasteride & Minoxidil Foam",
@@ -16,10 +16,7 @@
       "consultationImage": "https://myrocky.b-cdn.net/WP%20Images/Questionnaire/FinistridenMinioxidalFoam.png",
       "badge": "https://myrocky.b-cdn.net/WP%20Images/Hair%20Loss/mask-group.png",
       "label": "Most Popular",
-      "bestFor": [
-        "Stopping Hair Loss",
-        "Regrowing Hair"
-      ],
+      "bestFor": ["Stopping Hair Loss", "Regrowing Hair"],
       "benefits": [
         "Clinically proven to prevent hair loss and stimulate hair growth.",
         "See results in 3 months.",
@@ -27,15 +24,12 @@
       ],
       "tooltip": "A prescription hair loss treatment, our topical finasteride and minoxidil foam is a dual-action solution promoting hair regrowth while curbing hair loss.",
       "quantity": 1,
-      "consultationOptions": [
-        "Regrowing my hair",
-        "Both"
-      ]
+      "consultationOptions": ["Regrowing my hair", "Both"]
     },
     "6288": {
       "id": "6288",
       "title": "The Growth Plan",
-      "name": "The Growth Plan",
+      "name": "The Growth Plan", 
       "description": "Propecia (finasteride) Tablets and Minoxidil Solution",
       "price": 180,
       "supply": "3 Months Supply",
@@ -44,10 +38,7 @@
       "subscriptionPeriod": "3_month",
       "image": "https://myrocky.b-cdn.net/WP%20Images/Hair%20Loss/The%20Growth%20Plan.png",
       "badge": "https://myrocky.b-cdn.net/WP%20Images/Hair%20Loss/mask-group.png",
-      "bestFor": [
-        "Stopping Hair Loss",
-        "Regrowing Hair"
-      ],
+      "bestFor": ["Stopping Hair Loss", "Regrowing Hair"],
       "benefits": [
         "Clinically proven to prevent hair loss and stimulate hair growth.",
         "See results in 3 months.",
@@ -61,7 +52,7 @@
       "baseProductId": "267",
       "title": "Back On Track",
       "name": "Back On Track",
-      "description": "Minoxidil 5% Topical Solution",
+      "description": "Minoxidil 5% Topical Solution", 
       "price": 101.25,
       "regularPrice": 135,
       "supply": "3 Months Supply",
@@ -70,9 +61,7 @@
       "subscriptionPeriod": "3_month",
       "image": "https://myrocky.b-cdn.net/WP%20Images/Hair%20Loss/Back-On-Track.png",
       "badge": "https://myrocky.b-cdn.net/WP%20Images/Hair%20Loss/mask-group.png",
-      "bestFor": [
-        "Regrowing Hair"
-      ],
+      "bestFor": ["Regrowing Hair"],
       "benefits": [
         "No prescription required.",
         "Helps thicken and grow hair.",
@@ -87,7 +76,7 @@
       "name": "Finasteride (Propecia) Tablets",
       "description": "Finasteride (Propecia) Tablets",
       "price": 123.75,
-      "supply": "3 Months Supply",
+      "supply": "3 Months Supply", 
       "frequency": "3 Months supply",
       "pills": "",
       "isSubscription": true,
@@ -95,9 +84,7 @@
       "image": "https://myrocky.b-cdn.net/WP%20Images/Hair%20Loss/Not-on-my-watch.png",
       "consultationImage": "https://myrocky.b-cdn.net/WP%20Images/Questionnaire/Finastride.png",
       "badge": "https://myrocky.b-cdn.net/WP%20Images/Hair%20Loss/mask-group.png",
-      "bestFor": [
-        "Stopping Hair Loss"
-      ],
+      "bestFor": ["Stopping Hair Loss"],
       "benefits": [
         "Stops hair loss from worsening.",
         "Just one pill a day.",
@@ -105,17 +92,13 @@
       ],
       "tooltip": "Daily prescription pill clinically proven to prevent hair loss.",
       "quantity": 1,
-      "consultationOptions": [
-        "Preventing future hair loss"
-      ]
+      "consultationOptions": ["Preventing future hair loss"]
     }
   },
   "consultationMapping": {
     "Regrowing my hair": "126208",
-    "Preventing future hair loss": "126208",
+    "Preventing future hair loss": "126208", 
     "Both": "126208"
   },
-  "flowProducts": [
-    "126208"
-  ]
+  "flowProducts": ["126208"]
 }
