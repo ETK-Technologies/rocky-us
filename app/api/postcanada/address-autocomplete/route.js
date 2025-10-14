@@ -137,6 +137,18 @@ export async function POST(request) {
         originalData: item,
       };
     }).filter((address) => {
+      // Exclude addresses with "- X Addresses" suffix as they don't work properly
+      if (
+        address.formattedAddress.includes("- ") &&
+        address.formattedAddress.match(/\d+ Addresses?$/)
+      ) {
+        logger.log(
+          "Filtering out address with '- X Addresses' suffix:",
+          address.formattedAddress
+        );
+        return false;
+      }
+
       // For US addresses, filter by state
       if (country === "US" || apiCountryCode === "USA") {
         // If no state code detected (early in search/typing), INCLUDE it
