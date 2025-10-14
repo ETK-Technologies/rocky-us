@@ -10,6 +10,9 @@ const PAYMENT_ELEMENT_OPTIONS = {
   },
   fields: {
     billingDetails: {
+      name: "auto", // Auto-fill from form data
+      email: "auto", // Auto-fill from form data
+      phone: "auto", // Auto-fill from form data
       address: {
         country: "never", // We collect this separately
         postalCode: "never", // We collect this separately
@@ -22,11 +25,25 @@ const PAYMENT_ELEMENT_OPTIONS = {
   },
 };
 
-export default function StripeCardInput({ onReady, onChange }) {
+export default function StripeCardInput({ onReady, onChange, customerData }) {
+  // Create options with customer data if provided
+  const elementOptions = {
+    ...PAYMENT_ELEMENT_OPTIONS,
+    ...(customerData && {
+      defaultValues: {
+        billingDetails: {
+          name: customerData.name,
+          email: customerData.email,
+          phone: customerData.phone,
+        },
+      },
+    }),
+  };
+
   return (
     <div className="stripe-payment-input">
       <PaymentElement
-        options={PAYMENT_ELEMENT_OPTIONS}
+        options={elementOptions}
         onReady={onReady}
         onChange={onChange}
       />

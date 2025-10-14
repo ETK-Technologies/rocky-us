@@ -5,6 +5,7 @@ import StripeCardInput from "./StripeCardInput";
 const Payment = ({
   setFormData,
   onStripeReady, // Callback for Stripe Elements
+  formData, // Get form data to pass customer info
 }) => {
   const elements = useElements(); // Get Stripe Elements instance
 
@@ -24,7 +25,15 @@ const Payment = ({
         <label className="block text-sm font-medium text-[#251F20] mb-2">
           Card Details
         </label>
-        <StripeCardInput />
+        <StripeCardInput
+          customerData={{
+            name: `${formData.billing_address.first_name || ""} ${
+              formData.billing_address.last_name || ""
+            }`.trim(),
+            email: formData.billing_address.email || "",
+            phone: formData.billing_address.phone || "",
+          }}
+        />
         <p className="mt-2 text-xs text-gray-600 flex items-center gap-1">
           <svg
             className="w-4 h-4 text-green-600"

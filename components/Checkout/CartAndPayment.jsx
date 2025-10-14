@@ -48,20 +48,7 @@ const CartAndPayment = ({
 
       <Payment
         setFormData={setFormData}
-        handleSubmit={handleSubmit}
-        cardNumber={cardNumber}
-        setCardNumber={setCardNumber}
-        expiry={expiry}
-        setExpiry={setExpiry}
-        cvc={cvc}
-        setCvc={setCvc}
-        cardType={cardType}
-        setCardType={setCardType}
-        savedCards={savedCards}
-        setSavedCards={setSavedCards}
-        selectedCard={selectedCard}
-        setSelectedCard={setSelectedCard}
-        isLoadingSavedCards={isLoadingSavedCards}
+        formData={formData}
         onStripeReady={onStripeReady}
       />
       <button
