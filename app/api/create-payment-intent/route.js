@@ -11,6 +11,7 @@ export async function POST(req) {
     const {
       orderId,
       amount, // Amount in cents
+      paymentMethodId, // Payment method ID from PaymentElement
       customerEmail,
       customerName,
       billingDetails,
@@ -32,46 +33,108 @@ export async function POST(req) {
       );
     }
 
+    if (!paymentMethodId) {
+      return NextResponse.json(
+        { success: false, error: "Payment method is required" },
+        { status: 400 }
+      );
+    }
+
     logger.log("=== CREATING PAYMENT INTENT ===");
     logger.log("Order ID:", orderId);
     logger.log("Amount:", amount, "cents");
+    logger.log("Payment Method:", paymentMethodId);
     logger.log("Customer:", customerEmail);
     logger.log("================================");
 
-    // Create PaymentIntent with manual capture (authorization only)
+    // Create PaymentIntent with manual capture for authorization-only payments
+    // This will create an "uncaptured" payment in Stripe dashboard
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount),
       currency: "usd",
-      capture_method: "manual", // Authorization only - manual capture later
+      payment_method: paymentMethodId,
+      capture_method: "manual", // Authorization only - payment remains uncaptured
+      confirm: true, // Confirm immediately to authorize the payment
       description: `Order #${orderId}`,
       receipt_email: customerEmail || undefined,
+      return_url: `${
+        process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+      }/checkout/order-received/${orderId}`,
       metadata: {
         order_id: orderId,
         customer_name: customerName,
         ...metadata,
       },
-      // Automatic payment methods for Apple Pay, Google Pay, etc.
+      // Configure automatic payment methods to not allow redirects
       automatic_payment_methods: {
         enabled: true,
-        allow_redirects: "never", // We'll handle redirects manually if needed
+        allow_redirects: "never",
       },
     });
 
-    logger.log("✅ PaymentIntent created:", {
+    logger.log("✅ PaymentIntent created and confirmed:", {
       id: paymentIntent.id,
       status: paymentIntent.status,
       amount: paymentIntent.amount,
-      client_secret: paymentIntent.client_secret.substring(0, 20) + "...",
+      capture_method: paymentIntent.capture_method,
+      captured: paymentIntent.captured,
     });
 
-    return NextResponse.json({
-      success: true,
-      paymentIntentId: paymentIntent.id,
-      clientSecret: paymentIntent.client_secret,
-      chargeId: null, // Will be available after confirmation
-      amount: paymentIntent.amount,
-      currency: paymentIntent.currency,
-    });
+    // Handle successful authorization (requires_capture)
+    if (paymentIntent.status === "requires_capture") {
+      const chargeId = paymentIntent.latest_charge || null;
+
+      return NextResponse.json({
+        success: true,
+        paymentIntent: paymentIntent,
+        chargeId: chargeId,
+      });
+    }
+
+    // Handle payments requiring action (e.g., 3D Secure)
+    if (paymentIntent.status === "requires_action") {
+      return NextResponse.json({
+        success: true,
+        paymentIntent: paymentIntent,
+        clientSecret: paymentIntent.client_secret,
+      });
+    }
+
+    // Handle successful payment (if capture_method was automatic)
+    if (paymentIntent.status === "succeeded") {
+      const chargeId = paymentIntent.latest_charge || null;
+
+      return NextResponse.json({
+        success: true,
+        paymentIntent: paymentIntent,
+        chargeId: chargeId,
+      });
+    }
+
+    // Handle failed payment
+    if (
+      paymentIntent.status === "canceled" ||
+      paymentIntent.status === "requires_payment_method"
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: paymentIntent.last_payment_error?.message || "Payment failed",
+          paymentIntent: paymentIntent,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Handle other statuses
+    return NextResponse.json(
+      {
+        success: false,
+        error: `Unexpected payment status: ${paymentIntent.status}`,
+        paymentIntent: paymentIntent,
+      },
+      { status: 400 }
+    );
   } catch (error) {
     logger.error("❌ PaymentIntent creation failed:", error);
 

@@ -8,7 +8,7 @@ const items = [
   {
     icon: "https://myrocky.b-cdn.net/WP%20Images/Hair%20Loss/hospital 1.png",
     alt: "Health",
-    text: "Health Canada-Authorized Treatments",
+    text: "FDA-Authorized Treatments",
   },
   {
     icon: "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/Pre%20Sell/delivery--parcel%201.png",
