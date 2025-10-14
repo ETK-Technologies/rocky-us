@@ -316,20 +316,32 @@ const CheckoutPageContent = () => {
       // Prepare customer data for API call
       const customerData = {
         billing_address: {
-          ...formData.billing_address,
-          ...(addressType === "billing" && shouldClearFields
-            ? {
-                address_1: "",
-                address_2: "",
-                city: "",
-                postcode: "",
-                country: "US",
-              }
-            : {}),
+          first_name: formData.billing_address.first_name || "",
+          last_name: formData.billing_address.last_name || "",
+          company: formData.billing_address.company || "",
+          address_1:
+            addressType === "billing" && shouldClearFields
+              ? ""
+              : formData.billing_address.address_1 || "",
+          address_2:
+            addressType === "billing" && shouldClearFields
+              ? ""
+              : formData.billing_address.address_2 || "",
+          city:
+            addressType === "billing" && shouldClearFields
+              ? ""
+              : formData.billing_address.city || "",
           state:
             addressType === "billing"
               ? newProvince
               : formData.billing_address.state || newProvince,
+          postcode:
+            addressType === "billing" && shouldClearFields
+              ? ""
+              : formData.billing_address.postcode || "",
+          country: "US",
+          email: formData.billing_address.email || "",
+          phone: formData.billing_address.phone || "",
         },
         shipping_address: addressData,
       };
