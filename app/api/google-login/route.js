@@ -124,6 +124,37 @@ export async function POST(req) {
           cookieStore.set("dob", dob || "");
 
           logger.log("Google login: User profile data fetched successfully");
+
+          // Fetch Stripe customer ID from WooCommerce and save to cookies
+          try {
+            const customerResponse = await axios.get(
+              `${BASE_URL}/wp-json/wc/v3/customers/${userId}`,
+              {
+                headers: {
+                  Authorization: process.env.ADMIN_TOKEN || authToken.value,
+                },
+              }
+            );
+
+            const metaData = customerResponse.data.meta_data || [];
+            const stripeCustomerMeta = metaData.find(
+              (meta) => meta.key === "_stripe_customer_id"
+            );
+
+            if (stripeCustomerMeta && stripeCustomerMeta.value) {
+              cookieStore.set("stripeCustomerId", stripeCustomerMeta.value);
+              logger.log(
+                "Stripe customer ID saved to cookies:",
+                stripeCustomerMeta.value
+              );
+            }
+          } catch (customerError) {
+            logger.error(
+              "Failed to fetch Stripe customer ID:",
+              customerError.message
+            );
+            // Continue login even if we can't fetch customer ID
+          }
         }
       } catch (profileError) {
         logger.log(
@@ -173,6 +204,37 @@ export async function POST(req) {
           cookieStore.set("pn", phone || "");
           cookieStore.set("province", province || "");
           cookieStore.set("dob", dob || "");
+
+          // Fetch Stripe customer ID from WooCommerce and save to cookies
+          try {
+            const customerResponse = await axios.get(
+              `${BASE_URL}/wp-json/wc/v3/customers/${userId}`,
+              {
+                headers: {
+                  Authorization: process.env.ADMIN_TOKEN || authToken.value,
+                },
+              }
+            );
+
+            const metaData = customerResponse.data.meta_data || [];
+            const stripeCustomerMeta = metaData.find(
+              (meta) => meta.key === "_stripe_customer_id"
+            );
+
+            if (stripeCustomerMeta && stripeCustomerMeta.value) {
+              cookieStore.set("stripeCustomerId", stripeCustomerMeta.value);
+              logger.log(
+                "Stripe customer ID saved to cookies (fallback):",
+                stripeCustomerMeta.value
+              );
+            }
+          } catch (customerError) {
+            logger.error(
+              "Failed to fetch Stripe customer ID (fallback):",
+              customerError.message
+            );
+            // Continue login even if we can't fetch customer ID
+          }
         }
       } catch (fetchError) {
         logger.log("Could not fetch profile in fallback:", fetchError.message);

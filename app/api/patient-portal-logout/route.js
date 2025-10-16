@@ -15,6 +15,7 @@ export async function POST(req) {
     cookieStore.delete("province");
     cookieStore.delete("phone");
     cookieStore.delete("DOB");
+    cookieStore.delete("stripeCustomerId");
 
     // Set a flag in cookies to trigger client-side cache clearing
     cookieStore.set("clearCache", "true", {

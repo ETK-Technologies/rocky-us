@@ -11,6 +11,7 @@ export async function POST(req) {
     cookieStore.delete("userEmail");
     cookieStore.delete("userId");
     cookieStore.delete("displayName");
+    cookieStore.delete("stripeCustomerId");
 
     // Set a flag in cookies to trigger client-side cache clearing
     // This is needed because server-side code cannot directly access localStorage

@@ -92,6 +92,37 @@ export async function POST(req) {
     cookieStore.set("province", province);
     cookieStore.set("dob", dob);
 
+    // Fetch Stripe customer ID from WooCommerce and save to cookies
+    try {
+      const customerResponse = await axios.get(
+        `${BASE_URL}/wp-json/wc/v3/customers/${userId}`,
+        {
+          headers: {
+            Authorization: process.env.ADMIN_TOKEN || authToken.value,
+          },
+        }
+      );
+
+      const metaData = customerResponse.data.meta_data || [];
+      const stripeCustomerMeta = metaData.find(
+        (meta) => meta.key === "_stripe_customer_id"
+      );
+
+      if (stripeCustomerMeta && stripeCustomerMeta.value) {
+        cookieStore.set("stripeCustomerId", stripeCustomerMeta.value);
+        logger.log(
+          "Stripe customer ID saved to cookies:",
+          stripeCustomerMeta.value
+        );
+      }
+    } catch (customerError) {
+      logger.error(
+        "Failed to fetch Stripe customer ID:",
+        customerError.message
+      );
+      // Continue login even if we can't fetch customer ID
+    }
+
     // Verify the cookies were set correctly
     const storedUserId = cookieStore.get("userId");
     if (!storedUserId || storedUserId.value !== userId) {
