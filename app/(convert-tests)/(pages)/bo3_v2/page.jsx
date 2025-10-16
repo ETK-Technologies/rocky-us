@@ -100,7 +100,8 @@ const loseUpItems = [
     id: "2",
     time: "Step 2",
     title: "Take a lab test",
-    description: "If you're a candidate for treatment, our clinician will provide you with the appropriate lab requisition or alternatively you can provide us with recent results.",
+    description:
+      "If you're a candidate for treatment, our clinician will provide you with the appropriate lab requisition or alternatively you can provide us with recent results.",
   },
   {
     id: "3",
@@ -113,7 +114,8 @@ const loseUpItems = [
     id: "4",
     time: "Step 4",
     title: "Ongoing care & support",
-    description: "You'll have access to your clinician and the pharmacy team at all times should you have any questions.",
+    description:
+      "You'll have access to your clinician and the pharmacy team at all times should you have any questions.",
   },
 ];
 
@@ -121,7 +123,7 @@ const faqs = [
   {
     question: "How much does the Weight Loss Program cost?",
     answer:
-      "The initial consultation fee is $99. The cost of medication along with a $60 program fee is charged monthly. The program fee includes access to clinicians, new prescriptions and pharmacy counselling.",
+      "The initial consultation fee is $99. The cost of medication along with a $99 program fee is charged monthly. The program fee includes access to clinicians, new prescriptions and pharmacy counselling.",
   },
   {
     question: "Do you accept insurance?",
@@ -178,10 +180,10 @@ export default function BodyOptimization3V2() {
     const modalOpened = localStorage.getItem("modalOpened");
     if (!modalOpened) {
       const timer = setTimeout(() => {
-        if(window.openModalV1 == true) {
-           setopenModalV1(true);
+        if (window.openModalV1 == true) {
+          setopenModalV1(true);
         } else if (window.openModalV2 == true) {
-           setopenModalV2(true);
+          setopenModalV2(true);
         }
 
         localStorage.setItem("modalOpened", "true");
