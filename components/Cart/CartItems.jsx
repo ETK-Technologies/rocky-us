@@ -186,9 +186,9 @@ const CartItem = ({ item, setCartItems, allItems }) => {
             : 0),
         attributes: item.variation?.length
           ? item.variation.map((v) => ({
-            name: v.attribute || v.name,
-            options: [v.value],
-          }))
+              name: v.attribute || v.name,
+              options: [v.value],
+            }))
           : [],
       };
       if (delta > 0) {
@@ -235,15 +235,15 @@ const CartItem = ({ item, setCartItems, allItems }) => {
           name: item.name,
           price:
             (item.prices?.sale_price || item.prices?.regular_price || 0) /
-            100 ||
+              100 ||
             (item.totals?.line_subtotal && item.quantity
               ? item.totals.line_subtotal / 100 / item.quantity
               : 0),
           attributes: item.variation?.length
             ? item.variation.map((v) => ({
-              name: v.attribute || v.name,
-              options: [v.value],
-            }))
+                name: v.attribute || v.name,
+                options: [v.value],
+              }))
             : [],
         };
         analyticsService.trackRemoveFromCart(
@@ -298,8 +298,9 @@ const CartItem = ({ item, setCartItems, allItems }) => {
               <>
                 <CiTrash
                   size={20}
-                  className={`cursor-pointer ${deleteLoading ? "opacity-50" : ""
-                    }`}
+                  className={`cursor-pointer ${
+                    deleteLoading ? "opacity-50" : ""
+                  }`}
                   onClick={handleDeleteItem}
                 />
                 {deleteLoading && (
@@ -346,13 +347,15 @@ const CartItem = ({ item, setCartItems, allItems }) => {
                       item.variation[1] &&
                       item.variation[1]?.value}
                     {item.name?.toLowerCase().includes("zonnic") &&
-                      item.variation?.find(v => v.attribute?.toLowerCase() === "flavors")?.value && (
+                      item.variation?.find(
+                        (v) => v.attribute?.toLowerCase() === "flavors"
+                      )?.value && (
                         <>
                           {" / "}
                           <span className="text-[12px] font-[400] text-[#212121]">
                             {
                               item.variation.find(
-                                v => v.attribute?.toLowerCase() === "flavors"
+                                (v) => v.attribute?.toLowerCase() === "flavors"
                               )?.value
                             }
                           </span>
@@ -368,7 +371,7 @@ const CartItem = ({ item, setCartItems, allItems }) => {
                   </p>
                   <p className="text-sm md:text-base text-[#212121]">
                     Initial fee $99 | <br className="hidden md:block" /> Monthly
-                    fee $60
+                    fee $99
                   </p>
                   <p className="text-sm md:text-base font-[500] text-[#212121] mt-2 underline">
                     Includes:
@@ -388,8 +391,9 @@ const CartItem = ({ item, setCartItems, allItems }) => {
 
         <div className="hidden md:flex justify-self-end  items-center justify-between p-2 w-[104px] h-[40px] rounded-full border border-[#E2E2E1]">
           <button
-            className={`quantity-minus w-[20px] h-[20px] ${item.quantity === 1 && "cursor-not-allowed"
-              }`}
+            className={`quantity-minus w-[20px] h-[20px] ${
+              item.quantity === 1 && "cursor-not-allowed"
+            }`}
             disabled={item.quantity === 1 || loading}
             onClick={() => handleQuantityEdit(item.quantity - 1)}
           >
@@ -419,8 +423,9 @@ const CartItem = ({ item, setCartItems, allItems }) => {
         <div className="md:hidden flex items-center gap-2 mt-4">
           <div className="min-w-[104px] justify-self-end flex items-center justify-between p-2 w-[104px] h-[40px] rounded-full border border-[#E2E2E1]">
             <button
-              className={`quantity-minus w-[20px] h-[20px] ${item.quantity === 1 && "cursor-not-allowed"
-                }`}
+              className={`quantity-minus w-[20px] h-[20px] ${
+                item.quantity === 1 && "cursor-not-allowed"
+              }`}
               disabled={item.quantity === 1 || loading}
               onClick={() => handleQuantityEdit(item.quantity - 1)}
             >
@@ -440,8 +445,9 @@ const CartItem = ({ item, setCartItems, allItems }) => {
               <>
                 <CiTrash
                   size={20}
-                  className={`cursor-pointer ${deleteLoading ? "opacity-50" : ""
-                    }`}
+                  className={`cursor-pointer ${
+                    deleteLoading ? "opacity-50" : ""
+                  }`}
                   onClick={handleDeleteItem}
                 />
                 {deleteLoading && (

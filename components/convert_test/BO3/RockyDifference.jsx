@@ -5,27 +5,26 @@ import MoneyGuaranteeModal from "./MoneyGuaranteeModal";
 import { useState } from "react";
 
 const RockyDifference = () => {
- 
-   const [IsOpen, setIsOpen] = useState(false);
-  
-    const openModal = () => {
-      setIsOpen(true);
-    };
-  
-    const closePopUp = () => {
-      setIsOpen(false);
-    };
-  
- 
+  const [IsOpen, setIsOpen] = useState(false);
+
+  const openModal = () => {
+    setIsOpen(true);
+  };
+
+  const closePopUp = () => {
+    setIsOpen(false);
+  };
+
   return (
     <>
-     
       <div className="w-full max-w-6xl mx-auto lg:px-4">
         {/* Title Section */}
         <div className="py-7 flex lg:hidden  flex-col justify-center items-start gap-2">
           <div className="flex flex-col justify-start items-start gap-4">
             <div className="w-full text-center md:text-left">
-              <span className="text-black text-3xl font-semibold md:text-4xl">The</span>
+              <span className="text-black text-3xl font-semibold md:text-4xl">
+                The
+              </span>
               <span className="text-[#AE7E56] font-semibold text-3xl md:text-4xl">
                 {" "}
                 Rocky
@@ -79,7 +78,9 @@ const RockyDifference = () => {
                 key={index}
                 className="lg:h-20 h-[110px]  border-b border-black flex items-center lg:px-4"
               >
-                <div className="text-black  text-[13px] lg:text-[16px]  font-semibold">{item}</div>
+                <div className="text-black  text-[13px] lg:text-[16px]  font-semibold">
+                  {item}
+                </div>
               </div>
             ))}
             <div className="lg:h-20 h-[110px] "></div>
@@ -101,7 +102,7 @@ const RockyDifference = () => {
               "Evidence-backed",
               "Personali zed",
               "Backed by lab data",
-              "$60/month",
+              "$99/month",
             ].map((item, index) => (
               <div
                 key={index}
@@ -117,16 +118,17 @@ const RockyDifference = () => {
             ))}
 
             <div
-                onClick={openModal}
-                className="lg:h-20 h-[110px] lg:px-4 px-1 border-b border-black/95 flex items-center"
-              >
-                <div className="flex flex-col w-full lg:w-auto lg:flex-row items-center justify-center  lg:gap-3 gap-1 lg:px-6">
-                  <FaCheckCircle className="text-[#AE7E56] text-xl md:text-2xl" />
-                  <span className="text-black  leading-[140%] tracking-[0px] text-[11px] lg:text-[16px] font-medium text-center">
-                    6 months <span className="underline cursor-pointer">(See Terms)</span> 
-                  </span>
-                </div>
+              onClick={openModal}
+              className="lg:h-20 h-[110px] lg:px-4 px-1 border-b border-black/95 flex items-center"
+            >
+              <div className="flex flex-col w-full lg:w-auto lg:flex-row items-center justify-center  lg:gap-3 gap-1 lg:px-6">
+                <FaCheckCircle className="text-[#AE7E56] text-xl md:text-2xl" />
+                <span className="text-black  leading-[140%] tracking-[0px] text-[11px] lg:text-[16px] font-medium text-center">
+                  6 months{" "}
+                  <span className="underline cursor-pointer">(See Terms)</span>
+                </span>
               </div>
+            </div>
 
             <div className="lg:h-20 h-[110px] "></div>
           </div>
@@ -165,8 +167,7 @@ const RockyDifference = () => {
         </div>
       </div>
 
-
-       {IsOpen && (
+      {IsOpen && (
         <>
           <MoneyGuaranteeModal closePopUp={closePopUp} />
         </>

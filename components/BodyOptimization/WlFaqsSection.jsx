@@ -4,7 +4,7 @@ const faqs = [
   {
     question: "How much does the Weight Loss Program cost?",
     answer:
-      "The initial consultation fee is $99. The cost of medication along with a $60 program fee is charged monthly. The program fee includes access to clinicians, new prescriptions and pharmacy counselling.",
+      "The initial consultation fee is $99. The cost of medication along with a $99 program fee is charged monthly. The program fee includes access to clinicians, new prescriptions and pharmacy counselling.",
   },
   {
     question: "Do you accept insurance?",

@@ -13,7 +13,7 @@ export default function WeightLossProgramFeesAndRefundPolicy() {
       </p>
       <ul className="space-y-1 list-disc text-[16px] md:text-[18px] font-[400] ml-6 md:ml-8">
         <li>
-          Non-Refundable Monthly Fee: The monthly program fee of $60 is
+          Non-Refundable Monthly Fee: The monthly program fee of $99 is
           non-refundable once it has renewed. To avoid unwanted charges, you
           must cancel or pause your treatment prior to the renewal date.
         </li>
@@ -21,7 +21,7 @@ export default function WeightLossProgramFeesAndRefundPolicy() {
           Advance Medication Refills: If you request medication refills in
           advance to cover multiple months, the monthly program fee will be
           charged upfront. For example, if you request a three-month supply of
-          medication, you will be charged $180, at the time of the request.
+          medication, you will be charged $297, at the time of the request.
         </li>
       </ul>
     </div>
