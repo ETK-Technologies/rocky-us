@@ -381,7 +381,9 @@ const CartItem = ({ item, refreshCart, isLocalCart, allItems }) => {
         </p>
         <p className="mt-1 text-xs">
           {quantity} × {currencySymbol}
-          {typeof itemPrice === "number" ? formatPrice(itemPrice) : formatPrice(itemPrice)}
+          {typeof itemPrice === "number"
+            ? formatPrice(itemPrice)
+            : formatPrice(itemPrice)}
         </p>
         <p className="mt-1 text-xs font-semibold">
           Total: {currencySymbol}
@@ -395,7 +397,7 @@ const CartItem = ({ item, refreshCart, isLocalCart, allItems }) => {
               Monthly membership:
             </p>
             <p className="text-sm text-[#212121]">
-              Initial fee $99 | Monthly fee $60
+              Initial fee $99 | Monthly fee $99
             </p>
             <p className="text-sm font-[500] text-[#212121] mt-2 underline">
               Includes:
