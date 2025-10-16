@@ -155,6 +155,25 @@ export async function POST(req) {
       // Continue without customer ID - payment can still succeed
     }
 
+    // Attach payment method to customer if we have a customer ID
+    if (stripeCustomerId && paymentMethodId) {
+      try {
+        logger.log("Attaching payment method to customer...");
+        await stripe.paymentMethods.attach(paymentMethodId, {
+          customer: stripeCustomerId,
+        });
+        logger.log("✅ Payment method attached to customer successfully");
+      } catch (attachError) {
+        // Payment method might already be attached to this or another customer
+        if (attachError.code === "resource_already_exists") {
+          logger.log("Payment method already attached to a customer");
+        } else {
+          logger.warn("Failed to attach payment method:", attachError.message);
+          // Continue anyway - PaymentIntent creation will still work
+        }
+      }
+    }
+
     // Create PaymentIntent with manual capture for authorization-only payments
     // This will create an "uncaptured" payment in Stripe dashboard
     const paymentIntentData = {
