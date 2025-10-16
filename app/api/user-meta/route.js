@@ -68,6 +68,15 @@ export async function GET(request) {
     const billing = customerData.billing || {};
     const shipping = customerData.shipping || {};
 
+    // Extract Stripe customer ID from WooCommerce metadata
+    const metaData = customerData.meta_data || [];
+    const stripeCustomerMeta = metaData.find(
+      (meta) => meta.key === "_stripe_customer_id"
+    );
+    const stripeCustomerId = stripeCustomerMeta?.value || null;
+
+    logger.log("Stripe customer ID from WooCommerce:", stripeCustomerId);
+
     // Return the user metadata and address information
     return NextResponse.json({
       success: true,
@@ -79,6 +88,9 @@ export async function GET(request) {
       phone: userMeta.phone_number || billing.phone || "",
       date_of_birth: userMeta.date_of_birth || "",
       province: userMeta.province || billing.state || "",
+
+      // Stripe customer ID
+      stripe_customer_id: stripeCustomerId,
 
       // Billing address fields
       billing_address_1: billing.address_1 || "",

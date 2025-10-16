@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { logger } from "@/utils/devLogger";
+import { cookies } from "next/headers";
+import axios from "axios";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
+const BASE_URL = process.env.BASE_URL;
 
 export async function POST(req) {
   try {
@@ -47,9 +50,114 @@ export async function POST(req) {
     logger.log("Customer:", customerEmail);
     logger.log("================================");
 
+    // Get or create Stripe customer
+    let stripeCustomerId = null;
+    try {
+      const cookieStore = await cookies();
+      const userId = cookieStore.get("userId");
+      const authToken = cookieStore.get("authToken");
+
+      // Check if we have Stripe customer ID in cookies first (fastest path)
+      const cachedStripeCustomerId = cookieStore.get("stripeCustomerId");
+      if (cachedStripeCustomerId && cachedStripeCustomerId.value) {
+        stripeCustomerId = cachedStripeCustomerId.value;
+        logger.log(
+          "Using cached Stripe customer ID from cookies:",
+          stripeCustomerId
+        );
+      } else if (userId && authToken) {
+        // Cookie not found, fetch from WooCommerce
+        logger.log(
+          "Fetching WooCommerce customer data for user:",
+          userId.value
+        );
+
+        // Fetch WooCommerce customer data to check for existing Stripe customer ID
+        const customerResponse = await axios.get(
+          `${BASE_URL}/wp-json/wc/v3/customers/${userId.value}`,
+          {
+            headers: {
+              Authorization: process.env.ADMIN_TOKEN || authToken.value,
+            },
+          }
+        );
+
+        const customerData = customerResponse.data;
+        const metaData = customerData.meta_data || [];
+
+        // Look for existing Stripe customer ID in metadata
+        const stripeCustomerMeta = metaData.find(
+          (meta) => meta.key === "_stripe_customer_id"
+        );
+
+        if (stripeCustomerMeta && stripeCustomerMeta.value) {
+          stripeCustomerId = stripeCustomerMeta.value;
+          logger.log(
+            "Found existing Stripe customer ID in WooCommerce:",
+            stripeCustomerId
+          );
+
+          // Save to cookies for future requests
+          cookieStore.set("stripeCustomerId", stripeCustomerId);
+          logger.log("Saved Stripe customer ID to cookies for future use");
+        } else {
+          // Create new Stripe customer
+          logger.log("Creating new Stripe customer...");
+          const stripeCustomer = await stripe.customers.create({
+            email: customerEmail,
+            name: customerName,
+            metadata: {
+              woocommerce_user_id: userId.value,
+            },
+          });
+
+          stripeCustomerId = stripeCustomer.id;
+          logger.log("Created new Stripe customer:", stripeCustomerId);
+
+          // Save Stripe customer ID to cookies
+          cookieStore.set("stripeCustomerId", stripeCustomerId);
+          logger.log("Saved new Stripe customer ID to cookies");
+
+          // Save Stripe customer ID to WooCommerce metadata
+          try {
+            await axios.put(
+              `${BASE_URL}/wp-json/wc/v3/customers/${userId.value}`,
+              {
+                meta_data: [
+                  {
+                    key: "_stripe_customer_id",
+                    value: stripeCustomerId,
+                  },
+                ],
+              },
+              {
+                headers: {
+                  Authorization: process.env.ADMIN_TOKEN || authToken.value,
+                  "Content-Type": "application/json",
+                },
+              }
+            );
+            logger.log("Saved Stripe customer ID to WooCommerce metadata");
+          } catch (metaError) {
+            logger.error(
+              "Failed to save Stripe customer ID to WooCommerce:",
+              metaError.message
+            );
+            // Continue anyway - customer was created in Stripe
+          }
+        }
+      }
+    } catch (customerError) {
+      logger.error(
+        "Error fetching/creating Stripe customer:",
+        customerError.message
+      );
+      // Continue without customer ID - payment can still succeed
+    }
+
     // Create PaymentIntent with manual capture for authorization-only payments
     // This will create an "uncaptured" payment in Stripe dashboard
-    const paymentIntent = await stripe.paymentIntents.create({
+    const paymentIntentData = {
       amount: Math.round(amount),
       currency: "usd",
       payment_method: paymentMethodId,
@@ -70,7 +178,18 @@ export async function POST(req) {
         enabled: true,
         allow_redirects: "never",
       },
-    });
+    };
+
+    // Add customer ID if available
+    if (stripeCustomerId) {
+      paymentIntentData.customer = stripeCustomerId;
+      logger.log(
+        "Payment intent will be linked to customer:",
+        stripeCustomerId
+      );
+    }
+
+    const paymentIntent = await stripe.paymentIntents.create(paymentIntentData);
 
     logger.log("✅ PaymentIntent created and confirmed:", {
       id: paymentIntent.id,
