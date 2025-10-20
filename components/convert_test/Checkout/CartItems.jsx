@@ -99,7 +99,7 @@ const CartItem = ({ item }) => {
               Monthly membership:
             </p>
             <p className="text-sm md:text-base font-[300] text-[#212121]">
-              Initial fee $99 | Monthly fee $60
+              Initial fee $99 | Monthly fee $99
             </p>
             <p className="text-sm md:text-base font-[500] text-[#212121] mt-2 underline">
               Includes:
