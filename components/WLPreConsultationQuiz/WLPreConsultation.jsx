@@ -446,14 +446,136 @@ const WeightQuestionnaire = () => {
   };
 
   // Popup Action Handlers
-  const handleRybelusPopupAction = (choice) => {
+  const handleRybelusPopupAction = async (choice) => {
     if (choice === "choose-for-me") {
-      setProductState((prev) => ({ ...prev, selected: PRODUCTS.OZEMPIC }));
+      // User chose Ozempic instead of Rybelsus
+      const ozempicProduct = PRODUCTS.OZEMPIC;
+      setProductState((prev) => ({ ...prev, selected: ozempicProduct }));
       setPopups((prev) => ({ ...prev, rybelsus: false }));
-      setShowCrossSellPopup(true);
+
+      // Add Ozempic to cart before showing cross-sell popup
+      setIsAddingToCart(true);
+      try {
+        const mainProduct = {
+          id: ozempicProduct.id,
+          name: ozempicProduct.name,
+          price: ozempicProduct.price,
+          image: ozempicProduct.image || ozempicProduct.url,
+          quantity: 1,
+          isSubscription: ozempicProduct.isSubscription || false,
+          variation: [
+            {
+              attribute: "Subscription Type",
+              value:
+                ozempicProduct.supply ||
+                ozempicProduct.frequency ||
+                "Monthly Supply",
+            },
+          ],
+        };
+
+        logger.log(
+          "🛒 WL Flow - Adding Ozempic to cart (chosen instead of Rybelsus):",
+          mainProduct
+        );
+
+        const result = await addToCartEarly(mainProduct, "wl", {
+          requireConsultation: true,
+        });
+
+        if (result.success) {
+          logger.log("✅ Ozempic added to cart, opening cross-sell popup");
+
+          if (result.cartData) {
+            setInitialCartData(result.cartData);
+          }
+
+          if (!userData.gender) {
+            await fetchUserGender();
+            setTimeout(() => {
+              setShowCrossSellPopup(true);
+              setIsAddingToCart(false);
+            }, 100);
+          } else {
+            setShowCrossSellPopup(true);
+            setIsAddingToCart(false);
+          }
+        } else {
+          logger.error("❌ Failed to add Ozempic to cart:", result.error);
+          setIsAddingToCart(false);
+          alert(
+            result.error || "Failed to add product to cart. Please try again."
+          );
+        }
+      } catch (error) {
+        logger.error("Error adding Ozempic to cart:", error);
+        setIsAddingToCart(false);
+        alert(
+          "There was an issue adding the product to cart. Please try again."
+        );
+      }
     } else if (choice === "continue-with-rybelsus") {
+      // User confirmed they want Rybelsus
       setPopups((prev) => ({ ...prev, rybelsus: false }));
-      setShowCrossSellPopup(true);
+
+      // Add Rybelsus to cart before showing cross-sell popup
+      setIsAddingToCart(true);
+      try {
+        const mainProduct = {
+          id: productState.selected.id,
+          name: productState.selected.name,
+          price: productState.selected.price,
+          image: productState.selected.image || productState.selected.url,
+          quantity: 1,
+          isSubscription: productState.selected.isSubscription || false,
+          variation: [
+            {
+              attribute: "Subscription Type",
+              value:
+                productState.selected.supply ||
+                productState.selected.frequency ||
+                "Monthly Supply",
+            },
+          ],
+        };
+
+        logger.log("🛒 WL Flow - Adding Rybelsus to cart:", mainProduct);
+
+        const result = await addToCartEarly(mainProduct, "wl", {
+          requireConsultation: true,
+        });
+
+        if (result.success) {
+          logger.log("✅ Rybelsus added to cart, opening cross-sell popup");
+
+          if (result.cartData) {
+            setInitialCartData(result.cartData);
+          }
+
+          if (!userData.gender) {
+            await fetchUserGender();
+            setTimeout(() => {
+              setShowCrossSellPopup(true);
+              setIsAddingToCart(false);
+            }, 100);
+          } else {
+            setShowCrossSellPopup(true);
+            setIsAddingToCart(false);
+          }
+        } else {
+          logger.error("❌ Failed to add Rybelsus to cart:", result.error);
+          setIsAddingToCart(false);
+          alert(
+            result.error || "Failed to add product to cart. Please try again."
+          );
+        }
+      } catch (error) {
+        logger.error("Error adding Rybelsus to cart:", error);
+        setIsAddingToCart(false);
+        alert(
+          "There was an issue adding the product to cart. Please try again."
+        );
+      }
     }
   };
 
