@@ -82,9 +82,11 @@ const ReviewsSection = () => {
   return (
     <div className="bg-[#F5F4EF]">
       <div className="max-w-7xl mx-auto p-3 py-16 text-center">
-        <h2 className="text-3xl md:text-5xl font-bold">What People Are Saying</h2>
+        <h2 className="text-3xl md:text-5xl font-bold">
+          What People Are Saying
+        </h2>
         <p className="mt-4 text-lg">
-          Our clinical team has put together effective treatments for you.
+          Hear from real people who trusted Rocky with their health.
         </p>
         <div className="flex items-center justify-center pt-3">
           <CustomImage

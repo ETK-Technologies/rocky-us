@@ -13,7 +13,7 @@ const leadershipTeam = [
   {
     name: "Dr. George Mankaryous",
     title: "M.D. CCFP",
-    subtitle: "Chief Executive Officer",
+    subtitle: "Chief Medical Officer",
     description:
       "Dr. Mankaryous is a licensed family doctor in both Canada and the UK, with a strong commitment to evidence-based medicine. He empowers patients by providing them with the information needed to make informed decisions about their health. Integrating a functional medicine approach, Dr. Mankaryous focuses on identifying and addressing the root causes of disease, offering a comprehensive and personalized care experience. His blend of scientific rigor and holistic care makes him a valuable asset to our leadership team.",
     imageSrc: "https://myrocky.b-cdn.net/team-members/george.jpg",
@@ -49,34 +49,34 @@ const medicalTeam = [
     description:
       "Dr. Mirhom is a Columbia-trained, board-certified psychiatrist. He is an Assistant Professor of Psychiatry in Columbia University. He completed his adult psychiatry training in the Mount Sinai Health System and his fellowship in Columbia University Medical Center. He currently teaches public psychiatry fellows in Columbia University and is a renowned national speaker on mental health and wellness. He is also a consultant for the NBPA (National Basketball Player Association) to assist NBA players and staff with mental health needs.",
   },
-  {
-    name: "Corey Wideman",
-    title: "Nurse Practitioner",
-    image: "https://myrocky.b-cdn.net/team-members/corey.webp",
-    description:
-      "Corey graduated from the Master of Nursing program at the University of Toronto in 2020. Since then, he has worked in community-based clinics where he provides primary healthcare services. He is passionate about improving healthcare accessibility by leveraging technology to provide care through virtual platforms.",
-  },
-  {
-    name: "Tawanda Nyamukondiwa",
-    title: "Nurse Practitioner",
-    image: "https://myrocky.b-cdn.net/team-members/Tawanda.webp",
-    description:
-      "Tawanda Nyamukondiwa is a seasoned Nurse Practitioner with extensive experience and specialization in family medicine, health promotion, and occupational health. He is dedicated to delivering patient-centered care and is passionate about making a positive impact in patients' lives through a personal approach. By leveraging his diverse skills and rich experience, Tawanda ensures comprehensive care for patients of all ages.",
-  },
-  {
-    name: "Josh Belanger",
-    title: "Nurse Practitioner",
-    image: "https://myrocky.b-cdn.net/team-members/johua_square_dark.webp",
-    description:
-      "Josh Belanger is a dedicated Primary Care Nurse Practitioner who specializes in providing comprehensive healthcare at a nurse practitioner-led clinic. In addition to his primary care duties, he offers vital support to rural Emergency Rooms, delivering critical care to patients with varying acuity levels. With over a decade of experience in emergency room and cardiac cath lab settings as a Registered Nurse, Josh is deeply committed to enhancing primary care accessibility and championing wellness initiatives by addressing systemic and social barriers.",
-  },
-  {
-    name: "Pamela Bridgen",
-    title: "Nurse Practitioner",
-    image: "https://myrocky.b-cdn.net/team-members/pamela.webp",
-    description:
-      "Pamela Bridgen is a seasoned Nurse Practitioner with 15 years of experience in primary care, specializing in medical weight loss. Combining clinical expertise with compassionate care, she empowers patients to achieve their health goals through tailored treatment plans and lifestyle modifications. Her dedication to improving patient well-being extends beyond medical intervention, fostering long-term wellness and sustainable habits.",
-  },
+  // {
+  //   name: "Corey Wideman",
+  //   title: "Nurse Practitioner",
+  //   image: "https://myrocky.b-cdn.net/team-members/corey.webp",
+  //   description:
+  //     "Corey graduated from the Master of Nursing program at the University of Toronto in 2020. Since then, he has worked in community-based clinics where he provides primary healthcare services. He is passionate about improving healthcare accessibility by leveraging technology to provide care through virtual platforms.",
+  // },
+  // {
+  //   name: "Tawanda Nyamukondiwa",
+  //   title: "Nurse Practitioner",
+  //   image: "https://myrocky.b-cdn.net/team-members/Tawanda.webp",
+  //   description:
+  //     "Tawanda Nyamukondiwa is a seasoned Nurse Practitioner with extensive experience and specialization in family medicine, health promotion, and occupational health. He is dedicated to delivering patient-centered care and is passionate about making a positive impact in patients' lives through a personal approach. By leveraging his diverse skills and rich experience, Tawanda ensures comprehensive care for patients of all ages.",
+  // },
+  // {
+  //   name: "Josh Belanger",
+  //   title: "Nurse Practitioner",
+  //   image: "https://myrocky.b-cdn.net/team-members/johua_square_dark.webp",
+  //   description:
+  //     "Josh Belanger is a dedicated Primary Care Nurse Practitioner who specializes in providing comprehensive healthcare at a nurse practitioner-led clinic. In addition to his primary care duties, he offers vital support to rural Emergency Rooms, delivering critical care to patients with varying acuity levels. With over a decade of experience in emergency room and cardiac cath lab settings as a Registered Nurse, Josh is deeply committed to enhancing primary care accessibility and championing wellness initiatives by addressing systemic and social barriers.",
+  // },
+  // {
+  //   name: "Pamela Bridgen",
+  //   title: "Nurse Practitioner",
+  //   image: "https://myrocky.b-cdn.net/team-members/pamela.webp",
+  //   description:
+  //     "Pamela Bridgen is a seasoned Nurse Practitioner with 15 years of experience in primary care, specializing in medical weight loss. Combining clinical expertise with compassionate care, she empowers patients to achieve their health goals through tailored treatment plans and lifestyle modifications. Her dedication to improving patient well-being extends beyond medical intervention, fostering long-term wellness and sustainable habits.",
+  // },
   // {
   //   name: "Annivy",
   //   title: "Nurse Practitioner",
@@ -107,20 +107,20 @@ const pharmaceuticalTeam = [
     description:
       "Peri graduated with a Doctorate of Pharmacy from MCPHS University in Boston. She is licensed in Ontario and practices as a retail pharmacist. She is passionate about mental health and volunteers weekly at the Center for Addiction and Mental Health (CAMH) in Toronto. She also has startup experience interning at PillPack. Peri brings forth extensive knowledge in various areas of pharmacy.",
   },
-  {
-    name: "Mario Saad",
-    title: "Fulfilment Coordinator",
-    image: "https://myrocky.b-cdn.net/team-members/mario.webp",
-    description:
-      "Mario is our Fulfillment Coordinator, bringing a keen eye for detail and a commitment to efficiency from his background in police college. With a strong foundation in organization and logistics, he ensures that our telehealth services are delivered seamlessly to our clients. His unique perspective helps our team maintain the highest standards of service and reliability.",
-  },
-  {
-    name: "Roudy Abdelsalam",
-    title: "Logistics & Marketing Coordinator",
-    image: "https://myrocky.b-cdn.net/team-members/Roudy.webp",
-    description:
-      "Roudy excels as a Logistics and Marketing Coordinator, merging her advertising and marketing experience with strong organizational skills. Her market insight and consumer knowledge help her create effective promotional strategies, while her logistical expertise ensures smooth operations. By blending creative marketing with efficient logistics, Roudy enhances brand visibility and optimizes workflows, driving success and growth.",
-  },
+  // {
+  //   name: "Mario Saad",
+  //   title: "Fulfilment Coordinator",
+  //   image: "https://myrocky.b-cdn.net/team-members/mario.webp",
+  //   description:
+  //     "Mario is our Fulfillment Coordinator, bringing a keen eye for detail and a commitment to efficiency from his background in police college. With a strong foundation in organization and logistics, he ensures that our telehealth services are delivered seamlessly to our clients. His unique perspective helps our team maintain the highest standards of service and reliability.",
+  // },
+  // {
+  //   name: "Roudy Abdelsalam",
+  //   title: "Logistics & Marketing Coordinator",
+  //   image: "https://myrocky.b-cdn.net/team-members/Roudy.webp",
+  //   description:
+  //     "Roudy excels as a Logistics and Marketing Coordinator, merging her advertising and marketing experience with strong organizational skills. Her market insight and consumer knowledge help her create effective promotional strategies, while her logistical expertise ensures smooth operations. By blending creative marketing with efficient logistics, Roudy enhances brand visibility and optimizes workflows, driving success and growth.",
+  // },
 ];
 
 export default function AboutUs() {

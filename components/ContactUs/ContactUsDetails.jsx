@@ -60,7 +60,7 @@ export default function ContactUsDetails() {
             </p>
             <div>
               <p className="text-[14px] md:text-[16px] font-[500] leading-[140%] mb-2 md:mb-4">
-                Rocky Pharmacy (310538)
+                Rocky Pharmacy
               </p>
               <Link
                 href="mailto:info@myrocky.com"

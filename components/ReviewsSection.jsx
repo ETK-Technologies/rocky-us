@@ -111,7 +111,7 @@ const ReviewsSection = () => {
         What People Are Saying
       </h2>
       <p className="mt-4 text-lg text-center">
-        Our clinical team has put together effective treatments for you.
+        Hear from real people who trusted Rocky with their health.
       </p>
 
       {/* TrustPilot Logos */}
