@@ -76,7 +76,7 @@ const TrustpilotReviewsFallback = () => {
           What People Are Saying
         </h2>
         <p className="mt-4 text-lg text-center mb-8">
-          Our clinical team has put together effective treatments for you.
+          Hear from real people who trusted Rocky with their health.
         </p>
 
         {/* Trustpilot Header */}

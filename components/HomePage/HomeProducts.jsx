@@ -91,7 +91,7 @@ const hairProductCard = [
     ProductCard: [
       {
         title: "Finasteride & Minoxidil Topical Foam",
-        description: "Prevents hair loss and regrow hair",
+        description: "Prevents hair loss and helps regrow hair",
         link: "/hair-flow/?onboarding=1&showonly=2-in-1-growth-plan",
         image:
           "https://myrocky.b-cdn.net/WP%20Images/Homepage/minoxidil-spray.webp",

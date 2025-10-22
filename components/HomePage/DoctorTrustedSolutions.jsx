@@ -4,7 +4,7 @@ const DoctorTrustedSolutionsCards = [
   {
     title: "Private Care, <br/> 100% Online",
     description:
-      "No in-person visit needed. Manage treatment in the app with a secure login.",
+      "No in-person visit needed. Manage treatment in the secured patient portal.",
     image:
       "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/Pre%20Sell/private%20care.webp",
     height: "480px",
@@ -25,7 +25,7 @@ const DoctorTrustedSolutionsCards = [
     title2: "Vetted, Licensed Providers for Every Treatment",
     text: "vetted",
     description:
-      "Free consultations and ongoing support from licensed providers in all Canada.",
+      "Free consultations and ongoing support from licensed providers in USA.",
     image:
       "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/Pre%20Sell/vetted.webp",
     height: "685px",
