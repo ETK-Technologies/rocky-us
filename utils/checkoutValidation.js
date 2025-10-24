@@ -142,9 +142,12 @@ export const validateBillingAddress = (billingData) => {
   // Validate required fields
   requiredFields.forEach((field) => {
     if (!billingData[field] || billingData[field].trim() === "") {
+      // Use "ZIP code" instead of "postcode" for better user experience
+      const fieldName =
+        field === "postcode" ? "ZIP code" : field.replace("_", " ");
       errors.push({
         field,
-        message: `${field.replace("_", " ")} is required`,
+        message: `${fieldName} is required`,
       });
     }
   });
@@ -261,9 +264,12 @@ export const validateShippingAddress = (
   // Validate required fields
   requiredFields.forEach((field) => {
     if (!shippingData[field] || shippingData[field].trim() === "") {
+      // Use "ZIP code" instead of "postcode" for better user experience
+      const fieldName =
+        field === "postcode" ? "ZIP code" : field.replace("_", " ");
       errors.push({
         field: `shipping_${field}`,
-        message: `Shipping ${field.replace("_", " ")} is required`,
+        message: `Shipping ${fieldName} is required`,
       });
     }
   });
