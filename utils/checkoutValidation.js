@@ -41,12 +41,13 @@ const VALIDATION_RULES = {
   },
 
   // Postal code validation (Canadian and US formats)
+  // US formats: 5-digit (12345) or ZIP+4 (12345-6789)
   postalCode: {
     patterns: {
-      CA: /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/,
+      CA: /^\d{5}(-\d{4})?$/,
       US: /^\d{5}(-\d{4})?$/,
     },
-    message: "Please enter a valid postal code",
+    message: "Please enter a valid ZIP code (5-digit or ZIP+4 format)",
   },
 
   // Card number validation (basic Luhn algorithm check)
