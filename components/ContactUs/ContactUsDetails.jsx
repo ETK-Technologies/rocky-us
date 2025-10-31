@@ -59,9 +59,6 @@ export default function ContactUsDetails() {
               For pharmacy inquiries:
             </p>
             <div>
-              <p className="text-[14px] md:text-[16px] font-[500] leading-[140%] mb-2 md:mb-4">
-                Rocky Pharmacy
-              </p>
               <Link
                 href="mailto:info@myrocky.com"
                 className="text-[14px] md:text-[16px] leading-[140%] font-[600] text-[#814b00] hover:text-[#4e340fec]  "

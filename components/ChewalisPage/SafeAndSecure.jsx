@@ -81,11 +81,11 @@ const cards = [
     description:
       "Regulates the pharmacy profession to ensure competent health professionals and respectful treatment. Governed by the Pharmacy Act, 1991, it sets practice standards, ethical guidelines, and continuing competence requirements.",
   },
-  {
-    image:
-      "https://myrocky-dev.etk-tech.com/wp-content/uploads/2024/07/ontario2-removebg-preview.png",
-    title: "LegitScript certification",
-    description:
-      "LegitScript conducts thorough oversight of online pharmacies through an extensive verification process, ensuring they meet licensing requirements, regulatory compliance, and adhere strictly to relevant laws.",
-  },
+  // {
+  //   image:
+  //     "https://myrocky-dev.etk-tech.com/wp-content/uploads/2024/07/ontario2-removebg-preview.png",
+  //   title: "LegitScript certification",
+  //   description:
+  //     "LegitScript conducts thorough oversight of online pharmacies through an extensive verification process, ensuring they meet licensing requirements, regulatory compliance, and adhere strictly to relevant laws.",
+  // },
 ];
