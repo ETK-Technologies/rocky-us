@@ -143,12 +143,12 @@ const Footer2 = ({ hideFooter = false }) => {
                   <FaYoutube />
                 </Link>
               </div>
-              <CustomImage
+              {/* <CustomImage
                 src="https://static.legitscript.com/seals/11382672.png"
                 width="100"
                 height="100"
                 className="mb-[24px]"
-              ></CustomImage>
+              ></CustomImage> */}
               <p className="text-white font-medium mb-[8px]">
                 Rocky Pharmacy (308582)
               </p>

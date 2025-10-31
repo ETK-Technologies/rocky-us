@@ -3,11 +3,11 @@ import { useEffect, useState } from "react";
 import CustomImage from "@/components/utils/CustomImage";
 
 const rockyFeaturesCards = [
-  {
-    title: "US-Certified Pharmacy",
-    image:
-      "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/Pre%20Sell/hospital%201.png",
-  },
+  // {
+  //   title: "US-Certified Pharmacy",
+  //   image:
+  //     "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/Pre%20Sell/hospital%201.png",
+  // },
   {
     title: "Personalized Treatments",
     image:
@@ -48,7 +48,7 @@ const RockyFeatures = ({ cards }) => {
   };
 
   return (
-    <div className="overflow-hidden relative w-full max-w-[1184px] mx-auto border border-solid border-[#E2E2E1] rounded-2xl py-4">
+    <div className="overflow-hidden relative w-full max-w-[900px] mx-auto border border-solid border-[#E2E2E1] rounded-2xl py-4">
       <div className="bg-[linear-gradient(270deg,rgba(255,255,255,0)_0%,#ffffff_100%)] lg:bg-white absolute -right-[5px] md:right-0 w-[80px] h-[24px] z-10 rotate-[180deg]"></div>
       <div className="bg-[linear-gradient(270deg,rgba(255,255,255,0)_0%,#ffffff_100%)] absolute -left-[5px] md:left-0 w-[80px] h-[24px] z-10"></div>
 
