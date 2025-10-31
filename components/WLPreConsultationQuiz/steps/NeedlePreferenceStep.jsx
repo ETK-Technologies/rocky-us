@@ -4,7 +4,7 @@ const NeedlePreferenceStep = ({ onOptionSelect }) => {
   const PrivacyText = () => (
     <p className="text-xs text-gray-500 my-6">
       We respect your privacy. All of your information is securely stored on our
-      PIPEDA Compliant server.
+      HIPAA Compliant server.
     </p>
   );
 
@@ -13,7 +13,8 @@ const NeedlePreferenceStep = ({ onOptionSelect }) => {
   return (
     <div className="w-full md:w-[520px] mx-auto px-5 md:px-0 mt-6">
       <h1 className="text-2xl mb-6 font-semibold">
-        Would you prefer to avoid needles if an equally effective, easier-to-use alternative were available?
+        Would you prefer to avoid needles if an equally effective, easier-to-use
+        alternative were available?
       </h1>
 
       <div className="space-y-3">

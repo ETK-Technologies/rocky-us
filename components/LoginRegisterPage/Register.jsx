@@ -726,7 +726,7 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
             </p>
             <p>
               We respect your privacy. All of your information is securely
-              stored on our PIPEDA Compliant server.
+              stored on our HIPAA Compliant server.
             </p>
           </div>
         </div>

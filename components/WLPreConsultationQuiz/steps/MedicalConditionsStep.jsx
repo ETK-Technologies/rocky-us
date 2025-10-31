@@ -4,7 +4,7 @@ const MedicalConditionsStep = ({ onConditionSelect }) => {
   const PrivacyText = () => (
     <p className="text-xs text-gray-500  my-6">
       We respect your privacy. All of your information is securely stored on our
-      PIPEDA Compliant server.
+      HIPAA Compliant server.
     </p>
   );
 
