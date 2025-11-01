@@ -170,7 +170,7 @@ export const quizConfig = {
       privacyNoteStyle:
         "bg-[#F8F8F8] p-[12px] rounded-[8px] text-[12px] font-medium text-[#00000099] flex items-center gap-2 justify-center",
       privacyNote:
-        "Rocky takes your privacy seriously. We respect your privacy. All of your information is securely stored on our PIPEDA Compliant server.",
+        "Rocky takes your privacy seriously. We respect your privacy. All of your information is securely stored on our HIPAA Compliant server.",
       required: true,
     },
 
@@ -203,7 +203,7 @@ export const quizConfig = {
         "bg-[#F8F8F8] p-[12px] rounded-[8px] text-[12px] font-medium text-[#00000099] flex items-center gap-2 justify-center",
 
       privacyNote:
-        "Rocky takes your privacy seriously. We respect your privacy. All of your information is securely stored on our PIPEDA Compliant server.",
+        "Rocky takes your privacy seriously. We respect your privacy. All of your information is securely stored on our HIPAA Compliant server.",
       required: true,
     },
 

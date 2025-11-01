@@ -103,7 +103,6 @@ const CheckoutForm = ({
         },
       }));
 
-    
       // Trigger province/change handling without clearing fields
       const province = normalized.state;
       if (province) onProvinceChange(province, "billing", false);
@@ -502,7 +501,6 @@ const CheckoutForm = ({
     return "";
   };
 
-  
   const validateCanadianPhone = (value) => {
     if (!value) return "This field is required";
     return "";
@@ -1021,7 +1019,7 @@ const CheckoutForm = ({
 
           <p className="text-[10px] text-[#00000059] leading-[150%] font-medium mt-4">
             We respect your privacy. All of your information is securely stored
-            on our PIPEDA Compliant server.
+            on our HIPAA Compliant server.
           </p>
         </div>
       </div>

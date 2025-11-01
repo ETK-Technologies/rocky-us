@@ -348,7 +348,7 @@ const HairPreConsultationQuiz = () => {
             />
             <p className="text-left  mb-5 px-5 md:px-8  text-[12px] text-[#BCBCBC] mt-5 subheaders-font">
               We respect your privacy. All of your information is securely
-              stored on our PIPEDA Compliant server.
+              stored on our HIPAA Compliant server.
             </p>
 
             <div className="fixed bottom-0 w-[335px] md:w-[520px] p-4 bg-white -translate-x-2/4 left-2/4 z-10">
@@ -725,7 +725,7 @@ const HairPreConsultationQuiz = () => {
 
         {/* <p className="text-left text-xs text-gray-400 mt-5 subheaders-font">
           We respect your privacy. All of your information is securely stored on
-          our PIPEDA Compliant server.
+          our HIPAA Compliant server.
         </p> */}
       </div>
     </div>

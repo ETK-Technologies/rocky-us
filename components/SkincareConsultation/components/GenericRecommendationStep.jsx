@@ -25,7 +25,7 @@ const GenericRecommendationStep = ({
   const PrivacyText = () => (
     <p className="text-xs text-[#212121] my-1 md:my-4">
       We respect your privacy. All of your information is securely stored on our
-      PIPEDA Compliant server.
+      HIPAA Compliant server.
     </p>
   );
 
@@ -231,10 +231,11 @@ const GenericRecommendationStep = ({
       {/* Continue Button */}
       <div className="sticky bottom-0 py-4 z-30">
         <button
-          className={`w-full py-3 rounded-full font-medium flex items-center justify-center ${isContinueEnabled && !isAddingToCart
-            ? "bg-black text-white"
-            : "bg-gray-300 text-gray-500 cursor-not-allowed"
-            }`}
+          className={`w-full py-3 rounded-full font-medium flex items-center justify-center ${
+            isContinueEnabled && !isAddingToCart
+              ? "bg-black text-white"
+              : "bg-gray-300 text-gray-500 cursor-not-allowed"
+          }`}
           onClick={onContinue}
           disabled={!isContinueEnabled || isAddingToCart}
         >

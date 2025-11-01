@@ -82,7 +82,9 @@ const PhotoUploadStep = ({
       onContinue();
     } catch (error) {
       console.error("Photo upload error:", error);
-      setUploadError(error.message || "Failed to upload photos. Please try again.");
+      setUploadError(
+        error.message || "Failed to upload photos. Please try again."
+      );
     }
   };
 
@@ -99,7 +101,8 @@ const PhotoUploadStep = ({
 
       {/* Subtitle */}
       <p className="text-[14px] md:text-[16px] text-gray-600 mb-6">
-        Please upload a clear image of your face or area of concern for assessment
+        Please upload a clear image of your face or area of concern for
+        assessment
       </p>
 
       <div className="w-full space-y-8">
@@ -119,7 +122,10 @@ const PhotoUploadStep = ({
             <div className="flex w-full items-center">
               <img
                 className="w-16 h-16 object-contain mr-4"
-                src={frontPreview || "https://myrocky.com/wp-content/themes/salient-child/img/photo_upload_icon.png"}
+                src={
+                  frontPreview ||
+                  "https://myrocky.com/wp-content/themes/salient-child/img/photo_upload_icon.png"
+                }
                 alt="Upload icon"
               />
               <span className="text-[#C19A6B]">
@@ -148,7 +154,10 @@ const PhotoUploadStep = ({
             <div className="flex w-full items-center">
               <img
                 className="w-16 h-16 object-contain mr-4"
-                src={sidePreview || "https://myrocky.com/wp-content/themes/salient-child/img/photo_upload_icon.png"}
+                src={
+                  sidePreview ||
+                  "https://myrocky.com/wp-content/themes/salient-child/img/photo_upload_icon.png"
+                }
                 alt="Upload icon"
               />
               <span className="text-[#C19A6B]">
@@ -190,15 +199,15 @@ const PhotoUploadStep = ({
         {/* Success Message */}
         {uploadProgress === 100 && frontPhotoUrl && sidePhotoUrl && (
           <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-            <p className="text-green-600 text-sm">Photos uploaded successfully!</p>
+            <p className="text-green-600 text-sm">
+              Photos uploaded successfully!
+            </p>
           </div>
         )}
 
         {/* File format information */}
         <div className="text-center text-xs text-gray-400 mt-6">
-          <p>
-            Only JPG, JPEG, PNG, HEIF, and HEIC images are supported.
-          </p>
+          <p>Only JPG, JPEG, PNG, HEIF, and HEIC images are supported.</p>
           <p>Max allowed file size per image is 20MB</p>
         </div>
 
@@ -210,7 +219,7 @@ const PhotoUploadStep = ({
           >
             Back
           </button>
-          
+
           <button
             onClick={handleUpload}
             disabled={!canContinue || uploadProgress > 0}
@@ -254,7 +263,7 @@ const PhotoUploadStep = ({
       {/* Privacy text */}
       <div className="text-[10px] my-6 text-[#00000059] text-left font-[400] leading-[140%] tracking-[0%]">
         We respect your privacy. All of your information is securely stored on
-        our PIPEDA Compliant server.
+        our HIPAA Compliant server.
       </div>
     </div>
   );
