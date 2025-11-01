@@ -17,20 +17,32 @@ const BasicInfoForm = ({ onAction, initialData = {} }) => {
 
   return (
     <form className="flex flex-col gap-6 w-full" onSubmit={handleSubmit}>
-      <h2 className="text-[28px] font-semibold mb-4">We’ll start with the basics</h2>
+      <h2 className="text-[28px] font-semibold mb-4">
+        We’ll start with the basics
+      </h2>
       <div>
-        <label className="block text-[16px] font-medium mb-2">Sex assigned at birth</label>
+        <label className="block text-[16px] font-medium mb-2">
+          Sex assigned at birth
+        </label>
         <div className="flex gap-4 mb-2">
           <button
             type="button"
-            className={`flex-1 py-3 rounded-lg border text-[16px] font-medium ${sex === "Male" ? "border-black bg-white" : "border-[#E5E5E5] bg-[#FAFAFA]"}`}
+            className={`flex-1 py-3 rounded-lg border text-[16px] font-medium ${
+              sex === "Male"
+                ? "border-black bg-white"
+                : "border-[#E5E5E5] bg-[#FAFAFA]"
+            }`}
             onClick={() => setSex("Male")}
           >
             Male
           </button>
           <button
             type="button"
-            className={`flex-1 py-3 rounded-lg border text-[16px] font-medium ${sex === "Female" ? "border-black bg-white" : "border-[#E5E5E5] bg-[#FAFAFA]"}`}
+            className={`flex-1 py-3 rounded-lg border text-[16px] font-medium ${
+              sex === "Female"
+                ? "border-black bg-white"
+                : "border-[#E5E5E5] bg-[#FAFAFA]"
+            }`}
             onClick={() => setSex("Female")}
           >
             Female
@@ -44,7 +56,7 @@ const BasicInfoForm = ({ onAction, initialData = {} }) => {
           className="w-full border border-[#E5E5E5] rounded-lg px-4 py-3 text-[16px] focus:outline-none focus:border-black"
           placeholder="dd/mm/yyyy"
           value={birthday}
-          onChange={e => setBirthday(e.target.value)}
+          onChange={(e) => setBirthday(e.target.value)}
         />
       </div>
       <div>
@@ -54,15 +66,20 @@ const BasicInfoForm = ({ onAction, initialData = {} }) => {
           className="w-full border border-[#E5E5E5] rounded-lg px-4 py-3 text-[16px] focus:outline-none focus:border-black"
           placeholder="123456"
           value={zip}
-          onChange={e => setZip(e.target.value)}
+          onChange={(e) => setZip(e.target.value)}
         />
       </div>
       <p className="text-[13px] text-[#888] mt-2 mb-4">
-        We respect your privacy. All of your information is securely stored on our PIPEDA Compliant server.
+        We respect your privacy. All of your information is securely stored on
+        our HIPAA Compliant server.
       </p>
       <button
         type="submit"
-        className={`w-full py-4 rounded-full text-[18px] font-semibold transition ${isValid ? "bg-black text-white hover:bg-gray-900" : "bg-[#E5E5E5] text-[#888] cursor-not-allowed"}`}
+        className={`w-full py-4 rounded-full text-[18px] font-semibold transition ${
+          isValid
+            ? "bg-black text-white hover:bg-gray-900"
+            : "bg-[#E5E5E5] text-[#888] cursor-not-allowed"
+        }`}
         disabled={!isValid}
       >
         Continue

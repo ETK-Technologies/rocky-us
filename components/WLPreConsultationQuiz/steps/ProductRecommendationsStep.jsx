@@ -13,7 +13,7 @@ const ProductRecommendationsStep = ({
   const PrivacyText = () => (
     <p className="text-xs text-[#212121] my-1 md:my-4">
       We respect your privacy. All of your information is securely stored on our
-      PIPEDA Compliant server.
+      HIPAA Compliant server.
     </p>
   );
 

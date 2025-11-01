@@ -24,17 +24,17 @@ const AgeVerificationStep = ({ onDateSelect }) => {
         const birthYear = parseInt(dateParts[0]);
         const birthMonth = parseInt(dateParts[1]);
         const birthDay = parseInt(dateParts[2]);
-        
+
         const today = new Date();
         const birthDate = new Date(birthYear, birthMonth - 1, birthDay);
-        
+
         let age = today.getFullYear() - birthYear;
         const monthDiff = today.getMonth() - (birthMonth - 1);
-        
+
         if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDay)) {
           age--;
         }
-        
+
         return age >= 18;
       }
     } else {
@@ -43,17 +43,17 @@ const AgeVerificationStep = ({ onDateSelect }) => {
         const birthMonth = parseInt(dateParts[0]);
         const birthDay = parseInt(dateParts[1]);
         const birthYear = parseInt(dateParts[2]);
-        
+
         const today = new Date();
         const birthDate = new Date(birthYear, birthMonth - 1, birthDay);
-        
+
         let age = today.getFullYear() - birthYear;
         const monthDiff = today.getMonth() - (birthMonth - 1);
-        
+
         if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDay)) {
           age--;
         }
-        
+
         return age >= 18;
       }
     }
@@ -88,7 +88,7 @@ const AgeVerificationStep = ({ onDateSelect }) => {
 
         <div className="text-[10px] mt-6 text-[#00000059] text-left font-[400] leading-[140%] tracking-[0%]">
           We respect your privacy. All of your information is securely stored on
-          our PIPEDA Compliant server.
+          our HIPAA Compliant server.
         </div>
       </div>
 

@@ -1179,9 +1179,9 @@ export default function HairConsultationQuiz({
 
   const handleHealthcareQuestionsSelect = (option) => {
     clearError();
-    
+
     let updates = { "35_choice": option };
-    
+
     if (option === "No") {
       updates["35"] = "none";
     } else if (option === "Yes") {
@@ -1189,7 +1189,7 @@ export default function HairConsultationQuiz({
         updates["35"] = "";
       }
     }
-    
+
     setFormData((prevData) => {
       const updatedData = {
         ...prevData,
@@ -1199,7 +1199,7 @@ export default function HairConsultationQuiz({
       queueFormSubmission(updatedData);
       return updatedData;
     });
-    
+
     if (option === "No") {
       setTimeout(() => {
         moveToNextSlideWithoutValidation();
@@ -2464,7 +2464,8 @@ export default function HairConsultationQuiz({
           alert(
             "An error has been encountered while processing your data. If your session has expired, you will be asked to login again."
           );
-          const redirectStage = data.redirect_to_stage || "consultation-after-checkout";
+          const redirectStage =
+            data.redirect_to_stage || "consultation-after-checkout";
           window.location.href = `/hair-consultation-quiz/?stage=${redirectStage}`;
           return null;
         }
@@ -3962,11 +3963,18 @@ export default function HairConsultationQuiz({
                             <div
                               key={index}
                               className={`quiz-option text-left block w-full mb-4 cursor-pointer`}
-                              onClick={() => handleHealthcareQuestionsSelect(answer.body)}
+                              onClick={() =>
+                                handleHealthcareQuestionsSelect(answer.body)
+                              }
                             >
                               <div
                                 className={`quiz-option-label cursor-pointer text-left p-4 border-2 
-                                          ${formData["35_choice"] === answer.body ? "border-[#A7885A]" : "border-gray-300"} 
+                                          ${
+                                            formData["35_choice"] ===
+                                            answer.body
+                                              ? "border-[#A7885A]"
+                                              : "border-gray-300"
+                                          } 
                                           rounded-[12px] block w-full shadow-md flex items-center`}
                               >
                                 <span className="flex-grow">{answer.body}</span>
@@ -3989,7 +3997,8 @@ export default function HairConsultationQuiz({
                           {formData["35_choice"] === "Yes" && (
                             <div className="mt-4 w-full">
                               <p className="text-sm text-center mb-4">
-                                Ask any questions you may have about your condition or treatment options
+                                Ask any questions you may have about your
+                                condition or treatment options
                               </p>
                               <textarea
                                 id="35"
@@ -4502,7 +4511,7 @@ export default function HairConsultationQuiz({
 
             {/* <p className="text-center text-xs text-gray-500 mt-5">
               We respect your privacy. All of your information is securely
-              stored on our PIPEDA Compliant server.
+              stored on our HIPAA Compliant server.
             </p> */}
             <div className="quiz-footer flex flex-col flex-wrap items-center justify-center mx-auto px-10 py-4 bg-white z-20 w-full"></div>
           </div>

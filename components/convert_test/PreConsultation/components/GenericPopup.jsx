@@ -164,15 +164,19 @@ const GenericPopup = ({
             </div>
           )}
 
-          <div className={popupConfig.title === "You want something..."
-            ? "flex justify-start items-start"
-            : "flex justify-start items-start md:justify-center md:items-center"
-          }>
+          <div
+            className={
+              popupConfig.title === "You want something..."
+                ? "flex justify-start items-start"
+                : "flex justify-start items-start md:justify-center md:items-center"
+            }
+          >
             <div
-              className={` px-8 md:px-0 max-w-lg flex flex-col  ${popupConfig.contentAlign === "left"
-                ? "items-start"
-                : "items-center justify-center mx-auto"
-                }`}
+              className={` px-8 md:px-0 max-w-lg flex flex-col  ${
+                popupConfig.contentAlign === "left"
+                  ? "items-start"
+                  : "items-center justify-center mx-auto"
+              }`}
             >
               {/* Optional image */}
 
@@ -336,7 +340,7 @@ const GenericPopup = ({
                 <>
                   <div className="text-[10px] leading-[140%] font-medium text-[#BABABA] mt-2 mb-24">
                     We respect your privacy. All of your information is securely
-                    stored on our PIPEDA Compliant server.
+                    stored on our HIPAA Compliant server.
                   </div>
                 </>
               )}
@@ -368,13 +372,15 @@ const GenericPopup = ({
                       key={index}
                       onClick={() => handleButtonClick(button)}
                       disabled={button.disabled}
-                      className={`w-full h-[52px] ${popupConfig.title === "You want something..."
-                        ? "w-full"
-                        : "max-w-sm"
-                        }  py-3 items-center rounded-full font-medium transition-colors ${button.primary
+                      className={`w-full h-[52px] ${
+                        popupConfig.title === "You want something..."
+                          ? "w-full"
+                          : "max-w-sm"
+                      }  py-3 items-center rounded-full font-medium transition-colors ${
+                        button.primary
                           ? "bg-black text-white hover:bg-gray-800"
                           : "border border-gray-300 text-gray-700 hover:bg-gray-50"
-                        }`}
+                      }`}
                     >
                       {button.label}
                     </button>
