@@ -1,25 +1,24 @@
 import MoreQuestions from "@/components/MoreQuestions";
 import React from "react";
 
-
 export const metadata = {
   title: "ED Medication Services Across Canada | Rocky",
   description:
     "Access ED medications online with discreet delivery across Canada. Professional consultation and prescription services for Viagra and Cialis.",
   openGraph: {
     title: "ED Medication Services Across Canada | Rocky",
-  description:
-    "Access ED medications online with discreet delivery across Canada. Professional consultation and prescription services for Viagra and Cialis.",
- images:
-      "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/Rocky-TM_upscayl_2x.webp",
+    description:
+      "Access ED medications online with discreet delivery across Canada. Professional consultation and prescription services for Viagra and Cialis.",
+    images:
+      "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/my-rocky-black.webp",
   },
   twitter: {
     card: "ED Medication Services Across Canada | Rocky",
     title: "ED Medication Services Across Canada | Rocky",
-  description:
-    "Access ED medications online with discreet delivery across Canada. Professional consultation and prescription services for Viagra and Cialis.",
- images:
-      "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/Rocky-TM_upscayl_2x.webp",
+    description:
+      "Access ED medications online with discreet delivery across Canada. Professional consultation and prescription services for Viagra and Cialis.",
+    images:
+      "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/my-rocky-black.webp",
   },
 };
 

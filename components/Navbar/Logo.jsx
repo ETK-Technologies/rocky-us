@@ -3,9 +3,9 @@ import Link from "next/link";
 
 const Logo = ({ withLink = true }) => {
   const logoContent = (
-    <div className="h-[35px] w-[70px] relative ml-[0]">
+    <div className="h-[35px] w-[100px] relative ml-[0]">
       <Image
-        src="https://myrocky.b-cdn.net/WP%20Images/Global%20Images/Rocky-TM_upscayl_2x.webp"
+        src="https://myrocky.b-cdn.net/WP%20Images/Global%20Images/my-rocky-black.webp"
         alt="Rocky Logo"
         fill
         className="object-contain"

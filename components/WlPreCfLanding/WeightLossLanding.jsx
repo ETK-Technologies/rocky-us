@@ -28,7 +28,7 @@ export default function WeightLossLanding() {
       <div className="my-4">
         <Link href="/" className="flex justify-center">
           <Image
-            src="https://myrocky.b-cdn.net/WP%20Images/Global%20Images/Rocky-TM_upscayl_2x.webp"
+            src="https://myrocky.b-cdn.net/WP%20Images/Global%20Images/my-rocky-black.webp"
             alt="Rocky"
             width={80}
             height={30}

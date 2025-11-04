@@ -49,7 +49,7 @@ export const metadata = {
     siteName: "Rocky Health",
     images: [
       {
-        url: "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/Rocky-TM_upscayl_2x.webp",
+        url: "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/my-rocky-black.webp",
         width: 1200,
         height: 630,
         alt: "Rocky - Your Health Partner",

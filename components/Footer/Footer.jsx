@@ -90,7 +90,7 @@ const Footer = ({ className }) => {
           {/* Logo */}
           <div className="mx-auto relative rounded-2xl overflow-hidden w-[150px] h-[50px] flex justify-center mt-8 mb-4">
             <CustomImage
-              src="https://myrocky.b-cdn.net/WP%20Images/rocky_footer.png"
+              src="https://myrocky.b-cdn.net/WP%20Images/Global%20Images/my-rocky-white.webp"
               alt="Rocky Logo"
               fill
             />
