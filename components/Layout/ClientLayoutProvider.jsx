@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import LayoutDetector from "./LayoutDetector";
 import BugHerdProvider from "./BugHerdProvider";
 import AttributionTracker from "./AttributionTracker";
@@ -14,7 +15,9 @@ const ClientLayoutProvider = ({ children }) => {
   return (
     <BugHerdProvider>
       <LayoutDetector />
-      <AttributionTracker />
+      <Suspense fallback={null}>
+        <AttributionTracker />
+      </Suspense>
       {children}
     </BugHerdProvider>
   );
