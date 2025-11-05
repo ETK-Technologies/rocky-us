@@ -3,6 +3,68 @@ import { logger } from "@/utils/devLogger";
 import { api as wooApi } from "@/lib/woocommerce";
 
 /**
+ * Convert 2-letter country code to 3-letter ISO 3166-1 alpha-3 code
+ * @param {string} countryCode - 2-letter country code
+ * @returns {string} 3-letter country code
+ */
+const convertToISO3166Alpha3 = (countryCode) => {
+  // Comprehensive ISO 3166-1 alpha-2 to alpha-3 mapping
+  const countryMap = {
+    // North America
+    CA: "CAN", US: "USA", MX: "MEX",
+    // Europe
+    GB: "GBR", DE: "DEU", FR: "FRA", IT: "ITA", ES: "ESP", NL: "NLD", BE: "BEL",
+    AT: "AUT", CH: "CHE", SE: "SWE", NO: "NOR", DK: "DNK", FI: "FIN", IE: "IRL",
+    PT: "PRT", GR: "GRC", PL: "POL", CZ: "CZE", HU: "HUN", RO: "ROU", SK: "SVK",
+    BG: "BGR", HR: "HRV", SI: "SVN", LT: "LTU", LV: "LVA", EE: "EST", IS: "ISL",
+    LU: "LUX", MT: "MLT", CY: "CYP", RS: "SRB", UA: "UKR", BY: "BLR", MD: "MDA",
+    AL: "ALB", BA: "BIH", MK: "MKD", ME: "MNE", XK: "XKX",
+    // Asia
+    CN: "CHN", JP: "JPN", KR: "KOR", IN: "IND", SG: "SGP", MY: "MYS", TH: "THA",
+    ID: "IDN", PH: "PHL", VN: "VNM", TW: "TWN", HK: "HKG", MO: "MAC", KH: "KHM",
+    LA: "LAO", MM: "MMR", BN: "BRN", BD: "BGD", LK: "LKA", NP: "NPL", PK: "PAK",
+    AF: "AFG", MV: "MDV", BT: "BTN", MN: "MNG", KZ: "KAZ", UZ: "UZB", TM: "TKM",
+    KG: "KGZ", TJ: "TJK",
+    // Middle East
+    IL: "ISR", AE: "ARE", SA: "SAU", TR: "TUR", IQ: "IRQ", IR: "IRN", JO: "JOR",
+    LB: "LBN", SY: "SYR", YE: "YEM", OM: "OMN", KW: "KWT", BH: "BHR", QA: "QAT",
+    PS: "PSE", AM: "ARM", AZ: "AZE", GE: "GEO",
+    // Oceania
+    AU: "AUS", NZ: "NZL", FJ: "FJI", PG: "PNG", NC: "NCL", PF: "PYF", GU: "GUM",
+    AS: "ASM", MP: "MNP", FM: "FSM", MH: "MHL", PW: "PLW", WS: "WSM", TO: "TON",
+    VU: "VUT", SB: "SLB", KI: "KIR", TV: "TUV", NR: "NRU",
+    // South America
+    BR: "BRA", AR: "ARG", CL: "CHL", CO: "COL", PE: "PER", VE: "VEN", EC: "ECU",
+    BO: "BOL", PY: "PRY", UY: "URY", GY: "GUY", SR: "SUR", GF: "GUF", FK: "FLK",
+    // Central America & Caribbean
+    GT: "GTM", HN: "HND", SV: "SLV", NI: "NIC", CR: "CRI", PA: "PAN", BZ: "BLZ",
+    CU: "CUB", JM: "JAM", HT: "HTI", DO: "DOM", PR: "PRI", TT: "TTO", BS: "BHS",
+    BB: "BRB", LC: "LCA", VC: "VCT", GD: "GRD", AG: "ATG", DM: "DMA", KN: "KNA",
+    AW: "ABW", CW: "CUW", SX: "SXM", BQ: "BES", VG: "VGB", KY: "CYM", TC: "TCA",
+    BM: "BMU", MS: "MSR", AI: "AIA", GP: "GLP", MQ: "MTQ",
+    // Africa
+    ZA: "ZAF", EG: "EGY", NG: "NGA", KE: "KEN", GH: "GHA", TZ: "TZA", UG: "UGA",
+    DZ: "DZA", MA: "MAR", AO: "AGO", SD: "SDN", ET: "ETH", MZ: "MOZ", CM: "CMR",
+    CI: "CIV", MG: "MDG", NE: "NER", BF: "BFA", ML: "MLI", MW: "MWI", ZM: "ZMB",
+    SN: "SEN", SO: "SOM", TD: "TCD", GN: "GIN", RW: "RWA", BJ: "BEN", BI: "BDI",
+    TN: "TUN", SS: "SSD", TG: "TGO", SL: "SLE", LY: "LBY", LR: "LBR", MR: "MRT",
+    CF: "CAF", ER: "ERI", GM: "GMB", BW: "BWA", GA: "GAB", GW: "GNB", MU: "MUS",
+    SZ: "SWZ", DJ: "DJI", KM: "COM", CV: "CPV", ST: "STP", SC: "SYC", GQ: "GNQ",
+    ZW: "ZWE", NA: "NAM", LS: "LSO", RE: "REU", YT: "MYT",
+  };
+  
+  const code = String(countryCode || "").toUpperCase().trim();
+  
+  // If already 3 letters, return as-is
+  if (code.length === 3) {
+    return code;
+  }
+  
+  // Convert 2-letter to 3-letter, default to CAN if not found
+  return countryMap[code] || "CAN";
+};
+
+/**
  * POST /api/northbeam/backfill
  * Body: { order_ids: (number[]|string[]), dry_run?: boolean }
  * For each Woo order id, fetch order + forward to `/api/northbeam/orders`.
@@ -98,8 +160,7 @@ export async function POST(req) {
             city: order.shipping.city || "",
             state: order.shipping.state || "",
             zip: order.shipping.postcode || "",
-            country_code:
-              order.shipping.country === "CA" ? "CAN" : order.shipping.country || "CAN",
+            country_code: convertToISO3166Alpha3(order.shipping.country),
           }
         : undefined;
 
