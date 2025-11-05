@@ -7,7 +7,7 @@ export const metadata = {
     description:
       "Access professional mental health treatment and support online with Rocky. Personalized care and effective solutions delivered discreetly across Canada.",
     images:
-      "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/Rocky-TM_upscayl_2x.webp",
+      "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/my-rocky-black.webp",
   },
   twitter: {
     card: "Mental Health Treatment & Support | Rocky",
@@ -15,7 +15,7 @@ export const metadata = {
     description:
       "Access professional mental health treatment and support online with Rocky. Personalized care and effective solutions delivered discreetly across Canada.",
     images:
-      "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/Rocky-TM_upscayl_2x.webp",
+      "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/my-rocky-black.webp",
   },
 };
 

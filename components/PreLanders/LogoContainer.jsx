@@ -7,7 +7,7 @@ const LogoContainer = ({ quizHref }) => {
         <div className="flex justify-center md:justify-between items-center">
           <div className="flex-shrink-0">
             <img
-              src="https://myrocky.b-cdn.net/WP%20Images/Global%20Images/Rocky-TM_upscayl_2x.webp"
+              src="https://myrocky.b-cdn.net/WP%20Images/Global%20Images/my-rocky-black.webp"
               alt="Rocky"
               className="w-[90px] md:w-[116px]"
             />
