@@ -1,18 +1,23 @@
 "use client";
 
+import { Suspense } from "react";
 import LayoutDetector from "./LayoutDetector";
 import BugHerdProvider from "./BugHerdProvider";
+import AttributionTracker from "./AttributionTracker";
 
 /**
  * ClientLayoutProvider serves as a client component wrapper
  * that can be imported into server components.
  * It includes client-side functionality like the LayoutDetector
- * without affecting server-side rendering.
+ * and AttributionTracker without affecting server-side rendering.
  */
 const ClientLayoutProvider = ({ children }) => {
   return (
     <BugHerdProvider>
       <LayoutDetector />
+      <Suspense fallback={null}>
+        <AttributionTracker />
+      </Suspense>
       {children}
     </BugHerdProvider>
   );
