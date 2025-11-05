@@ -26,8 +26,14 @@ export async function POST(req) {
     const cronSecret = process.env.CRON_SECRET || process.env.VERCEL_CRON_SECRET;
     
     if (!cronSecret) {
-      logger.warn("[NB Auto-Retry] CRON_SECRET not configured, allowing request");
-    } else if (authHeader !== `Bearer ${cronSecret}`) {
+      logger.error("[NB Auto-Retry] CRON_SECRET not configured, rejecting request for security");
+      return NextResponse.json(
+        { error: "Unauthorized - CRON_SECRET must be configured" },
+        { status: 401 }
+      );
+    }
+    
+    if (authHeader !== `Bearer ${cronSecret}`) {
       logger.error("[NB Auto-Retry] Unauthorized cron request");
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -165,8 +171,15 @@ export async function GET(req) {
   const authHeader = req.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET || process.env.VERCEL_CRON_SECRET;
   
-  // Simple auth check for GET as well
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  // Require authentication for GET as well
+  if (!cronSecret) {
+    return NextResponse.json(
+      { error: "Unauthorized - CRON_SECRET must be configured" },
+      { status: 401 }
+    );
+  }
+  
+  if (authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -188,4 +201,3 @@ export async function GET(req) {
     message: "Use POST to trigger manual retry, or let Vercel Cron handle it automatically",
   });
 }
-
