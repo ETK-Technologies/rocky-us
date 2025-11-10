@@ -400,25 +400,22 @@ const WeightQuestionnaire = () => {
         });
 
         if (result.success) {
-          logger.log("✅ Product added to cart, opening cross-sell popup");
+          logger.log("✅ Product added to cart, redirecting to checkout");
 
           // Store the cart data to pass to the modal
           if (result.cartData) {
             setInitialCartData(result.cartData);
           }
 
-          // If gender is still null, try fetching it again before showing popup
-          if (!userData.gender) {
-            await fetchUserGender();
-            // Add a small delay to ensure state updates
-            setTimeout(() => {
-              setShowCrossSellPopup(true);
-              setIsAddingToCart(false);
-            }, 100);
+          // Go directly to checkout instead of showing cross-sell popup
+          setIsAddingToCart(false);
+
+          // Redirect to checkout
+          if (result.checkoutUrl) {
+            window.location.href = result.checkoutUrl;
           } else {
-            // Show cross-sell popup
-            setShowCrossSellPopup(true);
-            setIsAddingToCart(false);
+            // Fallback to standard checkout URL
+            window.location.href = "/checkout";
           }
         } else {
           logger.error("❌ Failed to add product to cart:", result.error);
@@ -484,21 +481,21 @@ const WeightQuestionnaire = () => {
         });
 
         if (result.success) {
-          logger.log("✅ Ozempic added to cart, opening cross-sell popup");
+          logger.log("✅ Ozempic added to cart, redirecting to checkout");
 
           if (result.cartData) {
             setInitialCartData(result.cartData);
           }
 
-          if (!userData.gender) {
-            await fetchUserGender();
-            setTimeout(() => {
-              setShowCrossSellPopup(true);
-              setIsAddingToCart(false);
-            }, 100);
+          // Go directly to checkout instead of showing cross-sell popup
+          setIsAddingToCart(false);
+
+          // Redirect to checkout
+          if (result.checkoutUrl) {
+            window.location.href = result.checkoutUrl;
           } else {
-            setShowCrossSellPopup(true);
-            setIsAddingToCart(false);
+            // Fallback to standard checkout URL
+            window.location.href = "/checkout";
           }
         } else {
           logger.error("❌ Failed to add Ozempic to cart:", result.error);
@@ -546,21 +543,21 @@ const WeightQuestionnaire = () => {
         });
 
         if (result.success) {
-          logger.log("✅ Rybelsus added to cart, opening cross-sell popup");
+          logger.log("✅ Rybelsus added to cart, redirecting to checkout");
 
           if (result.cartData) {
             setInitialCartData(result.cartData);
           }
 
-          if (!userData.gender) {
-            await fetchUserGender();
-            setTimeout(() => {
-              setShowCrossSellPopup(true);
-              setIsAddingToCart(false);
-            }, 100);
+          // Go directly to checkout instead of showing cross-sell popup
+          setIsAddingToCart(false);
+
+          // Redirect to checkout
+          if (result.checkoutUrl) {
+            window.location.href = result.checkoutUrl;
           } else {
-            setShowCrossSellPopup(true);
-            setIsAddingToCart(false);
+            // Fallback to standard checkout URL
+            window.location.href = "/checkout";
           }
         } else {
           logger.error("❌ Failed to add Rybelsus to cart:", result.error);
@@ -689,8 +686,8 @@ const WeightQuestionnaire = () => {
         currentPage={currentPage}
       />
 
-      {/* Cross-Sell Popup */}
-      {showCrossSellPopup && (
+      {/* Cross-Sell Popup - COMMENTED OUT */}
+      {/* {showCrossSellPopup && (
         <CrossSellPopupWrapper
           isOpen={showCrossSellPopup}
           userData={userData}
@@ -699,7 +696,7 @@ const WeightQuestionnaire = () => {
           onClose={() => setShowCrossSellPopup(false)}
           initialCartData={initialCartData}
         />
-      )}
+      )} */}
 
       {/* Styles */}
       <style jsx>{`

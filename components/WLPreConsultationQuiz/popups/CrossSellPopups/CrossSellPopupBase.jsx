@@ -387,13 +387,11 @@ const CrossSellPopup = ({
                               e.stopPropagation();
                               handleAddProduct(addon);
                             }}
-                            className={`data-addon-id-${
-                              addon.id
-                            } add-to-cart-addon-product cursor-pointer border ${
-                              isAddonInCart(addon.id) || isAddingAddon(addon.id)
+                            className={`data-addon-id-${addon.id
+                              } add-to-cart-addon-product cursor-pointer border ${isAddonInCart(addon.id) || isAddingAddon(addon.id)
                                 ? "border-[#814B00] text-[#814B00]"
                                 : "border-[#D8D8D8] text-black"
-                            } border-solid rounded-full w-full text-center font-[500] text-[14px] flex items-center justify-center gap-2 py-2 mt-2`}
+                              } border-solid rounded-full w-full text-center font-[500] text-[14px] flex items-center justify-center gap-2 py-2 mt-2`}
                             data-addon-id={addon.id}
                             data-title={addon.name}
                             data-price={addon.price}
@@ -412,8 +410,8 @@ const CrossSellPopup = ({
                             {isAddingAddon(addon.id)
                               ? "Adding..."
                               : isAddonInCart(addon.id)
-                              ? "Added ✓"
-                              : "Add To Cart"}
+                                ? "Added ✓"
+                                : "Add To Cart"}
                           </button>
                         </div>
                       </div>

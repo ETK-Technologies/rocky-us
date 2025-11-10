@@ -186,20 +186,20 @@ const CrossSellModal = ({
   }, [isOpen]);
 
   const addOnProducts = [
-    {
-      id: "262914",
-      title: "Essential T-Boost",
-      price: 35,
-      quantity: "60 Capsules",
-      frequency: "30-days supply",
-      image:
-        "https://mycdn.myrocky.com/wp-content/uploads/20250908134137/t-boost.png",
-      description:
-        "Helps improve overall testosterone levels, enhance libido, and promote a sense of well-being.",
-      dataType: "simple",
-      dataVar: "",
-      dataAddToCart: "262914",
-    },
+    // {
+    //   id: "262914",
+    //   title: "Essential T-Boost",
+    //   price: 35,
+    //   quantity: "60 Capsules",
+    //   frequency: "30-days supply",
+    //   image:
+    //     "https://mycdn.myrocky.com/wp-content/uploads/20250908134137/t-boost.png",
+    //   description:
+    //     "Helps improve overall testosterone levels, enhance libido, and promote a sense of well-being.",
+    //   dataType: "simple",
+    //   dataVar: "",
+    //   dataAddToCart: "262914",
+    // },
     // {
     //   id: "276",
     //   title: "Lidocaine Cream",
@@ -257,52 +257,52 @@ const CrossSellModal = ({
     //   dataVar: "",
     //   dataAddToCart: "353755",
     // },
-    {
-      id: "490612",
-      title: "Essential Night Boost",
-      price: "30.00",
-      image: "/supplements/night-boost.webp",
-      description:
-        "Night boost is a natural sleep support supplement made with gentle, effective ingredients like L-theanine, magnesium bisglycinate, GABA, glycine, and inositol—formulated to help your body relax and ease into a deep, restful sleep.",
-      dataType: "simple",
-      dataVar: "",
-      dataAddToCart: "490612",
-    },
-    {
-      id: "490621",
-      title: "Essential Mood Balance",
-      price: "36.00",
-      image: "/supplements/mood.webp",
-      description:
-        "Ashwagandha is a traditional herb used in Ayurvedic medicine, known for its adaptogenic properties that help the body manage stress. It supports emotional well-being by helping to reduce anxiety, balance mood, and promote a sense of calm—making it a natural way to cope with daily mental and emotional stressors.",
-      dataType: "simple",
-      dataVar: "",
-      dataAddToCart: "490621",
-    },
-    {
-      id: "490636",
-      title: "Essential Gut Relief",
-      price: "36.00",
-      image: "/supplements/gut.webp",
-      description:
-        "Bloat Relief is a potent blend of natural extracts, including sweet fennel, turmeric, and milk thistle, designed to aid digestion and alleviate symptoms like bloating, gas, and indigestion.",
-      dataType: "simple",
-      dataVar: "",
-      dataAddToCart: "490636",
-    },
-    {
-      id: "368051",
-      title: "DHM Blend",
-      price: 39,
-      quantity: "(10 pack)",
-      frequency: "One time purchase",
-      image: "https://myrocky.b-cdn.net/WP%20Images/dhm/dhm.png",
-      description:
-        "DHM Blend is a science-backed formulation featuring Dihydromyricetin (DHM), L-Cysteine, Milk Thistle, Prickly Pear, and a Vitamin B Complex.\nPortable & Convenient: Compact packaging makes it easy to carry in your pocket or purse.\nAffordable: Just a few dollars per serving.\nTrusted Worldwide: Over 300,000 customers globally have made DHM Blend their go-to choice.",
-      dataType: "simple",
-      dataVar: "",
-      dataAddToCart: "368051",
-    },
+    // {
+    //   id: "490612",
+    //   title: "Essential Night Boost",
+    //   price: "30.00",
+    //   image: "/supplements/night-boost.webp",
+    //   description:
+    //     "Night boost is a natural sleep support supplement made with gentle, effective ingredients like L-theanine, magnesium bisglycinate, GABA, glycine, and inositol—formulated to help your body relax and ease into a deep, restful sleep.",
+    //   dataType: "simple",
+    //   dataVar: "",
+    //   dataAddToCart: "490612",
+    // },
+    // {
+    //   id: "490621",
+    //   title: "Essential Mood Balance",
+    //   price: "36.00",
+    //   image: "/supplements/mood.webp",
+    //   description:
+    //     "Ashwagandha is a traditional herb used in Ayurvedic medicine, known for its adaptogenic properties that help the body manage stress. It supports emotional well-being by helping to reduce anxiety, balance mood, and promote a sense of calm—making it a natural way to cope with daily mental and emotional stressors.",
+    //   dataType: "simple",
+    //   dataVar: "",
+    //   dataAddToCart: "490621",
+    // },
+    // {
+    //   id: "490636",
+    //   title: "Essential Gut Relief",
+    //   price: "36.00",
+    //   image: "/supplements/gut.webp",
+    //   description:
+    //     "Bloat Relief is a potent blend of natural extracts, including sweet fennel, turmeric, and milk thistle, designed to aid digestion and alleviate symptoms like bloating, gas, and indigestion.",
+    //   dataType: "simple",
+    //   dataVar: "",
+    //   dataAddToCart: "490636",
+    // },
+    // {
+    //   id: "368051",
+    //   title: "DHM Blend",
+    //   price: 39,
+    //   quantity: "(10 pack)",
+    //   frequency: "One time purchase",
+    //   image: "https://myrocky.b-cdn.net/WP%20Images/dhm/dhm.png",
+    //   description:
+    //     "DHM Blend is a science-backed formulation featuring Dihydromyricetin (DHM), L-Cysteine, Milk Thistle, Prickly Pear, and a Vitamin B Complex.\nPortable & Convenient: Compact packaging makes it easy to carry in your pocket or purse.\nAffordable: Just a few dollars per serving.\nTrusted Worldwide: Over 300,000 customers globally have made DHM Blend their go-to choice.",
+    //   dataType: "simple",
+    //   dataVar: "",
+    //   dataAddToCart: "368051",
+    // },
 
     // {
     //   id: "93366",
@@ -488,11 +488,10 @@ const CrossSellModal = ({
           <button
             onClick={handleCheckout}
             disabled={isLoading}
-            className={`block border-0 rounded-full text-white p-2 px-10 mt-2 md:mt-4 w-full text-center md:w-fit flex items-center justify-center gap-2 ${
-              isLoading
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-black hover:bg-gray-800"
-            }`}
+            className={`block border-0 rounded-full text-white p-2 px-10 mt-2 md:mt-4 w-full text-center md:w-fit flex items-center justify-center gap-2 ${isLoading
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-black hover:bg-gray-800"
+              }`}
           >
             {isLoading && (
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -555,7 +554,8 @@ const CrossSellModal = ({
             Get exclusive savings on our most popular products
           </p>
 
-          <div className="slider-arrows relative hidden md:block">
+          {/* Slider arrows hidden for single item display */}
+          <div className="slider-arrows relative hidden">
             <span
               className="slider-arrow left-arrow shadow-md"
               onClick={() => handleSliderArrow("left")}
@@ -571,13 +571,13 @@ const CrossSellModal = ({
             </span>
           </div>
 
-          <div className="grid grid-cols-2 md:flex w-[100%] mt-10 overflow-x-auto addons-slider gap-4 pb-1">
+          <div className="flex justify-center w-[100%] mt-10 pb-1">
             {addOnProducts.map((addon) => (
               <div
                 key={addon.id}
-                className="basis-1/2 md:basis-1/4 md:min-w-[220px]"
+                className="w-full max-w-[300px] md:max-w-[350px]"
               >
-                <div className="relative shadow rounded-[12px] overflow-hidden bg-[#FFFFFF] border-solid min-h-[220px] flex flex-col">
+                <div className="relative shadow-lg rounded-[12px] overflow-hidden bg-[#FFFFFF] border-solid min-h-[280px] flex flex-col">
                   <div className={`addon${addon.id}-box-top relative`}>
                     <a
                       data-addon-class={`addon${addon.id}-box-body-alt-text`}
@@ -596,20 +596,20 @@ const CrossSellModal = ({
                       <div className="text-center">
                         <img
                           loading="lazy"
-                          className="w-[135px] h-[135px] mx-auto mb-4 block rounded object-cover"
+                          className="w-[160px] h-[160px] mx-auto mb-4 block rounded object-cover"
                           src={addon.image}
                           alt={addon.title}
                         />
                       </div>
                       <div className="text-center mb-2 border-b border-gray-200 border-solid border-1 flex-grow">
-                        <h4 className="text-center font-semibold text-[14px] leading-[19px] min-h-[38px] flex items-center justify-center">
+                        <h4 className="text-center font-semibold text-[16px] leading-[22px] min-h-[44px] flex items-center justify-center">
                           {addon.title}
                         </h4>
-                        <small className="text-center text-[#212121] font-[400] text-[12px] mb-2 inline-block">
+                        <small className="text-center text-[#212121] font-[400] text-[14px] mb-2 inline-block">
                           {addon.quantity}
                         </small>
                       </div>
-                      <p className="font-[500] text-[14px] text-black text-center">
+                      <p className="font-[500] text-[16px] text-black text-center">
                         ${addon.price}
                       </p>
                       {/* <button
@@ -636,13 +636,11 @@ const CrossSellModal = ({
                       <div className="flex items-center gap-2 w-full">
                         <button
                           onClick={() => toggleAddon(addon.id)}
-                          className={`data-addon-id-${
-                            addon.id
-                          } add-to-cart-addon-product cursor-pointer border ${
-                            isAddonInCart(addon.id) || isAddingAddon(addon.id)
+                          className={`data-addon-id-${addon.id
+                            } add-to-cart-addon-product cursor-pointer border ${isAddonInCart(addon.id) || isAddingAddon(addon.id)
                               ? "border-[#814B00] text-[#814B00]"
                               : "border-[#D8D8D8] text-black"
-                          } border-solid rounded-full w-full text-center font-[500] text-[14px] flex items-center justify-center gap-2 py-2 mt-2`}
+                            } border-solid rounded-full w-full text-center font-[500] text-[16px] flex items-center justify-center gap-2 py-3 mt-2`}
                           data-addon-id={addon.id}
                           data-title={addon.title}
                           data-price={addon.price}
@@ -661,8 +659,8 @@ const CrossSellModal = ({
                           {isAddingAddon(addon.id)
                             ? "Adding..."
                             : isAddonInCart(addon.id)
-                            ? "Added ✓"
-                            : "Add To Cart"}
+                              ? "Added ✓"
+                              : "Add To Cart"}
                         </button>
                       </div>
                     </div>
@@ -701,9 +699,8 @@ const CrossSellModal = ({
       <button
         onClick={isLoading ? undefined : onClose}
         disabled={isLoading}
-        className={`cross-sell-close-popup new-popup-dialog-close-button dialog-lightbox-close-button absolute top-3 md:top-5 right-3 md:right-10 z-[99999] ${
-          isLoading ? "cursor-not-allowed opacity-50" : "cursor-pointer"
-        }`}
+        className={`cross-sell-close-popup new-popup-dialog-close-button dialog-lightbox-close-button absolute top-3 md:top-5 right-3 md:right-10 z-[99999] ${isLoading ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+          }`}
       >
         <IoIosCloseCircleOutline className="text-2xl md:text-4xl" />
       </button>
