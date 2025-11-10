@@ -19,7 +19,7 @@ const ProudPartner = ({ section = false, bg = "bg-white" }) => {
           }`}
         >
           <CustomContainImage
-            src="https://myrocky.b-cdn.net/WP%20Images/Global%20Images/Rocky-TM_upscayl_2x.webp"
+            src="https://myrocky.b-cdn.net/WP%20Images/Global%20Images/my-rocky-black.webp"
             alt="Rocky Logo"
             fill
           />

@@ -158,7 +158,7 @@ const GenericPopup = ({
                   width="100"
                   height="100"
                   className={`mb-16 ${popupConfig.isWL ? "" : "mt-6"}`}
-                  src="https://myrocky.b-cdn.net/WP%20Images/Global%20Images/Rocky-TM_upscayl_2x.webp"
+                  src="https://myrocky.b-cdn.net/WP%20Images/Global%20Images/my-rocky-black.webp"
                 />
               </Link>
             </div>
