@@ -119,23 +119,25 @@ export async function POST(request) {
     logger.log("State code:", stateCode);
 
     // Validate that the address is in a supported state (for USA addresses)
-    if (
-      (address.country === "US" || address.country === "USA") &&
-      !isStateSupported(stateCode)
-    ) {
-      logger.warn(
-        `Address in unsupported state: ${stateCode}. Supported states:`,
-        PHASE_1_STATES
-      );
-      return NextResponse.json(
-        {
-          error: "Address not available",
-          details: `Sorry, we currently don't support deliveries to ${stateCode}.`,
-          serviceCoverageUrl: "/service-coverage/",
-        },
-        { status: 400 }
-      );
-    }
+    // if (
+    //   (address.country === "US" || address.country === "USA") &&
+    //   !isStateSupported(stateCode)
+    // ) {
+    //   logger.warn(
+    //     `Address in unsupported state: ${stateCode}. Supported states:`,
+    //     PHASE_1_STATES
+    //   );
+    //   return NextResponse.json(
+    //     {
+    //       error: "Address not available",
+    //       details: `Sorry, we currently don't support deliveries to ${stateCode}.`,
+    //       serviceCoverageUrl: "/service-coverage/",
+    //     },
+    //     { status: 400 }
+    //   );
+    // }
+
+    logger.log(`Address accepted for state: ${stateCode}`);
 
     return NextResponse.json({ address });
   } catch (error) {

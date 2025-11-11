@@ -71,8 +71,10 @@ export const checkQuebecZonnicRestriction = (
   const isQuebec = isQuebecProvince(province);
 
   return {
-    blocked: hasZonnic && isQuebec,
-    message: hasZonnic && isQuebec ? getQuebecRestrictionMessage() : null,
+    // blocked: hasZonnic && isQuebec,
+    // message: hasZonnic && isQuebec ? getQuebecRestrictionMessage() : null,
+    blocked: false, // Always allow checkout regardless of Quebec + Zonnic combination
+    message: null,
     hasZonnic,
     isQuebec,
     province,

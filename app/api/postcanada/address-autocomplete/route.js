@@ -153,22 +153,23 @@ export async function POST(request) {
       if (country === "US" || apiCountryCode === "USA") {
         // If no state code detected (early in search/typing), INCLUDE it
         // This allows users to see suggestions while typing
-        if (!address.stateCode) {
-          logger.log(
-            "Including address without state code:",
-            address.formattedAddress
-          );
-          return true;
-        }
-        // If state code is detected, only include if it's supported
-        const isSupported = PHASE_1_STATES.includes(address.stateCode);
-        if (!isSupported) {
-          logger.log(
-            `Filtering out unsupported state ${address.stateCode}:`,
-            address.formattedAddress
-          );
-        }
-        return isSupported;
+        // if (!address.stateCode) {
+        //   logger.log(
+        //     "Including address without state code:",
+        //     address.formattedAddress
+        //   );
+        //   return true;
+        // }
+        // // If state code is detected, only include if it's supported
+        // const isSupported = PHASE_1_STATES.includes(address.stateCode);
+        // if (!isSupported) {
+        //   logger.log(
+        //     `Filtering out unsupported state ${address.stateCode}:`,
+        //     address.formattedAddress
+        //   );
+        // }
+        // return isSupported;
+        return true;
       }
       return true; // For non-US addresses, include all
     });
