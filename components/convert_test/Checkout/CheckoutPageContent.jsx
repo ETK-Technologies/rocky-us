@@ -198,16 +198,16 @@ const CheckoutPageContent = () => {
     shouldClearFields = true
   ) => {
     if (cartItems && cartItems.items) {
-      const restriction = checkQuebecZonnicRestriction(
-        cartItems.items,
-        newProvince,
-        newProvince
-      );
+      // const restriction = checkQuebecZonnicRestriction(
+      //   cartItems.items,
+      //   newProvince,
+      //   newProvince
+      // );
 
-      if (restriction.blocked) {
-        setShowQuebecPopup(true);
-        return;
-      }
+      // if (restriction.blocked) {
+      //   setShowQuebecPopup(true);
+      //   return;
+      // }
 
       // Check age restriction for Zonnic products
       if (hasZonnicProducts(cartItems.items)) {
@@ -354,12 +354,12 @@ const CheckoutPageContent = () => {
             ...prev.billing_address,
             ...(addressType === "billing"
               ? {
-                  address_1: "",
-                  address_2: "",
-                  city: "",
-                  postcode: "",
-                  country: "US",
-                }
+                address_1: "",
+                address_2: "",
+                city: "",
+                postcode: "",
+                country: "US",
+              }
               : {}),
             state:
               addressType === "billing"
@@ -488,9 +488,8 @@ const CheckoutPageContent = () => {
               // Add the flowType=1 to the URL if not present
               const newParams = new URLSearchParams(window.location.search);
               newParams.set(match.flowType, "1");
-              const newUrl = `${
-                window.location.pathname
-              }?${newParams.toString()}`;
+              const newUrl = `${window.location.pathname
+                }?${newParams.toString()}`;
               window.history.replaceState({ path: newUrl }, "", newUrl);
               // Only add the first found flow, break
               break;
@@ -643,8 +642,8 @@ const CheckoutPageContent = () => {
               prev.billing_address.last_name ||
               (storedUserName
                 ? decodeURIComponent(storedUserName)
-                    .replace(storedFirstName, "")
-                    .trim()
+                  .replace(storedFirstName, "")
+                  .trim()
                 : profileData.last_name || ""),
             email: prev.billing_address.email || profileData.email || "",
             phone: prev.billing_address.phone || profileData.phone || "",
@@ -691,8 +690,8 @@ const CheckoutPageContent = () => {
               prev.shipping_address.last_name ||
               (storedUserName
                 ? decodeURIComponent(storedUserName)
-                    .replace(storedFirstName, "")
-                    .trim()
+                  .replace(storedFirstName, "")
+                  .trim()
                 : profileData.last_name || ""),
             phone: prev.shipping_address.phone || profileData.phone || "",
             address_1:
@@ -799,17 +798,17 @@ const CheckoutPageContent = () => {
               // Clean up URL parameters - use the detected flow type from result
               cleanupCartUrlParameters(
                 result.flowType ||
-                  (isEdFlow
-                    ? "ed"
-                    : flowParams["hair-flow"]
+                (isEdFlow
+                  ? "ed"
+                  : flowParams["hair-flow"]
                     ? "hair"
                     : flowParams["wl-flow"]
-                    ? "wl"
-                    : flowParams["mh-flow"]
-                    ? "mh"
-                    : flowParams["skincare-flow"]
-                    ? "skincare"
-                    : "general")
+                      ? "wl"
+                      : flowParams["mh-flow"]
+                        ? "mh"
+                        : flowParams["skincare-flow"]
+                          ? "skincare"
+                          : "general")
               );
             } else if (result.status === "error") {
               toast.error(result.message || "Failed to add products to cart.");
@@ -859,7 +858,7 @@ const CheckoutPageContent = () => {
         logger.log("Form validation failed:", validationResult.errors);
         toast.error(
           validationResult.formattedMessage ||
-            "Please check your form data and try again."
+          "Please check your form data and try again."
         );
         setSubmitting(false);
         return;
@@ -876,20 +875,20 @@ const CheckoutPageContent = () => {
 
       // Check Quebec restriction for Zonnic products
       if (cartItems && cartItems.items) {
-        const shippingProvince = formData.shipping_address.state;
-        const billingProvince = formData.billing_address.state;
+        // const shippingProvince = formData.shipping_address.state;
+        // const billingProvince = formData.billing_address.state;
 
-        const restriction = checkQuebecZonnicRestriction(
-          cartItems.items,
-          shippingProvince,
-          billingProvince
-        );
+        // const restriction = checkQuebecZonnicRestriction(
+        //   cartItems.items,
+        //   shippingProvince,
+        //   billingProvince
+        // );
 
-        if (restriction.blocked) {
-          setShowQuebecPopup(true);
-          setSubmitting(false);
-          return;
-        }
+        // if (restriction.blocked) {
+        //   setShowQuebecPopup(true);
+        //   setSubmitting(false);
+        //   return;
+        // }
 
         // Check age restriction for Zonnic products
         if (hasZonnicProducts(cartItems.items)) {
@@ -958,29 +957,29 @@ const CheckoutPageContent = () => {
           },
           shipping_address: useShippingAddress
             ? {
-                first_name: formData.shipping_address.first_name || "",
-                last_name: formData.shipping_address.last_name || "",
-                company: formData.shipping_address.company || "",
-                address_1: formData.shipping_address.address_1 || "",
-                address_2: formData.shipping_address.address_2 || "",
-                city: formData.shipping_address.city || "",
-                state: formData.shipping_address.state || "",
-                postcode: formData.shipping_address.postcode || "",
-                country: formData.shipping_address.country || "US",
-                phone: formData.shipping_address.phone || "",
-              }
+              first_name: formData.shipping_address.first_name || "",
+              last_name: formData.shipping_address.last_name || "",
+              company: formData.shipping_address.company || "",
+              address_1: formData.shipping_address.address_1 || "",
+              address_2: formData.shipping_address.address_2 || "",
+              city: formData.shipping_address.city || "",
+              state: formData.shipping_address.state || "",
+              postcode: formData.shipping_address.postcode || "",
+              country: formData.shipping_address.country || "US",
+              phone: formData.shipping_address.phone || "",
+            }
             : {
-                first_name: formData.billing_address.first_name || "",
-                last_name: formData.billing_address.last_name || "",
-                company: formData.billing_address.company || "",
-                address_1: formData.billing_address.address_1 || "",
-                address_2: formData.billing_address.address_2 || "",
-                city: formData.billing_address.city || "",
-                state: formData.billing_address.state || "",
-                postcode: formData.billing_address.postcode || "",
-                country: formData.billing_address.country || "US",
-                phone: formData.billing_address.phone || "",
-              },
+              first_name: formData.billing_address.first_name || "",
+              last_name: formData.billing_address.last_name || "",
+              company: formData.billing_address.company || "",
+              address_1: formData.billing_address.address_1 || "",
+              address_2: formData.billing_address.address_2 || "",
+              city: formData.billing_address.city || "",
+              state: formData.billing_address.state || "",
+              postcode: formData.billing_address.postcode || "",
+              country: formData.billing_address.country || "US",
+              phone: formData.billing_address.phone || "",
+            },
         };
 
         const updateResponse = await fetch("/api/cart/update-customer", {
@@ -1142,8 +1141,8 @@ const CheckoutPageContent = () => {
         cardType: selectedCard
           ? ""
           : formData.payment_data.find(
-              (d) => d.key === "wc-bambora-credit-card-card-type"
-            )?.value,
+            (d) => d.key === "wc-bambora-credit-card-card-type"
+          )?.value,
         cardExpMonth: selectedCard ? "" : expiry.slice(0, 2),
         cardExpYear: selectedCard ? "" : expiry.slice(3),
         cardCVD: selectedCard ? "" : cvc,
@@ -1161,8 +1160,8 @@ const CheckoutPageContent = () => {
           cartItems.totals && cartItems.totals.total_price
             ? parseFloat(cartItems.totals.total_price) / 100
             : cartItems.totals && cartItems.totals.total
-            ? parseFloat(cartItems.totals.total.replace(/[^0-9.]/g, ""))
-            : 0,
+              ? parseFloat(cartItems.totals.total.replace(/[^0-9.]/g, ""))
+              : 0,
 
         // ED Flow parameter
         isEdFlow: isEdFlow,
@@ -1531,8 +1530,7 @@ const CheckoutPageContent = () => {
           // Success! Redirect to order received page
           toast.success("Order placed successfully!");
           router.push(
-            `/checkout/order-received/${orderId}?key=${orderKey}${
-              buildFlowQueryString() ? buildFlowQueryString() : ""
+            `/checkout/order-received/${orderId}?key=${orderKey}${buildFlowQueryString() ? buildFlowQueryString() : ""
             }`
           );
           return;
@@ -1602,8 +1600,7 @@ const CheckoutPageContent = () => {
         }
 
         router.push(
-          `/checkout/order-received/${order_id}?key=${order_key}${
-            buildFlowQueryString() ? buildFlowQueryString() : ""
+          `/checkout/order-received/${order_id}?key=${order_key}${buildFlowQueryString() ? buildFlowQueryString() : ""
           }`
         );
       }
