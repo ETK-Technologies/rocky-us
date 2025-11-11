@@ -16,13 +16,13 @@ const coverCards = [
       "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/New%20Home%20Page/hero-2.webp",
     link: "/body-optimization",
   },
-  {
-    title: "Mental Health",
-    description: "Your Mental Health Matters",
-    image:
-      "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/New%20Home%20Page/hero-3.webp",
-    link: "/mental-health",
-  },
+  // {
+  //   title: "Mental Health",
+  //   description: "Your Mental Health Matters",
+  //   image:
+  //     "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/New%20Home%20Page/hero-3.webp",
+  //   link: "/mental-health",
+  // },
   {
     title: "Hair Loss",
     description: "Stop Hair Loss In Its Tracks",
@@ -30,18 +30,18 @@ const coverCards = [
       "https://myrocky.b-cdn.net/WP%20Images/Global%20Images/New%20Home%20Page/hero-4.webp",
     link: "/hair",
   },
-  {
-    title: "Smoking Cessation",
-    description: "A New Way To Quit",
-    image: "https://myrocky.b-cdn.net/WP%20Images/Homepage/zonnic-hands.png",
-    link: "/product/zonnic",
-  },
-  {
-    title: "Recovery",
-    description: "A Smarter Way To Recover",
-    image: "https://myrocky.b-cdn.net/WP%20Images/dhm/DHMBlendPP.png?v=1",
-    link: "/product/dhm-blend",
-  },
+  // {
+  //   title: "Smoking Cessation",
+  //   description: "A New Way To Quit",
+  //   image: "https://myrocky.b-cdn.net/WP%20Images/Homepage/zonnic-hands.png",
+  //   link: "/product/zonnic",
+  // },
+  // {
+  //   title: "Recovery",
+  //   description: "A Smarter Way To Recover",
+  //   image: "https://myrocky.b-cdn.net/WP%20Images/dhm/DHMBlendPP.png?v=1",
+  //   link: "/product/dhm-blend",
+  // },
 ];
 
 const Categories = () => {
@@ -54,7 +54,7 @@ const Categories = () => {
         made easy, quick & discreet
       </h2>
 
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-2 lg:gap-4 my-8 lg:my-14">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-4 my-8 lg:my-14 justify-center items-center">
         {coverCards &&
           coverCards.map((card) => {
             return (
