@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { logger } from "@/utils/devLogger";
 import { toast } from "react-toastify";
 
@@ -19,6 +19,7 @@ const PostCanadaAddressAutocomplete = ({
   const [inputValue, setInputValue] = useState(value || "");
   const [error, setError] = useState(null);
   const wrapperRef = useRef(null);
+  const debounceTimeoutRef = useRef(null);
 
   // Update local state when prop value changes
   useEffect(() => {
@@ -164,7 +165,6 @@ const PostCanadaAddressAutocomplete = ({
       } else if (data.address) {
         const address = data.address;
 
-        // Format address for our form
         const formattedAddress = {
           address_1: address.street || "",
           address_2: address.unit || "",
@@ -173,16 +173,14 @@ const PostCanadaAddressAutocomplete = ({
           postcode: address.postalCode || "",
         };
 
-        logger.log("Formatted address:", formattedAddress);
+        const streetValue = address.street || "";
+        setInputValue(streetValue);
 
         if (onAddressSelected) {
           onAddressSelected(formattedAddress);
         }
-
-        // Update the input value
-        setInputValue(address.street || "");
       } else {
-        logger.log("No address in response:", data);
+        logger.log("❌ No address in response:", data);
       }
     } catch (err) {
       logger.error("Error retrieving address details:", err);
@@ -255,82 +253,45 @@ const PostCanadaAddressAutocomplete = ({
     }
   };
 
+  // Debounced fetch suggestions function
+  const debouncedFetchSuggestions = useCallback((searchTerm) => {
+    // Clear any existing timeout
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+
+    // Set a new timeout to fetch suggestions after 300ms delay
+    debounceTimeoutRef.current = setTimeout(() => {
+      fetchSuggestions(searchTerm);
+    }, 300);
+  }, []);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Handle input change
   const handleInputChange = (e) => {
     const newValue = e.target.value;
     setInputValue(newValue);
 
-    // Call the parent onChange handler
-    if (onChange) {
-      onChange({
-        target: {
-          name,
-          value: newValue,
-        },
-      });
-    }
-
-    // Fetch suggestions for the new input value
-    fetchSuggestions(newValue);
+    // Use debounced fetch to avoid calling API on every keystroke
+    debouncedFetchSuggestions(newValue);
     setShowSuggestions(true);
   };
 
   // Handle suggestion selection
   const handleSelectSuggestion = (suggestion) => {
-    logger.log("Selected suggestion:", suggestion);
+    logger.log("🏠 Selected suggestion:", suggestion);
+    logger.log("🏠 Suggestion formattedAddress:", suggestion.formattedAddress);
+    logger.log("🏠 Suggestion ID:", suggestion.id);
 
-    // Parse the address from the formatted address string
-    const parseAddressFromSuggestion = (suggestion) => {
-      const formattedAddress = suggestion.formattedAddress;
-      const description = suggestion.originalData?.Description || "";
-
-      logger.log("Parsing address from:", formattedAddress);
-      logger.log("Description:", description);
-
-      // Parse the description which contains "City, Province, PostalCode"
-      const parts = description.split(",").map((part) => part.trim());
-
-      if (parts.length >= 3) {
-        const city = parts[0];
-        const province = parts[1];
-        // Clean the postal code by removing any text after " - " (e.g., "L4W 0G7 - 22 Addresses" becomes "L4W 0G7")
-        const postalCodeRaw = parts[2];
-        const postalCode = postalCodeRaw.split(" - ")[0].trim();
-
-        // Extract street address from the formatted address
-        const streetMatch = formattedAddress.match(/^([^,]+),/);
-        const street = streetMatch ? streetMatch[1].trim() : "";
-
-        const parsedAddress = {
-          address_1: street,
-          address_2: "",
-          city: city,
-          state: province,
-          postcode: postalCode,
-        };
-
-        logger.log("Parsed address:", parsedAddress);
-        return parsedAddress;
-      }
-
-      // Fallback to API call if parsing fails
-      return null;
-    };
-
-    // Try to parse from suggestion first
-    const parsedAddress = parseAddressFromSuggestion(suggestion);
-
-    if (parsedAddress) {
-      // Use parsed address directly
-      if (onAddressSelected) {
-        onAddressSelected(parsedAddress);
-      }
-      setInputValue(parsedAddress.address_1);
-      setShowSuggestions(false);
-    } else {
-      // Fallback to API call
-      getAddressDetails(suggestion.id);
-    }
+    getAddressDetails(suggestion.id);
   };
 
   return (

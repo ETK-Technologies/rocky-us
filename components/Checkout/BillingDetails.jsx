@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import FormInput from "./FormInput";
 import DOBInput from "../shared/DOBInput";
 import PostCanadaAddressAutocomplete from "./PostCanada/PostCanadaAddressAutocomplete";
@@ -8,17 +8,46 @@ import { US_STATES_WITH_CODES, PHASE_1_STATES } from "@/lib/constants/usStates";
 
 const BillingDetails = ({
   formData,
+  setFormData,
   handleBillingAddressChange,
   isUpdatingShipping,
   onAgeValidation,
   onAgeValidationReset,
   cartItems,
+  onProvinceChange,
 }) => {
   logger.log("BillingDetails props:", {
     onAgeValidation,
     onAgeValidationReset,
     cartItems,
   });
+
+  const addressSelectedRef = useRef(false);
+  const previousStateRef = useRef(formData.billing_address.state);
+  const isInitialMount = useRef(true);
+
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    if (addressSelectedRef.current && formData.billing_address.state) {
+      const currentState = formData.billing_address.state;
+      const previousState = previousStateRef.current;
+
+      if (currentState !== previousState) {
+        if (onProvinceChange) {
+          onProvinceChange(currentState, "billing", false);
+        }
+
+        previousStateRef.current = currentState;
+        addressSelectedRef.current = false;
+      }
+    } else {
+      previousStateRef.current = formData.billing_address.state;
+    }
+  }, [formData.billing_address.state, formData.billing_address.address_1, onProvinceChange]);
   // Handle date change in the date picker with real-time age validation
   const handleDateChange = (value) => {
     logger.log("handleDateChange called with value:", value);
@@ -78,20 +107,36 @@ const BillingDetails = ({
     }
   };
 
-  // Handle address selection from address autocomplete
   const handleAddressSelected = (address) => {
-    // Update each address field individually, marking as from autocomplete
-    Object.entries(address).forEach(([field, value]) => {
-      handleBillingAddressChange(
-        {
-          target: {
-            name: field,
-            value: value,
-          },
+    if (!address.address_1 || address.address_1.trim() === "") {
+      logger.error("❌ ERROR: address_1 is empty or invalid!", address);
+      return;
+    }
+
+    const addressUpdate = {
+      address_1: String(address.address_1).trim(),
+      address_2: address.address_2 || "",
+      city: address.city || "",
+      state: address.state || "",
+      postcode: address.postcode || "",
+      country: address.country || "US",
+    };
+
+    setFormData((prev) => {
+      const updatedFormData = {
+        ...prev,
+        billing_address: {
+          ...prev.billing_address,
+          ...addressUpdate,
         },
-        true
-      ); // true indicates this is from autocomplete
+      };
+
+      return updatedFormData;
     });
+
+    if (address.state) {
+      addressSelectedRef.current = true;
+    }
   };
 
   return (
@@ -185,9 +230,8 @@ const BillingDetails = ({
               id="state"
               name="state"
               disabled={isUpdatingShipping}
-              className={`w-full bg-white rounded-[8px] border border-solid border-[#E2E2E1] px-[16px] h-[44px] focus:outline-none focus:border-gray-500 appearance-none ${
-                isUpdatingShipping ? "opacity-50 cursor-not-allowed" : ""
-              }`}
+              className={`w-full bg-white rounded-[8px] border border-solid border-[#E2E2E1] px-[16px] h-[44px] focus:outline-none focus:border-gray-500 appearance-none ${isUpdatingShipping ? "opacity-50 cursor-not-allowed" : ""
+                }`}
             >
               <option value="" disabled="">
                 Select your state
