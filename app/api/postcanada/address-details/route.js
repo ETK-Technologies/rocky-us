@@ -102,8 +102,20 @@ export async function POST(request) {
     // Transform the address data with proper capitalization
     // AddressComplete API field mapping (works for both Canada and USA)
     const stateCode = addressData.ProvinceCode || addressData.Province || "";
+    
+    // Log the raw Line1 data before processing
+    logger.log("🏠 Raw Line1 from API:", `"${addressData.Line1}"`);
+    logger.log("🏠 Raw Line1 length:", addressData.Line1?.length || 0);
+    
+    // Process the street address
+    const rawStreet = addressData.Line1 || "";
+    const processedStreet = toTitleCase(rawStreet);
+    
+    logger.log("🏠 Street after toTitleCase:", `"${processedStreet}"`);
+    logger.log("🏠 Processed street length:", processedStreet?.length || 0);
+    
     const address = {
-      street: toTitleCase(addressData.Line1 || ""),
+      street: processedStreet,
       unit: toTitleCase(addressData.Line2 || ""),
       city: toTitleCase(addressData.City || ""),
       // For USA: uses ProvinceName/Province for state
@@ -115,7 +127,8 @@ export async function POST(request) {
       country: addressData.CountryIso2 || addressData.Country || "",
     };
 
-    logger.log("Transformed address:", address);
+    logger.log("🏠 Final transformed address:", address);
+    logger.log("🏠 Final street field:", `"${address.street}"`);
     logger.log("State code:", stateCode);
 
     // Validate that the address is in a supported state (for USA addresses)

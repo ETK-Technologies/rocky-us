@@ -36,6 +36,8 @@ import { getAwinFromUrlOrStorage } from "@/utils/awin";
 import StripeElementsPayment from "./StripeElementsPayment";
 import { Elements, useStripe } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
+import { useAddressManager } from "@/lib/hooks/useAddressManager";
+import { debugAddressData } from "@/utils/addressDebugger";
 
 // Load Stripe outside component to avoid recreating on every render
 const stripePromise = loadStripe(
@@ -113,6 +115,14 @@ const CheckoutPageContent = () => {
     hasErrors,
     getFieldError,
   } = useCheckoutValidation();
+
+  // Initialize address manager hook
+  const {
+    isLoadingAddresses,
+    populateAddressData,
+    saveAddressData,
+    clearStoredAddresses,
+  } = useAddressManager();
   const [formData, setFormData] = useState({
     additional_fields: [],
     shipping_address: {},
@@ -198,6 +208,11 @@ const CheckoutPageContent = () => {
     addressType = "billing",
     shouldClearFields = true
   ) => {
+    logger.log("🔄 HANDLE PROVINCE CHANGE CALLED");
+    logger.log("newProvince:", newProvince);
+    logger.log("addressType:", addressType);
+    logger.log("shouldClearFields:", shouldClearFields);
+    logger.log("Current formData.billing_address.address_1:", formData.billing_address?.address_1);
     if (cartItems && cartItems.items) {
       // const restriction = checkQuebecZonnicRestriction(
       //   cartItems.items,
@@ -349,26 +364,53 @@ const CheckoutPageContent = () => {
 
       // Also update form data to sync UI only if we should clear fields
       if (shouldClearFields) {
-        setFormData((prev) => ({
-          ...prev,
-          billing_address: {
-            ...prev.billing_address,
-            ...(addressType === "billing"
-              ? {
-                address_1: "",
-                address_2: "",
-                city: "",
-                postcode: "",
-                country: "US",
-              }
-              : {}),
-            state:
-              addressType === "billing"
-                ? newProvince
-                : prev.billing_address.state || newProvince,
-          },
-          shipping_address: addressData,
-        }));
+        logger.log("🚨 CLEARING FIELDS - This might be causing address truncation!");
+        logger.log("shouldClearFields:", shouldClearFields);
+        logger.log("addressType:", addressType);
+        logger.log("Current billing address_1 before clearing:", formData.billing_address?.address_1);
+        logger.log("🚨 WARNING: This will clear the address fields!");
+
+        // IMPORTANT: Only clear fields if we're not in the middle of an address autocomplete selection
+        // Check if the current address looks like it was just populated (has meaningful data)
+        const hasRecentAddressData = formData.billing_address?.address_1 &&
+          formData.billing_address?.city &&
+          formData.billing_address?.postcode;
+
+        if (hasRecentAddressData) {
+          logger.log("🛡️ PREVENTING FIELD CLEARING - Recent address data detected!");
+          logger.log("🛡️ Keeping existing address data intact");
+          return; // Don't clear fields if we have recent address data
+        }
+
+        setFormData((prev) => {
+          const updatedData = {
+            ...prev,
+            billing_address: {
+              ...prev.billing_address,
+              ...(addressType === "billing"
+                ? {
+                  address_1: "",
+                  address_2: "",
+                  city: "",
+                  postcode: "",
+                  country: "US",
+                }
+                : {}),
+              state:
+                addressType === "billing"
+                  ? newProvince
+                  : prev.billing_address.state || newProvince,
+            },
+            shipping_address: addressData,
+          };
+
+          logger.log("FormData after clearing fields:", {
+            billing_address_1: updatedData.billing_address.address_1,
+            shipping_address_1: updatedData.shipping_address.address_1,
+          });
+
+          return updatedData;
+        });
       }
 
       // Log the customer data being sent
@@ -376,6 +418,16 @@ const CheckoutPageContent = () => {
         "Sending customer data to update-customer API:",
         JSON.stringify(customerData, null, 2)
       );
+
+      // Specifically log the address_1 field to debug truncation
+      logger.log("=== ADDRESS DEBUG ===");
+      logger.log("Billing address_1 being sent:", `"${customerData.billing_address.address_1}"`);
+      logger.log("Billing address_1 length:", customerData.billing_address.address_1?.length || 0);
+      logger.log("Shipping address_1 being sent:", `"${customerData.shipping_address.address_1}"`);
+      logger.log("Shipping address_1 length:", customerData.shipping_address.address_1?.length || 0);
+      logger.log("FormData billing address_1:", `"${formData.billing_address.address_1}"`);
+      logger.log("FormData shipping address_1:", `"${formData.shipping_address.address_1}"`);
+      logger.log("=== END ADDRESS DEBUG ===");
 
       // Call the update customer API
       const response = await fetch("/api/cart/update-customer", {
@@ -527,6 +579,55 @@ const CheckoutPageContent = () => {
       return null;
     }
   };
+
+  // Effect to save address data when formData changes
+  useEffect(() => {
+    if (formData.billing_address || formData.shipping_address) {
+      saveAddressData(formData.billing_address, formData.shipping_address);
+    }
+  }, [formData.billing_address, formData.shipping_address, saveAddressData]);
+
+  // Effect to populate address data after initial load
+  useEffect(() => {
+    // Only run this after the initial cart and profile data have been loaded
+    if (cartItems && !isProcessingUrlParams && !isLoadingAddresses) {
+      const timer = setTimeout(async () => {
+        logger.log("=== POPULATING ADDRESS DATA WITH HOOK ===");
+        logger.log("Current formData before population:", {
+          billing_address_1: formData.billing_address?.address_1,
+          billing_city: formData.billing_address?.city,
+          billing_postcode: formData.billing_address?.postcode,
+          billing_date_of_birth: formData.billing_address?.date_of_birth,
+        });
+
+        const updatedFormData = await populateAddressData(formData);
+
+        // Use deep comparison to check if data actually changed
+        const hasChanges = JSON.stringify(updatedFormData) !== JSON.stringify(formData);
+
+        if (hasChanges) {
+          logger.log("✅ FormData will be updated with address data:", {
+            billing_address_1: updatedFormData.billing_address?.address_1,
+            billing_city: updatedFormData.billing_address?.city,
+            billing_postcode: updatedFormData.billing_address?.postcode,
+            billing_date_of_birth: updatedFormData.billing_address?.date_of_birth,
+          });
+          setFormData(updatedFormData);
+
+          // Debug localStorage after update
+          setTimeout(() => {
+            debugAddressData();
+          }, 500);
+        } else {
+          logger.log("ℹ️ No address data changes detected");
+          // Still debug to see what's in localStorage
+          debugAddressData();
+        }
+      }, 1000); // Small delay to ensure other data loading is complete
+
+      return () => clearTimeout(timer);
+    }
+  }, [cartItems, isProcessingUrlParams, isLoadingAddresses]);
 
   // Function to fetch saved payment cards
   const fetchSavedCards = async () => {
@@ -825,7 +926,15 @@ const CheckoutPageContent = () => {
         await fetchUserProfile();
         logger.log("=== PROFILE DATA LOADED ===");
 
-        // STEP 3: Load saved cards (doesn't affect form data)
+        // STEP 3: Ensure address data is populated from all available sources
+        logger.log("=== ENSURING ADDRESS DATA POPULATED ===");
+        const updatedFormDataWithAddresses = await populateAddressData(formData);
+        if (updatedFormDataWithAddresses !== formData) {
+          setFormData(updatedFormDataWithAddresses);
+        }
+        logger.log("=== ADDRESS DATA CHECK COMPLETED ===");
+
+        // STEP 4: Load saved cards (doesn't affect form data)
         await fetchSavedCards();
       } catch (error) {
         logger.error("Error loading checkout data:", error);

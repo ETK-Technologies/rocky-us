@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { logger } from "@/utils/devLogger";
 
 const PostCanadaAddressAutocomplete = ({
@@ -17,6 +17,7 @@ const PostCanadaAddressAutocomplete = ({
   const [inputValue, setInputValue] = useState(value || "");
   const [error, setError] = useState(null);
   const wrapperRef = useRef(null);
+  const debounceTimeoutRef = useRef(null);
 
   // Update local state when prop value changes
   useEffect(() => {
@@ -153,6 +154,28 @@ const PostCanadaAddressAutocomplete = ({
     }
   };
 
+  // Debounced fetch suggestions function
+  const debouncedFetchSuggestions = useCallback((searchTerm) => {
+    // Clear any existing timeout
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+
+    // Set a new timeout to fetch suggestions after 300ms delay
+    debounceTimeoutRef.current = setTimeout(() => {
+      fetchSuggestions(searchTerm);
+    }, 300);
+  }, []);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Handle input change
   const handleInputChange = (e) => {
     const newValue = e.target.value;
@@ -168,8 +191,8 @@ const PostCanadaAddressAutocomplete = ({
       });
     }
 
-    // Fetch suggestions for the new input value
-    fetchSuggestions(newValue);
+    // Use debounced fetch to avoid calling API on every keystroke
+    debouncedFetchSuggestions(newValue);
     setShowSuggestions(true);
   };
 
