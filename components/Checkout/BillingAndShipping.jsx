@@ -3,6 +3,7 @@ import ShippingAddress from "./ShippingAddress";
 import OrderNotes from "./OrderNotes";
 import SelectDelivery from "./SelectDelivery";
 import Link from "next/link";
+import { logger } from "@/utils/devLogger";
 
 const BillingAndShipping = ({
   setFormData,
@@ -14,14 +15,41 @@ const BillingAndShipping = ({
   onAgeValidationReset,
 }) => {
   const handleBillingAddressChange = (e, fromAutocomplete = false) => {
+    // Debug logging for address changes
+    if (e.target.name === "address_1") {
+      logger.log("=== BILLING ADDRESS_1 CHANGE ===");
+      logger.log("Field name:", e.target.name);
+      logger.log("New value:", `"${e.target.value}"`);
+      logger.log("Value length:", e.target.value?.length || 0);
+      logger.log("From autocomplete:", fromAutocomplete);
+
+      // Additional check: if value is very short and we have existing longer address, warn about potential issue
+      const currentAddress = formData.billing_address?.address_1 || "";
+      if (currentAddress.length > 5 && e.target.value.length < 3 && !fromAutocomplete) {
+        logger.warn("⚠️ WARNING: Short address value detected!");
+        logger.warn("⚠️ Current address:", `"${currentAddress}"`, "Length:", currentAddress.length);
+        logger.warn("⚠️ New value:", `"${e.target.value}"`, "Length:", e.target.value.length);
+        logger.warn("⚠️ This might be user typing or a bug!");
+      }
+
+      logger.log("=== END BILLING ADDRESS_1 CHANGE ===");
+    }
+
     setFormData((prev) => {
-      return {
+      const updatedFormData = {
         ...prev,
         billing_address: {
           ...prev.billing_address,
           [e.target.name]: e.target.value,
         },
       };
+
+      // Debug log the updated form data for address_1 changes
+      if (e.target.name === "address_1") {
+        logger.log("Updated billing_address in formData:", updatedFormData.billing_address.address_1);
+      }
+
+      return updatedFormData;
     });
 
     // Check for Quebec restriction when province changes
@@ -127,11 +155,13 @@ const BillingAndShipping = ({
       <div className="p-4 md:p-6 lg:w-[512px] rounded-[16px] border border-solid border-[#E2E2E1] mb-4">
         <BillingDetails
           formData={formData}
+          setFormData={setFormData}
           handleBillingAddressChange={handleBillingAddressChange}
           isUpdatingShipping={isUpdatingShipping}
           onAgeValidation={onAgeValidation}
           onAgeValidationReset={onAgeValidationReset}
           cartItems={cartItems}
+          onProvinceChange={onProvinceChange}
         />
         <ShippingAddress
           handleAnotherShippingAddressChange={

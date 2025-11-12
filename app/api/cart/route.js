@@ -107,6 +107,40 @@ export async function GET() {
       responseData.items = responseData.items || [];
     }
 
+    // Try to fetch and include user address data if not already present in cart
+    if (!responseData.billing_address && !responseData.shipping_address) {
+      try {
+        const userId = cookieStore.get("userId");
+        if (userId) {
+          // Fetch customer data to get billing and shipping addresses
+          const customerResponse = await axios.get(
+            `${BASE_URL}/wp-json/wc/v3/customers/${userId.value}`,
+            {
+              headers: {
+                Authorization: process.env.ADMIN_TOKEN || encodedCredentials.value,
+              },
+            }
+          );
+
+          const customerData = customerResponse.data;
+          if (customerData.billing || customerData.shipping) {
+            logger.log("Adding customer address data to cart response");
+            
+            // Add billing and shipping addresses to cart response
+            if (customerData.billing) {
+              responseData.billing_address = customerData.billing;
+            }
+            if (customerData.shipping) {
+              responseData.shipping_address = customerData.shipping;
+            }
+          }
+        }
+      } catch (addressError) {
+        logger.log("Could not fetch customer address data:", addressError.message);
+        // Continue without address data - not a critical error
+      }
+    }
+
     return NextResponse.json(responseData);
   } catch (error) {
     logger.error("Error getting cart:", error.response?.data || error.message);
