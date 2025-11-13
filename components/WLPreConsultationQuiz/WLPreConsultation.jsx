@@ -411,12 +411,13 @@ const WeightQuestionnaire = () => {
           setIsAddingToCart(false);
 
           // Redirect to checkout
-          if (result.checkoutUrl) {
-            window.location.href = result.checkoutUrl;
-          } else {
-            // Fallback to standard checkout URL
-            window.location.href = "/checkout";
-          }
+          // Use redirectUrl (for authenticated) or checkoutUrl (backwards compat), or generate URL
+          const checkoutUrl =
+            result.redirectUrl ||
+            result.checkoutUrl ||
+            "/checkout?wl-flow=1" +
+              (result.authenticationRequired === false ? "&onboarding=1" : "");
+          window.location.href = checkoutUrl;
         } else {
           logger.error("❌ Failed to add product to cart:", result.error);
           setIsAddingToCart(false);
@@ -491,12 +492,13 @@ const WeightQuestionnaire = () => {
           setIsAddingToCart(false);
 
           // Redirect to checkout
-          if (result.checkoutUrl) {
-            window.location.href = result.checkoutUrl;
-          } else {
-            // Fallback to standard checkout URL
-            window.location.href = "/checkout";
-          }
+          // Use redirectUrl (for authenticated) or checkoutUrl (backwards compat), or generate URL
+          const checkoutUrl =
+            result.redirectUrl ||
+            result.checkoutUrl ||
+            "/checkout?wl-flow=1" +
+              (result.authenticationRequired === false ? "&onboarding=1" : "");
+          window.location.href = checkoutUrl;
         } else {
           logger.error("❌ Failed to add Ozempic to cart:", result.error);
           setIsAddingToCart(false);
@@ -553,12 +555,13 @@ const WeightQuestionnaire = () => {
           setIsAddingToCart(false);
 
           // Redirect to checkout
-          if (result.checkoutUrl) {
-            window.location.href = result.checkoutUrl;
-          } else {
-            // Fallback to standard checkout URL
-            window.location.href = "/checkout";
-          }
+          // Use redirectUrl (for authenticated) or checkoutUrl (backwards compat), or generate URL
+          const checkoutUrl =
+            result.redirectUrl ||
+            result.checkoutUrl ||
+            "/checkout?wl-flow=1" +
+              (result.authenticationRequired === false ? "&onboarding=1" : "");
+          window.location.href = checkoutUrl;
         } else {
           logger.error("❌ Failed to add Rybelsus to cart:", result.error);
           setIsAddingToCart(false);
