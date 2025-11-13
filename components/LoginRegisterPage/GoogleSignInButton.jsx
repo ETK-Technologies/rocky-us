@@ -1,167 +1,60 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { logger } from "@/utils/devLogger";
+import { getSessionId } from "@/services/sessionService";
 
 const GoogleSignInButton = ({ onSuccess, onError, disabled, isLoading }) => {
-  const buttonRef = useRef(null);
-  const onSuccessRef = useRef(onSuccess);
-  const onErrorRef = useRef(onError);
-  const [isGoogleLoaded, setIsGoogleLoaded] = useState(false);
-  const initAttempted = useRef(false);
-  const codeClientRef = useRef(null);
-
-  // Keep refs updated with latest callbacks
-  useEffect(() => {
-    onSuccessRef.current = onSuccess;
-    onErrorRef.current = onError;
-  }, [onSuccess, onError]);
-
-  useEffect(() => {
-    // Wait for Google Identity Services library to load
-    const initializeGoogle = () => {
-      if (
-        typeof window !== "undefined" &&
-        window.google?.accounts?.oauth2 &&
-        !initAttempted.current
-      ) {
-        try {
-          const clientId =
-            process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ||
-            "699900977641-9tnb16c0lkeu6acrktirpfu2r90bevhq.apps.googleusercontent.com";
-
-          if (!clientId) {
-            logger.error("Google Client ID is missing");
-            return;
-          }
-
-          // Initialize OAuth2 Code Client - this provides proper popup flow
-          // that works in incognito mode and allows account selection
-          codeClientRef.current = window.google.accounts.oauth2.initCodeClient({
-            client_id: clientId,
-            scope: "openid email profile",
-            ux_mode: "popup",
-            callback: async (response) => {
-              if (response.code) {
-                logger.log("Google authorization code received");
-
-                try {
-                  // Exchange authorization code for ID token
-                  const exchangeResponse = await fetch(
-                    "/api/google-exchange-token",
-                    {
-                      method: "POST",
-                      headers: {
-                        "Content-Type": "application/json",
-                      },
-                      body: JSON.stringify({
-                        code: response.code,
-                      }),
-                    }
-                  );
-
-                  const exchangeData = await exchangeResponse.json();
-
-                  if (exchangeData.id_token) {
-                    logger.log("ID token received from exchange");
-                    onSuccessRef.current({ credential: exchangeData.id_token });
-                  } else {
-                    logger.error(
-                      "Failed to get ID token from exchange:",
-                      exchangeData
-                    );
-                    onErrorRef.current?.();
-                  }
-                } catch (err) {
-                  logger.error("Error exchanging authorization code:", err);
-                  onErrorRef.current?.();
-                }
-              } else if (response.error) {
-                logger.error("Google OAuth error:", response.error);
-                // Don't call onError for user cancellation
-                if (
-                  response.error !== "user_closed_popup" &&
-                  response.error !== "popup_closed_by_user"
-                ) {
-                  onErrorRef.current?.();
-                }
-              }
-            },
-            error_callback: (error) => {
-              logger.error("Google OAuth error callback:", error);
-              onErrorRef.current?.();
-            },
-          });
-
-          initAttempted.current = true;
-          setIsGoogleLoaded(true);
-          logger.log(
-            "Google OAuth Sign-In initialized successfully with Code Client"
-          );
-        } catch (error) {
-          logger.error("Error initializing Google Sign-In:", error);
-        }
-      }
-    };
-
-    // Try to initialize immediately
-    initializeGoogle();
-
-    // If not loaded yet, poll for it
-    const checkInterval = setInterval(() => {
-      if (initAttempted.current) {
-        clearInterval(checkInterval);
-      } else {
-        initializeGoogle();
-      }
-    }, 100);
-
-    // Clean up interval after 5 seconds
-    const timeout = setTimeout(() => {
-      clearInterval(checkInterval);
-      if (!initAttempted.current) {
-        logger.error("Google Sign-In library failed to load");
-      }
-    }, 5000);
-
-    return () => {
-      clearInterval(checkInterval);
-      clearTimeout(timeout);
-    };
-  }, []); // Empty dependency array - initialize only once
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   const handleClick = () => {
-    if (disabled || isLoading) return;
-
-    if (!isGoogleLoaded || !codeClientRef.current) {
-      logger.warn("Google Sign-In not loaded yet");
+    if (disabled || isLoading) {
       return;
     }
 
     try {
-      // Request authorization code with prompt for account selection
-      // This opens a proper OAuth popup that:
-      // 1. Works in incognito mode
-      // 2. Always shows the account chooser
-      codeClientRef.current.requestCode();
+      // Get sessionId from localStorage for guest cart merging
+      const sessionId = getSessionId();
+
+      // Build the OAuth initiation URL
+      let oauthUrl = "/api/auth/google";
+      
+      // Add sessionId to URL if available
+      if (sessionId) {
+        oauthUrl += `?sessionId=${encodeURIComponent(sessionId)}`;
+      }
+
+      // Preserve redirect_to parameter if present
+      const redirectTo = searchParams.get("redirect_to");
+      if (redirectTo) {
+        oauthUrl += sessionId ? "&" : "?";
+        oauthUrl += `redirect_to=${encodeURIComponent(redirectTo)}`;
+      }
+
+      logger.log("Initiating Google OAuth:", oauthUrl);
+
+      // Redirect to our OAuth initiation route
+      // This will redirect to backend, which will redirect to Google,
+      // and eventually come back to our callback route
+      window.location.href = oauthUrl;
     } catch (error) {
-      logger.error("Error triggering Google Sign-In:", error);
-      onErrorRef.current?.();
+      logger.error("Error initiating Google Sign-In:", error);
+      if (onError) {
+        onError();
+      }
     }
   };
 
   return (
     <button
-      ref={buttonRef}
       type="button"
       onClick={handleClick}
-      disabled={disabled || isLoading || !isGoogleLoaded}
+      disabled={disabled || isLoading}
       className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-300 text-gray-700 py-[12.5px] rounded-full hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
     >
       {isLoading ? (
         <span>Signing in...</span>
-      ) : !isGoogleLoaded ? (
-        <span>Loading...</span>
       ) : (
         <>
           <svg

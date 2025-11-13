@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { logger } from "@/utils/devLogger";
 import { usePathname } from "next/navigation";
+import { clearSessionId } from "@/services/sessionService";
 
 const CacheClearer = () => {
   const pathname = usePathname();
@@ -20,15 +21,18 @@ const CacheClearer = () => {
           localStorage.removeItem("userProfileData");
           localStorage.removeItem("cartData");
           localStorage.removeItem("savedCards");
+          localStorage.removeItem("userDetails");
+
+          // Clear sessionId using the session service
+          clearSessionId();
 
           // Clear any other cached data that might be stored
           // You can add more specific items here as needed
 
-          // For comprehensive clearing, you can use this:
-          // localStorage.clear();
-
           // Delete the clearCache cookie itself
           document.cookie = "clearCache=; max-age=0; path=/;";
+
+          logger.log("All cached data and sessionId cleared");
 
           break;
         }

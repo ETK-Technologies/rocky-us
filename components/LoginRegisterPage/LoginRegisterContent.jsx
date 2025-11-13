@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { logger } from "@/utils/devLogger";
 import { useSearchParams, useRouter } from "next/navigation";
 import { toast } from "react-toastify";
+import { clearSessionId } from "@/services/sessionService";
 import Login from "./Login";
 import Register from "./Register";
 
@@ -47,6 +48,9 @@ const LoginRegisterContent = () => {
             localStorage.removeItem("userDetails");
             localStorage.removeItem("userProfileData");
             localStorage.removeItem("cartItems");
+            
+            // Clear sessionId using the session service
+            clearSessionId();
 
             // Mark logout as processed to prevent multiple calls
             setLogoutProcessed(true);

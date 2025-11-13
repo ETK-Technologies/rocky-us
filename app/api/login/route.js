@@ -3,165 +3,159 @@ import axios from "axios";
 import { cookies } from "next/headers";
 import { logger } from "@/utils/devLogger";
 
-const BASE_URL = process.env.BASE_URL;
+const BASE_URL = "https://rocky-be-production.up.railway.app";
 
+/**
+ * POST /api/login
+ * Authenticate user with email and password using the new auth API
+ */
 export async function POST(req) {
   try {
-    const { username, password } = await req.json();
+    const { email, password, sessionId } = await req.json();
 
-    const encodedCredentials = btoa(`${username}:${password}`);
-
-    const response = await axios.post(
-      `${BASE_URL}/wp-json/jwt-auth/v1/token`,
-      {
-        username,
-        password,
-      },
-      {
-        headers: {
-          Authorization: `Basic ${encodedCredentials}`,
-        },
-      }
-    );
-
-    logger.log("Login response:", response.data);
-
-    const { token } = response.data;
-
-    if (!token) {
-      return NextResponse.json(
-        {
-          error: response.data?.message || "Login failed. Please try again.",
-        },
-        { status: 401 }
-      );
-    }
-
-    // Extract user ID from the token
-    const tokenParts = token.split(".");
-    const payload = JSON.parse(atob(tokenParts[1]));
-    const userId = payload.data.user.id;
-
-    // Get user display name and email from response
-    const userDisplayName = response.data.user_display_name || "";
-    const userEmail = response.data.user_email || username;
-
-    // Extract first and last name if available
-    const firstName =
-      response.data.user_firstname || userDisplayName.split(" ")[0] || "";
-    const lastName =
-      response.data.user_lastname ||
-      (userDisplayName.split(" ").length > 1
-        ? userDisplayName.split(" ").slice(1).join(" ")
-        : "");
-    const fullName = `${firstName} ${lastName}`.trim();
-
-    const cookieStore = await cookies();
-    cookieStore.set("authToken", `Basic ${encodedCredentials}`);
-    cookieStore.set("userId", userId);
-    cookieStore.set("userName", fullName);
-    cookieStore.set("userEmail", userEmail);
-    // Store just the first name in displayName to avoid disturbing the design
-    cookieStore.set("displayName", firstName || userDisplayName.split(" ")[0]);
-
-    const authToken = cookieStore.get("authToken");
-
-    if (!authToken) {
+    // Validate required fields
+    if (!email) {
       return NextResponse.json(
         {
           success: false,
-          message: "Not authenticated",
+          error: "Email is required",
         },
-        { status: 401 }
+        { status: 400 }
       );
     }
 
-    const wpResponse = await axios.get(
-      `${BASE_URL}/wp-json/custom/v1/user-profile`,
-      {
-        headers: {
-          Authorization: authToken.value,
+    if (!password) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Password is required",
         },
-      }
-    );
+        { status: 400 }
+      );
+    }
 
-    const phone = wpResponse.data.custom_meta.phone_number;
-    const province = wpResponse.data.custom_meta.province;
-    const dob = wpResponse.data.custom_meta.date_of_birth;
-    cookieStore.set("pn", phone);
-    cookieStore.set("province", province);
-    cookieStore.set("dob", dob);
-
-    // Fetch Stripe customer ID from WooCommerce and save to cookies
     try {
-      const customerResponse = await axios.get(
-        `${BASE_URL}/wp-json/wc/v3/customers/${userId}`,
+      // Prepare request body for new API
+      const requestBody = {
+        email,
+        password,
+      };
+
+      // Include sessionId if provided (for guest cart merging)
+      if (sessionId) {
+        requestBody.sessionId = sessionId;
+      }
+
+      logger.log("Logging in user with new auth API");
+
+      const response = await axios.post(
+        `${BASE_URL}/api/v1/auth/login`,
+        requestBody,
         {
           headers: {
-            Authorization: process.env.ADMIN_TOKEN || authToken.value,
+            "Content-Type": "application/json",
+            accept: "application/json",
           },
         }
       );
 
-      const metaData = customerResponse.data.meta_data || [];
-      const stripeCustomerMeta = metaData.find(
-        (meta) => meta.key === "_stripe_customer_id"
+      const { access_token, refresh_token, user, cart } = response.data;
+
+      // Set up cookies for our Next.js app
+      const cookieStore = await cookies();
+
+      // Store access token
+      if (access_token) {
+        cookieStore.set("authToken", `Bearer ${access_token}`, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          maxAge: 24 * 60 * 60, // 24 hours
+        });
+      }
+
+      // Store refresh token
+      if (refresh_token) {
+        cookieStore.set("refreshToken", refresh_token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          maxAge: 7 * 24 * 60 * 60, // 7 days
+        });
+      }
+
+      // Store user information
+      if (user) {
+        cookieStore.set("userId", user.id);
+        cookieStore.set("userEmail", user.email);
+        cookieStore.set("displayName", user.firstName);
+        cookieStore.set("lastName", user.lastName || "");
+        cookieStore.set("userName", `${user.firstName} ${user.lastName || ""}`.trim());
+        if (user.avatar) {
+          cookieStore.set("userAvatar", user.avatar);
+        }
+      }
+
+      logger.log("User logged in successfully:", {
+        userId: user?.id,
+        email: user?.email,
+        cartMerged: cart?.merged || false,
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: "Login successful",
+        data: {
+          user,
+          cart,
+          access_token,
+          refresh_token,
+        },
+      });
+    } catch (error) {
+      logger.error(
+        "Error logging in with new auth API:",
+        error.response?.data || error.message
       );
 
-      if (stripeCustomerMeta && stripeCustomerMeta.value) {
-        cookieStore.set("stripeCustomerId", stripeCustomerMeta.value);
-        logger.log(
-          "Stripe customer ID saved to cookies:",
-          stripeCustomerMeta.value
+      // Handle specific error responses from the API
+      if (error.response?.status === 401) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Invalid credentials. Please check your email and password.",
+          },
+          { status: 401 }
         );
       }
-    } catch (customerError) {
-      logger.error(
-        "Failed to fetch Stripe customer ID:",
-        customerError.message
-      );
-      // Continue login even if we can't fetch customer ID
-    }
 
-    // Verify the cookies were set correctly
-    const storedUserId = cookieStore.get("userId");
-    if (!storedUserId || storedUserId.value !== userId) {
-      logger.error("Failed to store userId in cookies");
+      if (error.response?.data?.message) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: error.response.data.message,
+          },
+          { status: error.response.status || 400 }
+        );
+      }
+
       return NextResponse.json(
         {
-          error: "Failed to store user session. Please try again.",
+          success: false,
+          error: "Login failed. Please try again.",
         },
         { status: 500 }
       );
     }
-
-    return NextResponse.json({
-      success: true,
-      userId: userId,
-      userDisplayName: firstName || userDisplayName.split(" ")[0],
-    });
   } catch (error) {
-    logger.error("Error logging in:", error.response?.data || error.message);
-
-    // Check for authentication-related error codes from WordPress
-    const errorCode = error.response?.data?.code;
-    const isAuthError =
-      errorCode === "incorrect_password" ||
-      errorCode === "invalid_email" ||
-      errorCode === "invalid_username" ||
-      errorCode === "[jwt_auth] invalid_username" ||
-      errorCode === "[jwt_auth] incorrect_password";
-
-    // Use 401 for authentication errors, otherwise use response status or 500
-    const statusCode = isAuthError ? 401 : error.response?.status || 500;
+    logger.error("Error in login route:", error.message);
 
     return NextResponse.json(
       {
-        error:
-          error.response?.data?.message || "Login failed. Please try again.",
-        code: errorCode, // Include the error code for frontend handling
+        success: false,
+        error: "Login failed. Please try again.",
       },
-      { status: statusCode }
+      { status: 500 }
     );
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { logger } from "@/utils/devLogger";
 import { useSearchParams, useRouter } from "next/navigation";
 import { toast } from "react-toastify";
@@ -16,6 +16,7 @@ import Link from "next/link";
 import { migrateLocalCartToServer } from "@/lib/cart/cartService";
 import GoogleSignInButton from "./GoogleSignInButton";
 import CartMigrationOverlay from "@/components/CartMigrationOverlay";
+import { getSessionId } from "@/services/sessionService";
 
 const LoginContent = ({ setActiveTab, loginRef }) => {
   const searchParams = useSearchParams();
@@ -24,12 +25,12 @@ const LoginContent = ({ setActiveTab, loginRef }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isMigratingCart, setIsMigratingCart] = useState(false);
   const [formData, setFormData] = useState({
-    username: "",
+    email: "",
     password: "",
     rememberme: false,
   });
   const [errors, setErrors] = useState({
-    username: "",
+    email: "",
     password: "",
   });
 
@@ -83,14 +84,14 @@ const LoginContent = ({ setActiveTab, loginRef }) => {
           searchParams.get("ed-flow") === "1"
             ? "ed"
             : searchParams.get("wl-flow") === "1"
-            ? "wl"
-            : searchParams.get("hair-flow") === "1"
-            ? "hair"
-            : searchParams.get("mh-flow") === "1"
-            ? "mh"
-            : searchParams.get("skincare-flow") === "1"
-            ? "skincare"
-            : savedProducts.flowType || "ed"; // Use saved flow type or default to "ed"
+              ? "wl"
+              : searchParams.get("hair-flow") === "1"
+                ? "hair"
+                : searchParams.get("mh-flow") === "1"
+                  ? "mh"
+                  : searchParams.get("skincare-flow") === "1"
+                    ? "skincare"
+                    : savedProducts.flowType || "ed"; // Use saved flow type or default to "ed"
 
         logger.log(
           "Using flow type for direct cart addition after login:",
@@ -127,17 +128,52 @@ const LoginContent = ({ setActiveTab, loginRef }) => {
     return null;
   };
 
+  // Validate individual field
+  const validateField = (name, value) => {
+    let error = "";
+
+    switch (name) {
+      case "email":
+        if (!value.trim()) {
+          error = "Email address is required";
+        } else if (!/\S+@\S+\.\S+/.test(value)) {
+          error = "Please enter a valid email address";
+        }
+        break;
+      case "password":
+        if (!value) {
+          error = "Password is required";
+        }
+        break;
+      default:
+        break;
+    }
+
+    setErrors((prev) => ({
+      ...prev,
+      [name]: error,
+    }));
+
+    return !error;
+  };
+
+  // Handle blur event for field validation
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    validateField(name, value);
+  };
+
   // Validate form before submission
   const validateForm = () => {
     let valid = true;
-    const newErrors = { username: "", password: "" };
+    const newErrors = { email: "", password: "" };
 
     // Validate email
-    if (!formData.username.trim()) {
-      newErrors.username = "Email address is required";
+    if (!formData.email.trim()) {
+      newErrors.email = "Email address is required";
       valid = false;
-    } else if (!/\S+@\S+\.\S+/.test(formData.username)) {
-      newErrors.username = "Please enter a valid email address";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address";
       valid = false;
     }
 
@@ -151,104 +187,265 @@ const LoginContent = ({ setActiveTab, loginRef }) => {
     return valid;
   };
 
-  // Handle Google Sign-In
-  const handleGoogleSuccess = async (credentialResponse) => {
-    setSubmitting(true);
+  // Handle Google OAuth callback (when user returns from OAuth flow)
+  useEffect(() => {
+    const checkGoogleCallback = async () => {
+      const error = searchParams.get("error");
+      const googleOAuthProcessing = searchParams.get("google_oauth") === "processing";
+      const googleAuthSuccess = searchParams.get("google_auth_success") === "true";
 
-    try {
-      const id_token = credentialResponse.credential;
-
-      const res = await fetch("/api/google-login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ id_token }),
-      });
-
-      const data = await res.json();
-
-      logger.log("Google login response:", {
-        status: res.status,
-        data: data || "No data",
-      });
-
-      if (res.ok) {
-        toast.success(
-          data.message ||
-            `Welcome back${
-              data.userDisplayName ? ", " + data.userDisplayName : ""
-            }!`
+      if (error) {
+        logger.error("Google OAuth error:", error);
+        toast.error(
+          error === "oauth_failed"
+            ? "Google sign-in failed. Please try again."
+            : error === "authentication_failed"
+              ? "Authentication failed. Please try again."
+              : decodeURIComponent(error)
         );
-
-        // Migrate any localStorage cart items to the server cart
-        try {
-          logger.log("Starting cart migration process after Google login...");
-          setIsMigratingCart(true);
-          await migrateLocalCartToServer();
-          logger.log("Cart migration completed successfully");
-
-          // Refresh the cart display
-          document.getElementById("cart-refresher")?.click();
-          logger.log("Cart display refreshed after migration");
-
-          // Dispatch a custom event to ensure cart is updated throughout the app
-          const cartUpdatedEvent = new CustomEvent("cart-updated");
-          document.dispatchEvent(cartUpdatedEvent);
-        } catch (migrateError) {
-          logger.error("Error migrating cart items:", migrateError);
-          // Don't block login flow if migration fails
-          setIsMigratingCart(false);
-        }
-        // Note: We don't hide the overlay here for successful migrations
-        // It will stay visible during the redirect delays and disappear when page navigates
-
-        // Handle cross-sell products
-        const redirectPath = await handleCrossSellProducts();
-
-        // Determine final redirect
-        let finalRedirectPath = redirectPath;
-        if (!finalRedirectPath) {
-          if (redirectTo) {
-            try {
-              finalRedirectPath = decodeURIComponent(redirectTo);
-            } catch (e) {
-              logger.error("Error decoding redirectTo URL:", e);
-              finalRedirectPath = redirectTo;
-            }
-          } else {
-            finalRedirectPath = "/";
-          }
-        }
-
-        logger.log(
-          "Final redirect path after Google login:",
-          finalRedirectPath
-        );
-
-        // Add a small delay to ensure the success toast is visible before navigation
-        setTimeout(() => {
-          router.push(finalRedirectPath);
-          setTimeout(() => {
-            router.refresh();
-          }, 300);
-        }, 1500);
-      } else {
-        // Handle error responses
-        let errorMessage =
-          data.error || "Google sign-in failed. Please try again.";
-        toast.error(errorMessage);
-        logger.error("Google login error:", data);
+        // Remove error from URL
+        const newParams = new URLSearchParams(searchParams.toString());
+        newParams.delete("error");
+        router.replace(`/login-register?${newParams.toString()}`);
+        return;
       }
-    } catch (err) {
-      logger.error("Google login exception:", err);
-      toast.error(
-        "An error occurred during Google sign-in. Please try again later."
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  };
+
+      // If we have the success flag, handle post-login tasks and stay on current page
+      // The callback route already redirected us to the target page (home or redirect_to)
+      if (googleAuthSuccess) {
+        logger.log("Google auth success flag detected, handling post-login tasks");
+
+        // Remove the flag from URL
+        const newParams = new URLSearchParams(searchParams.toString());
+        newParams.delete("google_auth_success");
+        const cleanUrl = window.location.pathname + (newParams.toString() ? `?${newParams.toString()}` : '');
+        router.replace(cleanUrl);
+
+        // Handle post-login tasks in background
+        (async () => {
+          // Fetch user profile
+          try {
+            const profileResponse = await fetch("/api/profile");
+            if (profileResponse.ok) {
+              const profileData = await profileResponse.json();
+              if (profileData.success) {
+                logger.log("User profile fetched after Google login");
+              }
+            }
+          } catch (profileError) {
+            logger.error("Error fetching profile:", profileError);
+          }
+
+          // Show success message
+          toast.success("You logged in successfully with Google");
+
+          // Migrate cart
+          try {
+            logger.log("Starting cart migration...");
+            setIsMigratingCart(true);
+            await migrateLocalCartToServer();
+            document.getElementById("cart-refresher")?.click();
+            const cartUpdatedEvent = new CustomEvent("cart-updated");
+            document.dispatchEvent(cartUpdatedEvent);
+          } catch (migrateError) {
+            logger.error("Error migrating cart:", migrateError);
+            setIsMigratingCart(false);
+          }
+
+          // Handle cross-sell products - if there are any, redirect to checkout
+          const redirectPath = await handleCrossSellProducts();
+          if (redirectPath) {
+            logger.log("Cross-sell products found, redirecting to:", redirectPath);
+            setTimeout(() => {
+              router.push(redirectPath);
+              setTimeout(() => router.refresh(), 300);
+            }, 1500);
+          }
+        })();
+
+        return;
+      }
+
+      // Check if we're waiting for Google OAuth processing
+      if (googleOAuthProcessing) {
+        logger.log("Google OAuth processing - checking for tokens...");
+
+        // Poll for authToken cookie and verify authentication
+        let attempts = 0;
+        const maxAttempts = 20; // Increased to 20 attempts (10 seconds total)
+        const checkInterval = setInterval(async () => {
+          attempts++;
+
+          // Check for authToken cookie
+          const hasAuthToken = document.cookie.includes("authToken=");
+
+          // Also verify by calling the profile API
+          let isAuthenticated = false;
+          if (hasAuthToken) {
+            try {
+              const profileResponse = await fetch("/api/profile");
+              isAuthenticated = profileResponse.ok;
+            } catch (e) {
+              // API call failed, but cookie exists - might still be valid
+              isAuthenticated = hasAuthToken;
+            }
+          }
+
+          if (isAuthenticated || attempts >= maxAttempts) {
+            clearInterval(checkInterval);
+
+            if (isAuthenticated) {
+              logger.log("Authentication verified, proceeding with login flow");
+              // Remove the processing parameter
+              const newParams = new URLSearchParams(searchParams.toString());
+              newParams.delete("google_oauth");
+              router.replace(`/login-register?${newParams.toString()}`);
+
+              // Now trigger the Google login success flow directly
+              // This will handle cart migration, cross-sell, and redirect
+              setTimeout(async () => {
+                // Fetch user profile
+                try {
+                  const profileResponse = await fetch("/api/profile");
+                  if (profileResponse.ok) {
+                    const profileData = await profileResponse.json();
+                    if (profileData.success) {
+                      logger.log("User profile fetched after Google login");
+                    }
+                  }
+                } catch (profileError) {
+                  logger.error("Error fetching profile:", profileError);
+                }
+
+                // Show success message
+                toast.success("You logged in successfully with Google");
+
+                // Migrate cart
+                try {
+                  logger.log("Starting cart migration...");
+                  setIsMigratingCart(true);
+                  await migrateLocalCartToServer();
+                  document.getElementById("cart-refresher")?.click();
+                  const cartUpdatedEvent = new CustomEvent("cart-updated");
+                  document.dispatchEvent(cartUpdatedEvent);
+                } catch (migrateError) {
+                  logger.error("Error migrating cart:", migrateError);
+                  setIsMigratingCart(false);
+                }
+
+                // Handle cross-sell and redirect
+                const redirectPath = await handleCrossSellProducts();
+                let finalRedirectPath = redirectPath;
+                if (!finalRedirectPath) {
+                  if (redirectTo) {
+                    try {
+                      finalRedirectPath = decodeURIComponent(redirectTo);
+                    } catch (e) {
+                      finalRedirectPath = redirectTo;
+                    }
+                  } else {
+                    finalRedirectPath = "/";
+                  }
+                }
+
+                logger.log("Final redirect path:", finalRedirectPath);
+                setTimeout(() => {
+                  router.push(finalRedirectPath);
+                  setTimeout(() => router.refresh(), 300);
+                }, 1000);
+              }, 100);
+            } else {
+              logger.error("Authentication not verified after waiting");
+              toast.error("Authentication failed. Please try logging in again.");
+              const newParams = new URLSearchParams(searchParams.toString());
+              newParams.delete("google_oauth");
+              router.replace(`/login-register?${newParams.toString()}`);
+            }
+          }
+        }, 500); // Check every 500ms
+
+        return;
+      }
+
+      // Check if we just returned from Google OAuth (has authToken cookie)
+      // Only check this if we don't have the success flag (to avoid duplicate processing)
+      if (!googleAuthSuccess && !googleOAuthProcessing) {
+        const hasAuthToken = document.cookie.includes("authToken=");
+
+        if (hasAuthToken) {
+          logger.log("Google OAuth callback detected, user authenticated");
+
+          // Fetch user info from backend to ensure all cookies are set
+          try {
+            const profileResponse = await fetch("/api/profile");
+            if (profileResponse.ok) {
+              const profileData = await profileResponse.json();
+              if (profileData.success) {
+                logger.log("User profile fetched after Google login");
+              }
+            }
+          } catch (profileError) {
+            logger.error("Error fetching profile after Google login:", profileError);
+            // Continue anyway - cookies might already be set
+          }
+
+          // Show success message
+          toast.success("You logged in successfully with Google");
+
+          // Migrate any localStorage cart items to the server cart
+          try {
+            logger.log("Starting cart migration process after Google login...");
+            setIsMigratingCart(true);
+            await migrateLocalCartToServer();
+            logger.log("Cart migration completed successfully");
+
+            // Refresh the cart display
+            document.getElementById("cart-refresher")?.click();
+            logger.log("Cart display refreshed after migration");
+
+            // Dispatch a custom event to ensure cart is updated throughout the app
+            const cartUpdatedEvent = new CustomEvent("cart-updated");
+            document.dispatchEvent(cartUpdatedEvent);
+          } catch (migrateError) {
+            logger.error("Error migrating cart items:", migrateError);
+            setIsMigratingCart(false);
+          }
+
+          // Handle cross-sell products
+          const redirectPath = await handleCrossSellProducts();
+
+          // Determine final redirect - default to home page
+          let finalRedirectPath = redirectPath;
+          if (!finalRedirectPath) {
+            if (redirectTo) {
+              try {
+                finalRedirectPath = decodeURIComponent(redirectTo);
+              } catch (e) {
+                logger.error("Error decoding redirectTo URL:", e);
+                finalRedirectPath = redirectTo;
+              }
+            } else {
+              // Always default to home page
+              finalRedirectPath = "/";
+            }
+          }
+
+          logger.log("Final redirect path after Google login:", finalRedirectPath);
+
+          // Small delay to show toast, then navigate smoothly to home page
+          setTimeout(() => {
+            router.push(finalRedirectPath || "/");
+            setTimeout(() => {
+              router.refresh();
+            }, 300);
+          }, 1000);
+        }
+      }
+    };
+
+    checkGoogleCallback();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const handleGoogleError = () => {
     toast.error("Google sign-in was unsuccessful. Please try again.");
@@ -265,12 +462,26 @@ const LoginContent = ({ setActiveTab, loginRef }) => {
     setSubmitting(true);
 
     try {
+      // Get sessionId from localStorage for guest cart merging
+      const sessionId = getSessionId();
+
+      // Prepare request body
+      const requestBody = {
+        email: formData.email,
+        password: formData.password,
+      };
+
+      // Include sessionId if available
+      if (sessionId) {
+        requestBody.sessionId = sessionId;
+      }
+
       const res = await fetch("/api/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(requestBody),
       });
 
       // Parse the response data
@@ -290,26 +501,33 @@ const LoginContent = ({ setActiveTab, loginRef }) => {
         data: data || "No data",
       });
 
-      if (res.ok) {
-        // We'll trigger the cart refresh AFTER migration, not here
-        logger.log("🎉 LOGIN SUCCESS - About to show toast");
-        if (data?.data?.name) {
-          toast.success("You logged in successfully, " + data.data.name);
+      if (res.ok && data.success) {
+        logger.log("Login successful:", data.data);
+
+        // Show success message
+        const userName = data.data?.user?.firstName || "";
+        if (userName) {
+          toast.success(`You logged in successfully, ${userName}`);
         } else {
           toast.success("You logged in successfully");
         }
-        logger.log("🎉 LOGIN SUCCESS - Toast should be visible now");
 
-        // Migrate any localStorage cart items to the server cart
+        // Handle cart merging notification
+        if (data.data?.cart?.merged) {
+          logger.log("Guest cart was merged into user cart");
+        }
+
+        // Note: Cart merging is now handled by the API when sessionId is provided
+        // We still migrate any remaining localStorage items as a fallback
         let migrateSuccess = false;
         try {
-          logger.log("Starting cart migration process...");
+          logger.log("Starting cart migration process for any remaining items...");
           setIsMigratingCart(true);
           await migrateLocalCartToServer();
           migrateSuccess = true;
           logger.log("Cart migration completed successfully");
 
-          // Now that migration is complete, refresh the cart display
+          // Refresh the cart display
           document.getElementById("cart-refresher")?.click();
           logger.log("Cart display refreshed after migration");
 
@@ -321,15 +539,13 @@ const LoginContent = ({ setActiveTab, loginRef }) => {
           // Don't block login flow if migration fails
           setIsMigratingCart(false);
         }
-        // Note: We don't hide the overlay here for successful migrations
-        // It will stay visible during the redirect delays and disappear when page navigates
 
-        // Small delay to ensure cart migration has time to complete server-side
-        if (migrateSuccess && redirectTo && redirectTo.includes("/checkout")) {
+        // Small delay to ensure cart operations have time to complete
+        if (redirectTo && redirectTo.includes("/checkout")) {
           logger.log(
-            "Waiting for cart migration to complete before checkout redirect..."
+            "Waiting for cart operations to complete before checkout redirect..."
           );
-          await new Promise((resolve) => setTimeout(resolve, 1000));
+          await new Promise((resolve) => setTimeout(resolve, 500));
         }
 
         // Determine the redirect path after successful login
@@ -409,35 +625,51 @@ const LoginContent = ({ setActiveTab, loginRef }) => {
           }, 300);
         }, 1500); // 1.5 second delay to show the success toast
       } else {
-        // Handle error responses - display error in toast notification
+        // Handle error responses
         let errorMessage =
           "Login failed. Please check your email and password and try again.";
 
-        // Safely extract error message from response
-        if (data) {
-          // Handle specific error codes from WordPress API
-          if (data.code === "incorrect_password") {
-            errorMessage =
-              "The password you entered is incorrect. Please try again.";
-          } else if (
-            data.code === "invalid_email" ||
-            data.code === "invalid_username"
-          ) {
-            errorMessage = "Unknown email address. Please check and try again.";
-          } else if (data.error) {
-            // Use the error message from backend (strip HTML tags if present)
-            errorMessage = data.error.replace(/<[^>]*>/g, "");
-          } else if (data.message) {
-            // Fallback to message field (strip HTML tags if present)
-            errorMessage = data.message.replace(/<[^>]*>/g, "");
+        // Extract error message from response
+        if (data?.error) {
+          errorMessage = data.error;
+        } else if (data?.message) {
+          errorMessage = data.message;
+        }
+
+        // Handle specific error cases and map to field errors
+        if (res.status === 401) {
+          errorMessage =
+            "Invalid email or password. Please check your credentials and try again.";
+          // Set field errors
+          setErrors((prev) => ({
+            ...prev,
+            email: "Invalid email or password",
+            password: "Invalid email or password",
+          }));
+        } else {
+          // Map API errors to specific fields
+          const errorLower = errorMessage.toLowerCase();
+          if (errorLower.includes("email")) {
+            setErrors((prev) => ({
+              ...prev,
+              email: errorMessage,
+            }));
+          } else if (errorLower.includes("password")) {
+            setErrors((prev) => ({
+              ...prev,
+              password: errorMessage,
+            }));
           }
         }
 
-        // Always show a toast error regardless of the response structure
         toast.error(errorMessage);
+        logger.error("Login error:", data);
 
-        // Safely log error data
-        //logger.error("Login error:", data || "No error data available");
+        // Clear password field on error
+        setFormData((prev) => ({
+          ...prev,
+          password: "",
+        }));
       }
     } catch (err) {
       // Handle any unexpected errors during the fetch operation
@@ -457,7 +689,7 @@ const LoginContent = ({ setActiveTab, loginRef }) => {
         </h2>
         <h3 className="text-sm text-center font-normal pt-2 tracking-normal">
           Don't have an account?
-          <a
+          <Link
             href={(() => {
               const currentParams = new URLSearchParams(
                 searchParams.toString()
@@ -468,25 +700,31 @@ const LoginContent = ({ setActiveTab, loginRef }) => {
             className="font-[400] text-[#AE7E56] underline ml-1"
           >
             Sign up
-          </a>
+          </Link>
         </h3>
       </div>
 
       <form onSubmit={handleSubmit}>
         <div className="flex flex-col flex-wrap items-center justify-center mx-auto py-3 px-8 pt-5 w-[100%] max-w-[400px] space-y-4">
           <div className="w-full flex flex-col items-start justify-center gap-2">
-            <label htmlFor="username">Email Address</label>
+            <label htmlFor="email">Email Address</label>
             <input
               type="email"
-              id="username"
-              name="username"
-              className="block w-[100%] rounded-[8px] h-[40px] text-md m-auto border-gray-500 border px-4 focus:outline focus:outline-2 focus:outline-black focus:ring-0 focus:border-transparent"
+              id="email"
+              name="email"
+              className={`block w-[100%] rounded-[8px] h-[40px] text-md m-auto border px-4 focus:outline focus:outline-2 focus:outline-black focus:ring-0 focus:border-transparent ${errors.email ? "border-red-500" : "border-gray-500"
+                }`}
               tabIndex="1"
               autoComplete="email"
               placeholder="Enter your email address"
+              value={formData.email}
               onChange={handleChange}
+              onBlur={handleBlur}
               style={{ outlineColor: "black" }}
             />
+            {errors.email && (
+              <span className="text-red-500 text-sm">{errors.email}</span>
+            )}
           </div>
           <div className="w-full flex flex-col items-start justify-center gap-2 password-field">
             <div className="flex flex-row justify-between items-center w-full">
@@ -504,10 +742,13 @@ const LoginContent = ({ setActiveTab, loginRef }) => {
                 id="password"
                 placeholder="Enter your password"
                 name="password"
-                className="block w-[100%] rounded-[8px] h-[40px] text-md m-auto border-gray-500 border px-4 focus:outline focus:outline-2 focus:outline-black focus:ring-0 focus:border-transparent"
+                className={`block w-[100%] rounded-[8px] h-[40px] text-md m-auto border px-4 focus:outline focus:outline-2 focus:outline-black focus:ring-0 focus:border-transparent ${errors.password ? "border-red-500" : "border-gray-500"
+                  }`}
                 tabIndex="2"
                 autoComplete="off"
+                value={formData.password}
                 onChange={handleChange}
+                onBlur={handleBlur}
                 style={{ outlineColor: "black" }}
               />
               {showPassword ? (
@@ -550,9 +791,8 @@ const LoginContent = ({ setActiveTab, loginRef }) => {
             </div>
             <div className="basis-1/2">
               <Link
-                href={`/forgot-password${
-                  redirectTo ? "?redirect_to=" + redirectTo : ""
-                }${isEdFlow ? (redirectTo ? "&" : "?") + "ed-flow=1" : ""}`}
+                href={`/forgot-password${redirectTo ? "?redirect_to=" + redirectTo : ""
+                  }${isEdFlow ? (redirectTo ? "&" : "?") + "ed-flow=1" : ""}`}
                 className="text-[#AE7E56] text-sm font-normal block text-right underline"
               >
                 Forgot Password?
@@ -579,7 +819,6 @@ const LoginContent = ({ setActiveTab, loginRef }) => {
           {/* Google Sign-In Button */}
           <div className="w-full flex justify-center items-center">
             <GoogleSignInButton
-              onSuccess={handleGoogleSuccess}
               onError={handleGoogleError}
               disabled={submitting}
               isLoading={submitting}

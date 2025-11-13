@@ -8,6 +8,7 @@ import Loader from "@/components/Loader";
 import Link from "next/link";
 import SignInLink from "./SignInLink";
 import StickyButton from "./StickyButton";
+import { getSessionId } from "@/services/sessionService";
 
 const Form = ({
   config,
@@ -307,7 +308,8 @@ const Form = ({
   // Reusable registration logic for both WLFlow1 and WLFlow2
   const registerUser = async (mergedUserData) => {
     setLoading(true);
-    // Step 1 validation (name, email, password)
+    
+    // Validate required fields for new API
     if (!mergedUserData.firstName || !mergedUserData.lastName) {
       toast.error("Please enter your full name");
       setLoading(false);
@@ -335,79 +337,45 @@ const Form = ({
       setLoading(false);
       return false;
     }
-
-    // Step 2 validation (phone, dob, province)
     if (!mergedUserData.phone) {
       toast.error("Phone number is required");
       setLoading(false);
       return false;
     }
-    if (!mergedUserData.dateOfBirth) {
-      toast.error("Date of birth is required");
-      setLoading(false);
-      return false;
-    }
-    if (!mergedUserData.province) {
-      toast.error("Province is required");
-      setLoading(false);
-      return false;
+
+    // Get sessionId from localStorage for guest cart merging
+    const sessionId = getSessionId();
+
+    // Prepare request body for new API
+    const requestBody = {
+      firstName: mergedUserData.firstName,
+      lastName: mergedUserData.lastName,
+      email: mergedUserData.email,
+      password: mergedUserData.password,
+      phone: mergedUserData.phone.replace(/\D/g, ""), // Remove formatting for API
+    };
+
+    // Include sessionId if available
+    if (sessionId) {
+      requestBody.sessionId = sessionId;
     }
 
-    // Format date_of_birth to YYYY-MM-DD if needed
-    let formattedDOB = mergedUserData.dateOfBirth;
-    if (formattedDOB && formattedDOB.includes("/")) {
-      const parts = formattedDOB.split("/");
-      if (parts.length === 3) {
-        formattedDOB = `${parts[2]}-${parts[1].padStart(
-          2,
-          "0"
-        )}-${parts[0].padStart(2, "0")}`;
-      }
-    }
-
-    // Call register API (step 1)
     try {
-      const res1 = await fetch("/api/register", {
+      const res = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          first_name: mergedUserData.firstName,
-          last_name: mergedUserData.lastName,
-          email: mergedUserData.email,
-          password: mergedUserData.password,
-          register_step: 1,
-        }),
+        body: JSON.stringify(requestBody),
       });
-      const data1 = await res1.json();
-      if (!res1.ok || !data1.success) {
-        toast.error(data1.error || "Step 1 registration failed");
+      
+      const data = await res.json();
+      
+      if (!res.ok || !data.success) {
+        toast.error(data.error || "Registration failed");
         setLoading(false);
         return false;
       }
 
-      // Call register API (step 2)
-      const res2 = await fetch("/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          first_name: mergedUserData.firstName,
-          last_name: mergedUserData.lastName,
-          email: mergedUserData.email,
-          password: mergedUserData.password,
-          phone: mergedUserData.phone,
-          date_of_birth: formattedDOB,
-          province: mergedUserData.province,
-          gender: mergedUserData.gender,
-          register_step: 2,
-        }),
-      });
-      const data2 = await res2.json();
-      if (!res2.ok || !data2.success) {
-        toast.error(data2.error || "Step 2 registration failed");
-        setLoading(false);
-        return false;
-      }
-      //toast.success(data2.message || "Registration successful!");
+      logger.log("Registration successful:", data.data);
       setLoading(false);
       return true;
     } catch (err) {

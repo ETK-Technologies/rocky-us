@@ -4,6 +4,8 @@ import { FiAlignJustify } from "react-icons/fi";
 import { IoClose } from "react-icons/io5";
 import { FaArrowRightLong } from "react-icons/fa6";
 import { CiUser } from "react-icons/ci";
+import { useRouter } from "next/navigation";
+import { handleLogout } from "@/utils/logoutHandler";
 
 import Link from "next/link";
 import Image from "next/image";
@@ -30,6 +32,7 @@ const MobileMenu = ({ menuItems, displayName, token }) => {
   };
 
   const ProfileIcon = ({ setIsOpen }) => {
+    const router = useRouter();
     const [isProfileItemOpen, setIsProfileItemOpen] = useState(false);
 
     // Determine the display name with the same fallback logic as desktop
@@ -57,6 +60,12 @@ const MobileMenu = ({ menuItems, displayName, token }) => {
       }
     }
 
+    const handleLogoutClick = async (e) => {
+      e.preventDefault();
+      setIsOpen(false);
+      await handleLogout(router);
+    };
+
     return (
       <>
         {token ? (
@@ -77,27 +86,30 @@ const MobileMenu = ({ menuItems, displayName, token }) => {
             </button>
             {isProfileItemOpen && (
               <div className="pl-4">
-                <button
-                  onClick={() => goToProfile()}
+                <Link
+                  href="/my-account"
                   className="block px-4 py-1 text-gray-700 hover:bg-slate-200 hover:text-black w-full text-start"
+                  onClick={() => setIsOpen(false)}
                 >
                   My Account
-                </button>
+                </Link>
 
-                <form action="/api/logout" method="POST">
-                  <button
-                    // onClick={() => setIsOpen(false)}
-                    className="block px-4 py-1 text-gray-700 hover:bg-slate-200 hover:text-black w-full text-start"
-                  >
-                    Logout
-                  </button>
-                </form>
+                <button
+                  onClick={handleLogoutClick}
+                  className="block px-4 py-1 text-gray-700 hover:bg-slate-200 hover:text-black w-full text-start"
+                >
+                  Logout
+                </button>
               </div>
             )}
           </div>
         ) : (
           <div className="flex items-center justify-between pl-5 pr-3.5 py-2 border-b border-solid">
-            <Link className="headers-font" onClick={() => setIsOpen(false)}>
+            <Link
+              href="/login-register?viewshow=login"
+              className="headers-font"
+              onClick={() => setIsOpen(false)}
+            >
               Sign In
             </Link>
 
@@ -106,10 +118,6 @@ const MobileMenu = ({ menuItems, displayName, token }) => {
         )}
       </>
     );
-  };
-
-  const goToProfile = () => {
-    window.location.href = "/my-account";
   };
 
   return (

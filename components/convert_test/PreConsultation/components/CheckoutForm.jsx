@@ -10,6 +10,7 @@ import QuestionnaireNavbar from "./QuestionnaireNavbar";
 import FloatLabelInput from "./FloatLabelInput";
 import PostCanadaAddressAutocomplete from "@/components/convert_test/PostCanadaAddressAutocompelete";
 import Loader from "@/components/Loader";
+import { getSessionId } from "@/services/sessionService";
 
 const CheckoutForm = ({
   handleCheckoutContinue = () => {},
@@ -947,15 +948,29 @@ const CheckoutForm = ({
                         // attempt login
                         try {
                           setLoading(true);
+                          
+                          // Get sessionId from localStorage for guest cart merging
+                          const sessionId = getSessionId();
+                          
+                          const requestBody = {
+                            email: authEmail,
+                            password: authPassword,
+                          };
+                          
+                          // Include sessionId if available
+                          if (sessionId) {
+                            requestBody.sessionId = sessionId;
+                          }
+                          
                           const res = await fetch("/api/login", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                              username: authEmail,
-                              password: authPassword,
-                            }),
+                            body: JSON.stringify(requestBody),
                           });
-                          if (res.ok) {
+                          
+                          const data = await res.json();
+                          
+                          if (res.ok && data.success) {
                             toast.success("Logged in successfully");
 
                             // Re-fetch profile data and refresh the router so UI reflects authenticated state
@@ -984,12 +999,8 @@ const CheckoutForm = ({
                             // proceed with submit flow, indicating this came from a login
                             handleFormSubmit(null, true);
                           } else {
-                            let data = null;
-                            try {
-                              data = await res.json();
-                            } catch (e) {}
                             const msg =
-                              (data && (data.message || data.error)) ||
+                              (data?.error || data?.message) ||
                               "Login failed";
                             toast.error(msg);
                           }

@@ -7,59 +7,56 @@ import {
   MdOutlineRemoveRedEye,
   MdOutlineVisibilityOff,
   MdArrowForward,
-  MdArrowBack,
 } from "react-icons/md";
 import { toast } from "react-toastify";
 import { useSearchParams, useRouter } from "next/navigation";
 import Loader from "@/components/Loader";
-import DOBInput from "../shared/DOBInput";
+import { getSessionId } from "@/services/sessionService";
 import {
   getSavedProducts,
   clearSavedProducts,
 } from "../../utils/crossSellCheckout";
 import { processSavedFlowProducts } from "../../utils/flowCartHandler";
-import { migrateLocalCartToServer } from "@/lib/cart/cartService";
-import {
-  checkQuebecZonnicRestriction,
-  getQuebecRestrictionMessage,
-  isQuebecProvince,
-} from "@/utils/zonnicQuebecValidation";
-import CartMigrationOverlay from "@/components/CartMigrationOverlay";
-
-import {
-  ALL_US_STATES,
-  PHASE_1_STATES,
-  getStateLabel,
-} from "@/lib/constants/usStates";
 
 const RegisterContent = ({ setActiveTab, registerRef }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [isMigratingCart, setIsMigratingCart] = useState(false);
   const [formData, setFormData] = useState({
-    first_name: "",
-    last_name: "",
+    firstName: "",
+    lastName: "",
     email: "",
     password: "",
-    confirm_password: "",
+    confirmPassword: "",
     phone: "",
-    date_of_birth: "",
-    province: "",
-    gender: "",
   });
-  const [datePickerValue, setDatePickerValue] = useState(null);
+  const [errors, setErrors] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    phone: "",
+  });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
   const redirectTo = searchParams.get("redirect_to");
   const isEdFlow = searchParams.get("ed-flow") === "1";
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [name]: value,
     }));
+
+    // Clear validation error when user types
+    if (errors[name]) {
+      setErrors((prev) => ({
+        ...prev,
+        [name]: "",
+      }));
+    }
   };
 
   const togglePasswordVisibility = () => {
@@ -70,11 +67,193 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
     setShowConfirmPassword(!showConfirmPassword);
   };
 
-  const genderOptions = [
-    { value: "", label: "Select gender" },
-    { value: "male", label: "Male" },
-    { value: "female", label: "Female" },
-  ];
+  const formatPhoneNumber = (value) => {
+    const phoneNumber = value.replace(/\D/g, "");
+
+    if (phoneNumber.length <= 3) {
+      return `(${phoneNumber}`;
+    } else if (phoneNumber.length <= 6) {
+      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
+    } else {
+      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(
+        3,
+        6
+      )}-${phoneNumber.slice(6, 10)}`;
+    }
+  };
+
+  const handlePhoneChange = (e) => {
+    const formattedPhoneNumber = formatPhoneNumber(e.target.value);
+    setFormData((prev) => ({
+      ...prev,
+      phone: formattedPhoneNumber,
+    }));
+
+    // Clear validation error when user types
+    if (errors.phone) {
+      setErrors((prev) => ({
+        ...prev,
+        phone: "",
+      }));
+    }
+  };
+
+  // Validate individual field
+  const validateField = (name, value) => {
+    let error = "";
+
+    switch (name) {
+      case "firstName":
+        if (!value.trim()) {
+          error = "First name is required";
+        }
+        break;
+      case "lastName":
+        if (!value.trim()) {
+          error = "Last name is required";
+        }
+        break;
+      case "email":
+        if (!value.trim()) {
+          error = "Email address is required";
+        } else if (!/\S+@\S+\.\S+/.test(value)) {
+          error = "Please enter a valid email address";
+        }
+        break;
+      case "phone":
+        if (!value.trim()) {
+          error = "Phone number is required";
+        } else {
+          const phoneDigits = value.replace(/\D/g, "");
+          if (phoneDigits.length < 10) {
+            error = "Please enter a valid phone number";
+          }
+        }
+        break;
+      case "password":
+        if (!value) {
+          error = "Password is required";
+        } else if (value.length < 6) {
+          error = "Password must be at least 6 characters";
+        }
+        break;
+      case "confirmPassword":
+        if (!value) {
+          error = "Please confirm your password";
+        } else if (formData.password !== value) {
+          error = "Passwords do not match";
+        }
+        break;
+      default:
+        break;
+    }
+
+    setErrors((prev) => ({
+      ...prev,
+      [name]: error,
+    }));
+
+    return !error;
+  };
+
+  // Handle blur event for field validation
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+
+    // Special handling for confirm password - also validate if password changed
+    if (name === "confirmPassword") {
+      validateField(name, value);
+      // Also re-validate password if confirm password has an error
+      if (formData.password && formData.password !== value) {
+        setErrors((prev) => ({
+          ...prev,
+          confirmPassword: "Passwords do not match",
+        }));
+      }
+    } else {
+      validateField(name, value);
+
+      // If password field is blurred and confirm password has value, re-validate confirm password
+      if (name === "password" && formData.confirmPassword) {
+        validateField("confirmPassword", formData.confirmPassword);
+      }
+    }
+  };
+
+  const validateForm = () => {
+    let valid = true;
+    const newErrors = {
+      firstName: "",
+      lastName: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      phone: "",
+    };
+
+    // Validate first name
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = "First name is required";
+      valid = false;
+    }
+
+    // Validate last name
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = "Last name is required";
+      valid = false;
+    }
+
+    // Validate email
+    if (!formData.email.trim()) {
+      newErrors.email = "Email address is required";
+      valid = false;
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address";
+      valid = false;
+    }
+
+    // Validate phone
+    if (!formData.phone.trim()) {
+      newErrors.phone = "Phone number is required";
+      valid = false;
+    } else {
+      const phoneDigits = formData.phone.replace(/\D/g, "");
+      if (phoneDigits.length < 10) {
+        newErrors.phone = "Please enter a valid phone number";
+        valid = false;
+      }
+    }
+
+    // Validate password
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+      valid = false;
+    } else if (formData.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
+      valid = false;
+    }
+
+    // Validate confirm password
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = "Please confirm your password";
+      valid = false;
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+      valid = false;
+    }
+
+    setErrors(newErrors);
+
+    // Show toast for first error if validation fails
+    if (!valid) {
+      const firstError = Object.values(newErrors).find((error) => error);
+      if (firstError) {
+        toast.error(firstError);
+      }
+    }
+
+    return valid;
+  };
 
   const handleCrossSellProducts = async (isFromCrossSell = false) => {
     try {
@@ -83,7 +262,6 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
       );
 
       // First, check for new flow products (direct cart approach)
-      // This should always be processed regardless of cross-sell popup origin
       const flowProductsResult = await processSavedFlowProducts();
       if (flowProductsResult.success) {
         logger.log(
@@ -95,7 +273,6 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
 
       // Only process old cross-sell products if NOT from a cross-sell popup
       if (!isFromCrossSell) {
-        // Fallback to old cross-sell products (URL-based approach)
         const savedProducts = getSavedProducts();
 
         if (savedProducts) {
@@ -134,170 +311,45 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
     return null;
   };
 
-  const validateStep1 = () => {
-    if (!formData.first_name || !formData.last_name) {
-      toast.error("Please enter your full name");
-      return false;
-    }
-    if (!formData.email) {
-      toast.error("Email address is required");
-      return false;
-    }
-    if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      toast.error("Please enter a valid email address");
-      return false;
-    }
-    if (!formData.password) {
-      toast.error("Password is required");
-      return false;
-    }
-    if (formData.password.length < 6) {
-      toast.error("Password must be at least 6 characters");
-      return false;
-    }
-    if (formData.password !== formData.confirm_password) {
-      toast.error("Passwords do not match");
-      return false;
-    }
-    return true;
-  };
-
-  const validateStep2 = () => {
-    if (!formData.phone) {
-      toast.error("Phone number is required");
-      return false;
-    }
-    if (!formData.date_of_birth) {
-      toast.error("Date of birth is required");
-      return false;
-    }
-    if (!formData.province) {
-      toast.error("Province is required");
-      return false;
-    }
-    return true;
-  };
-
-  const handleNextStep = async (e) => {
-    e.preventDefault();
-    if (!validateStep1()) {
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const res = await fetch("/api/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          first_name: formData.first_name,
-          last_name: formData.last_name,
-          email: formData.email,
-          password: formData.password,
-          register_step: 1,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok && data.success) {
-        setCurrentStep(2);
-      } else {
-        // Debug logging to help identify the issue
-        logger.log("Register API Error Response:", {
-          status: res.status,
-          ok: res.ok,
-          data: data,
-          error: data.error,
-        });
-
-        toast.error(
-          data.error || "Registration failed. Please check and try again."
-        );
-      }
-    } catch (err) {
-      logger.error("Registration error:", err);
-      toast.error("Registration failed. Please check and try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleBackStep = () => {
-    setCurrentStep(1);
-  };
-
-  const formatPhoneNumber = (value) => {
-    const phoneNumber = value.replace(/\D/g, "");
-
-    if (phoneNumber.length <= 3) {
-      return `(${phoneNumber}`;
-    } else if (phoneNumber.length <= 6) {
-      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
-    } else {
-      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(
-        3,
-        6
-      )}-${phoneNumber.slice(6, 10)}`;
-    }
-  };
-
-  const handlePhoneChange = (e) => {
-    const formattedPhoneNumber = formatPhoneNumber(e.target.value);
-    setFormData((prev) => ({
-      ...prev,
-      phone: formattedPhoneNumber,
-    }));
-  };
-
-  const handleDateChange = (value) => {
-    setFormData((prev) => ({
-      ...prev,
-      date_of_birth: value,
-    }));
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!validateStep2()) {
+    if (!validateForm()) {
       return;
     }
 
     setLoading(true);
 
     try {
-      const dateParts = formData.date_of_birth.split("/");
-      const formattedDate =
-        dateParts.length === 3
-          ? `${dateParts[2]}-${dateParts[0]}-${dateParts[1]}`
-          : formData.date_of_birth;
+      // Get sessionId from localStorage for guest cart merging
+      const sessionId = getSessionId();
+
+      // Prepare request body
+      const requestBody = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        phone: formData.phone.replace(/\D/g, ""), // Remove formatting for API
+      };
+
+      // Include sessionId if available
+      if (sessionId) {
+        requestBody.sessionId = sessionId;
+      }
 
       const res = await fetch("/api/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          first_name: formData.first_name,
-          last_name: formData.last_name,
-          email: formData.email,
-          password: formData.password,
-          phone: formData.phone,
-          date_of_birth: formattedDate,
-          province: formData.province,
-          gender: formData.gender,
-          register_step: 2,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       const data = await res.json();
 
       if (res.ok && data.success) {
-        logger.log(data.data.response);
+        logger.log("Registration successful:", data.data);
         document.getElementById("cart-refresher")?.click();
         toast.success(data.message || "You registered successfully!");
 
@@ -308,115 +360,23 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
           searchParams.get("hair-flow") === "1" ||
           searchParams.get("mh-flow") === "1";
 
-        // Only migrate cart if we're not coming from a cross-sell popup
-        if (!isFromCrossSell) {
-          let migrateSuccess = false;
-          try {
-            logger.log(
-              "Starting cart migration process for new registration..."
-            );
-            setIsMigratingCart(true);
-            await migrateLocalCartToServer();
-            migrateSuccess = true;
-            logger.log("Cart migration completed successfully");
-
-            // Now that migration is complete, refresh the cart display
-            document.getElementById("cart-refresher")?.click();
-            logger.log("Cart display refreshed after migration");
-
-            // Dispatch a custom event to ensure cart is updated throughout the app
-            const cartUpdatedEvent = new CustomEvent("cart-updated");
-            document.dispatchEvent(cartUpdatedEvent);
-          } catch (migrateError) {
-            logger.error("Error migrating cart items:", migrateError);
-            // Don't block registration flow if migration fails
-            setIsMigratingCart(false);
-          }
-          // Note: We don't hide the overlay here for successful migrations
-          // It will stay visible during the redirect delays and disappear when page navigates
-        } else {
-          logger.log(
-            "Skipping cart migration as user came from cross-sell popup"
-          );
+        // Handle cart merging notification
+        if (data.data?.cart?.merged) {
+          logger.log("Guest cart was merged into user cart");
         }
 
-        // Small delay to ensure cart migration has time to complete server-side
-        if (
-          !isFromCrossSell &&
-          redirectTo &&
-          redirectTo.includes("/checkout")
-        ) {
-          logger.log(
-            "Waiting for cart migration to complete before checkout redirect..."
-          );
-          await new Promise((resolve) => setTimeout(resolve, 1000));
+        // Small delay to ensure everything is processed
+        if (redirectTo && redirectTo.includes("/checkout")) {
+          await new Promise((resolve) => setTimeout(resolve, 500));
         }
 
         let redirectPath;
 
-        // Always check for saved flow products (new direct cart approach)
-        // Only skip old cross-sell handling if we came from a cross-sell popup
+        // Always check for saved flow products
         redirectPath = await handleCrossSellProducts(isFromCrossSell);
 
         if (!redirectPath) {
           redirectPath = redirectTo || "/";
-        }
-
-        // Check for Quebec restriction after successful registration
-        if (formData.province && isQuebecProvince(formData.province)) {
-          try {
-            // Fetch cart items to check for Zonnic products
-            const cartResponse = await fetch("/api/cart");
-            if (cartResponse.ok) {
-              const cartData = await cartResponse.json();
-              if (cartData.items && cartData.items.length > 0) {
-                const restriction = checkQuebecZonnicRestriction(
-                  cartData.items,
-                  formData.province,
-                  formData.province
-                );
-
-                if (restriction.blocked) {
-                  // Remove Zonnic products from cart
-                  const zonnicItems = cartData.items.filter(
-                    (item) =>
-                      item.name && item.name.toLowerCase().includes("zonnic")
-                  );
-
-                  for (const zonnicItem of zonnicItems) {
-                    try {
-                      await fetch("/api/cart", {
-                        method: "DELETE",
-                        headers: {
-                          "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({
-                          itemKey: zonnicItem.key,
-                        }),
-                      });
-                      logger.log(
-                        `Removed Zonnic product ${zonnicItem.name} from cart due to Quebec restriction`
-                      );
-                    } catch (removeError) {
-                      logger.error(
-                        "Error removing Zonnic product from cart:",
-                        removeError
-                      );
-                    }
-                  }
-
-                  // Store popup state in localStorage to show after redirect
-                  localStorage.setItem("showQuebecPopup", "true");
-                  localStorage.setItem(
-                    "quebecPopupMessage",
-                    getQuebecRestrictionMessage()
-                  );
-                }
-              }
-            }
-          } catch (error) {
-            logger.error("Error checking cart for Quebec restriction:", error);
-          }
         }
 
         router.push(redirectPath);
@@ -424,269 +384,273 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
           router.refresh();
         }, 300);
 
+        // Reset form
         setFormData({
-          first_name: "",
-          last_name: "",
+          firstName: "",
+          lastName: "",
           email: "",
           password: "",
-          confirm_password: "",
+          confirmPassword: "",
           phone: "",
-          date_of_birth: "",
-          province: "",
-          gender: "",
         });
       } else {
-        // Debug logging to help identify the issue
-        logger.log("Register API Step 2 Error Response:", {
+        logger.log("Register API Error Response:", {
           status: res.status,
           ok: res.ok,
           data: data,
           error: data.error,
         });
 
-        toast.error(
-          data.error || "Registration failed. Please check and try again."
-        );
+        // Extract error message
+        let errorMessage =
+          data.error || "Registration failed. Please check and try again.";
+
+        // Handle specific error cases and map to field errors
+        if (res.status === 409) {
+          errorMessage = "This email is already registered. Please login instead.";
+          setErrors((prev) => ({
+            ...prev,
+            email: "This email is already registered",
+          }));
+        } else if (res.status === 400) {
+          // Try to extract field-specific errors
+          if (data.error) {
+            errorMessage = data.error;
+
+            // Map common API errors to specific fields
+            const errorLower = data.error.toLowerCase();
+            if (errorLower.includes("email")) {
+              setErrors((prev) => ({
+                ...prev,
+                email: data.error,
+              }));
+            } else if (errorLower.includes("password")) {
+              setErrors((prev) => ({
+                ...prev,
+                password: data.error,
+              }));
+            } else if (errorLower.includes("phone")) {
+              setErrors((prev) => ({
+                ...prev,
+                phone: data.error,
+              }));
+            } else if (errorLower.includes("first name") || errorLower.includes("firstName")) {
+              setErrors((prev) => ({
+                ...prev,
+                firstName: data.error,
+              }));
+            } else if (errorLower.includes("last name") || errorLower.includes("lastName")) {
+              setErrors((prev) => ({
+                ...prev,
+                lastName: data.error,
+              }));
+            }
+          }
+        }
+
+        toast.error(errorMessage);
       }
     } catch (err) {
       logger.error("Registration error:", err);
-      toast.error("Registration failed. Please check and try again.");
+      toast.error(
+        "An error occurred during registration. Please try again later."
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <>
-      <CartMigrationOverlay show={isMigratingCart} />
-      <div className="px-3 mx-auto pt-5 text-center">
-        <h2
-          className={`text-[#251f20] ${
-            isEdFlow ? "text-[24px]" : "text-[32px]"
+    <div className="px-3 mx-auto pt-5 text-center">
+      <h2
+        className={`text-[#251f20] ${isEdFlow ? "text-[24px]" : "text-[32px]"
           } headers-font font-[450] leading-[140%] max-w-[520px] mx-auto`}
+      >
+        {isEdFlow ? (
+          <>
+            Congratulations! <br className="md:hidden" /> You're just moments
+            away from making ED a thing of the past.
+          </>
+        ) : (
+          "Welcome to Rocky"
+        )}
+      </h2>
+      <h3 className="text-sm text-center font-normal pt-2 tracking-normal">
+        Already have an account?
+        <Link
+          href={(() => {
+            const currentParams = new URLSearchParams(
+              searchParams.toString()
+            );
+            currentParams.set("viewshow", "login");
+            return `/login-register?${currentParams.toString()}`;
+          })()}
+          className="font-[400] text-[#AE7E56] underline ml-1"
         >
-          {isEdFlow ? (
-            <>
-              Congratulations! <br className="md:hidden" /> You're just moments
-              away from making ED a thing of the past.
-            </>
-          ) : (
-            "Welcome to Rocky"
-          )}
-        </h2>
-        <h3 className="text-sm text-center font-normal pt-2 tracking-normal">
-          Already have an account?
-          <Link
-            href={(() => {
-              const currentParams = new URLSearchParams(
-                searchParams.toString()
-              );
-              currentParams.set("viewshow", "login");
-              return `/login-register?${currentParams.toString()}`;
-            })()}
-            className="font-[400] text-[#AE7E56] underline ml-1"
-          >
-            Log in
-          </Link>
-        </h3>
-      </div>
+          Log in
+        </Link>
+      </h3>
 
-      <form onSubmit={currentStep === 1 ? handleNextStep : handleSubmit}>
+      <form onSubmit={handleSubmit}>
         <div className="flex flex-col flex-wrap items-center justify-center mx-auto py-3 px-8 pt-5 w-[100%] max-w-[400px] space-y-4">
-          {currentStep === 1 ? (
-            <>
-              <div className="flex flex-col md:flex-row md:gap-2 w-full space-y-4 md:space-y-0">
-                <div className="w-full flex flex-col items-start justify-center gap-2">
-                  <label htmlFor="first_name">First Name</label>
-                  <input
-                    type="text"
-                    id="first_name"
-                    name="first_name"
-                    className="block w-[100%] rounded-[8px] h-[40px] text-md m-auto border-gray-500 border px-4 focus:outline focus:outline-2 focus:outline-black focus:ring-0 focus:border-transparent"
-                    tabIndex="1"
-                    placeholder="Your first name"
-                    value={formData.first_name}
-                    onChange={handleChange}
-                    style={{ outlineColor: "black" }}
-                    required
-                  />
-                </div>
-                <div className="w-full flex flex-col items-start justify-center gap-2">
-                  <label htmlFor="last_name">Last Name</label>
-                  <input
-                    type="text"
-                    id="last_name"
-                    name="last_name"
-                    className="block w-[100%] rounded-[8px] h-[40px] text-md m-auto border-gray-500 border px-4 focus:outline focus:outline-2 focus:outline-black focus:ring-0 focus:border-transparent"
-                    tabIndex="1"
-                    placeholder="Your last name"
-                    value={formData.last_name}
-                    onChange={handleChange}
-                    style={{ outlineColor: "black" }}
-                    required
-                  />
-                </div>
-              </div>
-              <div className="w-full flex flex-col items-start justify-center gap-2">
-                <label htmlFor="email">Email Address</label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  className="block w-[100%] rounded-[8px] h-[40px] text-md m-auto border-gray-500 border px-4 focus:outline focus:outline-2 focus:outline-black focus:ring-0 focus:border-transparent"
-                  tabIndex="1"
-                  autoComplete="email"
-                  placeholder="Enter your email address"
-                  value={formData.email}
-                  onChange={handleChange}
-                  style={{ outlineColor: "black" }}
-                  required
+          <div className="flex flex-col md:flex-row md:gap-2 w-full space-y-4 md:space-y-0">
+            <div className="w-full flex flex-col items-start justify-center gap-2">
+              <label htmlFor="firstName">First Name</label>
+              <input
+                type="text"
+                id="firstName"
+                name="firstName"
+                className={`block w-[100%] rounded-[8px] h-[40px] text-md m-auto border px-4 focus:outline focus:outline-2 focus:outline-black focus:ring-0 focus:border-transparent ${errors.firstName ? "border-red-500" : "border-gray-500"
+                  }`}
+                tabIndex="1"
+                placeholder="Your first name"
+                value={formData.firstName}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                style={{ outlineColor: "black" }}
+                required
+              />
+              {errors.firstName && (
+                <span className="text-red-500 text-sm">{errors.firstName}</span>
+              )}
+            </div>
+            <div className="w-full flex flex-col items-start justify-center gap-2">
+              <label htmlFor="lastName">Last Name</label>
+              <input
+                type="text"
+                id="lastName"
+                name="lastName"
+                className={`block w-[100%] rounded-[8px] h-[40px] text-md m-auto border px-4 focus:outline focus:outline-2 focus:outline-black focus:ring-0 focus:border-transparent ${errors.lastName ? "border-red-500" : "border-gray-500"
+                  }`}
+                tabIndex="1"
+                placeholder="Your last name"
+                value={formData.lastName}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                style={{ outlineColor: "black" }}
+                required
+              />
+              {errors.lastName && (
+                <span className="text-red-500 text-sm">{errors.lastName}</span>
+              )}
+            </div>
+          </div>
+          <div className="w-full flex flex-col items-start justify-center gap-2">
+            <label htmlFor="email">Email Address</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              className={`block w-[100%] rounded-[8px] h-[40px] text-md m-auto border px-4 focus:outline focus:outline-2 focus:outline-black focus:ring-0 focus:border-transparent ${errors.email ? "border-red-500" : "border-gray-500"
+                }`}
+              tabIndex="1"
+              autoComplete="email"
+              placeholder="Enter your email address"
+              value={formData.email}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              style={{ outlineColor: "black" }}
+              required
+            />
+            {errors.email && (
+              <span className="text-red-500 text-sm">{errors.email}</span>
+            )}
+          </div>
+          <div className="w-full flex flex-col items-start justify-center gap-2">
+            <label htmlFor="phone">Phone Number</label>
+            <input
+              type="tel"
+              id="phone"
+              name="phone"
+              className={`block w-[100%] rounded-[8px] h-[40px] text-md m-auto border px-4 focus:outline focus:outline-2 focus:outline-black focus:ring-0 focus:border-transparent ${errors.phone ? "border-red-500" : "border-gray-500"
+                }`}
+              placeholder="(___) ___-____"
+              value={formData.phone}
+              onChange={handlePhoneChange}
+              onBlur={(e) => validateField("phone", e.target.value)}
+              style={{ outlineColor: "black" }}
+              required
+              maxLength={14}
+            />
+            {errors.phone && (
+              <span className="text-red-500 text-sm">{errors.phone}</span>
+            )}
+          </div>
+          <div className="w-full flex flex-col items-start justify-center gap-2 password-field">
+            <label htmlFor="password">Password</label>
+            <div className="w-full relative items-center">
+              <input
+                type={showPassword ? "text" : "password"}
+                id="password"
+                placeholder="Enter your password"
+                name="password"
+                className={`block w-[100%] rounded-[8px] h-[40px] text-md m-auto border px-4 focus:outline focus:outline-2 focus:outline-black focus:ring-0 focus:border-transparent ${errors.password ? "border-red-500" : "border-gray-500"
+                  }`}
+                tabIndex="4"
+                autoComplete="off"
+                value={formData.password}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                style={{ outlineColor: "black" }}
+                required
+                minLength={6}
+              />
+              {showPassword ? (
+                <MdOutlineVisibilityOff
+                  size={16}
+                  className="absolute right-3 top-3 cursor-pointer"
+                  onClick={togglePasswordVisibility}
                 />
-              </div>
-              <div className="w-full flex flex-col items-start justify-center gap-2 password-field">
-                <label htmlFor="password">Password</label>
-                <div className="w-full relative items-center">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    id="password"
-                    placeholder="Enter your password"
-                    name="password"
-                    className="block w-[100%] rounded-[8px] h-[40px] text-md m-auto border-gray-500 border px-4 focus:outline focus:outline-2 focus:outline-black focus:ring-0 focus:border-transparent"
-                    tabIndex="4"
-                    autoComplete="off"
-                    value={formData.password}
-                    onChange={handleChange}
-                    style={{ outlineColor: "black" }}
-                    required
-                    minLength={6}
-                  />
-                  {showPassword ? (
-                    <MdOutlineVisibilityOff
-                      size={16}
-                      className="absolute right-3 top-3 cursor-pointer"
-                      onClick={togglePasswordVisibility}
-                    />
-                  ) : (
-                    <MdOutlineRemoveRedEye
-                      size={16}
-                      className="absolute right-3 top-3 cursor-pointer"
-                      onClick={togglePasswordVisibility}
-                    />
-                  )}
-                </div>
-              </div>
-              <div className="w-full flex flex-col items-start justify-center gap-2 password-field">
-                <label htmlFor="confirm_password">Confirm Password</label>
-                <div className="w-full relative items-center">
-                  <input
-                    type={showConfirmPassword ? "text" : "password"}
-                    id="confirm_password"
-                    placeholder="Confirm your password"
-                    name="confirm_password"
-                    className="block w-[100%] rounded-[8px] h-[40px] text-md m-auto border-gray-500 border px-4 focus:outline focus:outline-2 focus:outline-black focus:ring-0 focus:border-transparent"
-                    tabIndex="4"
-                    autoComplete="off"
-                    value={formData.confirm_password}
-                    onChange={handleChange}
-                    style={{ outlineColor: "black" }}
-                    required
-                  />
-                  {showConfirmPassword ? (
-                    <MdOutlineVisibilityOff
-                      size={16}
-                      className="absolute right-3 top-3 cursor-pointer"
-                      onClick={toggleConfirmPasswordVisibility}
-                    />
-                  ) : (
-                    <MdOutlineRemoveRedEye
-                      size={16}
-                      className="absolute right-3 top-3 cursor-pointer"
-                      onClick={toggleConfirmPasswordVisibility}
-                    />
-                  )}
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="w-full flex items-start mb-2">
-                <button
-                  type="button"
-                  onClick={handleBackStep}
-                  className="bg-transparent border-none cursor-pointer p-1 hover:bg-gray-100 rounded-full"
-                  aria-label="Go back to previous step"
-                >
-                  <MdArrowBack size={24} />
-                </button>
-              </div>
-              <div className="w-full flex flex-col items-start justify-center gap-2">
-                <label htmlFor="phone">Phone Number</label>
-                <input
-                  type="tel"
-                  id="phone"
-                  name="phone"
-                  className="block w-[100%] rounded-[8px] h-[40px] text-md m-auto border-gray-500 border px-4 focus:outline focus:outline-2 focus:outline-black focus:ring-0 focus:border-transparent"
-                  placeholder="(___) ___-____"
-                  value={formData.phone}
-                  onChange={handlePhoneChange}
-                  style={{ outlineColor: "black" }}
-                  required
-                  maxLength={14}
+              ) : (
+                <MdOutlineRemoveRedEye
+                  size={16}
+                  className="absolute right-3 top-3 cursor-pointer"
+                  onClick={togglePasswordVisibility}
                 />
-              </div>
-              <div className="w-full flex flex-col items-start justify-center gap-2">
-                <label htmlFor="date_of_birth">Date of Birth</label>
-                <DOBInput
-                  value={formData.date_of_birth}
-                  onChange={handleDateChange}
-                  className="block w-full rounded-[8px] h-[40px] text-md m-auto border-gray-500 border px-4 focus:outline focus:outline-2 focus:outline-black focus:ring-0 focus:border-transparent pr-10"
-                  placeholder="mm/dd/yyyy"
-                  minAge={18}
-                  required
+              )}
+            </div>
+            {errors.password && (
+              <span className="text-red-500 text-sm">{errors.password}</span>
+            )}
+          </div>
+          <div className="w-full flex flex-col items-start justify-center gap-2 password-field">
+            <label htmlFor="confirmPassword">Confirm Password</label>
+            <div className="w-full relative items-center">
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                id="confirmPassword"
+                placeholder="Confirm your password"
+                name="confirmPassword"
+                className={`block w-[100%] rounded-[8px] h-[40px] text-md m-auto border px-4 focus:outline focus:outline-2 focus:outline-black focus:ring-0 focus:border-transparent ${errors.confirmPassword ? "border-red-500" : "border-gray-500"
+                  }`}
+                tabIndex="4"
+                autoComplete="off"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                style={{ outlineColor: "black" }}
+                required
+              />
+              {showConfirmPassword ? (
+                <MdOutlineVisibilityOff
+                  size={16}
+                  className="absolute right-3 top-3 cursor-pointer"
+                  onClick={toggleConfirmPasswordVisibility}
                 />
-              </div>
-              <div className="w-full flex flex-col items-start justify-center gap-2">
-                <label htmlFor="province">State</label>
-                <select
-                  id="province"
-                  name="province"
-                  className="block w-[100%] rounded-[8px] h-[40px] text-md m-auto border-gray-500 border px-4 focus:outline focus:outline-2 focus:outline-black focus:ring-0 focus:border-transparent"
-                  value={formData.province}
-                  onChange={handleChange}
-                  style={{ outlineColor: "black" }}
-                  required
-                >
-                  {ALL_US_STATES.filter(
-                    (option) =>
-                      option.value === "" ||
-                      PHASE_1_STATES.includes(option.value)
-                  ).map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="w-full flex flex-col items-start justify-center gap-2">
-                <label htmlFor="gender">Gender</label>
-                <select
-                  id="gender"
-                  name="gender"
-                  className="block w-[100%] rounded-[8px] h-[40px] text-md m-auto border-gray-500 border px-4 focus:outline focus:outline-2 focus:outline-black focus:ring-0 focus:border-transparent"
-                  value={formData.gender}
-                  onChange={handleChange}
-                  style={{ outlineColor: "black" }}
-                  required
-                >
-                  {genderOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </>
-          )}
+              ) : (
+                <MdOutlineRemoveRedEye
+                  size={16}
+                  className="absolute right-3 top-3 cursor-pointer"
+                  onClick={toggleConfirmPasswordVisibility}
+                />
+              )}
+            </div>
+            {errors.confirmPassword && (
+              <span className="text-red-500 text-sm">
+                {errors.confirmPassword}
+              </span>
+            )}
+          </div>
 
           <div className="w-full flex justify-center items-center my-5">
             <button
@@ -694,13 +658,7 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
               className="bg-black text-white py-[12.5px] w-full rounded-full flex justify-center items-center"
               disabled={loading}
             >
-              {currentStep === 1
-                ? loading
-                  ? "Processing..."
-                  : "Continue"
-                : loading
-                ? "Signing up..."
-                : "Complete Sign Up"}
+              {loading ? "Signing up..." : "Complete Sign Up"}
               {!loading && <MdArrowForward className="ml-2" size={20} />}
             </button>
           </div>
@@ -731,7 +689,7 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
           </div>
         </div>
       </form>
-    </>
+    </div>
   );
 };
 

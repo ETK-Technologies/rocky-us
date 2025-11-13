@@ -4,6 +4,7 @@ import { logger } from "@/utils/devLogger";
 import Link from "next/link";
 import React, { useState } from "react";
 import { toast } from "react-toastify";
+import { getSessionId } from "@/services/sessionService";
 
 const WeightLossResultPasswordPopup = ({
   onSubmit,
@@ -52,31 +53,37 @@ const WeightLossResultPasswordPopup = ({
     // attempt login
     try {
       setLoading(true);
+
+      // Get sessionId from localStorage for guest cart merging
+      const sessionId = getSessionId();
+
+      const requestBody = {
+        email: email || "",
+        password: password || "",
+      };
+
+      // Include sessionId if available
+      if (sessionId) {
+        requestBody.sessionId = sessionId;
+      }
+
       const res = await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: email || "",
-          password: password || "",
-        }),
+        body: JSON.stringify(requestBody),
       });
-      if (res.ok) {
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
         toast.success("Logged in successfully");
         return 1;
       } else {
-        let data = null;
-        try {
-          data = await res.json();
-        } catch (e) {}
-        const msg = (data && (data.message || data.error)) || "Login failed";
+        const msg = (data?.error || data?.message) || "Login failed";
         logger.log("Login failed:", msg);
         if (msg != "Login failed. Please try again.") {
-          // toast.error(
-          //   "This E-mail associated to an account, please try logging in."
-          // );
           return 1;
         }
-        //toast.error(msg);
       }
     } catch (e) {
       console.error(e);
@@ -104,12 +111,12 @@ const WeightLossResultPasswordPopup = ({
   };
 
   const isButtonDisabled =
-  !email ||
-  !isValidEmail(email) ||
-  !password ||
-  !agreePrivacy ||
-  !isValidPassword(password) ||
-  disabled;
+    !email ||
+    !isValidEmail(email) ||
+    !password ||
+    !agreePrivacy ||
+    !isValidPassword(password) ||
+    disabled;
 
   return (
     <div
@@ -267,11 +274,10 @@ const WeightLossResultPasswordPopup = ({
 
             <button
               type="submit"
-              className={`w-full mt-2 py-4 rounded-full h-[52px] text-[14px] font-semibold transition bg-black text-white ${
-                isButtonDisabled
+              className={`w-full mt-2 py-4 rounded-full h-[52px] text-[14px] font-semibold transition bg-black text-white ${isButtonDisabled
                   ? "opacity-50 cursor-not-allowed"
                   : "hover:bg-gray-900 "
-              }`}
+                }`}
               disabled={isButtonDisabled}
             >
               View Results
