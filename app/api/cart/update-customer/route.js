@@ -26,14 +26,7 @@ export async function POST(req) {
       "Update customer request data:",
       JSON.stringify(requestData, null, 2)
     );
-    
-    // Specifically log address fields to debug truncation
-    logger.log("=== UPDATE-CUSTOMER API ADDRESS DEBUG ===");
-    logger.log("Received billing address_1:", `"${requestData.billing_address?.address_1}"`);
-    logger.log("Received billing address_1 length:", requestData.billing_address?.address_1?.length || 0);
-    logger.log("Received shipping address_1:", `"${requestData.shipping_address?.address_1}"`);
-    logger.log("Received shipping address_1 length:", requestData.shipping_address?.address_1?.length || 0);
-    logger.log("=== END UPDATE-CUSTOMER API ADDRESS DEBUG ===");
+
 
     // Call the WooCommerce Store API update-customer endpoint
     const response = await axios.post(

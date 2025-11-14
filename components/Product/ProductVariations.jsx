@@ -11,13 +11,12 @@ const VariationButton = ({ selected, onClick, children, disabled = false }) => (
   <button
     onClick={onClick}
     disabled={disabled}
-    className={`w-full py-1 px-3 text-sm rounded-[8px] border-2 transition-all duration-200 ${
-      disabled
+    className={`w-full py-1 px-3 text-sm rounded-[8px] border-2 transition-all duration-200 ${disabled
         ? "border-[#CECECE] text-gray-400 cursor-not-allowed"
         : selected
-        ? "border-[#AE7E56] text-[#AE7E56]"
-        : "border-[#CECECE] hover:border-gray-400"
-    }`}
+          ? "border-[#AE7E56] text-[#AE7E56]"
+          : "border-[#CECECE] hover:border-gray-400"
+      }`}
   >
     {children}
   </button>
@@ -35,11 +34,10 @@ const SubscriptionOption = ({ option, selected, onSelect }) => {
 
     return (
       <div
-        className={`flex justify-between items-center p-3 rounded-lg border-2 transition-all duration-200 ${
-          selected
+        className={`flex justify-between items-center p-3 rounded-lg border-2 transition-all duration-200 ${selected
             ? "border-[#A55255]"
             : "border-[#CECECE] hover:border-gray-400"
-        }`}
+          }`}
       >
         <span className="font-medium text-sm mx-auto whitespace-nowrap">
           {frequencyLabel}
@@ -51,9 +49,8 @@ const SubscriptionOption = ({ option, selected, onSelect }) => {
   // Unified design for all Lidocaine subscription options (and regular options)
   return (
     <div
-      className={`flex items-center justify-between p-3 rounded-lg border-2 transition-all duration-200 ${
-        selected ? "border-[#AE7E56]" : "border-gray-300 text-gray-500"
-      }`}
+      className={`flex items-center justify-between p-3 rounded-lg border-2 transition-all duration-200 ${selected ? "border-[#AE7E56]" : "border-gray-300 text-gray-500"
+        }`}
       onClick={() => onSelect(option)}
       style={{ cursor: "pointer" }}
     >
@@ -67,9 +64,8 @@ const SubscriptionOption = ({ option, selected, onSelect }) => {
           className="w-4 h-4"
         />
         <span
-          className={`font-semibold ${
-            selected ? "text-[#AE7E56]" : "text-black"
-          }`}
+          className={`font-semibold ${selected ? "text-[#AE7E56]" : "text-black"
+            }`}
         >
           {option.label.replace(/-/g, " ")}
         </span>
@@ -91,11 +87,10 @@ const ForcedSubscriptionOptions = ({ options, selected, onSelect }) => {
           options.map((option) => (
             <div
               key={option.id}
-              className={`flex justify-between items-center p-3 rounded-lg border-2 transition-all duration-200 cursor-pointer ${
-                selected?.id === option.id
+              className={`flex justify-between items-center p-3 rounded-lg border-2 transition-all duration-200 cursor-pointer ${selected?.id === option.id
                   ? "border-[#A55255]"
                   : "border-[#CECECE] hover:border-gray-400"
-              }`}
+                }`}
               onClick={() => onSelect(option)}
             >
               <div className="flex items-center gap-2">
@@ -133,46 +128,73 @@ const ForcedSubscriptionOptions = ({ options, selected, onSelect }) => {
   );
 };
 
-const FrequencyOptions = ({ options, selected, onSelect }) => (
-  <div className="space-y-2">
-    <h3 className="text-base font-medium">Select frequency</h3>
-    <div className="grid grid-cols-2 gap-2">
-      {options.map((option) => (
-        <VariationButton
-          key={option.value}
-          selected={selected === option.value}
-          onClick={() => onSelect(option)}
-        >
-          {option.label}
-        </VariationButton>
-      ))}
-    </div>
-  </div>
-);
+const FrequencyOptions = ({ options, selected, onSelect }) => {
+  // Deduplicate options by value to prevent redundant options
+  const uniqueOptions = [];
+  const seenValues = new Set();
 
-const QuantityOptions = ({ options, selected, onSelect }) => (
-  <div className="space-y-2">
-    <h3 className="text-base font-medium">How many pills?</h3>
-    <div className="grid grid-cols-4 gap-2">
-      {[...options]
-        .sort((a, b) => {
-          // Sort by numeric value, extracting number from label
-          const aNum = parseInt(a.label.split(" ")[0]);
-          const bNum = parseInt(b.label.split(" ")[0]);
-          return aNum - bNum; // Ascending order (4, 8, 12)
-        })
-        .map((option) => (
+  options.forEach((option) => {
+    if (!seenValues.has(option.value)) {
+      seenValues.add(option.value);
+      uniqueOptions.push(option);
+    }
+  });
+
+  return (
+    <div className="space-y-2">
+      <h3 className="text-base font-medium">Select frequency</h3>
+      <div className="grid grid-cols-2 gap-2">
+        {uniqueOptions.map((option) => (
           <VariationButton
             key={option.value}
-            selected={selected?.value === option.value}
+            selected={selected === option.value}
             onClick={() => onSelect(option)}
           >
-            {option.label.split(" ")[0]} tabs
+            {option.label}
           </VariationButton>
         ))}
+      </div>
     </div>
-  </div>
-);
+  );
+};
+
+const QuantityOptions = ({ options, selected, onSelect }) => {
+  // Deduplicate options by value, keeping the first occurrence
+  // This prevents duplicate keys when multiple variations have the same quantity
+  const uniqueOptions = [];
+  const seenValues = new Set();
+
+  options.forEach((option) => {
+    if (!seenValues.has(option.value)) {
+      seenValues.add(option.value);
+      uniqueOptions.push(option);
+    }
+  });
+
+  return (
+    <div className="space-y-2">
+      <h3 className="text-base font-medium">How many pills?</h3>
+      <div className="grid grid-cols-4 gap-2">
+        {[...uniqueOptions]
+          .sort((a, b) => {
+            // Sort by numeric value, extracting number from label
+            const aNum = parseInt(a.label.split(" ")[0]);
+            const bNum = parseInt(b.label.split(" ")[0]);
+            return aNum - bNum; // Ascending order (4, 8, 12)
+          })
+          .map((option) => (
+            <VariationButton
+              key={option.variation_id || option.value}
+              selected={selected?.value === option.value}
+              onClick={() => onSelect(option)}
+            >
+              {option.label.split(" ")[0]} tabs
+            </VariationButton>
+          ))}
+      </div>
+    </div>
+  );
+};
 
 const ProductVariations = ({
   type,
@@ -198,9 +220,9 @@ const ProductVariations = ({
   // Format subscription options if needed
   const subscriptionOptions = isForcedSubscription
     ? formatSubscriptionOptions(
-        product,
-        Array.isArray(variations) ? variations : []
-      )
+      product,
+      Array.isArray(variations) ? variations : []
+    )
     : variations;
 
   // Helper function to sort quantities
@@ -383,11 +405,10 @@ const ProductVariations = ({
             subscriptionOptions.map((option) => (
               <div
                 key={option.id}
-                className={`flex justify-between items-center p-3 rounded-lg border-2 transition-all duration-200 ${
-                  selectedSubscription?.id === option.id
+                className={`flex justify-between items-center p-3 rounded-lg border-2 transition-all duration-200 ${selectedSubscription?.id === option.id
                     ? "border-[#A55255]"
                     : "border-[#CECECE] hover:border-gray-400"
-                }`}
+                  }`}
                 onClick={() => handleSubscriptionSelect(option)}
               >
                 <span className="font-medium text-sm whitespace-nowrap">
@@ -416,12 +437,25 @@ const ProductVariations = ({
 
   // Render logic for subscription type
   if (type === VARIATION_TYPES.SUBSCRIPTION) {
+    // Deduplicate subscription options by id to prevent redundant options
+    const uniqueSubscriptionOptions = [];
+    const seenSubscriptionIds = new Set();
+
+    if (Array.isArray(subscriptionOptions)) {
+      subscriptionOptions.forEach((option) => {
+        const optionId = option.id || option.variation_id;
+        if (optionId && !seenSubscriptionIds.has(optionId)) {
+          seenSubscriptionIds.add(optionId);
+          uniqueSubscriptionOptions.push(option);
+        }
+      });
+    }
+
     // Check if this is a lidocaine product by checking the first option's label
     const isLidocaineProduct =
-      Array.isArray(subscriptionOptions) &&
-      subscriptionOptions.length > 0 &&
-      (subscriptionOptions[0].label === "One Time Purchase" ||
-        subscriptionOptions.some(
+      uniqueSubscriptionOptions.length > 0 &&
+      (uniqueSubscriptionOptions[0].label === "One Time Purchase" ||
+        uniqueSubscriptionOptions.some(
           (option) =>
             option.label.includes("(30g)") || option.label.includes("(90g)")
         ));
@@ -433,9 +467,9 @@ const ProductVariations = ({
         {isLidocaineProduct ? (
           // Vertical layout for lidocaine products (one per row)
           <div className="flex flex-col space-y-2">
-            {subscriptionOptions.map((option) => (
+            {uniqueSubscriptionOptions.map((option) => (
               <SubscriptionOption
-                key={option.id}
+                key={option.id || option.variation_id}
                 option={option}
                 selected={selectedSubscription?.id === option.id}
                 onSelect={handleSubscriptionSelect}
@@ -444,10 +478,9 @@ const ProductVariations = ({
           </div>
         ) : (
           // Vertical layout for regular products
-          Array.isArray(subscriptionOptions) &&
-          subscriptionOptions.map((option) => (
+          uniqueSubscriptionOptions.map((option) => (
             <SubscriptionOption
-              key={option.id}
+              key={option.id || option.variation_id}
               option={option}
               selected={selectedSubscription?.id === option.id}
               onSelect={handleSubscriptionSelect}

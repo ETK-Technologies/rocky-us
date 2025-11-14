@@ -1,5 +1,7 @@
-import { fetchProductBySlug } from "@/lib/woocommerce";
 import { logger } from "@/utils/devLogger";
+import { fetchProductBySlugFromBackend } from "@/lib/api/productApi";
+import { transformBackendProductToWooCommerceFormat } from "@/lib/api/productAdapter";
+import { BACKEND_API_PRODUCTS } from "@/lib/constants/backendApiProducts";
 import {
   ProductFactory,
   CategoryHandlerFactory,
@@ -16,11 +18,23 @@ export async function GET(request, { params }) {
       return Response.json({ error: "No slug provided" }, { status: 400 });
     }
 
-    // Fetch product data
-    const productData = await fetchProductBySlug(slug);
+    // Only fetch from new backend API for specified products
+    if (!BACKEND_API_PRODUCTS.includes(slug)) {
+      return Response.json({ error: "Product not found" }, { status: 404 });
+    }
+
+    // Fetch product data from new backend API
+    const apiProduct = await fetchProductBySlugFromBackend(slug, false);
+
+    if (!apiProduct) {
+      return Response.json({ error: "Product not found" }, { status: 404 });
+    }
+
+    // Transform the API response to WooCommerce-like format
+    const productData = transformBackendProductToWooCommerceFormat(apiProduct);
 
     if (!productData) {
-      return Response.json({ error: "Product not found" }, { status: 404 });
+      return Response.json({ error: "Failed to transform product data" }, { status: 500 });
     }
 
     // Process the product data using the same flow as the page component

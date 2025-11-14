@@ -1,8 +1,9 @@
-import { fetchProductBySlug } from "@/lib/woocommerce";
 import ErrorPage from "@/components/Product/ErrorPage";
 import ProductClientWrapper from "@/components/Product/ProductClientWrapper";
 import { logger } from "@/utils/devLogger";
-import { wooApiGet } from "@/lib/woocommerce";
+import { fetchProductBySlugFromBackend } from "@/lib/api/productApi";
+import { transformBackendProductToWooCommerceFormat } from "@/lib/api/productAdapter";
+import { BACKEND_API_PRODUCTS } from "@/lib/constants/backendApiProducts";
 import {
   ProductFactory,
   CategoryHandlerFactory,
@@ -12,32 +13,6 @@ import {
 
 // Add revalidation time (1 hour)
 export const revalidate = 3600;
-
-// Add generateStaticParams to pre-generate popular products
-export async function generateStaticParams() {
-  try {
-    // Fetch all published products
-    const response = await wooApiGet("products", {
-      per_page: 100,
-      status: "publish",
-      _fields: "slug", // Only fetch slugs to minimize payload
-    });
-
-    if (!response.ok) {
-      logger.error("Failed to fetch products for static generation");
-      return [];
-    }
-
-    const products = await response.json();
-
-    return products.map((product) => ({
-      slug: product.slug,
-    }));
-  } catch (error) {
-    logger.error("Error in generateStaticParams:", error);
-    return [];
-  }
-}
 
 export async function generateMetadata({ params }) {
   try {
@@ -51,19 +26,27 @@ export async function generateMetadata({ params }) {
       };
     }
 
-    const productData = await fetchProductBySlug(slug);
+    // Only fetch from new API for specified products
+    if (BACKEND_API_PRODUCTS.includes(slug)) {
+      const apiProduct = await fetchProductBySlugFromBackend(slug, false);
+      
+      if (!apiProduct) {
+        return {
+          title: "Product Not Found",
+          description: "The product you are looking for does not exist.",
+        };
+      }
 
-    if (!productData) {
       return {
-        title: "Product Not Found",
-        description: "The product you are looking for does not exist.",
+        title: apiProduct.name,
+        description: apiProduct.shortDescription || apiProduct.description || "",
       };
     }
 
+    // For other products, return generic metadata
     return {
-      title: productData.name,
-      description:
-        productData.short_description || productData.description || "",
+      title: "Product",
+      description: "Product page",
     };
   } catch (error) {
     logger.error("Error generating metadata", error);
@@ -86,15 +69,28 @@ export default async function ProductPage({ params }) {
     return <ErrorPage />;
   }
 
+  // Only fetch from new backend API for specified products
+  if (!BACKEND_API_PRODUCTS.includes(slug)) {
+    // For other products, show error or handle differently
+    return <ErrorPage />;
+  }
+
   try {
-    // Pre-fetch product data at build time
-    const productData = await fetchProductBySlug(slug);
+    // Fetch product data from new backend API
+    const apiProduct = await fetchProductBySlugFromBackend(slug, false);
+
+    if (!apiProduct) {
+      return <ErrorPage />;
+    }
+
+    // Transform the API response to WooCommerce-like format
+    const productData = transformBackendProductToWooCommerceFormat(apiProduct);
 
     if (!productData) {
       return <ErrorPage />;
     }
 
-    // Process the product data
+    // Process the product data using existing models
     const product = ProductFactory(productData);
     const categoryHandler = CategoryHandlerFactory(product);
     const variationManager = new VariationManager(product, categoryHandler);
