@@ -56,10 +56,34 @@ export const processItemsIndividuallyWithFallback = async (
           }`
         );
 
+        // Handle authentication and sessionId
+        const requestBody = { ...item };
+        try {
+          const { isAuthenticated } = await import("@/lib/cart/cartService");
+          const authenticated = isAuthenticated();
+          
+          if (authenticated) {
+            // Remove sessionId for authenticated users
+            if (requestBody.sessionId) {
+              logger.warn("⚠️ Removing sessionId from authenticated user request (batch fallback)");
+              delete requestBody.sessionId;
+            }
+          } else {
+            // Add sessionId for guest users
+            const { getSessionId } = await import("@/services/sessionService");
+            const sessionId = getSessionId();
+            if (sessionId) {
+              requestBody.sessionId = sessionId;
+            }
+          }
+        } catch (err) {
+          logger.warn("Could not check authentication status:", err);
+        }
+
         const response = await fetch(endpoint, {
           method: "POST",
           headers,
-          body: JSON.stringify(item),
+          body: JSON.stringify(requestBody),
         });
 
         if (!response.ok) {

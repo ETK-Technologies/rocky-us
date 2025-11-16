@@ -47,8 +47,7 @@ export const addToCartDirectly = async (
     // Check authentication status
     const isAuthenticated = isUserAuthenticated();
     logger.log(
-      `Authentication status: ${
-        isAuthenticated ? "Authenticated" : "Not authenticated"
+      `Authentication status: ${isAuthenticated ? "Authenticated" : "Not authenticated"
       }`
     );
 
@@ -689,16 +688,40 @@ async function addItemsBatch(items) {
 
 /**
  * Add single item using individual endpoint
+ * Includes sessionId for guest users ONLY
  */
 async function addSingleItem(item) {
   logger.log("Adding single item via individual endpoint");
+
+  const authenticated = checkIsAuthenticated();
+  logger.log("🔐 addSingleItem - User authenticated:", authenticated);
+
+  // Prepare request body
+  const requestBody = { ...item };
+
+  if (authenticated) {
+    // For authenticated users, explicitly REMOVE sessionId if present
+    if (requestBody.sessionId) {
+      logger.warn("⚠️ Removing sessionId from authenticated user request");
+      delete requestBody.sessionId;
+    }
+    logger.log("✅ Sending authenticated request (no sessionId):", requestBody);
+  } else {
+    // For guest users, include sessionId
+    const { getSessionId } = await import("@/services/sessionService");
+    const sessionId = getSessionId();
+    if (sessionId) {
+      requestBody.sessionId = sessionId;
+      logger.log("✅ Sending guest request (with sessionId):", requestBody);
+    }
+  }
 
   const response = await fetch("/api/cart/add-item", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(item),
+    body: JSON.stringify(requestBody),
   });
 
   if (!response.ok) {
@@ -877,8 +900,7 @@ export const addToCartEarly = async (
     // Check authentication status
     const isAuthenticated = isUserAuthenticated();
     logger.log(
-      `Authentication status: ${
-        isAuthenticated ? "Authenticated" : "Not authenticated"
+      `Authentication status: ${isAuthenticated ? "Authenticated" : "Not authenticated"
       }`
     );
 

@@ -79,50 +79,54 @@ const SubscriptionOption = ({ option, selected, onSelect }) => {
 
 // Special component for forced subscription products
 const ForcedSubscriptionOptions = ({ options, selected, onSelect }) => {
+  // ✅ FILTER: Only show active options
+  const activeOptions = Array.isArray(options)
+    ? options.filter((option) => option.isActive !== false)
+    : [];
+
   return (
     <div className="space-y-4" id="subscriptions">
       <h3 className="text-base font-medium">Select subscription</h3>
       <div className="flex flex-col space-y-2">
-        {Array.isArray(options) &&
-          options.map((option) => (
-            <div
-              key={option.id}
-              className={`flex justify-between items-center p-3 rounded-lg border-2 transition-all duration-200 cursor-pointer ${selected?.id === option.id
-                ? "border-[#A55255]"
-                : "border-[#CECECE] hover:border-gray-400"
-                }`}
-              onClick={() => onSelect(option)}
-            >
-              <div className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  value={option.id}
-                  id={`convert_to_sub_${option.id}`}
-                  name="convert_to_sub_forced_subscription"
-                  checked={selected?.id === option.id}
-                  onChange={() => onSelect(option)}
-                  className="w-4 h-4"
-                />
-                <p className="font-medium text-sm whitespace-nowrap">
-                  {option.label}
-                </p>
-              </div>
-
-              {/* Display price information */}
-              <div
-                id="cart-button-price"
-                className="subscription-price font-semibold"
-              >
-                ${option.price}
-                {option.sale_price &&
-                  Number(option.sale_price) < Number(option.regular_price) && (
-                    <span className="text-gray-400 line-through text-sm ml-2">
-                      ${option.regular_price}
-                    </span>
-                  )}
-              </div>
+        {activeOptions.map((option) => (
+          <div
+            key={option.id}
+            className={`flex justify-between items-center p-3 rounded-lg border-2 transition-all duration-200 cursor-pointer ${selected?.id === option.id
+              ? "border-[#A55255]"
+              : "border-[#CECECE] hover:border-gray-400"
+              }`}
+            onClick={() => onSelect(option)}
+          >
+            <div className="flex items-center gap-2">
+              <input
+                type="radio"
+                value={option.id}
+                id={`convert_to_sub_${option.id}`}
+                name="convert_to_sub_forced_subscription"
+                checked={selected?.id === option.id}
+                onChange={() => onSelect(option)}
+                className="w-4 h-4"
+              />
+              <p className="font-medium text-sm whitespace-nowrap">
+                {option.label}
+              </p>
             </div>
-          ))}
+
+            {/* Display price information */}
+            <div
+              id="cart-button-price"
+              className="subscription-price font-semibold"
+            >
+              ${option.price}
+              {option.sale_price &&
+                Number(option.sale_price) < Number(option.regular_price) && (
+                  <span className="text-gray-400 line-through text-sm ml-2">
+                    ${option.regular_price}
+                  </span>
+                )}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -134,6 +138,12 @@ const FrequencyOptions = ({ options, selected, onSelect }) => {
   const seenValues = new Set();
 
   options.forEach((option) => {
+    // ✅ FILTER: Only include active options
+    // Skip if isActive is explicitly false
+    if (option.isActive === false) {
+      return; // Skip inactive options
+    }
+
     if (!seenValues.has(option.value)) {
       seenValues.add(option.value);
       uniqueOptions.push(option);
@@ -165,11 +175,18 @@ const QuantityOptions = ({ options, selected, onSelect }) => {
   const seenValues = new Set();
 
   options.forEach((option) => {
+    // ✅ FILTER: Only include active options
+    // Skip if isActive is explicitly false
+    if (option.isActive === false) {
+      return; // Skip inactive options
+    }
+
     if (!seenValues.has(option.value)) {
       seenValues.add(option.value);
       uniqueOptions.push(option);
     }
   });
+
 
   return (
     <div className="space-y-2">
@@ -490,7 +507,6 @@ const ProductVariations = ({
       </div>
     );
   }
-
   // Render logic for quantity/frequency type
   return (
     <div className="space-y-6">

@@ -81,13 +81,11 @@ const EdProductCards = ({
             )} */}
 
       <div
-        className={`border-[0.5px] bg-white border-solid ${
-          isSelected ? "border-[#A55255] border-2" : "border-[#E2E2E1]"
-        } shadow-[0px_1px_1px_0px_#E2E2E1]  rounded-[16px] p-[16px] md:p-[24px] text-center h-full w-full min-w-[280px] md:min-w-[380px] ${
-          isRecommended
+        className={`border-[0.5px] bg-white border-solid ${isSelected ? "border-[#A55255] border-2" : "border-[#E2E2E1]"
+          } shadow-[0px_1px_1px_0px_#E2E2E1]  rounded-[16px] p-[16px] md:p-[24px] text-center h-full w-full min-w-[280px] md:min-w-[380px] ${isRecommended
             ? "pt-[32px] md:shadow-[0px_0px_16px_0px_#00000040]"
             : ""
-        } cursor-pointer`}
+          } cursor-pointer`}
         onClick={handleCardSelect}
       >
         <div className="flex justify-between items-start">
@@ -134,11 +132,10 @@ const EdProductCards = ({
           {preferences.map((pref) => (
             <p
               key={pref}
-              className={`border-[1.5px] border-solid ${
-                selectedPreference === pref
+              className={`border-[1.5px] border-solid ${selectedPreference === pref
                   ? "border-[#A55255]"
                   : "border-[#CECECE]"
-              } text-black text-center py-[6px] leading-[140%] rounded-[8px] w-full h-[32px] text-[14px] cursor-pointer shadow-[0px_1px_1px_0px_#E2E2E1]`}
+                } text-black text-center py-[6px] leading-[140%] rounded-[8px] w-full h-[32px] text-[14px] cursor-pointer shadow-[0px_1px_1px_0px_#E2E2E1]`}
               onClick={(e) => {
                 e.stopPropagation(); // Prevent card selection when clicking preference
                 setSelectedPreference(pref);
@@ -156,11 +153,10 @@ const EdProductCards = ({
           {Object.keys(frequencies).map((freq) => (
             <p
               key={freq}
-              className={`border-[1.5px] border-solid ${
-                selectedFrequency === freq
+              className={`border-[1.5px] border-solid ${selectedFrequency === freq
                   ? "border-[#A55255]"
                   : "border-[#CECECE]"
-              } text-black text-center py-[6px] leading-[140%] rounded-[8px] w-full h-[32px] text-[14px] cursor-pointer shadow-[0px_1px_1px_0px_#E2E2E1]`}
+                } text-black text-center py-[6px] leading-[140%] rounded-[8px] w-full h-[32px] text-[14px] cursor-pointer shadow-[0px_1px_1px_0px_#E2E2E1]`}
               onClick={(e) => {
                 e.stopPropagation(); // Prevent card selection when clicking frequency
                 setSelectedFrequency(freq);
@@ -178,11 +174,10 @@ const EdProductCards = ({
           {pillOptions[selectedFrequency].map((pill) => (
             <p
               key={pill.count}
-              className={`border-[1.5px] border-solid ${
-                selectedPills.count === pill.count
+              className={`border-[1.5px] border-solid ${selectedPills.count === pill.count
                   ? "border-[#A55255]"
                   : "border-[#CECECE]"
-              } text-black text-center py-[6px] leading-[140%] rounded-[8px] w-full h-[32px] text-[14px] cursor-pointer shadow-[0px_1px_1px_0px_#E2E2E1]`}
+                } text-black text-center py-[6px] leading-[140%] rounded-[8px] w-full h-[32px] text-[14px] cursor-pointer shadow-[0px_1px_1px_0px_#E2E2E1]`}
               onClick={(e) => {
                 e.stopPropagation(); // Prevent card selection when clicking pill count
                 setSelectedPills(pill);
@@ -201,16 +196,14 @@ const EdProductCards = ({
           }}
         >
           {isSelected
-            ? `Selected - $${
-                selectedPreference === "generic"
-                  ? selectedPills.genericPrice
-                  : selectedPills.brandPrice
-              }`
-            : `Select - $${
-                selectedPreference === "generic"
-                  ? selectedPills.genericPrice
-                  : selectedPills.brandPrice
-              }`}
+            ? `Selected - $${selectedPreference === "generic"
+              ? selectedPills.genericPrice
+              : selectedPills.brandPrice
+            }`
+            : `Select - $${selectedPreference === "generic"
+              ? selectedPills.genericPrice
+              : selectedPills.brandPrice
+            }`}
         </button>
         <p className="text-[10px] md:text-[12px] leading-[140%] font-[400] mt-[8px]">
           *Dose request can be made during questionnaire

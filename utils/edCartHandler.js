@@ -36,6 +36,32 @@ export const addEdProductToCart = async (productOptions, dosage) => {
 
     logger.log("Adding ED product to cart:", requestBody);
 
+    // Handle authentication and sessionId
+    try {
+      const { isAuthenticated } = await import("@/lib/cart/cartService");
+      const authenticated = isAuthenticated();
+      logger.log("🔐 edCartHandler - User authenticated:", authenticated);
+      
+      if (authenticated) {
+        // Remove sessionId for authenticated users
+        if (requestBody.sessionId) {
+          logger.warn("⚠️ Removing sessionId from authenticated user request");
+          delete requestBody.sessionId;
+        }
+        logger.log("✅ Sending authenticated request (no sessionId)");
+      } else {
+        // Add sessionId for guest users
+        const { getSessionId } = await import("@/services/sessionService");
+        const sessionId = getSessionId();
+        if (sessionId) {
+          requestBody.sessionId = sessionId;
+          logger.log("✅ Sending guest request (with sessionId)");
+        }
+      }
+    } catch (err) {
+      logger.warn("Could not check authentication status:", err);
+    }
+
     // Make the API call to add the item to cart
     const response = await fetch("/api/cart/add-item", {
       method: "POST",

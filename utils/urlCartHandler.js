@@ -504,12 +504,39 @@ export const processUrlCartParameters = async (searchParams) => {
         logger.log("Single item detected, using individual endpoint");
         const item = batchItems[0];
 
+        // Handle authentication and sessionId
+        const requestBody = { ...item };
+        try {
+          const { isAuthenticated } = await import("@/lib/cart/cartService");
+          const authenticated = isAuthenticated();
+          logger.log("🔐 urlCartHandler - User authenticated:", authenticated);
+
+          if (authenticated) {
+            // Remove sessionId for authenticated users
+            if (requestBody.sessionId) {
+              logger.warn("⚠️ Removing sessionId from authenticated user request");
+              delete requestBody.sessionId;
+            }
+            logger.log("✅ Sending authenticated request (no sessionId)");
+          } else {
+            // Add sessionId for guest users
+            const { getSessionId } = await import("@/services/sessionService");
+            const sessionId = getSessionId();
+            if (sessionId) {
+              requestBody.sessionId = sessionId;
+              logger.log("✅ Sending guest request (with sessionId)");
+            }
+          }
+        } catch (err) {
+          logger.warn("Could not check authentication status:", err);
+        }
+
         const response = await fetch("/api/cart/add-item", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(item),
+          body: JSON.stringify(requestBody),
         });
 
         if (!response.ok) {
@@ -575,6 +602,29 @@ export const processUrlCartParameters = async (searchParams) => {
               );
             }
             delete requestBody.needsDynamicVariationLookup;
+          }
+
+          // Handle authentication and sessionId
+          try {
+            const { isAuthenticated } = await import("@/lib/cart/cartService");
+            const authenticated = isAuthenticated();
+
+            if (authenticated) {
+              // Remove sessionId for authenticated users
+              if (requestBody.sessionId) {
+                logger.warn("⚠️ Removing sessionId from authenticated user request (fallback)");
+                delete requestBody.sessionId;
+              }
+            } else {
+              // Add sessionId for guest users
+              const { getSessionId } = await import("@/services/sessionService");
+              const sessionId = getSessionId();
+              if (sessionId) {
+                requestBody.sessionId = sessionId;
+              }
+            }
+          } catch (err) {
+            logger.warn("Could not check authentication status:", err);
           }
 
           // Add product to cart using individual endpoint
@@ -963,10 +1013,8 @@ async function findVariationByPrice(productId, targetPrice) {
 
     if (closestVariation) {
       logger.log(
-        `Found closest price match for ${productId}: variation ${
-          closestVariation.id
-        } at $${
-          closestVariation.price
+        `Found closest price match for ${productId}: variation ${closestVariation.id
+        } at $${closestVariation.price
         } (target: $${price}, difference: $${priceDifference.toFixed(2)})`
       );
       return closestVariation.id;
@@ -1637,12 +1685,12 @@ export const cleanupCartUrlParameters = (flowType = "ed") => {
     flowType === "ed"
       ? "ed-flow=1"
       : flowType === "wl"
-      ? "wl-flow=1"
-      : flowType === "hair"
-      ? "hair-flow=1"
-      : flowType === "mh"
-      ? "mh-flow=1"
-      : `${flowType}-flow=1`;
+        ? "wl-flow=1"
+        : flowType === "hair"
+          ? "hair-flow=1"
+          : flowType === "mh"
+            ? "mh-flow=1"
+            : `${flowType}-flow=1`;
 
   const newUrl = window.location.pathname + `?${flowParam}`;
   logger.log(`Cleaning up URL parameters, preserving flow type: ${flowType}`);

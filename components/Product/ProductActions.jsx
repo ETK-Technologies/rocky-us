@@ -28,7 +28,7 @@ const ProductActions = ({
     selectedVariation &&
     selectedVariation.sale_price &&
     Number(selectedVariation.sale_price) <
-      Number(selectedVariation.regular_price);
+    Number(selectedVariation.regular_price);
 
   // If there's a sale price, use it, otherwise use the regular price
   const finalPrice = hasSalePrice
@@ -67,79 +67,31 @@ const ProductActions = ({
       }
       // --- END FLOW DETECTION AND LOCALSTORAGE LOGIC ---
 
-      // Make sure we have the correct product image URL
-      const productImageUrl =
-        product.images && product.images.length > 0
-          ? product.images[0].src
-          : product.image || "";
-
-      logger.log("Adding product to cart with details:", {
-        id: product.id,
-        name: product.name,
-        price: finalPrice,
-        image: productImageUrl,
+      logger.log("Adding product to cart:", {
+        productId: product.id,
+        productName: product.name,
+        hasVariation: !!selectedVariation,
       });
 
-      // Prepare data for the cart addition with complete product details
+      // Prepare CLEAN cart data - ONLY required fields for the new API
       const cartData = {
         productId: product.id,
         quantity: 1,
-        name: product.name || "Product",
-        price: finalPrice,
-        // Include product image if available - with fallback options
-        image: productImageUrl,
-        // Include product type
-        product_type: product.type || "",
       };
 
-      // Add variation information if selected
+      // Add variantId if there's a selected variation
       if (selectedVariation) {
-        logger.log("selectedVariation", selectedVariation);
-        cartData.variationId =
-          selectedVariation.variation_id || selectedVariation.id;
+        const variantId = selectedVariation.variation_id || selectedVariation.id;
 
-        // Add variation attributes for display
-        if (selectedVariation.attributes) {
-          cartData.variation = Object.entries(selectedVariation.attributes).map(
-            ([name, value]) => ({
-              name: name.replace("attribute_", "").replace("pa_", ""),
-              value: value,
-            })
-          );
+        // Only add variantId if it's DIFFERENT from productId
+        if (variantId && variantId !== product.id) {
+          cartData.variantId = variantId;
+          logger.log(`Variable product: productId=${product.id}, variantId=${variantId}`);
+        } else {
+          logger.log(`Simple product (variantId same as productId): ${product.id}`);
         }
-
-        // Special handling for variable products where the variation ID should be used as product ID
-        const isVariableProduct =
-          product.type === "variable" ||
-          product.type === "variable-subscription";
-
-        // For variable products that aren't being converted to subscriptions,
-        // use the variation ID as the product ID
-        if (isVariableProduct && !cartData.convertToSub) {
-          const varId = selectedVariation.variation_id || selectedVariation.id;
-          logger.log(
-            `Variable product detected, using variation ID ${varId} as productId for ${
-              product.name || product.id
-            }`
-          );
-          cartData.productId = varId;
-        }
-      }
-
-      // Always set 'id' to the correct value for the API
-      if (
-        selectedVariation &&
-        (product.type === "variable" ||
-          product.type === "variable-subscription")
-      ) {
-        cartData.id = selectedVariation.variation_id || selectedVariation.id;
-        logger.log(
-          "variation id",
-          selectedVariation.variation_id || selectedVariation.id
-        );
       } else {
-        cartData.id = product.id;
-        logger.log("product id", product.id);
+        logger.log(`Simple product (no variation selected): ${product.id}`);
       }
 
       // Use the cart service instead of direct API call
@@ -148,36 +100,33 @@ const ProductActions = ({
       // Refresh the cart in the navbar
       document.getElementById("cart-refresher")?.click();
 
-      // Track add_to_cart
+      // Track add_to_cart event for analytics
       try {
         const productForTracking = {
           id: product.id,
-          sku: product.sku,
-          name: product.name,
+          sku: product.sku || "",
+          name: product.name || "Product",
           price: finalPrice,
-          // Variant context for analytics
           variant_id:
-            (selectedVariation &&
-              (selectedVariation.variation_id || selectedVariation.id)) ||
-            undefined,
+            selectedVariation &&
+            (selectedVariation.variation_id || selectedVariation.id),
           item_variant: selectedVariation?.attributes
             ? Object.entries(selectedVariation.attributes)
-                .map(
-                  ([key, val]) =>
-                    `${key
-                      .replace(/^attribute_/, "")
-                      .replace(/^pa_/, "")}: ${val}`
-                )
-                .join(", ")
+              .map(
+                ([key, val]) =>
+                  `${key
+                    .replace(/^attribute_/, "")
+                    .replace(/^pa_/, "")}: ${val}`
+              )
+              .join(", ")
             : "",
-          // Pass through minimal attributes if variation selected
           attributes: selectedVariation?.attributes
             ? Object.entries(selectedVariation.attributes).map(
-                ([key, val]) => ({
-                  name: key.replace(/^attribute_/, "").replace(/^pa_/, ""),
-                  options: [val],
-                })
-              )
+              ([key, val]) => ({
+                name: key.replace(/^attribute_/, "").replace(/^pa_/, ""),
+                options: [val],
+              })
+            )
             : [],
         };
         analyticsService.trackAddToCart(productForTracking, 1);

@@ -40,8 +40,8 @@ const EdProductCard = ({ product }) => {
     return product.name === "Viagra"
       ? "50mg"
       : product.name === "Cialis + Viagra"
-      ? "10/50mg"
-      : "10mg";
+        ? "10/50mg"
+        : "10mg";
   });
 
   // Calculate current price based on preferences
@@ -176,11 +176,10 @@ const EdProductCard = ({ product }) => {
           },
           {
             attribute: "Tabs frequency",
-            value: `${selectedProductData.pills} ${
-              selectedProductData.preference === "brand"
+            value: `${selectedProductData.pills} ${selectedProductData.preference === "brand"
                 ? "(Brand)"
                 : "(Generic)"
-            }`,
+              }`,
           },
         ],
       };
@@ -305,11 +304,10 @@ const EdProductCard = ({ product }) => {
                 <button
                   key={preference}
                   onClick={() => handlePreferenceChange(preference)}
-                  className={`border-2 border-solid ${
-                    activePreference === preference
+                  className={`border-2 border-solid ${activePreference === preference
                       ? "border-[#A55255]"
                       : "border-[#CECECE]"
-                  } text-black text-center py-1 rounded-[8px] w-full text-sm`}
+                    } text-black text-center py-1 rounded-[8px] w-full text-sm`}
                 >
                   {preference.charAt(0).toUpperCase() + preference.slice(1)}
                 </button>
@@ -340,11 +338,10 @@ const EdProductCard = ({ product }) => {
             <button
               key={key}
               onClick={() => handleFrequencyChange(key)}
-              className={`border-2 border-solid ${
-                activeFrequency === key
+              className={`border-2 border-solid ${activeFrequency === key
                   ? "border-[#A55255]"
                   : "border-[#CECECE]"
-              } text-black text-center py-1 rounded-[8px] w-full text-sm`}
+                } text-black text-center py-1 rounded-[8px] w-full text-sm`}
             >
               {value}
             </button>
@@ -361,15 +358,13 @@ const EdProductCard = ({ product }) => {
             <button
               key={index}
               onClick={() => handlePillOptionSelect(option)}
-              className={`${index === 0 ? "ct-opt-1" : ""} ${
-                index === product.pillOptions[activeFrequency].length - 1
+              className={`${index === 0 ? "ct-opt-1" : ""} ${index === product.pillOptions[activeFrequency].length - 1
                   ? "ct-opt-last relative"
                   : ""
-              } relative border-2 border-solid ${
-                selectedPillOption.count === option.count
+                } relative border-2 border-solid ${selectedPillOption.count === option.count
                   ? "border-[#A55255]"
                   : "border-[#CECECE]"
-              } text-black text-center py-1 rounded-[8px] w-full text-sm`}
+                } text-black text-center py-1 rounded-[8px] w-full text-sm`}
             >
               {option.count}
             </button>
