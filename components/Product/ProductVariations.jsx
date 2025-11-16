@@ -12,10 +12,10 @@ const VariationButton = ({ selected, onClick, children, disabled = false }) => (
     onClick={onClick}
     disabled={disabled}
     className={`w-full py-1 px-3 text-sm rounded-[8px] border-2 transition-all duration-200 ${disabled
-        ? "border-[#CECECE] text-gray-400 cursor-not-allowed"
-        : selected
-          ? "border-[#AE7E56] text-[#AE7E56]"
-          : "border-[#CECECE] hover:border-gray-400"
+      ? "border-[#CECECE] text-gray-400 cursor-not-allowed"
+      : selected
+        ? "border-[#AE7E56] text-[#AE7E56]"
+        : "border-[#CECECE] hover:border-gray-400"
       }`}
   >
     {children}
@@ -35,8 +35,8 @@ const SubscriptionOption = ({ option, selected, onSelect }) => {
     return (
       <div
         className={`flex justify-between items-center p-3 rounded-lg border-2 transition-all duration-200 ${selected
-            ? "border-[#A55255]"
-            : "border-[#CECECE] hover:border-gray-400"
+          ? "border-[#A55255]"
+          : "border-[#CECECE] hover:border-gray-400"
           }`}
       >
         <span className="font-medium text-sm mx-auto whitespace-nowrap">
@@ -88,8 +88,8 @@ const ForcedSubscriptionOptions = ({ options, selected, onSelect }) => {
             <div
               key={option.id}
               className={`flex justify-between items-center p-3 rounded-lg border-2 transition-all duration-200 cursor-pointer ${selected?.id === option.id
-                  ? "border-[#A55255]"
-                  : "border-[#CECECE] hover:border-gray-400"
+                ? "border-[#A55255]"
+                : "border-[#CECECE] hover:border-gray-400"
                 }`}
               onClick={() => onSelect(option)}
             >
@@ -406,8 +406,8 @@ const ProductVariations = ({
               <div
                 key={option.id}
                 className={`flex justify-between items-center p-3 rounded-lg border-2 transition-all duration-200 ${selectedSubscription?.id === option.id
-                    ? "border-[#A55255]"
-                    : "border-[#CECECE] hover:border-gray-400"
+                  ? "border-[#A55255]"
+                  : "border-[#CECECE] hover:border-gray-400"
                   }`}
                 onClick={() => handleSubscriptionSelect(option)}
               >

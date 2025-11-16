@@ -1,17 +1,19 @@
 import { NextResponse } from "next/server";
-import axios from "axios";
 import { cookies } from "next/headers";
 import { logger } from "@/utils/devLogger";
+import { fetchCartFromBackend } from "@/lib/api/cartApi";
 
-const BASE_URL = process.env.BASE_URL;
-
-export async function GET() {
+export async function GET(request) {
   try {
     const cookieStore = await cookies();
-    const encodedCredentials = cookieStore.get("authToken");
+    const authToken = cookieStore.get("authToken");
 
-    if (!encodedCredentials) {
-      // For unauthenticated users, we'll check for a cookie that might contain local cart data
+    // Get sessionId from query parameters (for guest users)
+    const { searchParams } = new URL(request.url);
+    const sessionId = searchParams.get("sessionId");
+
+    // If no auth token and no sessionId, check for local cart as fallback
+    if (!authToken && !sessionId) {
       const localCart = cookieStore.get("localCart");
 
       if (localCart) {
@@ -79,7 +81,7 @@ export async function GET() {
       }
 
       // If no local cart data is found or parsing fails, return an empty cart
-      logger.log("User not authenticated, returning empty cart");
+      logger.log("User not authenticated and no sessionId, returning empty cart");
 
       return NextResponse.json({
         items: [],
@@ -92,70 +94,45 @@ export async function GET() {
       });
     }
 
-    const response = await axios.get(`${BASE_URL}/wp-json/wc/store/cart`, {
-      headers: {
-        Authorization: `${encodedCredentials.value}`,
-      },
-    });
+    // Fetch cart from new backend API
+    const cartData = await fetchCartFromBackend(
+      authToken?.value || null,
+      sessionId || null
+    );
 
-    cookieStore.set("cart-nonce", response.headers.nonce);
+    if (!cartData) {
+      // Return empty cart if API call failed
+      return NextResponse.json({
+        items: [],
+        total_items: 0,
+        total_price: "0.00",
+        needs_shipping: false,
+        coupons: [],
+        shipping_rates: [],
+      });
+    }
 
     // Ensure the response has the expected structure
-    const responseData = response.data;
-    if (!responseData.items || !Array.isArray(responseData.items)) {
+    if (!cartData.items || !Array.isArray(cartData.items)) {
       logger.warn("Server returned invalid cart structure, fixing...");
-      responseData.items = responseData.items || [];
+      cartData.items = cartData.items || [];
     }
 
-    // Try to fetch and include user address data if not already present in cart
-    if (!responseData.billing_address && !responseData.shipping_address) {
-      try {
-        const userId = cookieStore.get("userId");
-        if (userId) {
-          // Fetch customer data to get billing and shipping addresses
-          const customerResponse = await axios.get(
-            `${BASE_URL}/wp-json/wc/v3/customers/${userId.value}`,
-            {
-              headers: {
-                Authorization: process.env.ADMIN_TOKEN || encodedCredentials.value,
-              },
-            }
-          );
-
-          const customerData = customerResponse.data;
-          if (customerData.billing || customerData.shipping) {
-            logger.log("Adding customer address data to cart response");
-            
-            // Add billing and shipping addresses to cart response
-            if (customerData.billing) {
-              responseData.billing_address = customerData.billing;
-            }
-            if (customerData.shipping) {
-              responseData.shipping_address = customerData.shipping;
-            }
-          }
-        }
-      } catch (addressError) {
-        logger.log("Could not fetch customer address data:", addressError.message);
-        // Continue without address data - not a critical error
-      }
-    }
-
-    return NextResponse.json(responseData);
+    return NextResponse.json(cartData);
   } catch (error) {
-    logger.error("Error getting cart:", error.response?.data || error.message);
+    logger.error("Error getting cart:", error.message || error);
 
     // Return a valid cart structure even on error
     return NextResponse.json(
       {
-        error: error.response?.data?.message || "Failed to get cart",
+        error: error.message || "Failed to get cart",
         items: [], // Always include empty items array
         total_items: 0,
         total_price: "0.00",
         coupons: [],
         shipping_rates: [],
       },
-      { status: error.response?.status || 500 }
+      { status: 500 }
     );
   }
 }

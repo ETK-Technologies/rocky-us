@@ -15,10 +15,23 @@ export const fetchCart = async () => {
   try {
     logger.log("📦 Fetching cart contents...");
 
-    // Refresh nonce before cart operation
+    // Refresh nonce before cart operation (for old WooCommerce compatibility)
     await refreshCartNonceClient();
 
-    const response = await fetch("/api/cart", {
+    // Get sessionId for guest users
+    let url = "/api/cart";
+    try {
+      const { getSessionId } = await import("@/services/sessionService");
+      const sessionId = getSessionId();
+      if (sessionId) {
+        url = `/api/cart?sessionId=${sessionId}`;
+      }
+    } catch (error) {
+      // If sessionService fails, continue without sessionId
+      logger.log("Could not get sessionId, fetching cart without it");
+    }
+
+    const response = await fetch(url, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",

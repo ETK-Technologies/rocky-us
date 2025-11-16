@@ -29,7 +29,7 @@ export async function generateMetadata({ params }) {
     // Only fetch from new API for specified products
     if (BACKEND_API_PRODUCTS.includes(slug)) {
       const apiProduct = await fetchProductBySlugFromBackend(slug, false);
-      
+
       if (!apiProduct) {
         return {
           title: "Product Not Found",

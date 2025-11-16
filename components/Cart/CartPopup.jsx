@@ -18,7 +18,19 @@ const CartPopup = ({ isOpen, onClose, productType, onContinueShopping }) => {
     setIsLoading(true);
     const fetchCartItems = async () => {
       try {
-        const res = await fetch("/api/cart", {
+        // Get sessionId for guest users
+        let url = "/api/cart";
+        try {
+          const { getSessionId } = await import("@/services/sessionService");
+          const sessionId = getSessionId();
+          if (sessionId) {
+            url = `/api/cart?sessionId=${sessionId}`;
+          }
+        } catch (error) {
+          // If sessionService fails, continue without sessionId
+        }
+
+        const res = await fetch(url, {
           headers: {
             "Cache-Control": "no-cache",
             Pragma: "no-cache",
@@ -53,8 +65,20 @@ const CartPopup = ({ isOpen, onClose, productType, onContinueShopping }) => {
     if (isRemoving === item.key) return;
     setIsRemoving(item.key);
     try {
+      // Get sessionId for guest users
+      let cartUrl = "/api/cart";
+      try {
+        const { getSessionId } = await import("@/services/sessionService");
+        const sessionId = getSessionId();
+        if (sessionId) {
+          cartUrl = `/api/cart?sessionId=${sessionId}`;
+        }
+      } catch (error) {
+        // If sessionService fails, continue without sessionId
+      }
+
       // Determine if cart is local or server
-      const cartRes = await fetch("/api/cart", {
+      const cartRes = await fetch(cartUrl, {
         headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
       });
       const cartData = await cartRes.json();
@@ -69,6 +93,7 @@ const CartPopup = ({ isOpen, onClose, productType, onContinueShopping }) => {
           return;
         }
       } else {
+        // Use new backend API for removing items
         const res = await fetch("/api/cart", {
           headers: { "Content-Type": "application/json" },
           method: "DELETE",
@@ -81,12 +106,14 @@ const CartPopup = ({ isOpen, onClose, productType, onContinueShopping }) => {
           return;
         }
       }
-      // Always refresh cart
-      const res = await fetch("/api/cart", {
+      // Always refresh cart after removal
+      const res = await fetch(cartUrl, {
         headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
       });
       const data = await res.json();
       setCartItems(data.items || []);
+      // Trigger cart refresh event for other components
+      document.dispatchEvent(new CustomEvent("cart-updated"));
     } catch (error) {
       toast.error("Failed to remove item from cart. Please try again.");
     } finally {

@@ -20,7 +20,20 @@ const CartIcon = ({ handleToggle }) => {
 
   const getCartItems = useCallback(async () => {
     try {
-      const res = await fetch("/api/cart", {
+      // Get sessionId for guest users
+      let url = "/api/cart";
+      try {
+        const { getSessionId } = await import("@/services/sessionService");
+        const sessionId = getSessionId();
+        if (sessionId) {
+          url = `/api/cart?sessionId=${sessionId}`;
+        }
+      } catch (error) {
+        // If sessionService fails, continue without sessionId
+        logger.log("Could not get sessionId, fetching cart without it");
+      }
+
+      const res = await fetch(url, {
         headers: {
           "Cache-Control": "no-cache",
           Pragma: "no-cache",
@@ -31,6 +44,9 @@ const CartIcon = ({ handleToggle }) => {
       setIsLocalCart(data.is_local_cart || false);
     } catch (error) {
       logger.error("Error fetching cart items:", error);
+      // Set empty cart on error
+      setCartItems({ items: [], total_items: 0, total_price: "0.00" });
+      setIsLocalCart(false);
     }
   }, []);
 
@@ -88,6 +104,7 @@ const CartIcon = ({ handleToggle }) => {
         }
         getCartItems();
       } else {
+        // Use new backend API for removing items
         const res = await fetch("/api/cart", {
           headers: { "Content-Type": "application/json" },
           method: "DELETE",
@@ -98,9 +115,14 @@ const CartIcon = ({ handleToggle }) => {
           toast.error(data.error);
           return;
         }
-        if (res.ok) getCartItems();
+        if (res.ok) {
+          getCartItems();
+          // Trigger cart refresh event
+          document.dispatchEvent(new CustomEvent("cart-updated"));
+        }
       }
     } catch (error) {
+      logger.error("Error removing item from cart:", error);
       toast.error("Failed to remove item from cart. Please try again.");
     }
   };
@@ -309,12 +331,12 @@ const CartItem = ({ item, refreshCart, isLocalCart, allItems }) => {
         // Refresh cart display
         refreshCart();
       } else {
-        // For server cart, use the DELETE API endpoint for proper removal
+        // For server cart, use the DELETE API endpoint (which uses new backend API)
         const res = await fetch("/api/cart", {
           headers: {
             "Content-Type": "application/json",
           },
-          method: "DELETE", // Use DELETE method instead of PUT with quantity 0
+          method: "DELETE",
           body: JSON.stringify({
             itemKey: item.key,
           }),
@@ -331,6 +353,8 @@ const CartItem = ({ item, refreshCart, isLocalCart, allItems }) => {
         if (res.ok) {
           // Refresh cart after successful removal
           refreshCart();
+          // Trigger cart refresh event for other components
+          document.dispatchEvent(new CustomEvent("cart-updated"));
         }
       }
 
