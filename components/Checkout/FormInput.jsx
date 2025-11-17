@@ -6,9 +6,12 @@ const FormInput = ({
   required,
   error,
   className = "",
+  value,
   ...props
 }) => {
   const hasError = !!error;
+
+  const safeValue = value !== undefined && value !== null ? String(value) : "";
 
   return (
     <div className="mb-4 md:mb-0 w-full">
@@ -24,11 +27,11 @@ const FormInput = ({
         id={name}
         name={name}
         placeholder={placeholder}
-        className={`w-full !bg-white !rounded-[8px] !border !border-solid !px-[16px] py-[12px] h-[44px] !focus:outline-none ${
-          hasError
-            ? "!border-red-500 focus:!border-red-600"
-            : "!border-[#E2E2E1] !focus:border-gray-500"
-        } ${className}`}
+        value={safeValue}
+        className={`w-full !bg-white !rounded-[8px] !border !border-solid !px-[16px] py-[12px] h-[44px] !focus:outline-none ${hasError
+          ? "!border-red-500 focus:!border-red-600"
+          : "!border-[#E2E2E1] !focus:border-gray-500"
+          } ${className}`}
         {...props}
       />
       {hasError && <p className="text-red-500 text-sm mt-1">{error}</p>}

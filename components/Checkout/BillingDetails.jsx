@@ -147,7 +147,7 @@ const BillingDetails = ({
           name="first_name"
           placeholder="Your first name"
           required
-          value={formData.billing_address.first_name}
+          value={formData.billing_address?.first_name || ""}
           onChange={handleBillingAddressChange}
         />
         <FormInput
@@ -155,7 +155,7 @@ const BillingDetails = ({
           name="last_name"
           placeholder="Your last name"
           required
-          value={formData.billing_address.last_name?.replace(/^%20/, "")}
+          value={formData.billing_address?.last_name?.replace(/^%20/, "") || ""}
           onChange={handleBillingAddressChange}
         />
       </div>
@@ -184,7 +184,7 @@ const BillingDetails = ({
         <PostCanadaAddressAutocomplete
           title="Street address"
           name="address_1"
-          value={formData.billing_address.address_1}
+          value={formData.billing_address?.address_1 || ""}
           placeholder="Start typing your street address"
           required
           disabled={isUpdatingShipping}
@@ -197,7 +197,7 @@ const BillingDetails = ({
         <FormInput
           title="Apartment Number"
           name="address_2"
-          value={formData.billing_address.address_2}
+          value={formData.billing_address?.address_2 || ""}
           placeholder="Enter your apartment number"
           disabled={isUpdatingShipping}
           onChange={handleBillingAddressChange}
@@ -207,7 +207,7 @@ const BillingDetails = ({
         <FormInput
           title="Town / City"
           name="city"
-          value={formData.billing_address.city}
+          value={formData.billing_address?.city || ""}
           placeholder="Enter your city/town"
           required
           disabled={isUpdatingShipping}
@@ -225,7 +225,7 @@ const BillingDetails = ({
           <div className="relative">
             <select
               required
-              value={formData.billing_address.state}
+              value={formData.billing_address?.state || ""}
               onChange={handleBillingAddressChange}
               id="state"
               name="state"
@@ -295,7 +295,7 @@ const BillingDetails = ({
         <FormInput
           title="ZIP Code"
           name="postcode"
-          value={formData.billing_address.postcode}
+          value={formData.billing_address?.postcode || ""}
           placeholder="Enter your ZIP code"
           required
           disabled={isUpdatingShipping}
@@ -306,7 +306,7 @@ const BillingDetails = ({
         <FormInput
           title="Phone Number"
           name="phone"
-          value={formData.billing_address.phone}
+          value={formData.billing_address?.phone || ""}
           placeholder="Enter your phone number"
           required
           onChange={handleBillingAddressChange}
@@ -322,7 +322,7 @@ const BillingDetails = ({
           </label>
         </div>
         <DOBInput
-          value={formData.billing_address.date_of_birth}
+          value={formData.billing_address?.date_of_birth || ""}
           onChange={handleDateChange}
           className="w-full bg-white rounded-[8px] border border-solid border-[#E2E2E1] px-[16px] py-[12px] h-[44px] focus:outline-none focus:border-gray-500"
           placeholder="MM/DD/YYYY"

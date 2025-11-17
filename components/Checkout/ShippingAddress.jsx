@@ -41,7 +41,7 @@ const ShippingAddress = ({
               name="first_name"
               placeholder="Your first name"
               required
-              value={formData.shipping_address.first_name}
+              value={formData.shipping_address?.first_name || ""}
               onChange={handleShippingAddressChange}
             />
             <FormInput
@@ -49,7 +49,7 @@ const ShippingAddress = ({
               name="last_name"
               placeholder="Your last name"
               required
-              value={formData.shipping_address.last_name}
+              value={formData.shipping_address?.last_name || ""}
               onChange={handleShippingAddressChange}
             />
           </div>
@@ -78,7 +78,7 @@ const ShippingAddress = ({
             <PostCanadaAddressAutocomplete
               title="Street address"
               name="address_1"
-              value={formData.shipping_address.address_1}
+              value={formData.shipping_address?.address_1 || ""}
               placeholder="Start typing your street address"
               required
               disabled={isUpdatingShipping}
@@ -91,7 +91,7 @@ const ShippingAddress = ({
             <FormInput
               title="Apartment Number"
               name="address_2"
-              value={formData.shipping_address.address_2}
+              value={formData.shipping_address?.address_2 || ""}
               placeholder="Enter your apartment number"
               disabled={isUpdatingShipping}
               onChange={handleShippingAddressChange}
@@ -101,7 +101,7 @@ const ShippingAddress = ({
             <FormInput
               title="Town / City"
               name="city"
-              value={formData.shipping_address.city}
+              value={formData.shipping_address?.city || ""}
               placeholder="Enter your city/town"
               required
               disabled={isUpdatingShipping}
@@ -119,14 +119,13 @@ const ShippingAddress = ({
               <div className="relative">
                 <select
                   required
-                  value={formData.shipping_address.state}
+                  value={formData.shipping_address?.state || ""}
                   onChange={handleShippingAddressChange}
                   id="state"
                   name="state"
                   disabled={isUpdatingShipping}
-                  className={`w-full bg-white rounded-[8px] border border-solid border-[#E2E2E1] px-[16px] h-[44px] focus:outline-none focus:border-gray-500 appearance-none ${
-                    isUpdatingShipping ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
+                  className={`w-full bg-white rounded-[8px] border border-solid border-[#E2E2E1] px-[16px] h-[44px] focus:outline-none focus:border-gray-500 appearance-none ${isUpdatingShipping ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
                 >
                   <option value="" disabled="">
                     Select your province
@@ -194,7 +193,7 @@ const ShippingAddress = ({
             <FormInput
               title="ZIP Code"
               name="postcode"
-              value={formData.shipping_address.postcode}
+              value={formData.shipping_address?.postcode || ""}
               placeholder="Enter your ZIP code"
               required
               disabled={isUpdatingShipping}

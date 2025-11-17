@@ -1,15 +1,28 @@
-import Image from "next/image";
+import CustomImage from "../utils/CustomImage";
 import { formatPrice } from "@/utils/priceFormatter";
 
 const CartItems = ({ items }) => {
+  if (!items || !Array.isArray(items) || items.length === 0) {
+    return (
+      <div className="w-full text-center py-8 text-gray-500">
+        Your cart is empty
+      </div>
+    );
+  }
+
   return (
     <div className="w-full">
-      {items.map((item) => (
-        <div key={item.key}>
-          <CartItem item={item} />
-          <hr />
-        </div>
-      ))}
+      {items.map((item, index) => {
+        // Support both new API structure (item.id) and legacy (item.key)
+        // Use index as fallback to ensure unique key
+        const itemKey = item.id || item.key || item.productId || `item-${index}`;
+        return (
+          <div key={itemKey}>
+            <CartItem item={item} />
+            <hr />
+          </div>
+        );
+      })}
     </div>
   );
 };
@@ -17,16 +30,44 @@ const CartItems = ({ items }) => {
 export default CartItems;
 
 const CartItem = ({ item }) => {
-  const itemPrice = item.totals.line_total / 100;
+  // Support both new API structure and legacy structure
+  // New API: unitPrice and totalPrice are strings (e.g., "108", "12.5")
+  // Legacy: totals.line_total is in cents
+  let itemPrice = 0;
+  const quantity = item.quantity || 1;
 
-  const currencySymbol = item.prices.currency_symbol || "$"; // Default to $
+  if (item.unitPrice !== undefined) {
+    // New API structure - prices are strings, convert to number
+    itemPrice = parseFloat(item.unitPrice) || 0;
+  } else if (item.totalPrice !== undefined) {
+    // New API structure - totalPrice is the line total (already multiplied by quantity)
+    // Divide by quantity to get unit price
+    itemPrice = (parseFloat(item.totalPrice) || 0) / quantity;
+  } else if (item.totals && typeof item.totals === 'object' && 'line_total' in item.totals) {
+    // Legacy structure with line_total (in cents) - check if totals exists and has line_total
+    itemPrice = (item.totals.line_total || 0) / 100;
+  } else if (item.prices?.sale_price !== undefined) {
+    // Legacy structure with sale_price (in cents)
+    itemPrice = item.prices.sale_price / 100;
+  } else if (item.prices?.regular_price !== undefined) {
+    // Legacy structure with regular_price (in cents)
+    itemPrice = item.prices.regular_price / 100;
+  } else if (item.price !== undefined) {
+    // Legacy structure with direct price
+    itemPrice = typeof item.price === "number" ? item.price : parseFloat(item.price) || 0;
+  }
 
+  // Get currency symbol - new API has it at cart level, legacy has it in item.prices
+  const currencySymbol = item.prices?.currency_symbol || "$"; // Default to $
+
+  // Handle subscription data - new API might not have extensions.subscriptions
   const subscription = item.extensions?.subscriptions;
   const isSubscription = subscription && subscription.billing_interval;
 
   // Special handling for Sublingual Semaglutide product (ID: 490537)
   // This product should be treated as a monthly subscription even if WooCommerce metadata is missing
-  const isOralSemaglutide = item.id === 490537 || item.product_id === 490537;
+  const productId = item.productId || item.product?.id || item.id;
+  const isOralSemaglutide = productId === 490537 || item.id === 490537 || item.product_id === 490537;
   const isSubscriptionWithFallback = isSubscription || isOralSemaglutide;
 
   let supply = "";
@@ -48,41 +89,61 @@ const CartItem = ({ item }) => {
 
   const intervalText = isSubscriptionWithFallback ? `${supply}` : "";
 
+  // Handle item name - new API has nested product.name
+  const itemName = item.product?.name || item.name || "Product";
+
+  // Handle images - new API has variant.imageUrl, legacy has images array
+  const imageUrl = item.variant?.imageUrl ||
+    item.images?.[0]?.thumbnail ||
+    item.images?.[0]?.src ||
+    item.image ||
+    item.productImage ||
+    null;
+
+  // Handle variations - new API might not have variation array
+  const variation = item.variation || [];
+
   return (
     <div className="flex gap-4 py-4 w-full">
-      <Image
-        width={65}
-        height={65}
-        src={item.images[0]?.thumbnail}
-        alt={item.name}
-        className="rounded-md min-w-[65px] min-h-[65px] w-[65px] h-[65px]"
-      />
+      {imageUrl ? (
+        <CustomImage
+          width={65}
+          height={65}
+          src={imageUrl}
+          alt={itemName}
+          className="rounded-md min-w-[65px] min-h-[65px] w-[65px] h-[65px] object-cover"
+        />
+      ) : (
+        <div className="rounded-md min-w-[65px] min-h-[65px] w-[65px] h-[65px] bg-gray-100 flex items-center justify-center text-gray-400 text-xs">
+          No Image
+        </div>
+      )}
       <div className="text-[14px] font-semibold">
         <h5>
-          <span dangerouslySetInnerHTML={{ __html: item.name }}></span>{" "}
+          <span dangerouslySetInnerHTML={{ __html: itemName }}></span>{" "}
           {!isSubscriptionWithFallback &&
-            item.variation[0] &&
-            `(${item.variation[0]?.value})`}
+            variation[0] &&
+            `(${variation[0]?.value})`}
         </h5>
 
-        {item.name != "Body Optimization Program" && (
+        {itemName !== "Body Optimization Program" && (
           <p className="text-[12px]">
             {currencySymbol}
             {formatPrice(itemPrice)} /{" "}
             <span className="text-[12px] font-normal">
               {isSubscriptionWithFallback && intervalText}
               {!isSubscriptionWithFallback &&
-                item.variation[1] &&
-                item.variation[1]?.value}
-              {item.name?.toString().toLowerCase().includes("zonnic") &&
-                item.variation?.find(
+                variation[1] &&
+                variation[1]?.value}
+              {itemName?.toString().toLowerCase().includes("zonnic") &&
+                variation?.find(
                   (v) => v.attribute?.toString().toLowerCase() === "flavors"
                 )?.value && (
                   <>
                     {" / "}
                     <span className="text-[12px] font-normal">
                       {
-                        item.variation.find(
+                        variation.find(
                           (v) =>
                             v.attribute?.toString().toLowerCase() === "flavors"
                         )?.value
@@ -93,7 +154,7 @@ const CartItem = ({ item }) => {
             </span>
           </p>
         )}
-        {item.name === "Body Optimization Program" && (
+        {itemName === "Body Optimization Program" && (
           <div className="flex flex-col">
             <p className="text-sm md:text-base font-[500] text-[#212121] underline text-nowrap">
               Monthly membership:

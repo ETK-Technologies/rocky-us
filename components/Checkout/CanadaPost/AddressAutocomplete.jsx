@@ -124,7 +124,7 @@ const AddressAutocomplete = ({
         type="text"
         id={name}
         name={name}
-        value={value}
+        value={value !== undefined && value !== null ? String(value) : ""}
         onChange={onChange}
         placeholder={placeholder}
         className="w-full !bg-white !rounded-[8px] !border !border-solid !border-[#E2E2E1] !px-[16px] py-[12px] h-[44px] !focus:outline-none !focus:border-gray-500"
