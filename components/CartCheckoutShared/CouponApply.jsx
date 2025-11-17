@@ -9,26 +9,57 @@ const CouponApply = ({ setCartItems }) => {
   const [addingCode, setAddingCode] = useState("");
 
   const handleCodeSubmit = async () => {
+    if (!code.trim()) {
+      toast.error("Please enter a coupon code");
+      return;
+    }
+
     setAddingCode(true);
     try {
-      const res = await fetch("/api/coupons", {
+      // Build URL with sessionId for guest users
+      let url = "/api/coupons";
+      const { isAuthenticated } = await import("@/lib/cart/cartService");
+      const isAuth = isAuthenticated();
+
+      if (!isAuth) {
+        // For guest users, get sessionId from localStorage
+        try {
+          const { getSessionId } = await import("@/services/sessionService");
+          const sessionId = getSessionId();
+          if (sessionId) {
+            url += `?sessionId=${encodeURIComponent(sessionId)}`;
+          }
+        } catch (error) {
+          logger.warn("Could not get sessionId for guest coupon apply:", error);
+        }
+      }
+
+      const res = await fetch(url, {
         headers: {
           "Content-Type": "application/json",
         },
         method: "POST",
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({ code: code.trim() }),
       });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to apply coupon");
+      }
 
       const data = await res.json();
 
       if (data.error) {
-        toast.error("Invalid coupon code.");
+        toast.error(data.error || "Invalid coupon code.");
       } else {
         setCartItems(data);
+        toast.success("Coupon applied successfully!");
+        // Trigger cart refresh event
+        document.dispatchEvent(new CustomEvent("cart-updated"));
       }
     } catch (error) {
-      logger.log(error);
-      toast.error(error);
+      logger.error("Error applying coupon:", error);
+      toast.error(error.message || "Failed to apply coupon. Please try again.");
     } finally {
       setAddingCode(false);
       setCode("");

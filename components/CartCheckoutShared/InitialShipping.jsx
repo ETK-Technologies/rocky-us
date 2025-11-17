@@ -36,7 +36,25 @@ const InitialShipping = ({
   const handleCodeRemove = async (code) => {
     setRemovingCode(true);
     try {
-      const res = await fetch("/api/coupons", {
+      // Build URL with sessionId for guest users
+      let url = "/api/coupons";
+      const { isAuthenticated } = await import("@/lib/cart/cartService");
+      const isAuth = isAuthenticated();
+      
+      if (!isAuth) {
+        // For guest users, get sessionId from localStorage
+        try {
+          const { getSessionId } = await import("@/services/sessionService");
+          const sessionId = getSessionId();
+          if (sessionId) {
+            url += `?sessionId=${encodeURIComponent(sessionId)}`;
+          }
+        } catch (error) {
+          logger.warn("Could not get sessionId for guest coupon remove:", error);
+        }
+      }
+
+      const res = await fetch(url, {
         headers: {
           "Content-Type": "application/json",
         },
@@ -44,16 +62,24 @@ const InitialShipping = ({
         body: JSON.stringify({ code }),
       });
 
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to remove coupon");
+      }
+
       const data = await res.json();
 
       if (data.error) {
-        toast.error("Invalid coupon code.");
+        toast.error(data.error || "Failed to remove coupon.");
       } else {
         setCartItems(data);
+        toast.success("Coupon removed successfully");
+        // Trigger cart refresh event
+        document.dispatchEvent(new CustomEvent("cart-updated"));
       }
     } catch (error) {
       logger.log(error);
-      toast.error(error);
+      toast.error(error.message || "Failed to remove coupon. Please try again.");
     } finally {
       setRemovingCode(false);
     }
@@ -119,35 +145,67 @@ const InitialShipping = ({
           {formatPrice(subTotalPrice)}
         </p>
       </div>
-      {cartItems?.coupons && cartItems.coupons.length > 0 && (
+      {/* Support both new API structure (couponCode as string) and legacy (coupons as array) */}
+      {((cartItems?.couponCode && cartItems.couponCode.trim() !== "") || 
+        (cartItems?.coupons && cartItems.coupons.length > 0)) && (
         <div className="pb-3 border-b relative">
           <p className="font-[500] text-[#4E4E4E] leading-[19.6px] mb-3">
             Coupons
           </p>
-          {cartItems.coupons.map((coupon) => {
-            return (
-              <div
-                key={coupon.code}
-                className="grid grid-cols-2 justify-between items-start py-[6px] md:py-0 mb-1 relative"
-              >
-                <p className="font-[500] text-[#4E4E4E] leading-[19.6px] text-sm uppercase underline">
-                  {coupon.code}
+          {/* New API structure: single couponCode string */}
+          {cartItems?.couponCode && cartItems.couponCode.trim() !== "" && (
+            <div className="grid grid-cols-2 justify-between items-start py-[6px] md:py-0 mb-1 relative">
+              <p className="font-[500] text-[#4E4E4E] leading-[19.6px] text-sm uppercase underline">
+                {cartItems.couponCode}
+              </p>
+              <div className="flex items-center justify-end gap-4">
+                <p className="leading-[19.6px] text-[#000000] text-sm justify-self-end">
+                  - {currencySymbol}
+                  {formatPrice(
+                    cartItems.discountAmount !== undefined
+                      ? parseFloat(cartItems.discountAmount) || 0
+                      : cartItems.totals?.discountAmount !== undefined
+                      ? cartItems.totals.discountAmount
+                      : 0
+                  )}
                 </p>
-                <div className="flex items-center justify-end gap-4">
-                  <p className="leading-[19.6px] text-[#000000] text-sm justify-self-end">
-                    - {currencySymbol}
-                    {formatPrice(Number(coupon.totals?.total_discount) / 100)}
-                  </p>
-                  <button
-                    className="justify-self-end"
-                    onClick={() => handleCodeRemove(coupon.code)}
-                  >
-                    <CiTrash color="darkred" />
-                  </button>
-                </div>
+                <button
+                  className="justify-self-end"
+                  onClick={() => handleCodeRemove(cartItems.couponCode)}
+                >
+                  <CiTrash color="darkred" />
+                </button>
               </div>
-            );
-          })}
+            </div>
+          )}
+          {/* Legacy structure: coupons array */}
+          {cartItems?.coupons && cartItems.coupons.length > 0 && 
+           !cartItems?.couponCode && (
+            cartItems.coupons.map((coupon) => {
+              return (
+                <div
+                  key={coupon.code}
+                  className="grid grid-cols-2 justify-between items-start py-[6px] md:py-0 mb-1 relative"
+                >
+                  <p className="font-[500] text-[#4E4E4E] leading-[19.6px] text-sm uppercase underline">
+                    {coupon.code}
+                  </p>
+                  <div className="flex items-center justify-end gap-4">
+                    <p className="leading-[19.6px] text-[#000000] text-sm justify-self-end">
+                      - {currencySymbol}
+                      {formatPrice(Number(coupon.totals?.total_discount) / 100)}
+                    </p>
+                    <button
+                      className="justify-self-end"
+                      onClick={() => handleCodeRemove(coupon.code)}
+                    >
+                      <CiTrash color="darkred" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
           {removingCode && (
             <div className="absolute backdrop-blur-[2px] flex items-center justify-center left-0 right-0 top-0 bottom-0 z-50">
               <DotsLoader size={25} loading={removingCode} color={"#000000"} />
