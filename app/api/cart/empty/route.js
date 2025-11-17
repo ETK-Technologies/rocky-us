@@ -2,135 +2,125 @@ import { NextResponse } from "next/server";
 import axios from "axios";
 import { logger } from "@/utils/devLogger";
 import { cookies } from "next/headers";
-import { clearLocalCart } from "@/lib/cart/cartService";
 
-const BASE_URL = process.env.BASE_URL;
+const BASE_URL = "https://rocky-be-production.up.railway.app";
 
-export async function POST() {
+/**
+ * DELETE /api/cart/empty
+ * Empty cart using the new backend API
+ * Supports both authenticated users and guest users
+ */
+export async function DELETE(req) {
   try {
     const cookieStore = await cookies();
-    const encodedCredentials = cookieStore.get("authToken");
-    const nonce = cookieStore.get("cart-nonce")?.value;
+    const authToken = cookieStore.get("authToken");
+    
+    // Get sessionId from query parameters (for guest users)
+    const { searchParams } = new URL(req.url);
+    const sessionId = searchParams.get("sessionId");
 
-    if (!encodedCredentials) {
-      // For unauthenticated users, we'll clear the local cart
-      // Since this is server-side code, we need to clear the cookie but can't directly access localStorage
-      cookieStore.set("localCart", "", {
-        maxAge: -1,
-        path: "/",
-      });
-
-      return NextResponse.json({
-        success: true,
-        message: "Local cart emptied",
-        items: [],
-        total_items: 0,
-        total_price: "0.00",
-      });
+    // Validate: Either authToken or sessionId must be provided
+    if (!authToken && !sessionId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Either authentication token or sessionId is required",
+        },
+        { status: 400 }
+      );
     }
 
-    // For authenticated users, call the WordPress REST API endpoint
     try {
-      const response = await axios.post(
-        `${BASE_URL}/wp-json/custom/v1/empty-cart`,
-        {},
-        {
-          headers: {
-            Authorization: `${encodedCredentials.value}`,
-            "X-WP-Nonce": nonce,
-          },
-        }
-      );
-
-      // Update the cart nonce if available
-      if (response.headers && response.headers.nonce) {
-        cookieStore.set("cart-nonce", response.headers.nonce);
+      // Build URL - only add sessionId if user is NOT authenticated
+      // If both authToken and sessionId are provided, prioritize authToken (authenticated user)
+      let url = `${BASE_URL}/api/v1/cart`;
+      const useSessionId = !authToken && sessionId; // Only use sessionId if no authToken
+      
+      if (useSessionId) {
+        url += `?sessionId=${encodeURIComponent(sessionId)}`;
       }
 
-      logger.log("WordPress empty-cart endpoint successful");
+      // Prepare headers
+      const headers = {
+        "Content-Type": "application/json",
+        accept: "application/json",
+        "X-App-Key": "app_04ecfac3213d7b179dc1e5ae9cb7a627",
+        "X-App-Secret": "sk_2c867224696400bc2b377c3e77356a9e",
+      };
+
+      // Add Authorization header ONLY if user is authenticated
+      // Do NOT send both Authorization and sessionId
+      if (authToken) {
+        headers["Authorization"] = authToken.value;
+      }
+
+      logger.log("Emptying cart with new API:", {
+        url,
+        hasAuth: !!authToken,
+        hasSessionId: useSessionId,
+        method: "DELETE",
+      });
+
+      const response = await axios.delete(url, {
+        headers,
+      });
+
+      logger.log("Cart emptied successfully:", response.data);
+
       return NextResponse.json({
         success: true,
-        message: "Cart emptied successfully",
-        items: [],
-        total_items: 0,
-        total_price: "0.00",
+        message: response.data?.message || "Cart cleared successfully",
       });
-    } catch (wpError) {
+    } catch (error) {
       logger.error(
-        "WordPress empty-cart endpoint failed:",
-        wpError.response?.data || wpError.message
+        "Error emptying cart with new API:",
+        error.response?.data || error.message
       );
 
-      // Fallback: Try to clear cart using WooCommerce REST API
-      try {
-        logger.log("Attempting fallback cart clearing via WooCommerce API...");
-
-        // Get current cart items first
-        const cartResponse = await axios.get(
-          `${BASE_URL}/wp-json/wc/store/cart`,
+      // Handle specific error responses from the API
+      if (error.response?.status === 400) {
+        return NextResponse.json(
           {
-            headers: {
-              Authorization: `${encodedCredentials.value}`,
-            },
-          }
+            success: false,
+            error: error.response.data?.message || "Either authentication token or sessionId is required",
+          },
+          { status: 400 }
         );
-
-        if (
-          cartResponse.data &&
-          cartResponse.data.items &&
-          cartResponse.data.items.length > 0
-        ) {
-          // Remove each item individually
-          for (const item of cartResponse.data.items) {
-            try {
-              await axios.post(
-                `${BASE_URL}/wp-json/wc/store/cart/remove-item`,
-                { key: item.key },
-                {
-                  headers: {
-                    Authorization: `${encodedCredentials.value}`,
-                    nonce: nonce,
-                  },
-                }
-              );
-              logger.log(`Removed item ${item.key} from cart`);
-            } catch (itemError) {
-              logger.error(
-                `Failed to remove item ${item.key}:`,
-                itemError.response?.data || itemError.message
-              );
-            }
-          }
-        }
-
-        logger.log("Fallback cart clearing completed");
-        return NextResponse.json({
-          success: true,
-          message: "Cart emptied successfully (fallback method)",
-          items: [],
-          total_items: 0,
-          total_price: "0.00",
-        });
-      } catch (fallbackError) {
-        logger.error(
-          "Fallback cart clearing also failed:",
-          fallbackError.response?.data || fallbackError.message
-        );
-        throw wpError; // Re-throw original error
       }
+
+      if (error.response?.status === 404) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Cart not found",
+          },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: error.response?.data?.message || "Failed to empty cart",
+        },
+        { status: error.response?.status || 500 }
+      );
     }
   } catch (error) {
-    logger.error("Error emptying cart:", error.response?.data || error.message);
+    logger.error("Error in empty cart route:", error.message);
 
     return NextResponse.json(
       {
         success: false,
-        error: error.response?.data?.message || "Failed to empty cart",
-        items: [],
-        total_items: 0,
-        total_price: "0.00",
+        error: "Failed to empty cart. Please try again.",
       },
-      { status: error.response?.status || 500 }
+      { status: 500 }
     );
   }
+}
+
+// Keep POST method for backward compatibility, but it will use DELETE internally
+export async function POST(req) {
+  // Forward to DELETE handler
+  return DELETE(req);
 }
