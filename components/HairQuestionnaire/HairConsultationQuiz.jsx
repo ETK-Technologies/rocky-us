@@ -465,7 +465,7 @@ export default function HairConsultationQuiz({
       return e.returnValue;
     };
 
-    if (currentPage >= 1) {
+    if (currentPage >= 1 && currentPage <= 21) {
       window.addEventListener("beforeunload", handleBeforeUnload);
     }
 
