@@ -40,7 +40,14 @@ const CartIcon = ({ handleToggle }) => {
         },
       });
       const data = await res.json();
-      setCartItems(data);
+      
+      // Handle both new API structure (data.items) and legacy structure
+      // Ensure items is always an array
+      const items = data.items || [];
+      setCartItems({
+        ...data,
+        items: Array.isArray(items) ? items : [],
+      });
       setIsLocalCart(data.is_local_cart || false);
     } catch (error) {
       logger.error("Error fetching cart items:", error);
@@ -167,9 +174,27 @@ const CartIcon = ({ handleToggle }) => {
     try {
       setIsEmptyingCart(true);
       await emptyCart();
-      getCartItems();
+      
+      // Immediately update UI to show empty cart
+      setCartItems({ items: [], total_items: 0, total_price: "0.00" });
+      
+      // Refresh cart from server to ensure consistency
+      await getCartItems();
+      
+      // Trigger cart refresh event for other components
+      document.dispatchEvent(new CustomEvent("cart-updated"));
+      
+      // Trigger cart refresher for other components
+      const refresher = document.getElementById("cart-refresher");
+      if (refresher) {
+        refresher.setAttribute("data-refreshed", Date.now().toString());
+        refresher.click();
+      }
+      
+      toast.success("Cart emptied successfully");
     } catch (error) {
-      toast.error("Failed to empty cart. Please try again.");
+      logger.error("Error emptying cart:", error);
+      toast.error(error.message || "Failed to empty cart. Please try again.");
     } finally {
       setIsEmptyingCart(false);
     }
@@ -248,13 +273,18 @@ const CartItems = ({ items, refreshCart, isLocalCart }) => {
       // Refresh cart after emptying
       refreshCart();
 
+      // Trigger cart refresh event for other components
+      document.dispatchEvent(new CustomEvent("cart-updated"));
+
       // Trigger cart refresher for other components
       const refresher = document.getElementById("cart-refresher");
       if (refresher) {
         refresher.setAttribute("data-refreshed", Date.now().toString());
+        refresher.click();
       }
     } catch (error) {
       logger.error("Error emptying cart:", error);
+      toast.error("Failed to empty cart. Please try again.");
     } finally {
       setIsEmptyingCart(false);
     }
