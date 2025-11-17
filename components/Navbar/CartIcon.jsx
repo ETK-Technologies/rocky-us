@@ -40,7 +40,7 @@ const CartIcon = ({ handleToggle }) => {
         },
       });
       const data = await res.json();
-      
+
       // Handle both new API structure (data.items) and legacy structure
       // Ensure items is always an array
       const items = data.items || [];
@@ -63,10 +63,19 @@ const CartIcon = ({ handleToggle }) => {
 
     // Add event listener for cart refresher element
     const handleCartRefresh = () => {
+      logger.log("Cart refresh event received in CartIcon");
+      getCartItems();
+    };
+
+    // Listen for user logout to immediately refresh cart
+    const handleUserLoggedOut = () => {
+      logger.log("User logged out event received in CartIcon, refreshing cart");
+      // Immediately refresh cart to show guest cart state
       getCartItems();
     };
 
     document.addEventListener("cart-updated", handleCartRefresh);
+    document.addEventListener("user-logged-out", handleUserLoggedOut);
 
     // Create a MutationObserver to watch for cart refresh clicks
     const observer = new MutationObserver((mutations) => {
@@ -75,6 +84,7 @@ const CartIcon = ({ handleToggle }) => {
           mutation.type === "attributes" &&
           mutation.attributeName === "data-refreshed"
         ) {
+          logger.log("Cart refresher attribute changed in CartIcon");
           getCartItems();
         }
       });
@@ -87,6 +97,7 @@ const CartIcon = ({ handleToggle }) => {
 
     return () => {
       document.removeEventListener("cart-updated", handleCartRefresh);
+      document.removeEventListener("user-logged-out", handleUserLoggedOut);
       observer.disconnect();
     };
   }, [getCartItems]);
@@ -114,18 +125,18 @@ const CartIcon = ({ handleToggle }) => {
         // Use new backend API for removing items
         // Support both new API structure (item.id) and legacy (item.key)
         const cartItemId = item.id || item.key;
-        
+
         if (!cartItemId) {
           logger.error("Cannot delete item: cart item ID is missing");
           toast.error("Unable to remove item. Please refresh the page.");
           return;
         }
-        
+
         // Build URL with sessionId for guest users
         let url = `/api/cart/items/${cartItemId}`;
         const { isAuthenticated } = await import("@/lib/cart/cartService");
         const isAuth = isAuthenticated();
-        
+
         if (!isAuth) {
           // For guest users, get sessionId from localStorage
           try {
@@ -138,24 +149,24 @@ const CartIcon = ({ handleToggle }) => {
             logger.warn("Could not get sessionId for guest cart delete:", error);
           }
         }
-        
+
         const res = await fetch(url, {
           headers: { "Content-Type": "application/json" },
           method: "DELETE",
         });
-        
+
         if (!res.ok) {
           const errorData = await res.json();
           toast.error(errorData.error || "Failed to remove item from cart");
           return;
         }
-        
+
         const data = await res.json();
         if (data.error) {
           toast.error(data.error);
           return;
         }
-        
+
         if (res.ok) {
           getCartItems();
           // Trigger cart refresh event
@@ -174,23 +185,23 @@ const CartIcon = ({ handleToggle }) => {
     try {
       setIsEmptyingCart(true);
       await emptyCart();
-      
+
       // Immediately update UI to show empty cart
       setCartItems({ items: [], total_items: 0, total_price: "0.00" });
-      
+
       // Refresh cart from server to ensure consistency
       await getCartItems();
-      
+
       // Trigger cart refresh event for other components
       document.dispatchEvent(new CustomEvent("cart-updated"));
-      
+
       // Trigger cart refresher for other components
       const refresher = document.getElementById("cart-refresher");
       if (refresher) {
         refresher.setAttribute("data-refreshed", Date.now().toString());
         refresher.click();
       }
-      
+
       toast.success("Cart emptied successfully");
     } catch (error) {
       logger.error("Error emptying cart:", error);

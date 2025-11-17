@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { CiUser } from "react-icons/ci";
 import CartIcon from "./CartIcon";
 import Link from "next/link";
@@ -89,13 +90,24 @@ export default DesktopIcons;
 
 const ProfileIcon = ({ token, nameToShow, handleToggle }) => {
   const router = useRouter();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogoutClick = async (e) => {
     e.preventDefault();
-    if (handleToggle) {
-      handleToggle();
+    if (isLoggingOut) return; // Prevent multiple clicks
+
+    setIsLoggingOut(true);
+    try {
+      if (handleToggle) {
+        handleToggle();
+      }
+      await handleLogout(router);
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      // Don't set to false immediately - let the navigation handle it
+      // setIsLoggingOut(false);
     }
-    await handleLogout(router);
   };
 
   return (
@@ -121,9 +133,17 @@ const ProfileIcon = ({ token, nameToShow, handleToggle }) => {
           </Link>
           <button
             onClick={handleLogoutClick}
-            className="block px-4 py-2 text-gray-700 hover:bg-[#F5F4EF] hover:text-black w-full text-start"
+            disabled={isLoggingOut}
+            className="block px-4 py-2 text-gray-700 hover:bg-[#F5F4EF] hover:text-black w-full text-start disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
           >
-            Logout
+            {isLoggingOut ? (
+              <>
+                <span className="w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin"></span>
+                Logging out...
+              </>
+            ) : (
+              "Logout"
+            )}
           </button>
         </div>
       ) : (

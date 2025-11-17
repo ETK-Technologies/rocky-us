@@ -34,6 +34,7 @@ const MobileMenu = ({ menuItems, displayName, token }) => {
   const ProfileIcon = ({ setIsOpen }) => {
     const router = useRouter();
     const [isProfileItemOpen, setIsProfileItemOpen] = useState(false);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     // Determine the display name with the same fallback logic as desktop
     let nameToShow = displayName;
@@ -62,8 +63,17 @@ const MobileMenu = ({ menuItems, displayName, token }) => {
 
     const handleLogoutClick = async (e) => {
       e.preventDefault();
-      setIsOpen(false);
-      await handleLogout(router);
+      if (isLoggingOut) return; // Prevent multiple clicks
+
+      setIsLoggingOut(true);
+      try {
+        setIsOpen(false);
+        await handleLogout(router);
+      } catch (error) {
+        console.error("Logout error:", error);
+        setIsLoggingOut(false);
+      }
+      // Don't set to false immediately - let the navigation handle it
     };
 
     return (
@@ -77,9 +87,8 @@ const MobileMenu = ({ menuItems, displayName, token }) => {
               <p>Hi, {nameToShow}!</p>
 
               <span
-                className={`transform transition-transform duration-300 ${
-                  isProfileItemOpen ? "rotate-[270deg] mb-2" : "rotate-[90deg]"
-                }`}
+                className={`transform transition-transform duration-300 ${isProfileItemOpen ? "rotate-[270deg] mb-2" : "rotate-[90deg]"
+                  }`}
               >
                 &gt;
               </span>
@@ -96,9 +105,17 @@ const MobileMenu = ({ menuItems, displayName, token }) => {
 
                 <button
                   onClick={handleLogoutClick}
-                  className="block px-4 py-1 text-gray-700 hover:bg-slate-200 hover:text-black w-full text-start"
+                  disabled={isLoggingOut}
+                  className="block px-4 py-1 text-gray-700 hover:bg-slate-200 hover:text-black w-full text-start disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
                 >
-                  Logout
+                  {isLoggingOut ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin"></span>
+                      Logging out...
+                    </>
+                  ) : (
+                    "Logout"
+                  )}
                 </button>
               </div>
             )}
@@ -177,9 +194,8 @@ const MenuItem = ({ item, isOpen, toggleMenu, setIsOpen }) => {
         >
           <p>{item.text}</p>
           <span
-            className={`transform transition-transform duration-300 ${
-              isOpen ? "rotate-[270deg]" : "rotate-90"
-            }`}
+            className={`transform transition-transform duration-300 ${isOpen ? "rotate-[270deg]" : "rotate-90"
+              }`}
           >
             &gt;
           </span>
@@ -337,9 +353,8 @@ const MegaMenu = ({ item, setIsOpen }) => {
                     <button
                       key={index}
                       onClick={() => setCurrentSlide(index)}
-                      className={`w-3 h-3 rounded-full transition-colors ${
-                        index === currentSlide ? "bg-white" : "bg-white/50"
-                      }`}
+                      className={`w-3 h-3 rounded-full transition-colors ${index === currentSlide ? "bg-white" : "bg-white/50"
+                        }`}
                     />
                   ))}
                 </div>
