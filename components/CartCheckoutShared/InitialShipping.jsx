@@ -13,13 +13,23 @@ const InitialShipping = ({
   formData,
 }) => {
   const [removingCode, setRemovingCode] = useState(false);
-  const subTotalPrice = cartItems?.totals?.total_items
+  
+  // Support both new API structure and legacy structure
+  // New API: totals.subtotal, totals.taxAmount, totals.totalAmount (numbers, not in cents)
+  // Legacy: totals.total_items, totals.total_tax, totals.total_price (in cents)
+  const subTotalPrice = cartItems?.totals?.subtotal !== undefined
+    ? cartItems.totals.subtotal
+    : cartItems?.totals?.total_items
     ? cartItems.totals.total_items / 100
     : 0;
-  const totalPrice = cartItems?.totals?.total_price
+  const totalPrice = cartItems?.totals?.totalAmount !== undefined
+    ? cartItems.totals.totalAmount
+    : cartItems?.totals?.total_price
     ? cartItems.totals.total_price / 100
     : 0;
-  const totalTax = cartItems?.totals?.total_tax
+  const totalTax = cartItems?.totals?.taxAmount !== undefined
+    ? cartItems.totals.taxAmount
+    : cartItems?.totals?.total_tax
     ? cartItems.totals.total_tax / 100
     : 0;
 

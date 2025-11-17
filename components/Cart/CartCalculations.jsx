@@ -6,7 +6,10 @@ import { analyticsService } from "@/utils/analytics/analyticsService";
 import { formatPrice } from "@/utils/priceFormatter";
 
 const CartCalculations = ({ cartItems, setCartItems }) => {
-  const currencySymbol = cartItems.totals.currency_symbol || "$";
+  // Support both new API structure and legacy structure
+  const currencySymbol = cartItems.totals?.currency_symbol || 
+                        cartItems.currency || 
+                        "$";
 
   // Check if subscriptions data exists before rendering RecurringShipping
   const hasSubscriptions =
@@ -47,23 +50,29 @@ const CartCalculations = ({ cartItems, setCartItems }) => {
                 Array.isArray(cartItems.items) &&
                 cartItems.items.length > 0
               ) {
-                const itemsForAnalytics = cartItems.items.map((it) => ({
-                  product: {
-                    id: it.product_id || it.id,
-                    sku: it.sku,
-                    name: it.name,
-                    price:
-                      (it.prices?.sale_price || it.prices?.regular_price || 0) /
-                      100,
-                    attributes: it.variation?.length
-                      ? it.variation.map((v) => ({
-                          name: v.attribute || v.name,
-                          options: [v.value],
-                        }))
-                      : [],
-                  },
-                  quantity: it.quantity || 1,
-                }));
+                const itemsForAnalytics = cartItems.items.map((it) => {
+                  // Support both new API structure and legacy structure
+                  const itemName = it.product?.name || it.name || "Product";
+                  const itemPrice = it.unitPrice !== undefined
+                    ? parseFloat(it.unitPrice) || 0
+                    : (it.prices?.sale_price || it.prices?.regular_price || 0) / 100;
+                  
+                  return {
+                    product: {
+                      id: it.productId || it.product?.id || it.product_id || it.id,
+                      sku: it.variant?.sku || it.sku,
+                      name: itemName,
+                      price: itemPrice,
+                      attributes: it.variation?.length
+                        ? it.variation.map((v) => ({
+                            name: v.attribute || v.name,
+                            options: [v.value],
+                          }))
+                        : it.variant?.name ? [{ name: "Variant", options: [it.variant.name] }] : [],
+                    },
+                    quantity: it.quantity || 1,
+                  };
+                });
                 analyticsService.trackBeginCheckout(itemsForAnalytics);
               }
             } catch (e) {

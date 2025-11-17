@@ -55,6 +55,8 @@ export async function POST(req) {
           headers: {
             "Content-Type": "application/json",
             accept: "application/json",
+            "X-App-Key": "app_04ecfac3213d7b179dc1e5ae9cb7a627",
+            "X-App-Secret": "sk_2c867224696400bc2b377c3e77356a9e",
           },
         }
       );

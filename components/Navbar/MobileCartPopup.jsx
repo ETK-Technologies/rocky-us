@@ -46,15 +46,13 @@ export default function MobileCartPopup({
   return (
     <>
       <div
-        className={` fixed inset-0 bg-black bg-opacity-50 z-[9998] transition-opacity duration-500 ease-in-out will-change-opacity ${
-          open && cartVisible ? "opacity-100 visible" : "opacity-0 invisible"
-        }`}
+        className={` fixed inset-0 bg-black bg-opacity-50 z-[9998] transition-opacity duration-500 ease-in-out will-change-opacity ${open && cartVisible ? "opacity-100 visible" : "opacity-0 invisible"
+          }`}
         onClick={onClose}
       ></div>
       <div
-        className={`cursor-auto fixed top-0 right-0 w-full h-full bg-white shadow-lg z-[9999] flex flex-col transition-transform duration-500 ease-in-out transform will-change-transform ${
-          open && cartVisible ? "translate-x-0" : "translate-x-full"
-        }`}
+        className={`cursor-auto fixed top-0 right-0 w-full h-full bg-white shadow-lg z-[9999] flex flex-col transition-transform duration-500 ease-in-out transform will-change-transform ${open && cartVisible ? "translate-x-0" : "translate-x-full"
+          }`}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-6 md:p-10">
@@ -86,67 +84,93 @@ export default function MobileCartPopup({
               ))}
             </>
           ) : cartItems && cartItems.length > 0 ? (
-            cartItems.map((item) => (
-              <div key={item.key} className="flex items-center gap-3 mb-4">
-                <div className="min-w-[60px] min-h-[60px] w-[60px] h-[60px] bg-gray-100 rounded-md flex items-center justify-center">
-                  {item.images && item.images[0]?.thumbnail ? (
-                    <Image
-                      width={60}
-                      height={60}
-                      src={item.images[0]?.thumbnail}
-                      alt={item.name}
-                      className="rounded-md"
-                    />
-                  ) : (
-                    <div className="text-gray-400">No Image</div>
-                  )}
+            cartItems.map((item) => {
+              // Support both new API structure and legacy structure
+              const itemKey = item.id || item.key;
+
+              // New API has nested product and variant objects
+              const itemName = item.product?.name || item.name || item.productName || "Product";
+              const quantity = item.quantity || 1;
+
+              // New API structure: unitPrice and totalPrice are strings (e.g., "108", "12.5")
+              // Legacy structure: prices.sale_price/regular_price or price
+              let unitPrice = 0;
+              let totalPrice = 0;
+
+              if (item.unitPrice !== undefined) {
+                // New API structure - prices are strings, convert to number
+                unitPrice = parseFloat(item.unitPrice) || 0;
+                totalPrice = item.totalPrice ? parseFloat(item.totalPrice) || 0 : unitPrice * quantity;
+              } else if (item.prices?.sale_price) {
+                // Legacy structure with sale_price (in cents)
+                unitPrice = item.prices.sale_price / 100;
+                totalPrice = (item.prices.sale_price / 100) * quantity;
+              } else if (item.prices?.regular_price) {
+                // Legacy structure with regular_price (in cents)
+                unitPrice = item.prices.regular_price / 100;
+                totalPrice = (item.prices.regular_price / 100) * quantity;
+              } else if (item.price !== undefined) {
+                // Legacy structure with direct price
+                unitPrice = typeof item.price === "number" ? item.price : parseFloat(item.price) || 0;
+                totalPrice = unitPrice * quantity;
+              }
+
+              // Handle images - new API has variant.imageUrl, legacy has images array
+              const imageUrl = item.variant?.imageUrl ||
+                item.images?.[0]?.thumbnail ||
+                item.images?.[0]?.src ||
+                item.image ||
+                item.productImage ||
+                null;
+
+              return (
+                <div key={itemKey} className="flex items-center gap-3 mb-4">
+                  <div className="min-w-[60px] min-h-[60px] w-[60px] h-[60px] bg-gray-100 rounded-md flex items-center justify-center">
+                    {imageUrl ? (
+                      <Image
+                        width={60}
+                        height={60}
+                        src={imageUrl}
+                        alt={itemName}
+                        className="rounded-md"
+                      />
+                    ) : (
+                      <div className="text-gray-400">No Image</div>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-[#212121] text-sm">
+                      <span
+                        dangerouslySetInnerHTML={{ __html: itemName }}
+                      ></span>
+                    </div>
+                    <div className="text-[#212121] text-sm">
+                      {quantity} × ${formatPrice(unitPrice)}
+                    </div>
+                    <div className="text-[#212121] text-sm font-semibold">
+                      Total: ${formatPrice(totalPrice)}
+                    </div>
+                  </div>
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      setIsRemoving(itemKey);
+                      await onRemoveItem(item);
+                      setIsRemoving(null);
+                    }}
+                    className="bg-[#EBEBEB] rounded-full w-9 h-9 flex items-center justify-center hover:bg-gray-300 transition-colors"
+                    title="Remove item"
+                    disabled={isRemoving === itemKey || isEmptyingCart}
+                  >
+                    {isRemoving === itemKey ? (
+                      <span className="w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin"></span>
+                    ) : (
+                      <IoClose size={22} />
+                    )}
+                  </button>
                 </div>
-                <div className="flex-1">
-                  <div className="text-[#212121] text-sm">
-                    <span
-                      dangerouslySetInnerHTML={{ __html: item.name }}
-                    ></span>
-                  </div>
-                  <div className="text-[#212121] text-sm">
-                    {item.quantity || 1} × $
-                    {item.prices?.sale_price
-                      ? formatPrice(item.prices.sale_price / 100)
-                      : formatPrice(
-                          item.prices?.regular_price / 100 || item.price
-                        )}
-                  </div>
-                  <div className="text-[#212121] text-sm font-semibold">
-                    Total: $
-                    {item.prices?.sale_price
-                      ? formatPrice(
-                          (item.prices.sale_price / 100) *
-                          (item.quantity || 1)
-                        )
-                      : formatPrice(
-                          (item.prices?.regular_price / 100 || item.price) *
-                          (item.quantity || 1)
-                        )}
-                  </div>
-                </div>
-                <button
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    setIsRemoving(item.key);
-                    await onRemoveItem(item);
-                    setIsRemoving(null);
-                  }}
-                  className="bg-[#EBEBEB] rounded-full w-9 h-9 flex items-center justify-center hover:bg-gray-300 transition-colors"
-                  title="Remove item"
-                  disabled={isRemoving === item.key || isEmptyingCart}
-                >
-                  {isRemoving === item.key ? (
-                    <span className="w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin"></span>
-                  ) : (
-                    <IoClose size={22} />
-                  )}
-                </button>
-              </div>
-            ))
+              );
+            })
           ) : (
             <div className="flex items-center justify-center h-full text-gray-500">
               Your cart is empty

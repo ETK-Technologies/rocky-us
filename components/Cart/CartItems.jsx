@@ -44,12 +44,16 @@ const CartItems = ({ items, setCartItems }) => {
         <div className="justify-self-end">TOTAL</div>
       </div>
 
-      {items.map((item) => (
-        <div key={item.key}>
-          <CartItem item={item} setCartItems={setCartItems} allItems={items} />
-          <hr />
-        </div>
-      ))}
+      {items.map((item) => {
+        // Support both new API structure (item.id) and legacy (item.key)
+        const itemKey = item.id || item.key;
+        return (
+          <div key={itemKey}>
+            <CartItem item={item} setCartItems={setCartItems} allItems={items} />
+            <hr />
+          </div>
+        );
+      })}
 
       {/* Empty Cart Button */}
       <div className="my-6">
@@ -131,10 +135,32 @@ export default CartItems;
 const CartItem = ({ item, setCartItems, allItems }) => {
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const itemPrice = (item.prices.sale_price || item.prices.regular_price) / 100;
-  const quantity = item.quantity;
-  const currencySymbol = item.prices.currency_symbol || "$";
-  const itemTotalPrice = item.totals.line_subtotal / 100;
+  
+  // Support both new API structure and legacy structure
+  const itemKey = item.id || item.key;
+  const itemName = item.product?.name || item.name || "Product";
+  const variantName = item.variant?.name || null;
+  const quantity = item.quantity || 1;
+  
+  // New API: unitPrice and totalPrice are strings, legacy: prices in cents
+  let itemPrice = 0;
+  let itemTotalPrice = 0;
+  
+  if (item.unitPrice !== undefined) {
+    // New API structure - prices are strings
+    itemPrice = parseFloat(item.unitPrice) || 0;
+    itemTotalPrice = item.totalPrice ? parseFloat(item.totalPrice) || 0 : itemPrice * quantity;
+  } else if (item.prices?.sale_price) {
+    // Legacy structure
+    itemPrice = item.prices.sale_price / 100;
+    itemTotalPrice = item.totals?.line_subtotal ? item.totals.line_subtotal / 100 : itemPrice * quantity;
+  } else if (item.prices?.regular_price) {
+    // Legacy structure
+    itemPrice = item.prices.regular_price / 100;
+    itemTotalPrice = item.totals?.line_subtotal ? item.totals.line_subtotal / 100 : itemPrice * quantity;
+  }
+  
+  const currencySymbol = item.prices?.currency_symbol || "$";
   const subscription = item.extensions?.subscriptions;
   const isSubscription = subscription && subscription.billing_interval;
 
@@ -163,7 +189,7 @@ const CartItem = ({ item, setCartItems, allItems }) => {
   const intervalText = isSubscriptionWithFallback ? `${supply}` : "";
 
   // Check if this item can be removed (for UI purposes)
-  const itemCanBeRemoved = canRemoveItem(allItems || [], item.key);
+  const itemCanBeRemoved = canRemoveItem(allItems || [], itemKey);
 
   // Handle quantity updates (increment/decrement)
   const handleQuantityEdit = async (quantity) => {
@@ -176,20 +202,16 @@ const CartItem = ({ item, setCartItems, allItems }) => {
       const newQty = quantity;
       const delta = (newQty || 0) - (prevQty || 0);
       const productForTracking = {
-        id: item.product_id || item.id,
-        sku: item.sku,
-        name: item.name,
-        price:
-          (item.prices?.sale_price || item.prices?.regular_price || 0) / 100 ||
-          (item.totals?.line_subtotal && prevQty
-            ? item.totals.line_subtotal / 100 / prevQty
-            : 0),
+        id: item.productId || item.product?.id || item.product_id || item.id,
+        sku: item.variant?.sku || item.sku,
+        name: itemName,
+        price: itemPrice,
         attributes: item.variation?.length
           ? item.variation.map((v) => ({
               name: v.attribute || v.name,
               options: [v.value],
             }))
-          : [],
+          : variantName ? [{ name: "Variant", options: [variantName] }] : [],
       };
       if (delta > 0) {
         analyticsService.trackAddToCart(productForTracking, delta);
@@ -206,7 +228,7 @@ const CartItem = ({ item, setCartItems, allItems }) => {
         },
         method: "PUT",
         body: JSON.stringify({
-          itemKey: item.key,
+          itemKey: itemKey,
           quantity,
         }),
       });
@@ -230,21 +252,16 @@ const CartItem = ({ item, setCartItems, allItems }) => {
       // Track full removal
       try {
         const productForTracking = {
-          id: item.product_id || item.id,
-          sku: item.sku,
-          name: item.name,
-          price:
-            (item.prices?.sale_price || item.prices?.regular_price || 0) /
-              100 ||
-            (item.totals?.line_subtotal && item.quantity
-              ? item.totals.line_subtotal / 100 / item.quantity
-              : 0),
+          id: item.productId || item.product?.id || item.product_id || item.id,
+          sku: item.variant?.sku || item.sku,
+          name: itemName,
+          price: itemPrice,
           attributes: item.variation?.length
             ? item.variation.map((v) => ({
                 name: v.attribute || v.name,
                 options: [v.value],
               }))
-            : [],
+            : variantName ? [{ name: "Variant", options: [variantName] }] : [],
         };
         analyticsService.trackRemoveFromCart(
           productForTracking,
@@ -261,7 +278,7 @@ const CartItem = ({ item, setCartItems, allItems }) => {
         },
         method: "DELETE", // Use DELETE method to properly remove the item
         body: JSON.stringify({
-          itemKey: item.key,
+          itemKey: itemKey,
         }),
       });
 
@@ -322,20 +339,19 @@ const CartItem = ({ item, setCartItems, allItems }) => {
           <div className="flex items-start gap-3">
             <div className="relative min-w-[70px] min-h-[70px] object-cover rounded-[12px] bg-[#F3F3F3] overflow-hidden">
               <CustomImage
-                src={item.images[0]?.thumbnail}
-                alt={item.name}
+                src={item.variant?.imageUrl || item.images?.[0]?.thumbnail || ""}
+                alt={itemName}
                 fill
               />
             </div>
             <div>
               <p className="text-[14px] font-[500] leading-[19.6px] mb-[2px]">
-                <span dangerouslySetInnerHTML={{ __html: item.name }}></span>{" "}
+                <span dangerouslySetInnerHTML={{ __html: itemName }}></span>{" "}
                 {!isSubscriptionWithFallback &&
-                  item.variation[0] &&
-                  `(${item.variation[0]?.value})`}
+                  (variantName || (item.variation?.[0] && `(${item.variation[0]?.value})`))}
               </p>
 
-              {item.name != "Body Optimization Program" && (
+              {itemName != "Body Optimization Program" && (
                 <>
                   <p className="text-[12px] font-[400] text-[#212121] inline">
                     {currencySymbol}
@@ -344,9 +360,8 @@ const CartItem = ({ item, setCartItems, allItems }) => {
                   <p className="text-[12px] font-[400] text-[#212121] inline">
                     / {isSubscriptionWithFallback && intervalText}
                     {!isSubscriptionWithFallback &&
-                      item.variation[1] &&
-                      item.variation[1]?.value}
-                    {item.name?.toLowerCase().includes("zonnic") &&
+                      (item.variation?.[1]?.value || variantName)}
+                    {itemName?.toLowerCase().includes("zonnic") &&
                       item.variation?.find(
                         (v) => v.attribute?.toLowerCase() === "flavors"
                       )?.value && (
@@ -364,7 +379,7 @@ const CartItem = ({ item, setCartItems, allItems }) => {
                   </p>
                 </>
               )}
-              {item.name === "Body Optimization Program" && (
+              {itemName === "Body Optimization Program" && (
                 <div className="flex flex-col">
                   <p className="text-sm md:text-base font-[500] text-[#212121] underline text-nowrap">
                     Monthly membership:
