@@ -13,7 +13,7 @@ import {
 } from "../../utils/crossSellCheckout";
 import { processSavedFlowProducts } from "../../utils/flowCartHandler";
 import Link from "next/link";
-import { migrateLocalCartToServer } from "@/lib/cart/cartService";
+import { mergeGuestCart } from "@/lib/api/cartMerge";
 import GoogleSignInButton from "./GoogleSignInButton";
 import CartMigrationOverlay from "@/components/CartMigrationOverlay";
 import { getSessionId } from "@/services/sessionService";
@@ -239,16 +239,29 @@ const LoginContent = ({ setActiveTab, loginRef }) => {
           // Show success message
           toast.success("You logged in successfully with Google");
 
-          // Migrate cart
+          // Merge guest cart if sessionId exists
           try {
-            logger.log("Starting cart migration...");
-            setIsMigratingCart(true);
-            await migrateLocalCartToServer();
-            document.getElementById("cart-refresher")?.click();
-            const cartUpdatedEvent = new CustomEvent("cart-updated");
-            document.dispatchEvent(cartUpdatedEvent);
-          } catch (migrateError) {
-            logger.error("Error migrating cart:", migrateError);
+            const sessionId = getSessionId();
+            if (sessionId) {
+              logger.log("Merging guest cart after Google login...");
+              setIsMigratingCart(true);
+
+              const mergeResult = await mergeGuestCart(sessionId);
+
+              if (mergeResult.success && mergeResult.merged) {
+                logger.log("Guest cart merged successfully:", mergeResult);
+                document.getElementById("cart-refresher")?.click();
+                const cartUpdatedEvent = new CustomEvent("cart-updated");
+                document.dispatchEvent(cartUpdatedEvent);
+              } else {
+                logger.warn("Cart merge failed or not needed:", mergeResult);
+              }
+            } else {
+              logger.log("No sessionId found, skipping cart merge");
+            }
+          } catch (mergeError) {
+            logger.error("Error merging cart:", mergeError);
+          } finally {
             setIsMigratingCart(false);
           }
 
@@ -320,16 +333,29 @@ const LoginContent = ({ setActiveTab, loginRef }) => {
                 // Show success message
                 toast.success("You logged in successfully with Google");
 
-                // Migrate cart
+                // Merge guest cart if sessionId exists
                 try {
-                  logger.log("Starting cart migration...");
-                  setIsMigratingCart(true);
-                  await migrateLocalCartToServer();
-                  document.getElementById("cart-refresher")?.click();
-                  const cartUpdatedEvent = new CustomEvent("cart-updated");
-                  document.dispatchEvent(cartUpdatedEvent);
-                } catch (migrateError) {
-                  logger.error("Error migrating cart:", migrateError);
+                  const sessionId = getSessionId();
+                  if (sessionId) {
+                    logger.log("Merging guest cart after Google login...");
+                    setIsMigratingCart(true);
+
+                    const mergeResult = await mergeGuestCart(sessionId);
+
+                    if (mergeResult.success && mergeResult.merged) {
+                      logger.log("Guest cart merged successfully:", mergeResult);
+                      document.getElementById("cart-refresher")?.click();
+                      const cartUpdatedEvent = new CustomEvent("cart-updated");
+                      document.dispatchEvent(cartUpdatedEvent);
+                    } else {
+                      logger.warn("Cart merge failed or not needed:", mergeResult);
+                    }
+                  } else {
+                    logger.log("No sessionId found, skipping cart merge");
+                  }
+                } catch (mergeError) {
+                  logger.error("Error merging cart:", mergeError);
+                } finally {
                   setIsMigratingCart(false);
                 }
 
@@ -392,22 +418,29 @@ const LoginContent = ({ setActiveTab, loginRef }) => {
           // Show success message
           toast.success("You logged in successfully with Google");
 
-          // Migrate any localStorage cart items to the server cart
+          // Merge guest cart if sessionId exists
           try {
-            logger.log("Starting cart migration process after Google login...");
-            setIsMigratingCart(true);
-            await migrateLocalCartToServer();
-            logger.log("Cart migration completed successfully");
+            const sessionId = getSessionId();
+            if (sessionId) {
+              logger.log("Merging guest cart after Google login...");
+              setIsMigratingCart(true);
 
-            // Refresh the cart display
-            document.getElementById("cart-refresher")?.click();
-            logger.log("Cart display refreshed after migration");
+              const mergeResult = await mergeGuestCart(sessionId);
 
-            // Dispatch a custom event to ensure cart is updated throughout the app
-            const cartUpdatedEvent = new CustomEvent("cart-updated");
-            document.dispatchEvent(cartUpdatedEvent);
-          } catch (migrateError) {
-            logger.error("Error migrating cart items:", migrateError);
+              if (mergeResult.success && mergeResult.merged) {
+                logger.log("Guest cart merged successfully:", mergeResult);
+                document.getElementById("cart-refresher")?.click();
+                const cartUpdatedEvent = new CustomEvent("cart-updated");
+                document.dispatchEvent(cartUpdatedEvent);
+              } else {
+                logger.warn("Cart merge failed or not needed:", mergeResult);
+              }
+            } else {
+              logger.log("No sessionId found, skipping cart merge");
+            }
+          } catch (mergeError) {
+            logger.error("Error merging cart:", mergeError);
+          } finally {
             setIsMigratingCart(false);
           }
 
@@ -514,32 +547,39 @@ const LoginContent = ({ setActiveTab, loginRef }) => {
           toast.success("You logged in successfully");
         }
 
-        // Handle cart merging notification
-        if (data.data?.cart?.merged) {
-          logger.log("Guest cart was merged into user cart");
+        // Handle cart merging
+        // The API may merge automatically when sessionId is provided, but we'll explicitly merge as well
+        let cartMerged = data.data?.cart?.merged || false;
+
+        // If cart wasn't merged automatically and we have a sessionId, merge it explicitly
+        if (!cartMerged && sessionId) {
+          try {
+            logger.log("Cart not merged automatically, merging explicitly...");
+            setIsMigratingCart(true);
+
+            const mergeResult = await mergeGuestCart(sessionId);
+
+            if (mergeResult.success && mergeResult.merged) {
+              logger.log("Guest cart merged successfully:", mergeResult);
+              cartMerged = true;
+            } else {
+              logger.warn("Cart merge failed or not needed:", mergeResult);
+            }
+          } catch (mergeError) {
+            logger.error("Error merging cart:", mergeError);
+            // Don't block login flow if merge fails
+          } finally {
+            setIsMigratingCart(false);
+          }
+        } else if (cartMerged) {
+          logger.log("Guest cart was automatically merged into user cart");
         }
 
-        // Note: Cart merging is now handled by the API when sessionId is provided
-        // We still migrate any remaining localStorage items as a fallback
-        let migrateSuccess = false;
-        try {
-          logger.log("Starting cart migration process for any remaining items...");
-          setIsMigratingCart(true);
-          await migrateLocalCartToServer();
-          migrateSuccess = true;
-          logger.log("Cart migration completed successfully");
-
-          // Refresh the cart display
+        // Refresh the cart display after merge
+        if (cartMerged) {
           document.getElementById("cart-refresher")?.click();
-          logger.log("Cart display refreshed after migration");
-
-          // Dispatch a custom event to ensure cart is updated throughout the app
           const cartUpdatedEvent = new CustomEvent("cart-updated");
           document.dispatchEvent(cartUpdatedEvent);
-        } catch (migrateError) {
-          logger.error("Error migrating cart items:", migrateError);
-          // Don't block login flow if migration fails
-          setIsMigratingCart(false);
         }
 
         // Small delay to ensure cart operations have time to complete

@@ -12,6 +12,7 @@ import { toast } from "react-toastify";
 import { useSearchParams, useRouter } from "next/navigation";
 import Loader from "@/components/Loader";
 import { getSessionId } from "@/services/sessionService";
+import { mergeGuestCart } from "@/lib/api/cartMerge";
 import {
   getSavedProducts,
   clearSavedProducts,
@@ -362,9 +363,36 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
           searchParams.get("hair-flow") === "1" ||
           searchParams.get("mh-flow") === "1";
 
-        // Handle cart merging notification
-        if (data.data?.cart?.merged) {
-          logger.log("Guest cart was merged into user cart");
+        // Handle cart merging
+        // The API may merge automatically when sessionId is provided, but we'll explicitly merge as well
+        let cartMerged = data.data?.cart?.merged || false;
+        
+        // If cart wasn't merged automatically and we have a sessionId, merge it explicitly
+        if (!cartMerged && sessionId) {
+          try {
+            logger.log("Cart not merged automatically, merging explicitly...");
+            
+            const mergeResult = await mergeGuestCart(sessionId);
+            
+            if (mergeResult.success && mergeResult.merged) {
+              logger.log("Guest cart merged successfully:", mergeResult);
+              cartMerged = true;
+            } else {
+              logger.warn("Cart merge failed or not needed:", mergeResult);
+            }
+          } catch (mergeError) {
+            logger.error("Error merging cart:", mergeError);
+            // Don't block registration flow if merge fails
+          }
+        } else if (cartMerged) {
+          logger.log("Guest cart was automatically merged into user cart");
+        }
+
+        // Refresh the cart display after merge
+        if (cartMerged) {
+          document.getElementById("cart-refresher")?.click();
+          const cartUpdatedEvent = new CustomEvent("cart-updated");
+          document.dispatchEvent(cartUpdatedEvent);
         }
 
         // Small delay to ensure everything is processed
