@@ -195,6 +195,12 @@ const CartItem = ({ item, setCartItems, allItems }) => {
   const handleQuantityEdit = async (quantity) => {
     if (loading) return; // Prevent multiple concurrent requests
 
+    // Validate quantity
+    if (quantity < 0) {
+      logger.warn("Cannot set quantity to negative value");
+      return;
+    }
+
     try {
       setLoading(true);
       // Track delta before updating
@@ -222,21 +228,57 @@ const CartItem = ({ item, setCartItems, allItems }) => {
         );
       }
 
-      const res = await fetch("/api/cart", {
+      // Use cart item ID (item.id) for the new API endpoint
+      // Support both new API structure (item.id) and legacy (item.key)
+      const cartItemId = item.id || itemKey;
+      
+      if (!cartItemId) {
+        logger.error("Cannot update quantity: cart item ID is missing");
+        toast.error("Unable to update item quantity. Please refresh the page.");
+        return;
+      }
+      
+      // Build URL with sessionId for guest users
+      let url = `/api/cart/items/${cartItemId}`;
+      const { isAuthenticated } = await import("@/lib/cart/cartService");
+      const isAuth = isAuthenticated();
+      
+      if (!isAuth) {
+        // For guest users, get sessionId from localStorage
+        try {
+          const { getSessionId } = await import("@/services/sessionService");
+          const sessionId = getSessionId();
+          if (sessionId) {
+            url += `?sessionId=${encodeURIComponent(sessionId)}`;
+          }
+        } catch (error) {
+          logger.warn("Could not get sessionId for guest cart update:", error);
+        }
+      }
+
+      const res = await fetch(url, {
         headers: {
           "Content-Type": "application/json",
         },
-        method: "PUT",
+        method: "PATCH",
         body: JSON.stringify({
-          itemKey: itemKey,
           quantity,
         }),
       });
 
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to update item quantity");
+      }
+
       const data = await res.json();
       setCartItems(data);
+      
+      // Trigger cart refresh event
+      document.dispatchEvent(new CustomEvent("cart-updated"));
     } catch (error) {
       logger.error("Error updating item quantity:", error);
+      toast.error(error.message || "Failed to update item quantity. Please try again.");
     } finally {
       setLoading(false);
       document.getElementById("cart-refresher")?.click();
@@ -338,11 +380,17 @@ const CartItem = ({ item, setCartItems, allItems }) => {
           </div>
           <div className="flex items-start gap-3">
             <div className="relative min-w-[70px] min-h-[70px] object-cover rounded-[12px] bg-[#F3F3F3] overflow-hidden">
-              <CustomImage
-                src={item.variant?.imageUrl || item.images?.[0]?.thumbnail || ""}
-                alt={itemName}
-                fill
-              />
+              {item.variant?.imageUrl || item.images?.[0]?.thumbnail ? (
+                <CustomImage
+                  src={item.variant?.imageUrl || item.images?.[0]?.thumbnail}
+                  alt={itemName}
+                  fill
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                  No Image
+                </div>
+              )}
             </div>
             <div>
               <p className="text-[14px] font-[500] leading-[19.6px] mb-[2px]">

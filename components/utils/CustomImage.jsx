@@ -9,6 +9,10 @@ function cn(...classes) {
 const CustomImage = ({ src, alt = "Image", className, ...props }) => {
   const [isLoading, setLoading] = useState(true);
 
+  if (!src || src === "") {
+    return null;
+  }
+
   return (
     <Image
       src={src}
