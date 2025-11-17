@@ -348,12 +348,12 @@ const Footer = ({ className }) => {
         </div>
       </footer>
 
-      {/* LegitScript Section
+      {/* LegitScript Section */}
       <div className="bg-white flex justify-between items-center p-4 max-w-[1200px] mx-auto flex-col md:flex-row gap-2">
         <div className="flex flex-col md:flex-row items-center gap-3">
-          <div className="relative rounded-2xl overflow-hidden w-[80px] h-[80px]">
+          <div className="relative rounded-2xl overflow-hidden w-[73px] h-[79px]">
             <CustomImage
-              src="https://static.legitscript.com/seals/11382672.png"
+              src="https://static.legitscript.com/seals/44796030.png"
               alt="LegitScript approved"
               fill
             />
@@ -387,7 +387,7 @@ const Footer = ({ className }) => {
             />
           </div>
         </div>
-      </div> */}
+      </div>
 
       {/* BugHerd Script */}
       <Script
