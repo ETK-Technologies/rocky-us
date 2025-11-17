@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { logger } from "@/utils/devLogger";
 import Link from "next/link";
 import { IoClose } from "react-icons/io5";
@@ -7,11 +8,109 @@ import { toast } from "react-toastify";
 import { analyticsService } from "@/utils/analytics/analyticsService";
 import { isUserAuthenticated } from "@/utils/crossSellCheckout";
 import { formatPrice } from "@/utils/priceFormatter";
+import { validateCart } from "@/lib/api/cartValidation";
 
 const CartPopup = ({ isOpen, onClose, productType, onContinueShopping }) => {
+  const router = useRouter();
   const [cartItems, setCartItems] = useState([]);
   const [isRemoving, setIsRemoving] = useState(null); // item key being removed
   const [isLoading, setIsLoading] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
+
+  const handleProceedToCheckout = async (e, checkoutUrl) => {
+    e.preventDefault();
+
+    // If user is not authenticated and this is merch, redirect to login-register with redirect_to
+    if (productType === "merch") {
+      try {
+        const authenticated = isUserAuthenticated();
+        if (!authenticated) {
+          const origin = typeof window !== "undefined" ? window.location.origin : "";
+          const redirectTo = encodeURIComponent(`${origin}${checkoutUrl}`);
+          window.location.href = `${origin}/login-register?redirect_to=${redirectTo}&viewshow=register`;
+          return;
+        }
+      } catch (_) {}
+    }
+
+    // Check if cart has items
+    if (!Array.isArray(cartItems) || cartItems.length === 0) {
+      toast.error("Your cart is empty");
+      return;
+    }
+
+    setIsValidating(true);
+    try {
+      // Validate cart before proceeding to checkout
+      logger.log("Validating cart before proceeding to checkout...");
+      const { getSessionId } = await import("@/services/sessionService");
+      const sessionId = getSessionId();
+      
+      const cartValidation = await validateCart(sessionId);
+      
+      if (!cartValidation.success || !cartValidation.valid) {
+        logger.error("Cart validation failed:", cartValidation);
+        
+        // Show detailed error message
+        const errorMessage = cartValidation.error || 
+                            cartValidation.message || 
+                            "Cart validation failed. Please check your cart and try again.";
+        toast.error(errorMessage);
+        
+        // If cart data is returned, refresh cart items (cart might have changed)
+        if (cartValidation.cart?.items) {
+          logger.log("Updating cart items with validated cart data");
+          setCartItems(cartValidation.cart.items);
+        }
+        
+        setIsValidating(false);
+        return;
+      }
+      
+      logger.log("Cart validation passed, proceeding to checkout");
+      
+      // Update cart items with validated cart data if available (ensures latest state)
+      if (cartValidation.cart?.items) {
+        logger.log("Updating cart items with validated cart data");
+        setCartItems(cartValidation.cart.items);
+      }
+
+      // Track analytics
+      try {
+        if (Array.isArray(cartItems) && cartItems.length > 0) {
+          const itemsForAnalytics = cartItems.map((it) => ({
+            product: {
+              id: it.product_id || it.id,
+              sku: it.sku,
+              name: it.name,
+              price:
+                (it.prices?.sale_price ||
+                  it.prices?.regular_price ||
+                  0) / 100,
+              attributes: it.variation?.length
+                ? it.variation.map((v) => ({
+                    name: v.attribute || v.name,
+                    options: [v.value],
+                  }))
+                : [],
+            },
+            quantity: it.quantity || 1,
+          }));
+          analyticsService.trackBeginCheckout(itemsForAnalytics);
+        }
+      } catch (e) {
+        logger.warn("[Analytics] begin_checkout (popup) skipped:", e);
+      }
+
+      // Navigate to checkout
+      router.push(checkoutUrl);
+    } catch (error) {
+      logger.error("Error validating cart:", error);
+      toast.error("Failed to validate cart. Please try again.");
+    } finally {
+      setIsValidating(false);
+    }
+  };
 
   useEffect(() => {
     if (!isOpen) return;
@@ -155,57 +254,13 @@ const CartPopup = ({ isOpen, onClose, productType, onContinueShopping }) => {
             </p>
 
             <div className="flex flex-col space-y-3">
-              <Link href={checkoutUrl} className="w-full">
-                <button
-                  className="w-full bg-black text-white py-2.5 px-4 rounded-full hover:bg-gray-900 transition-colors"
-                  onClick={(e) => {
-                    // If user is not authenticated and this is merch, redirect to login-register with redirect_to
-                    if (productType === "merch") {
-                      try {
-                        const authenticated = isUserAuthenticated();
-                        if (!authenticated) {
-                          e.preventDefault();
-                          const origin = typeof window !== "undefined" ? window.location.origin : "";
-                          const redirectTo = encodeURIComponent(`${origin}${checkoutUrl}`);
-                          window.location.href = `${origin}/login-register?redirect_to=${redirectTo}&viewshow=register`;
-                          return;
-                        }
-                      } catch (_) {}
-                    }
-
-                    try {
-                      if (Array.isArray(cartItems) && cartItems.length > 0) {
-                        const itemsForAnalytics = cartItems.map((it) => ({
-                          product: {
-                            id: it.product_id || it.id,
-                            sku: it.sku,
-                            name: it.name,
-                            price:
-                              (it.prices?.sale_price ||
-                                it.prices?.regular_price ||
-                                0) / 100,
-                            attributes: it.variation?.length
-                              ? it.variation.map((v) => ({
-                                  name: v.attribute || v.name,
-                                  options: [v.value],
-                                }))
-                              : [],
-                          },
-                          quantity: it.quantity || 1,
-                        }));
-                        analyticsService.trackBeginCheckout(itemsForAnalytics);
-                      }
-                    } catch (e) {
-                      logger.warn(
-                        "[Analytics] begin_checkout (popup) skipped:",
-                        e
-                      );
-                    }
-                  }}
-                >
-                  Proceed to Checkout
-                </button>
-              </Link>
+              <button
+                onClick={(e) => handleProceedToCheckout(e, checkoutUrl)}
+                disabled={isValidating}
+                className="w-full bg-black text-white py-2.5 px-4 rounded-full hover:bg-gray-900 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {isValidating ? "Validating..." : "Proceed to Checkout"}
+              </button>
 
               <button
                 onClick={productType === "merch" ? (onContinueShopping || onClose) : onClose}
@@ -367,58 +422,13 @@ const CartPopup = ({ isOpen, onClose, productType, onContinueShopping }) => {
           </div>
           {/* Footer Buttons */}
           <div className="px-5 pb-5 pt-2 flex flex-col gap-3">
-            <Link href={checkoutUrl} className="w-full">
-              <button
-                className="w-full py-3 rounded-full bg-black text-white text-center font-medium text-base disabled:opacity-60"
-                disabled={!!isRemoving}
-                onClick={(e) => {
-                  // If user is not authenticated and this is merch, redirect to login-register with redirect_to
-                  if (productType === "merch") {
-                    try {
-                      const authenticated = isUserAuthenticated();
-                      if (!authenticated) {
-                        e.preventDefault();
-                        const origin = typeof window !== "undefined" ? window.location.origin : "";
-                        const redirectTo = encodeURIComponent(`${origin}${checkoutUrl}`);
-                        window.location.href = `${origin}/login-register?redirect_to=${redirectTo}&viewshow=register`;
-                        return;
-                      }
-                    } catch (_) {}
-                  }
-
-                  try {
-                    if (Array.isArray(cartItems) && cartItems.length > 0) {
-                      const itemsForAnalytics = cartItems.map((it) => ({
-                        product: {
-                          id: it.product_id || it.id,
-                          sku: it.sku,
-                          name: it.name,
-                          price:
-                            (it.prices?.sale_price ||
-                              it.prices?.regular_price ||
-                              0) / 100,
-                          attributes: it.variation?.length
-                            ? it.variation.map((v) => ({
-                                name: v.attribute || v.name,
-                                options: [v.value],
-                              }))
-                            : [],
-                        },
-                        quantity: it.quantity || 1,
-                      }));
-                      analyticsService.trackBeginCheckout(itemsForAnalytics);
-                    }
-                  } catch (e) {
-                    logger.warn(
-                      "[Analytics] begin_checkout (popup mobile) skipped:",
-                      e
-                    );
-                  }
-                }}
-              >
-                Proceed to Checkout
-              </button>
-            </Link>
+            <button
+              onClick={(e) => handleProceedToCheckout(e, checkoutUrl)}
+              disabled={!!isRemoving || isValidating}
+              className="w-full py-3 rounded-full bg-black text-white text-center font-medium text-base disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isValidating ? "Validating..." : "Proceed to Checkout"}
+            </button>
             <button
               onClick={productType === "merch" ? (onContinueShopping || onClose) : onClose}
               className="w-full py-3 rounded-full border border-black text-black text-center font-medium text-base"

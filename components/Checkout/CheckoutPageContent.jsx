@@ -38,6 +38,7 @@ import { Elements, useStripe } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { useAddressManager } from "@/lib/hooks/useAddressManager";
 import { debugAddressData } from "@/utils/addressDebugger";
+import { validateCart } from "@/lib/api/cartValidation";
 
 // Load Stripe outside component to avoid recreating on every render
 const stripePromise = loadStripe(
@@ -975,6 +976,47 @@ const CheckoutPageContent = () => {
       }
 
       logger.log("Form validation passed, proceeding with checkout");
+
+      // Validate cart before proceeding (stock availability, pricing, etc.)
+      try {
+        logger.log("Validating cart before checkout...");
+        const { getSessionId } = await import("@/services/sessionService");
+        const sessionId = getSessionId();
+        
+        const cartValidation = await validateCart(sessionId);
+        
+        if (!cartValidation.success || !cartValidation.valid) {
+          logger.error("Cart validation failed:", cartValidation);
+          
+          // Show detailed error message
+          const errorMessage = cartValidation.error || 
+                              cartValidation.message || 
+                              "Cart validation failed. Please check your cart and try again.";
+          toast.error(errorMessage);
+          
+          // If cart data is returned, update cart state (cart might have changed)
+          if (cartValidation.cart && setCartItems) {
+            logger.log("Updating cart with validated cart data");
+            setCartItems(cartValidation.cart);
+          }
+          
+          setSubmitting(false);
+          return;
+        }
+        
+        logger.log("Cart validation passed:", cartValidation.message);
+        
+        // Update cart state with validated cart data if available (ensures latest state)
+        if (cartValidation.cart && setCartItems) {
+          logger.log("Updating cart with validated cart data");
+          setCartItems(cartValidation.cart);
+        }
+      } catch (cartValidationError) {
+        logger.error("Error validating cart:", cartValidationError);
+        toast.error("Failed to validate cart. Please try again.");
+        setSubmitting(false);
+        return;
+      }
 
       // Check if age validation has previously failed and prevent order
       if (ageValidationFailed) {

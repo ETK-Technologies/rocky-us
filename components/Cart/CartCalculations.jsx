@@ -1,15 +1,107 @@
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { logger } from "@/utils/devLogger";
 import CouponApply from "../CartCheckoutShared/CouponApply";
 import InitialShipping from "../CartCheckoutShared/InitialShipping";
 import { analyticsService } from "@/utils/analytics/analyticsService";
 import { formatPrice } from "@/utils/priceFormatter";
+import { validateCart } from "@/lib/api/cartValidation";
+import { toast } from "react-toastify";
 
 const CartCalculations = ({ cartItems, setCartItems }) => {
+  const router = useRouter();
+  const [isValidating, setIsValidating] = useState(false);
+
   // Support both new API structure and legacy structure
-  const currencySymbol = cartItems.totals?.currency_symbol || 
-                        cartItems.currency || 
-                        "$";
+  const currencySymbol = cartItems.totals?.currency_symbol ||
+    cartItems.currency ||
+    "$";
+
+  const handleProceedToCheckout = async (e) => {
+    e.preventDefault();
+
+    // Check if cart has items
+    if (!cartItems || !Array.isArray(cartItems.items) || cartItems.items.length === 0) {
+      toast.error("Your cart is empty");
+      return;
+    }
+
+    setIsValidating(true);
+    try {
+      // Validate cart before proceeding to checkout
+      logger.log("Validating cart before proceeding to checkout...");
+      const { getSessionId } = await import("@/services/sessionService");
+      const sessionId = getSessionId();
+
+      const cartValidation = await validateCart(sessionId);
+
+      if (!cartValidation.success || !cartValidation.valid) {
+        logger.error("Cart validation failed:", cartValidation);
+
+        // Show detailed error message
+        const errorMessage = cartValidation.error ||
+          cartValidation.message ||
+          "Cart validation failed. Please check your cart and try again.";
+        toast.error(errorMessage);
+
+        // If cart data is returned, update cart state (cart might have changed)
+        if (cartValidation.cart && setCartItems) {
+          logger.log("Updating cart with validated cart data");
+          setCartItems(cartValidation.cart);
+        }
+
+        setIsValidating(false);
+        return;
+      }
+
+      logger.log("Cart validation passed, proceeding to checkout");
+
+      // Update cart state with validated cart data if available (ensures latest state)
+      if (cartValidation.cart && setCartItems) {
+        logger.log("Updating cart with validated cart data");
+        setCartItems(cartValidation.cart);
+      }
+
+      // Track analytics
+      try {
+        const itemsForAnalytics = cartItems.items.map((it) => {
+          // Support both new API structure and legacy structure
+          const itemName = it.product?.name || it.name || "Product";
+          const itemPrice = it.unitPrice !== undefined
+            ? parseFloat(it.unitPrice) || 0
+            : (it.prices?.sale_price || it.prices?.regular_price || 0) / 100;
+
+          return {
+            product: {
+              id: it.productId || it.product?.id || it.product_id || it.id,
+              sku: it.variant?.sku || it.sku,
+              name: itemName,
+              price: itemPrice,
+              attributes: it.variation?.length
+                ? it.variation.map((v) => ({
+                  name: v.attribute || v.name,
+                  options: [v.value],
+                }))
+                : it.variant?.name ? [{ name: "Variant", options: [it.variant.name] }] : [],
+            },
+            quantity: it.quantity || 1,
+          };
+        });
+        analyticsService.trackBeginCheckout(itemsForAnalytics);
+      } catch (e) {
+        logger.warn("[Analytics] begin_checkout tracking skipped:", e);
+      }
+
+      // Navigate to checkout
+      router.push("/checkout");
+    } catch (error) {
+      logger.error("Error validating cart:", error);
+      toast.error("Failed to validate cart. Please try again.");
+    } finally {
+      setIsValidating(false);
+    }
+  };
 
   // Check if subscriptions data exists before rendering RecurringShipping
   const hasSubscriptions =
@@ -40,62 +132,29 @@ const CartCalculations = ({ cartItems, setCartItems }) => {
           />
         )}
 
-        <Link
-          href="/checkout"
-          className="flex items-center justify-center gap-3 bg-black text-white px-5 py-[12px] md:py-4 h-[44px] md:h-[52px] rounded-[64px] hover:bg-gray-800 transition"
-          onClick={() => {
-            try {
-              if (
-                cartItems &&
-                Array.isArray(cartItems.items) &&
-                cartItems.items.length > 0
-              ) {
-                const itemsForAnalytics = cartItems.items.map((it) => {
-                  // Support both new API structure and legacy structure
-                  const itemName = it.product?.name || it.name || "Product";
-                  const itemPrice = it.unitPrice !== undefined
-                    ? parseFloat(it.unitPrice) || 0
-                    : (it.prices?.sale_price || it.prices?.regular_price || 0) / 100;
-                  
-                  return {
-                    product: {
-                      id: it.productId || it.product?.id || it.product_id || it.id,
-                      sku: it.variant?.sku || it.sku,
-                      name: itemName,
-                      price: itemPrice,
-                      attributes: it.variation?.length
-                        ? it.variation.map((v) => ({
-                            name: v.attribute || v.name,
-                            options: [v.value],
-                          }))
-                        : it.variant?.name ? [{ name: "Variant", options: [it.variant.name] }] : [],
-                    },
-                    quantity: it.quantity || 1,
-                  };
-                });
-                analyticsService.trackBeginCheckout(itemsForAnalytics);
-              }
-            } catch (e) {
-              logger.warn("[Analytics] begin_checkout tracking skipped:", e);
-            }
-          }}
+        <button
+          onClick={handleProceedToCheckout}
+          disabled={isValidating}
+          className="flex items-center justify-center gap-3 bg-black text-white px-5 py-[12px] md:py-4 h-[44px] md:h-[52px] rounded-[64px] hover:bg-gray-800 transition disabled:opacity-60 disabled:cursor-not-allowed w-full"
         >
           <span className="text-[14px] font-[500] text-[#FFFFFF] leading-[19.6px] poppins-font">
-            Proceed to checkout
+            {isValidating ? "Validating..." : "Proceed to checkout"}
           </span>
-          <svg
-            width="12"
-            height="11"
-            viewBox="0 0 12 11"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M7 0.5L6.285 1.1965L10.075 5H0V6H10.075L6.285 9.7865L7 10.5L12 5.5L7 0.5Z"
-              fill="white"
-            ></path>
-          </svg>
-        </Link>
+          {!isValidating && (
+            <svg
+              width="12"
+              height="11"
+              viewBox="0 0 12 11"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M7 0.5L6.285 1.1965L10.075 5H0V6H10.075L6.285 9.7865L7 10.5L12 5.5L7 0.5Z"
+                fill="white"
+              ></path>
+            </svg>
+          )}
+        </button>
       </div>
     </div>
   );

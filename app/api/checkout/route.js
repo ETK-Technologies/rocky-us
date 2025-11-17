@@ -127,6 +127,53 @@ export async function POST(req) {
       );
     }
 
+    // Validate cart before processing checkout (stock, pricing, etc.)
+    try {
+      const { searchParams } = new URL(req.url);
+      const sessionId = searchParams.get("sessionId");
+      
+      let validateUrl = `${BASE_URL}/api/v1/cart/validate`;
+      const useSessionId = !encodedCredentials && sessionId;
+      
+      if (useSessionId) {
+        validateUrl += `?sessionId=${encodeURIComponent(sessionId)}`;
+      }
+
+      const validateHeaders = {
+        "Content-Type": "application/json",
+        accept: "application/json",
+        "X-App-Key": "app_04ecfac3213d7b179dc1e5ae9cb7a627",
+        "X-App-Secret": "sk_2c867224696400bc2b377c3e77356a9e",
+      };
+
+      if (encodedCredentials) {
+        validateHeaders["Authorization"] = encodedCredentials.value;
+      }
+
+      logger.log("Validating cart before checkout...");
+      const cartValidationResponse = await axios.post(
+        validateUrl,
+        {},
+        { headers: validateHeaders }
+      );
+
+      logger.log("Cart validation passed:", cartValidationResponse.status);
+    } catch (cartValidationError) {
+      logger.error("Cart validation failed:", cartValidationError.response?.data || cartValidationError.message);
+      
+      const validationError = cartValidationError.response?.data || {};
+      const errorMessage = validationError.message || validationError.error || "Cart validation failed. Please check your cart and try again.";
+
+      return NextResponse.json(
+        {
+          error: "Cart validation failed",
+          message: errorMessage,
+          details: validationError.details || validationError,
+        },
+        { status: cartValidationError.response?.status || 400 }
+      );
+    }
+
     let token = "";
     let stripePaymentMethodId = "";
     let cardNumberLastFourNumbers = "";
