@@ -313,16 +313,46 @@ const CartItem = ({ item, setCartItems, allItems }) => {
         logger.warn("[Analytics] remove_from_cart tracking skipped:", e);
       }
 
+      // Use cart item ID (item.id) for the new API endpoint
+      // Support both new API structure (item.id) and legacy (item.key)
+      const cartItemId = item.id || itemKey;
+      
+      if (!cartItemId) {
+        logger.error("Cannot delete item: cart item ID is missing");
+        toast.error("Unable to remove item. Please refresh the page.");
+        return;
+      }
+      
+      // Build URL with sessionId for guest users
+      let url = `/api/cart/items/${cartItemId}`;
+      const { isAuthenticated } = await import("@/lib/cart/cartService");
+      const isAuth = isAuthenticated();
+      
+      if (!isAuth) {
+        // For guest users, get sessionId from localStorage
+        try {
+          const { getSessionId } = await import("@/services/sessionService");
+          const sessionId = getSessionId();
+          if (sessionId) {
+            url += `?sessionId=${encodeURIComponent(sessionId)}`;
+          }
+        } catch (error) {
+          logger.warn("Could not get sessionId for guest cart delete:", error);
+        }
+      }
+
       // Item-specific loading state allows other items to be deleted in parallel
-      const res = await fetch("/api/cart", {
+      const res = await fetch(url, {
         headers: {
           "Content-Type": "application/json",
         },
         method: "DELETE", // Use DELETE method to properly remove the item
-        body: JSON.stringify({
-          itemKey: itemKey,
-        }),
       });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to remove item from cart");
+      }
 
       const data = await res.json();
 
@@ -334,6 +364,9 @@ const CartItem = ({ item, setCartItems, allItems }) => {
       }
 
       setCartItems(data);
+      
+      // Trigger cart refresh event
+      document.dispatchEvent(new CustomEvent("cart-updated"));
     } catch (error) {
       logger.error("Error removing item from cart:", error);
       toast.error("Failed to remove item from cart. Please try again.");

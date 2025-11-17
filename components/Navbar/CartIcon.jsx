@@ -105,16 +105,50 @@ const CartIcon = ({ handleToggle }) => {
         getCartItems();
       } else {
         // Use new backend API for removing items
-        const res = await fetch("/api/cart", {
+        // Support both new API structure (item.id) and legacy (item.key)
+        const cartItemId = item.id || item.key;
+        
+        if (!cartItemId) {
+          logger.error("Cannot delete item: cart item ID is missing");
+          toast.error("Unable to remove item. Please refresh the page.");
+          return;
+        }
+        
+        // Build URL with sessionId for guest users
+        let url = `/api/cart/items/${cartItemId}`;
+        const { isAuthenticated } = await import("@/lib/cart/cartService");
+        const isAuth = isAuthenticated();
+        
+        if (!isAuth) {
+          // For guest users, get sessionId from localStorage
+          try {
+            const { getSessionId } = await import("@/services/sessionService");
+            const sessionId = getSessionId();
+            if (sessionId) {
+              url += `?sessionId=${encodeURIComponent(sessionId)}`;
+            }
+          } catch (error) {
+            logger.warn("Could not get sessionId for guest cart delete:", error);
+          }
+        }
+        
+        const res = await fetch(url, {
           headers: { "Content-Type": "application/json" },
           method: "DELETE",
-          body: JSON.stringify({ itemKey: item.key }),
         });
+        
+        if (!res.ok) {
+          const errorData = await res.json();
+          toast.error(errorData.error || "Failed to remove item from cart");
+          return;
+        }
+        
         const data = await res.json();
         if (data.error) {
           toast.error(data.error);
           return;
         }
+        
         if (res.ok) {
           getCartItems();
           // Trigger cart refresh event
