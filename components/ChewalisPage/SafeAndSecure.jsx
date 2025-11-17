@@ -75,15 +75,13 @@ const features = [
 // Static card data
 const cards = [
   {
-    image:
-      "https://myrocky-dev.etk-tech.com/wp-content/uploads/2024/07/ontario-removebg-preview.png",
+    image: "https://myrocky.b-cdn.net/WP%20Images/chewalis/ontario.png",
     title: "Ontario College of Pharmacists",
     description:
       "Regulates the pharmacy profession to ensure competent health professionals and respectful treatment. Governed by the Pharmacy Act, 1991, it sets practice standards, ethical guidelines, and continuing competence requirements.",
   },
   {
-    image:
-      "https://myrocky-dev.etk-tech.com/wp-content/uploads/2024/07/ontario2-removebg-preview.png",
+    image: "https://myrocky.b-cdn.net/WP%20Images/chewalis/legit.png",
     title: "LegitScript certification",
     description:
       "LegitScript conducts thorough oversight of online pharmacies through an extensive verification process, ensuring they meet licensing requirements, regulatory compliance, and adhere strictly to relevant laws.",
