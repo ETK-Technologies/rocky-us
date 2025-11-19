@@ -18,7 +18,7 @@ import {
   clearSavedProducts,
 } from "../../utils/crossSellCheckout";
 import { processSavedFlowProducts } from "../../utils/flowCartHandler";
-import { migrateLocalCartToServer } from "@/lib/cart/cartService";
+import { migrateLocalCartToServer, getLocalCart } from "@/lib/cart/cartService";
 import {
   checkQuebecZonnicRestriction,
   getQuebecRestrictionMessage,
@@ -301,19 +301,24 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
         document.getElementById("cart-refresher")?.click();
         toast.success(data.message || "You registered successfully!");
 
-        // Check if we came from a cross-sell popup
-        const isFromCrossSell =
+        // Check if we came from a flow (for redirect logic)
+        const isFromFlow =
           searchParams.get("ed-flow") === "1" ||
           searchParams.get("wl-flow") === "1" ||
           searchParams.get("hair-flow") === "1" ||
           searchParams.get("mh-flow") === "1";
 
-        // Only migrate cart if we're not coming from a cross-sell popup
-        if (!isFromCrossSell) {
-          let migrateSuccess = false;
+        // Always check for local cart items and migrate if present
+        // This is important because unauthenticated users add items to localStorage
+        // and they need to be migrated after registration
+        const localCart = getLocalCart();
+        const hasLocalCartItems = localCart.items && localCart.items.length > 0;
+
+        let migrateSuccess = false;
+        if (hasLocalCartItems) {
           try {
             logger.log(
-              "Starting cart migration process for new registration..."
+              `Starting cart migration process for new registration with ${localCart.items.length} items in local cart...`
             );
             setIsMigratingCart(true);
             await migrateLocalCartToServer();
@@ -335,17 +340,11 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
           // Note: We don't hide the overlay here for successful migrations
           // It will stay visible during the redirect delays and disappear when page navigates
         } else {
-          logger.log(
-            "Skipping cart migration as user came from cross-sell popup"
-          );
+          logger.log("No local cart items to migrate after registration");
         }
 
         // Small delay to ensure cart migration has time to complete server-side
-        if (
-          !isFromCrossSell &&
-          redirectTo &&
-          redirectTo.includes("/checkout")
-        ) {
+        if (migrateSuccess && redirectTo && redirectTo.includes("/checkout")) {
           logger.log(
             "Waiting for cart migration to complete before checkout redirect..."
           );
@@ -356,7 +355,9 @@ const RegisterContent = ({ setActiveTab, registerRef }) => {
 
         // Always check for saved flow products (new direct cart approach)
         // Only skip old cross-sell handling if we came from a cross-sell popup
-        redirectPath = await handleCrossSellProducts(isFromCrossSell);
+        // Note: isFromFlow indicates flow parameter, but we still need to process
+        // saved products if they exist (they're different from localStorage cart items)
+        redirectPath = await handleCrossSellProducts(false);
 
         if (!redirectPath) {
           redirectPath = redirectTo || "/";
