@@ -47,8 +47,7 @@ export const addToCartDirectly = async (
     // Check authentication status
     const isAuthenticated = isUserAuthenticated();
     logger.log(
-      `Authentication status: ${
-        isAuthenticated ? "Authenticated" : "Not authenticated"
+      `Authentication status: ${isAuthenticated ? "Authenticated" : "Not authenticated"
       }`
     );
 
@@ -178,6 +177,7 @@ async function handleAuthenticatedFlow(mainProduct, addons, flowType, options) {
 
 /**
  * Handle cart addition for unauthenticated users (LocalStorage + Login redirect)
+ * Now also adds items to cart via cartService for immediate cart availability
  */
 async function handleUnauthenticatedFlow(
   mainProduct,
@@ -188,7 +188,117 @@ async function handleUnauthenticatedFlow(
   const { requireConsultation, subscriptionPeriod, varietyPackId } = options;
 
   try {
-    // Save products to localStorage for post-login retrieval
+    logger.log(
+      `🛒 Unauthenticated flow - Adding products to cart for ${flowType} flow`
+    );
+
+    // Prepare and add main product to cart
+    if (mainProduct) {
+      const priceInDollars = parseFloat(mainProduct.price) || 0;
+      const priceInCents = priceInDollars * 100;
+
+      const mainProductData = {
+        productId: extractProductId(mainProduct),
+        variationId: mainProduct.variationId,
+        quantity: mainProduct.quantity || 1,
+        name: mainProduct.name || mainProduct.title,
+        price: priceInCents,
+        image: mainProduct.image,
+        product_type: mainProduct.isSubscription ? "subscription" : "simple",
+        variation: mainProduct.variation || [],
+      };
+
+      logger.log("🛒 Adding main product via cartService:", mainProductData);
+      await addItemToCart(mainProductData);
+    }
+
+    // Add addon products to cart
+    if (addons && addons.length > 0) {
+      for (const addon of addons) {
+        const addonPriceInDollars = parseFloat(
+          addon.price || addon.dataPrice || 0
+        );
+        const addonPriceInCents = addonPriceInDollars * 100;
+
+        // Build variation data for addon
+        const addonVariation = addon.variation || [];
+        if (
+          !addonVariation.some(
+            (v) =>
+              v.attribute === "Subscription Type" || v.attribute === "Frequency"
+          )
+        ) {
+          if (addon.frequency) {
+            addonVariation.push({
+              attribute: "Frequency",
+              value: addon.frequency,
+            });
+          } else if (
+            addon.dataType === "simple" ||
+            !addon.isSubscription
+          ) {
+            addonVariation.push({
+              attribute: "Subscription Type",
+              value: "One-time Purchase",
+            });
+          } else if (
+            addon.dataType === "subscription" ||
+            addon.isSubscription
+          ) {
+            addonVariation.push({
+              attribute: "Subscription Type",
+              value: addon.subscriptionPeriod || "Monthly Supply",
+            });
+          }
+        }
+
+        const addonData = {
+          productId: extractProductId(addon),
+          variationId: addon.variationId || addon.dataAddToCart,
+          quantity: 1,
+          name:
+            addon.title ||
+            addon.name ||
+            addon.dataName ||
+            "Add-on Product",
+          price: addonPriceInCents,
+          image:
+            addon.image ||
+            addon.imageUrl ||
+            addon.images?.[0]?.src ||
+            addon.dataImage,
+          product_type:
+            addon.isSubscription || addon.dataType === "subscription"
+              ? "subscription"
+              : "simple",
+          variation: addonVariation,
+        };
+
+        logger.log("🛒 Adding addon via cartService:", addonData);
+        await addItemToCart(addonData);
+      }
+    }
+
+    // For WL flow, add Body Optimization Program as required addon
+    if (flowType === "wl") {
+      logger.log(
+        "🛒 Adding Body Optimization Program for WL flow via cartService"
+      );
+      const bodyOptimizationData = {
+        productId: "148515",
+        quantity: 1,
+        name: "Body Optimization Program",
+        price: 99 * 100, // Convert to cents
+        image:
+          "https://mycdn.myrocky.com/wp-content/uploads/20240403133727/wl-consultation-sq-small-icon-wt.png",
+        product_type: "simple",
+        variation: [],
+      };
+
+      await addItemToCart(bodyOptimizationData);
+    }
+
+    // Save products to localStorage for post-login retrieval (backward compatibility)
     const savedProductData = {
       mainProduct,
       addons,
@@ -208,15 +318,23 @@ async function handleUnauthenticatedFlow(
     // Add flow-specific consultation requirements to localStorage
     addFlowConsultationRequirements(mainProduct, flowType);
 
+    // Get the updated cart from cartService
+    const cartData = getLocalCart();
+    logger.log(
+      "✅ Products added to localStorage cart via cartService:",
+      cartData
+    );
+
     // Generate login URL with proper redirect
     const loginUrl = generateLoginUrl(flowType, requireConsultation);
 
     return {
       success: true,
-      message: "Redirecting to login for checkout",
+      message: "Products added to cart. Redirecting to login for checkout",
       redirectUrl: loginUrl,
       flowType,
       authenticationRequired: true,
+      cartData: formatCartDataForDisplay(cartData),
     };
   } catch (error) {
     logger.error(`Unauthenticated ${flowType} flow error:`, error);
@@ -877,8 +995,7 @@ export const addToCartEarly = async (
     // Check authentication status
     const isAuthenticated = isUserAuthenticated();
     logger.log(
-      `Authentication status: ${
-        isAuthenticated ? "Authenticated" : "Not authenticated"
+      `Authentication status: ${isAuthenticated ? "Authenticated" : "Not authenticated"
       }`
     );
 
